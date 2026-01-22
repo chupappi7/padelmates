@@ -55,56 +55,56 @@ export function GameCard({
       transition={{ duration: 0.2 }}
     >
       <Link to={`/games/${id}`} className="block card-game group">
-        <div className="p-5">
-          <div className="flex items-start justify-between mb-3">
-            <div className="flex gap-2">
-              <span className={`badge-skill ${skillColors[skillLevel]}`}>
+        <div className="p-4 sm:p-5">
+          <div className="flex items-start justify-between mb-2 sm:mb-3">
+            <div className="flex flex-wrap gap-1.5 sm:gap-2">
+              <span className={`badge-skill text-[10px] sm:text-xs px-2 sm:px-3 ${skillColors[skillLevel]}`}>
                 {skillLevel}
               </span>
-              <Badge variant="outline" className="rounded-full">
+              <Badge variant="outline" className="rounded-full text-[10px] sm:text-xs h-5 sm:h-6 px-2">
                 {formatLabels[format]}
               </Badge>
             </div>
             {pricePerPlayer > 0 && (
-              <div className="flex items-center gap-1 font-bold text-primary">
-                <Euro className="w-4 h-4" />
+              <div className="flex items-center gap-0.5 font-bold text-primary text-sm sm:text-base">
+                <Euro className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                 {pricePerPlayer}
               </div>
             )}
           </div>
 
-          <h3 className="font-display font-bold text-lg mb-2 group-hover:text-primary transition-colors">
+          <h3 className="font-display font-bold text-base sm:text-lg mb-2 group-hover:text-primary transition-colors line-clamp-1">
             {title}
           </h3>
 
-          <div className="space-y-2 text-sm text-muted-foreground mb-4">
+          <div className="space-y-1.5 sm:space-y-2 text-xs sm:text-sm text-muted-foreground mb-3 sm:mb-4">
             <div className="flex items-center gap-2">
-              <MapPin className="w-4 h-4 text-primary" />
-              <span>{location}</span>
+              <MapPin className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-primary shrink-0" />
+              <span className="truncate">{location}</span>
             </div>
             <div className="flex items-center gap-2">
-              <Calendar className="w-4 h-4 text-primary" />
+              <Calendar className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-primary shrink-0" />
               <span>{formatDate(date, "EEE, MMM d · h:mm a")}</span>
             </div>
             <div className="flex items-center gap-2">
-              <Users className="w-4 h-4 text-primary" />
+              <Users className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-primary shrink-0" />
               <span>
                 {currentPlayers}/{maxPlayers} players
                 {spotsLeft > 0 && (
-                  <span className="text-success ml-1">· {spotsLeft} spots left</span>
+                  <span className="text-success ml-1">· {spotsLeft} left</span>
                 )}
               </span>
             </div>
           </div>
 
-          <div className="flex items-center gap-3 pt-3 border-t border-border">
-            <Avatar className="h-8 w-8">
+          <div className="flex items-center gap-2 sm:gap-3 pt-2.5 sm:pt-3 border-t border-border">
+            <Avatar className="h-7 w-7 sm:h-8 sm:w-8">
               <AvatarImage src={hostAvatar} />
-              <AvatarFallback className="bg-primary/10 text-primary text-xs font-semibold">
+              <AvatarFallback className="bg-primary/10 text-primary text-[10px] sm:text-xs font-semibold">
                 {hostName.charAt(0).toUpperCase()}
               </AvatarFallback>
             </Avatar>
-            <span className="text-sm">
+            <span className="text-xs sm:text-sm truncate">
               Hosted by <span className="font-semibold">{hostName}</span>
             </span>
           </div>

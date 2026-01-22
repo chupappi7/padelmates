@@ -12,9 +12,11 @@ import {
 import { GameCard } from "@/components/games/GameCard";
 import { supabase } from "@/integrations/supabase/client";
 import { Navbar } from "@/components/layout/Navbar";
+import { MobileFilterSheet } from "@/components/games/MobileFilterSheet";
 import { motion } from "framer-motion";
-import { Plus, Search, Filter, Calendar } from "lucide-react";
+import { Plus, Search, Calendar } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface Game {
   id: string;
@@ -41,6 +43,7 @@ export default function GamesListPage() {
   const [formatFilter, setFormatFilter] = useState<string>("all");
   const navigate = useNavigate();
   const { user } = useAuth();
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     fetchGames();
@@ -84,23 +87,23 @@ export default function GamesListPage() {
   });
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background pb-20 sm:pb-0">
       <Navbar />
 
-      <div className="container py-8">
+      <div className="container py-5 sm:py-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mb-8"
+          className="mb-6"
         >
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+          <div className="flex items-start justify-between gap-4 mb-5">
             <div>
-              <h1 className="font-display text-3xl font-bold mb-1">Find Games</h1>
-              <p className="text-muted-foreground">
-                Discover padel games happening near you
+              <h1 className="font-display text-2xl sm:text-3xl font-bold mb-1">Find Games</h1>
+              <p className="text-sm sm:text-base text-muted-foreground">
+                Discover padel games near you
               </p>
             </div>
-            {user && (
+            {user && !isMobile && (
               <Button variant="hero" onClick={() => navigate("/games/create")}>
                 <Plus className="w-4 h-4" />
                 Host a Game
@@ -108,56 +111,69 @@ export default function GamesListPage() {
             )}
           </div>
 
-          {/* Filters */}
-          <div className="flex flex-col sm:flex-row gap-3">
+          {/* Filters - Mobile optimized */}
+          <div className="flex gap-2">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
-                placeholder="Search by title or location..."
+                placeholder="Search games..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-10 h-11"
               />
             </div>
-            <Select value={skillFilter} onValueChange={setSkillFilter}>
-              <SelectTrigger className="w-full sm:w-40 h-11">
-                <SelectValue placeholder="Skill level" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Levels</SelectItem>
-                <SelectItem value="beginner">Beginner</SelectItem>
-                <SelectItem value="intermediate">Intermediate</SelectItem>
-                <SelectItem value="advanced">Advanced</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select value={formatFilter} onValueChange={setFormatFilter}>
-              <SelectTrigger className="w-full sm:w-44 h-11">
-                <SelectValue placeholder="Game format" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Formats</SelectItem>
-                <SelectItem value="casual_match">Casual Match</SelectItem>
-                <SelectItem value="americano">Americano</SelectItem>
-                <SelectItem value="team_americano">Team Americano</SelectItem>
-              </SelectContent>
-            </Select>
+            
+            {/* Mobile: Filter sheet, Desktop: Inline selects */}
+            {isMobile ? (
+              <MobileFilterSheet
+                skillFilter={skillFilter}
+                setSkillFilter={setSkillFilter}
+                formatFilter={formatFilter}
+                setFormatFilter={setFormatFilter}
+              />
+            ) : (
+              <>
+                <Select value={skillFilter} onValueChange={setSkillFilter}>
+                  <SelectTrigger className="w-40 h-11">
+                    <SelectValue placeholder="Skill level" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Levels</SelectItem>
+                    <SelectItem value="beginner">Beginner</SelectItem>
+                    <SelectItem value="intermediate">Intermediate</SelectItem>
+                    <SelectItem value="advanced">Advanced</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Select value={formatFilter} onValueChange={setFormatFilter}>
+                  <SelectTrigger className="w-44 h-11">
+                    <SelectValue placeholder="Game format" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Formats</SelectItem>
+                    <SelectItem value="casual_match">Casual Match</SelectItem>
+                    <SelectItem value="americano">Americano</SelectItem>
+                    <SelectItem value="team_americano">Team Americano</SelectItem>
+                  </SelectContent>
+                </Select>
+              </>
+            )}
           </div>
         </motion.div>
 
         {loading ? (
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
             {[1, 2, 3, 4, 5, 6].map((i) => (
-              <div key={i} className="bg-card rounded-2xl h-64 animate-pulse" />
+              <div key={i} className="bg-card rounded-2xl h-56 sm:h-64 animate-pulse" />
             ))}
           </div>
         ) : filteredGames.length > 0 ? (
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
             {filteredGames.map((game, index) => (
               <motion.div
                 key={game.id}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.05 }}
+                transition={{ delay: Math.min(index * 0.03, 0.2) }}
               >
                 <GameCard
                   id={game.id}
@@ -179,18 +195,18 @@ export default function GamesListPage() {
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="text-center py-16"
+            className="text-center py-12 sm:py-16"
           >
-            <div className="w-16 h-16 rounded-2xl bg-muted flex items-center justify-center mx-auto mb-4">
-              <Calendar className="w-8 h-8 text-muted-foreground" />
+            <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-muted flex items-center justify-center mx-auto mb-4">
+              <Calendar className="w-7 h-7 sm:w-8 sm:h-8 text-muted-foreground" />
             </div>
-            <h3 className="font-display text-xl font-bold mb-2">No games found</h3>
-            <p className="text-muted-foreground mb-6">
+            <h3 className="font-display text-lg sm:text-xl font-bold mb-2">No games found</h3>
+            <p className="text-sm sm:text-base text-muted-foreground mb-6">
               {searchQuery || skillFilter !== "all" || formatFilter !== "all"
                 ? "Try adjusting your filters"
                 : "Be the first to host a game!"}
             </p>
-            {user && (
+            {user && !isMobile && (
               <Button variant="hero" onClick={() => navigate("/games/create")}>
                 <Plus className="w-4 h-4" />
                 Host a Game
@@ -199,6 +215,20 @@ export default function GamesListPage() {
           </motion.div>
         )}
       </div>
+
+      {/* Mobile sticky CTA */}
+      {user && isMobile && (
+        <div className="sticky-cta">
+          <Button 
+            variant="hero" 
+            className="w-full h-12"
+            onClick={() => navigate("/games/create")}
+          >
+            <Plus className="w-5 h-5" />
+            Host a Game
+          </Button>
+        </div>
+      )}
     </div>
   );
 }
