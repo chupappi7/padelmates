@@ -17,6 +17,7 @@ interface GameCardProps {
   pricePerPlayer: number;
   hostName: string;
   hostAvatar?: string;
+  distance?: number;
 }
 
 const formatLabels = {
@@ -43,9 +44,15 @@ export function GameCard({
   pricePerPlayer,
   hostName,
   hostAvatar,
+  distance,
 }: GameCardProps) {
   const spotsLeft = maxPlayers - currentPlayers;
   const date = new Date(dateTime);
+
+  const formatDistance = (km: number) => {
+    if (km < 1) return `${Math.round(km * 1000)}m`;
+    return `${km.toFixed(1)}km`;
+  };
 
   return (
     <motion.div
@@ -86,6 +93,11 @@ export function GameCard({
                 <div className="flex items-center gap-1 sm:gap-2">
                   <MapPin className="w-3 h-3 sm:w-4 sm:h-4 text-primary shrink-0" />
                   <span className="truncate max-w-[120px] sm:max-w-none">{location}</span>
+                  {distance !== undefined && (
+                    <span className="text-primary font-medium whitespace-nowrap">
+                      · {formatDistance(distance)}
+                    </span>
+                  )}
                 </div>
                 <div className="flex items-center gap-1 sm:gap-2">
                   <Calendar className="w-3 h-3 sm:w-4 sm:h-4 text-primary shrink-0" />

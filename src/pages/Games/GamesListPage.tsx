@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,15 +13,20 @@ import { GameCard } from "@/components/games/GameCard";
 import { supabase } from "@/integrations/supabase/client";
 import { Navbar } from "@/components/layout/Navbar";
 import { MobileFilterSheet } from "@/components/games/MobileFilterSheet";
+import { GameTimeGroup } from "@/components/games/GameTimeGroup";
 import { motion } from "framer-motion";
-import { Plus, Search, Calendar } from "lucide-react";
+import { Plus, Search, Calendar, ArrowUpDown } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useUserLocation, calculateDistance } from "@/hooks/useUserLocation";
+import { format } from "date-fns";
 
 interface Game {
   id: string;
   title: string;
   location: string;
+  location_lat?: number | null;
+  location_lng?: number | null;
   date_time: string;
   skill_level: "beginner" | "intermediate" | "advanced";
   format: "casual_match" | "americano" | "team_americano";
@@ -33,6 +38,13 @@ interface Game {
     avatar_url: string | null;
   } | null;
   game_players: { id: string }[];
+  distance?: number;
+}
+
+type SortOption = "time" | "nearest";
+
+function getTimeSlotKey(dateTime: string): string {
+  return format(new Date(dateTime), "yyyy-MM-dd HH:mm");
 }
 
 export default function GamesListPage() {
@@ -41,9 +53,11 @@ export default function GamesListPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [skillFilter, setSkillFilter] = useState<string>("all");
   const [formatFilter, setFormatFilter] = useState<string>("all");
+  const [sortBy, setSortBy] = useState<SortOption>("time");
   const navigate = useNavigate();
   const { user } = useAuth();
   const isMobile = useIsMobile();
+  const { location: userLocation } = useUserLocation();
 
   useEffect(() => {
     fetchGames();
@@ -77,14 +91,72 @@ export default function GamesListPage() {
     setLoading(false);
   };
 
-  const filteredGames = games.filter((game) => {
-    const matchesSearch =
-      game.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      game.location.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesSkill = skillFilter === "all" || game.skill_level === skillFilter;
-    const matchesFormat = formatFilter === "all" || game.format === formatFilter;
-    return matchesSearch && matchesSkill && matchesFormat;
-  });
+  // Calculate distances and sort games
+  const sortedAndFilteredGames = useMemo(() => {
+    let result = games.filter((game) => {
+      const matchesSearch =
+        game.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        game.location.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesSkill = skillFilter === "all" || game.skill_level === skillFilter;
+      const matchesFormat = formatFilter === "all" || game.format === formatFilter;
+      return matchesSearch && matchesSkill && matchesFormat;
+    });
+
+    // Add distance to games if user location is available
+    if (userLocation) {
+      result = result.map((game) => {
+        // For demo, we'll use a random distance if no coords
+        // In production, you'd geocode the location string
+        const distance = game.location_lat && game.location_lng
+          ? calculateDistance(
+              userLocation.latitude,
+              userLocation.longitude,
+              game.location_lat,
+              game.location_lng
+            )
+          : null;
+        return { ...game, distance: distance ?? undefined };
+      });
+    }
+
+    // Sort based on selected option
+    if (sortBy === "nearest" && userLocation) {
+      result.sort((a, b) => {
+        if (a.distance === undefined && b.distance === undefined) return 0;
+        if (a.distance === undefined) return 1;
+        if (b.distance === undefined) return -1;
+        return a.distance - b.distance;
+      });
+    } else {
+      // Default: sort by time (already sorted from API, but ensure it)
+      result.sort((a, b) => new Date(a.date_time).getTime() - new Date(b.date_time).getTime());
+    }
+
+    return result;
+  }, [games, searchQuery, skillFilter, formatFilter, sortBy, userLocation]);
+
+  // Group games by time slot for display
+  const groupedGames = useMemo(() => {
+    if (sortBy === "nearest") {
+      // Don't group when sorting by distance
+      return [{ key: "all", games: sortedAndFilteredGames }];
+    }
+
+    const groups: { key: string; dateTime: string; games: Game[] }[] = [];
+    let currentKey = "";
+
+    for (const game of sortedAndFilteredGames) {
+      const slotKey = getTimeSlotKey(game.date_time);
+      if (slotKey !== currentKey) {
+        currentKey = slotKey;
+        groups.push({ key: slotKey, dateTime: game.date_time, games: [game] });
+      } else {
+        groups[groups.length - 1].games.push(game);
+      }
+    }
+
+    return groups;
+  }, [sortedAndFilteredGames, sortBy]);
 
   return (
     <div className="min-h-screen bg-background pb-20 sm:pb-0">
@@ -158,37 +230,59 @@ export default function GamesListPage() {
               </>
             )}
           </div>
+
+          {/* Sort selector */}
+          <div className="flex items-center gap-2 mt-3">
+            <ArrowUpDown className="w-4 h-4 text-muted-foreground" />
+            <Select value={sortBy} onValueChange={(v) => setSortBy(v as SortOption)}>
+              <SelectTrigger className="w-32 h-9 text-sm">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="time">By Time</SelectItem>
+                <SelectItem value="nearest">Nearest</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </motion.div>
 
         {loading ? (
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
             {[1, 2, 3, 4, 5, 6].map((i) => (
-              <div key={i} className="bg-card rounded-2xl h-56 sm:h-64 animate-pulse" />
+              <div key={i} className="bg-card rounded-2xl h-40 sm:h-44 animate-pulse" />
             ))}
           </div>
-        ) : filteredGames.length > 0 ? (
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-            {filteredGames.map((game, index) => (
-              <motion.div
-                key={game.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: Math.min(index * 0.03, 0.2) }}
-              >
-                <GameCard
-                  id={game.id}
-                  title={game.title}
-                  location={game.location}
-                  dateTime={game.date_time}
-                  skillLevel={game.skill_level}
-                  format={game.format}
-                  maxPlayers={game.max_players}
-                  currentPlayers={game.game_players?.length || 0}
-                  pricePerPlayer={Number(game.price_per_player)}
-                  hostName={game.profiles?.name || "Unknown"}
-                  hostAvatar={game.profiles?.avatar_url || undefined}
-                />
-              </motion.div>
+        ) : sortedAndFilteredGames.length > 0 ? (
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+            {groupedGames.map((group) => (
+              <>
+                {group.dateTime && sortBy === "time" && (
+                  <GameTimeGroup key={`header-${group.key}`} dateTime={group.dateTime} />
+                )}
+                {group.games.map((game, index) => (
+                  <motion.div
+                    key={game.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: Math.min(index * 0.02, 0.15) }}
+                  >
+                    <GameCard
+                      id={game.id}
+                      title={game.title}
+                      location={game.location}
+                      dateTime={game.date_time}
+                      skillLevel={game.skill_level}
+                      format={game.format}
+                      maxPlayers={game.max_players}
+                      currentPlayers={game.game_players?.length || 0}
+                      pricePerPlayer={Number(game.price_per_player)}
+                      hostName={game.profiles?.name || "Unknown"}
+                      hostAvatar={game.profiles?.avatar_url || undefined}
+                      distance={game.distance}
+                    />
+                  </motion.div>
+                ))}
+              </>
             ))}
           </div>
         ) : (
