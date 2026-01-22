@@ -30,12 +30,12 @@ export function Navbar() {
 
   return (
     <nav className="sticky top-0 z-50 glass-card border-b border-border/50">
-      <div className="container flex items-center justify-between h-16">
+      <div className="container flex items-center justify-between h-14 sm:h-16">
         <Link to="/" className="flex items-center gap-2">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center">
-            <span className="text-primary-foreground font-bold text-lg">🎾</span>
+          <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center">
+            <span className="text-primary-foreground font-bold text-base sm:text-lg">🎾</span>
           </div>
-          <span className="font-display font-bold text-xl text-foreground">Padel<span className="text-primary">Hub</span></span>
+          <span className="font-display font-bold text-lg sm:text-xl text-foreground">Padel<span className="text-primary">Hub</span></span>
         </Link>
 
         {/* Desktop Navigation */}

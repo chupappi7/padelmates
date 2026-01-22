@@ -123,14 +123,29 @@
   body {
     @apply bg-background text-foreground antialiased;
     font-family: 'Inter', system-ui, sans-serif;
+    -webkit-tap-highlight-color: transparent;
   }
 
   h1, h2, h3, h4, h5, h6 {
     font-family: 'Space Grotesk', system-ui, sans-serif;
   }
+
+  /* Better touch targets for mobile */
+  @media (max-width: 640px) {
+    button, 
+    a, 
+    [role="button"] {
+      min-height: 44px;
+    }
+  }
 }
 
 @layer components {
+  /* Mobile-first container padding */
+  .container {
+    @apply px-4 sm:px-6 lg:px-8;
+  }
+
   .card-game {
     @apply bg-card rounded-2xl shadow-md hover:shadow-lg transition-all duration-300 overflow-hidden;
     border: 1px solid hsl(var(--border));
@@ -138,6 +153,17 @@
 
   .card-game:hover {
     transform: translateY(-4px);
+  }
+
+  /* Disable hover transform on touch devices */
+  @media (hover: none) {
+    .card-game:hover {
+      transform: none;
+    }
+    
+    .card-game:active {
+      transform: scale(0.98);
+    }
   }
 
   .badge-skill {
@@ -190,6 +216,28 @@
   .btn-accent-glow:hover {
     box-shadow: 0 12px 32px -6px hsl(16 85% 58% / 0.45);
     transform: translateY(-2px);
+  }
+
+  /* Mobile sticky CTA */
+  .sticky-cta {
+    @apply fixed bottom-0 left-0 right-0 p-4 bg-background/95 backdrop-blur-lg border-t border-border z-40;
+    padding-bottom: calc(1rem + env(safe-area-inset-bottom));
+  }
+
+  /* Mobile-optimized tabs */
+  .mobile-tabs {
+    @apply flex overflow-x-auto gap-1 pb-2 -mx-4 px-4 sm:mx-0 sm:px-0;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .mobile-tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Safe area padding for bottom elements */
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
   }
 }
 
