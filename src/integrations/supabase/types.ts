@@ -180,7 +180,9 @@ export type Database = {
           id: string
           location: string
           max_players: number
+          payment_deadline_hours: number | null
           payment_instructions: string | null
+          payment_mode: string
           price_per_player: number
           scoreboard: Json | null
           skill_level: Database["public"]["Enums"]["skill_level"]
@@ -198,7 +200,9 @@ export type Database = {
           id?: string
           location: string
           max_players?: number
+          payment_deadline_hours?: number | null
           payment_instructions?: string | null
+          payment_mode?: string
           price_per_player?: number
           scoreboard?: Json | null
           skill_level?: Database["public"]["Enums"]["skill_level"]
@@ -216,7 +220,9 @@ export type Database = {
           id?: string
           location?: string
           max_players?: number
+          payment_deadline_hours?: number | null
           payment_instructions?: string | null
+          payment_mode?: string
           price_per_player?: number
           scoreboard?: Json | null
           skill_level?: Database["public"]["Enums"]["skill_level"]
@@ -240,7 +246,10 @@ export type Database = {
           game_id: string
           id: string
           note: string | null
+          payment_due_at: string | null
           payment_screenshot_url: string | null
+          payment_status: string
+          rejection_reason: string | null
           status: Database["public"]["Enums"]["request_status"]
           updated_at: string
           user_id: string
@@ -250,7 +259,10 @@ export type Database = {
           game_id: string
           id?: string
           note?: string | null
+          payment_due_at?: string | null
           payment_screenshot_url?: string | null
+          payment_status?: string
+          rejection_reason?: string | null
           status?: Database["public"]["Enums"]["request_status"]
           updated_at?: string
           user_id: string
@@ -260,7 +272,10 @@ export type Database = {
           game_id?: string
           id?: string
           note?: string | null
+          payment_due_at?: string | null
           payment_screenshot_url?: string | null
+          payment_status?: string
+          rejection_reason?: string | null
           status?: Database["public"]["Enums"]["request_status"]
           updated_at?: string
           user_id?: string

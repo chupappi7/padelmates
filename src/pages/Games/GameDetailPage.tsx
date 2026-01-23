@@ -3,12 +3,16 @@ import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Navbar } from "@/components/layout/Navbar";
 import { SkillBadge } from "@/components/games/SkillBadge";
+import { JoinStatusBadge, getJoinStatus } from "@/components/games/JoinStatusBadge";
+import { JoinRequestModal } from "@/components/games/JoinRequestModal";
+import { PaymentUploadCard } from "@/components/games/PaymentUploadCard";
+import { HostRequestCard } from "@/components/games/HostRequestCard";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { format } from "date-fns";
@@ -20,13 +24,9 @@ import {
   Euro,
   MessageCircle,
   Trophy,
-  Upload,
-  Check,
-  X,
   Clock,
+  CreditCard,
 } from "lucide-react";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 
 interface Game {
   id: string;
@@ -39,10 +39,12 @@ interface Game {
   max_players: number;
   price_per_player: number;
   payment_instructions: string | null;
+  payment_mode: "pay_to_join" | "confirm_first";
+  payment_deadline_hours: number;
   visibility: string;
   host_id: string;
   scoreboard: unknown;
-  profiles: { name: string; avatar_url: string | null } | null;
+  profiles: { name: string; avatar_url: string | null; skill_level?: string } | null;
 }
 
 interface Player {
@@ -57,6 +59,8 @@ interface JoinRequest {
   status: "pending" | "accepted" | "rejected";
   note: string | null;
   payment_screenshot_url: string | null;
+  payment_status: string;
+  payment_due_at: string | null;
   profiles: { name: string; avatar_url: string | null; skill_level: "beginner" | "intermediate" | "advanced" } | null;
 }
 
@@ -87,8 +91,6 @@ export default function GameDetailPage() {
   const [loading, setLoading] = useState(true);
   const [newMessage, setNewMessage] = useState("");
   const [showJoinModal, setShowJoinModal] = useState(false);
-  const [joinNote, setJoinNote] = useState("");
-  const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -97,16 +99,30 @@ export default function GameDetailPage() {
       fetchMessages();
       if (user) {
         fetchMyRequest();
-        fetchRequests();
       }
     }
   }, [id, user]);
 
+  useEffect(() => {
+    if (user && game && game.host_id === user.id) {
+      fetchRequests();
+    }
+  }, [user, game]);
+
   const fetchGame = async () => {
     const { data } = await supabase.from("games").select("*").eq("id", id).single();
     if (data) {
-      const { data: profile } = await supabase.from("profiles").select("name, avatar_url").eq("user_id", data.host_id).single();
-      setGame({ ...data, profiles: profile } as Game);
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("name, avatar_url, skill_level")
+        .eq("user_id", data.host_id)
+        .single();
+      setGame({ 
+        ...data, 
+        profiles: profile,
+        payment_mode: data.payment_mode || "pay_to_join",
+        payment_deadline_hours: data.payment_deadline_hours || 48,
+      } as Game);
     }
     setLoading(false);
   };
@@ -116,7 +132,11 @@ export default function GameDetailPage() {
     if (data) {
       const playersWithProfiles = await Promise.all(
         data.map(async (p) => {
-          const { data: profile } = await supabase.from("profiles").select("name, avatar_url, skill_level").eq("user_id", p.user_id).single();
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("name, avatar_url, skill_level")
+            .eq("user_id", p.user_id)
+            .single();
           return { ...p, profiles: profile };
         })
       );
@@ -125,12 +145,19 @@ export default function GameDetailPage() {
   };
 
   const fetchRequests = async () => {
-    if (!game || game.host_id !== user?.id) return;
-    const { data } = await supabase.from("join_requests").select("*").eq("game_id", id).order("created_at", { ascending: false });
+    const { data } = await supabase
+      .from("join_requests")
+      .select("*")
+      .eq("game_id", id)
+      .order("created_at", { ascending: false });
     if (data) {
       const requestsWithProfiles = await Promise.all(
         data.map(async (r) => {
-          const { data: profile } = await supabase.from("profiles").select("name, avatar_url, skill_level").eq("user_id", r.user_id).single();
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("name, avatar_url, skill_level")
+            .eq("user_id", r.user_id)
+            .single();
           return { ...r, profiles: profile };
         })
       );
@@ -139,94 +166,43 @@ export default function GameDetailPage() {
   };
 
   const fetchMyRequest = async () => {
-    const { data } = await supabase.from("join_requests").select("*").eq("game_id", id).eq("user_id", user?.id).maybeSingle();
+    const { data } = await supabase
+      .from("join_requests")
+      .select("*")
+      .eq("game_id", id)
+      .eq("user_id", user?.id)
+      .maybeSingle();
     if (data) {
-      const { data: profile } = await supabase.from("profiles").select("name, avatar_url, skill_level").eq("user_id", data.user_id).single();
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("name, avatar_url, skill_level")
+        .eq("user_id", data.user_id)
+        .single();
       setMyRequest({ ...data, profiles: profile } as JoinRequest);
+    } else {
+      setMyRequest(null);
     }
   };
 
   const fetchMessages = async () => {
-    const { data } = await supabase.from("game_messages").select("*").eq("game_id", id).order("created_at", { ascending: true });
+    const { data } = await supabase
+      .from("game_messages")
+      .select("*")
+      .eq("game_id", id)
+      .order("created_at", { ascending: true });
     if (data) {
       const messagesWithProfiles = await Promise.all(
         data.map(async (m) => {
-          const { data: profile } = await supabase.from("profiles").select("name, avatar_url").eq("user_id", m.user_id).single();
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("name, avatar_url")
+            .eq("user_id", m.user_id)
+            .single();
           return { ...m, profiles: profile };
         })
       );
       setMessages(messagesWithProfiles as Message[]);
     }
-  };
-
-  const handleJoinRequest = async (screenshotUrl?: string) => {
-    if (!user || !id) return;
-    
-    const { error } = await supabase.from("join_requests").insert({
-      game_id: id,
-      user_id: user.id,
-      note: joinNote,
-      payment_screenshot_url: screenshotUrl,
-    });
-
-    if (error) {
-      toast.error("Failed to send join request");
-      return;
-    }
-
-    toast.success("Join request sent!");
-    setShowJoinModal(false);
-    fetchMyRequest();
-  };
-
-  const handleUploadScreenshot = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file || !user) return;
-
-    setUploading(true);
-    const fileName = `${user.id}/${Date.now()}-${file.name}`;
-    
-    const { error: uploadError, data } = await supabase.storage
-      .from("payment-screenshots")
-      .upload(fileName, file);
-
-    if (uploadError) {
-      toast.error("Failed to upload screenshot");
-      setUploading(false);
-      return;
-    }
-
-    const { data: { publicUrl } } = supabase.storage
-      .from("payment-screenshots")
-      .getPublicUrl(fileName);
-
-    await handleJoinRequest(publicUrl);
-    setUploading(false);
-  };
-
-  const handleRequestAction = async (requestId: string, userId: string, action: "accepted" | "rejected") => {
-    if (!id) return;
-
-    const { error } = await supabase
-      .from("join_requests")
-      .update({ status: action })
-      .eq("id", requestId);
-
-    if (error) {
-      toast.error("Failed to update request");
-      return;
-    }
-
-    if (action === "accepted") {
-      await supabase.from("game_players").insert({
-        game_id: id,
-        user_id: userId,
-      });
-    }
-
-    toast.success(action === "accepted" ? "Player accepted!" : "Request rejected");
-    fetchRequests();
-    fetchPlayers();
   };
 
   const handleSendMessage = async () => {
@@ -250,6 +226,18 @@ export default function GameDetailPage() {
   const isHost = user?.id === game?.host_id;
   const isPlayer = players.some((p) => p.user_id === user?.id);
   const spotsLeft = game ? game.max_players - players.length : 0;
+
+  // Get user's join status
+  const userJoinStatus = myRequest
+    ? getJoinStatus(myRequest.status, myRequest.payment_status, game?.payment_mode || "pay_to_join")
+    : null;
+
+  // Should show payment upload (for confirm_first after being accepted)
+  const showPaymentUpload =
+    myRequest &&
+    myRequest.status === "accepted" &&
+    game?.payment_mode === "confirm_first" &&
+    myRequest.payment_status === "pending";
 
   if (loading) {
     return (
@@ -278,7 +266,7 @@ export default function GameDetailPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background pb-24 md:pb-8">
       <Navbar />
 
       <div className="container py-4 md:py-8 max-w-4xl px-3 md:px-6">
@@ -291,21 +279,35 @@ export default function GameDetailPage() {
             Back to Games
           </button>
 
-          {/* Header */}
-          <div className="bg-card border border-border rounded-xl md:rounded-2xl p-4 md:p-6 mb-4 md:mb-6">
+          {/* Header Card */}
+          <div className="bg-card border border-border rounded-xl md:rounded-2xl p-4 md:p-6 mb-4">
+            {/* Tags Row */}
             <div className="flex flex-wrap gap-1.5 mb-2 md:mb-4">
               <SkillBadge level={game.skill_level} />
               <Badge variant="outline" className="rounded-full text-xs">
                 {formatLabels[game.format]}
               </Badge>
+              <Badge variant="outline" className="rounded-full text-xs flex items-center gap-1">
+                {game.payment_mode === "pay_to_join" ? (
+                  <>
+                    <CreditCard className="w-3 h-3" />
+                    Pay to Join
+                  </>
+                ) : (
+                  <>
+                    <Clock className="w-3 h-3" />
+                    Pay Later
+                  </>
+                )}
+              </Badge>
               {isHost && (
                 <Badge className="rounded-full bg-primary/10 text-primary border-0 text-xs">
-                  You're hosting
+                  Hosting
                 </Badge>
               )}
               {isPlayer && !isHost && (
                 <Badge className="rounded-full bg-success/10 text-success border-0 text-xs">
-                  You're playing
+                  Playing
                 </Badge>
               )}
             </div>
@@ -318,6 +320,7 @@ export default function GameDetailPage() {
               <p className="text-sm text-muted-foreground mb-3 md:mb-6">{game.description}</p>
             )}
 
+            {/* Info Grid */}
             <div className="grid grid-cols-2 gap-2.5 md:gap-4 mb-3 md:mb-6">
               <div className="flex items-center gap-2 md:gap-3">
                 <div className="w-8 h-8 md:w-10 md:h-10 rounded-lg md:rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
@@ -366,6 +369,7 @@ export default function GameDetailPage() {
               </div>
             </div>
 
+            {/* Host Info */}
             <div className="flex items-center gap-2 md:gap-3 pt-3 md:pt-4 border-t border-border">
               <Avatar className="h-8 w-8 md:h-10 md:w-10">
                 <AvatarImage src={game.profiles?.avatar_url || undefined} />
@@ -373,105 +377,37 @@ export default function GameDetailPage() {
                   {game.profiles?.name?.charAt(0).toUpperCase()}
                 </AvatarFallback>
               </Avatar>
-              <div>
+              <div className="flex-1 min-w-0">
                 <p className="text-xs text-muted-foreground">Hosted by</p>
-                <p className="text-sm md:text-base font-semibold">{game.profiles?.name}</p>
+                <p className="text-sm md:text-base font-semibold truncate">{game.profiles?.name}</p>
               </div>
+              {game.profiles?.skill_level && (
+                <SkillBadge level={game.profiles.skill_level as "beginner" | "intermediate" | "advanced"} size="sm" />
+              )}
             </div>
           </div>
 
-          {/* Join Request Status */}
-          {myRequest && !isPlayer && !isHost && (
-            <div className="bg-card border border-border rounded-xl md:rounded-2xl p-3 md:p-6 mb-4 md:mb-6">
-              <div className="flex items-center gap-2 md:gap-3">
-                {myRequest.status === "pending" && (
-                  <>
-                    <Clock className="w-4 h-4 md:w-5 md:h-5 text-warning" />
-                    <span className="text-sm md:text-base font-medium">Your request is pending review</span>
-                  </>
-                )}
-                {myRequest.status === "rejected" && (
-                  <>
-                    <X className="w-4 h-4 md:w-5 md:h-5 text-destructive" />
-                    <span className="text-sm md:text-base font-medium">Your request was declined</span>
-                  </>
-                )}
-              </div>
+          {/* Join Status Card */}
+          {myRequest && !isPlayer && userJoinStatus && (
+            <div className="mb-4">
+              <JoinStatusBadge
+                status={userJoinStatus}
+                paymentDeadline={myRequest.payment_due_at ? new Date(myRequest.payment_due_at) : undefined}
+              />
             </div>
           )}
 
-          {/* Join Button */}
-          {user && !isHost && !isPlayer && !myRequest && spotsLeft > 0 && (
-            <div className="bg-card border border-border rounded-xl md:rounded-2xl p-4 md:p-6 mb-4 md:mb-6">
-              {!showJoinModal ? (
-                <Button variant="hero" className="w-full" onClick={() => setShowJoinModal(true)}>
-                  Request to Join
-                </Button>
-              ) : (
-                <div className="space-y-3 md:space-y-4">
-                  <h3 className="font-display font-bold text-base md:text-lg">Request to Join</h3>
-                  
-                  {game.payment_instructions && (
-                    <div className="p-3 md:p-4 bg-muted rounded-lg md:rounded-xl">
-                      <p className="text-xs md:text-sm font-medium mb-1">Payment Instructions</p>
-                      <p className="text-xs md:text-sm text-muted-foreground">{game.payment_instructions}</p>
-                    </div>
-                  )}
-
-                  <div className="space-y-1.5 md:space-y-2">
-                    <Label className="text-sm">Add a note (optional)</Label>
-                    <Textarea
-                      placeholder="Introduce yourself..."
-                      value={joinNote}
-                      onChange={(e) => setJoinNote(e.target.value)}
-                      className="min-h-[80px] text-sm"
-                    />
-                  </div>
-
-                  {game.price_per_player > 0 && (
-                    <div className="space-y-1.5 md:space-y-2">
-                      <Label className="text-sm">Upload payment screenshot</Label>
-                      <div className="border-2 border-dashed border-border rounded-lg md:rounded-xl p-4 md:p-6 text-center">
-                        <Input
-                          type="file"
-                          accept="image/*"
-                          onChange={handleUploadScreenshot}
-                          className="hidden"
-                          id="screenshot"
-                          disabled={uploading}
-                        />
-                        <label
-                          htmlFor="screenshot"
-                          className="cursor-pointer flex flex-col items-center"
-                        >
-                          <Upload className="w-6 h-6 md:w-8 md:h-8 text-muted-foreground mb-1.5" />
-                          <span className="text-xs md:text-sm text-muted-foreground">
-                            {uploading ? "Uploading..." : "Click to upload"}
-                          </span>
-                        </label>
-                      </div>
-                    </div>
-                  )}
-
-                  <div className="flex gap-2 md:gap-3">
-                    <Button
-                      variant="outline"
-                      className="flex-1"
-                      onClick={() => setShowJoinModal(false)}
-                    >
-                      Cancel
-                    </Button>
-                    <Button
-                      variant="hero"
-                      className="flex-1"
-                      onClick={() => handleJoinRequest()}
-                      disabled={uploading}
-                    >
-                      Send Request
-                    </Button>
-                  </div>
-                </div>
-              )}
+          {/* Payment Upload Card for Confirm First mode */}
+          {showPaymentUpload && game && (
+            <div className="mb-4">
+              <PaymentUploadCard
+                requestId={myRequest!.id}
+                userId={user!.id}
+                pricePerPlayer={game.price_per_player}
+                paymentInstructions={game.payment_instructions}
+                paymentDueAt={myRequest!.payment_due_at}
+                onSuccess={fetchMyRequest}
+              />
             </div>
           )}
 
@@ -510,18 +446,8 @@ export default function GameDetailPage() {
               </TabsTrigger>
             </TabsList>
 
+            {/* Players Tab */}
             <TabsContent value="players" className="pt-4 md:pt-6">
-              {/* Join Request Button */}
-              {user && !isHost && !isPlayer && !myRequest && spotsLeft > 0 && (
-                <Button 
-                  variant="hero" 
-                  className="w-full mb-4" 
-                  onClick={() => setShowJoinModal(true)}
-                >
-                  Request to Join
-                </Button>
-              )}
-              
               {players.length > 0 ? (
                 <div className="space-y-2">
                   {players.map((player) => (
@@ -538,7 +464,7 @@ export default function GameDetailPage() {
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium truncate">{player.profiles?.name}</p>
                         {player.profiles?.skill_level && (
-                          <SkillBadge level={player.profiles.skill_level} />
+                          <SkillBadge level={player.profiles.skill_level} size="sm" />
                         )}
                       </div>
                     </div>
@@ -551,8 +477,9 @@ export default function GameDetailPage() {
               )}
             </TabsContent>
 
-            <TabsContent value="chat" className="pt-6">
-              <div className="bg-card border border-border rounded-2xl p-4">
+            {/* Chat Tab */}
+            <TabsContent value="chat" className="pt-4 md:pt-6">
+              <div className="bg-card border border-border rounded-xl p-4">
                 <div className="h-64 overflow-y-auto mb-4 space-y-3">
                   {messages.length > 0 ? (
                     messages.map((msg) => (
@@ -575,8 +502,8 @@ export default function GameDetailPage() {
                       </div>
                     ))
                   ) : (
-                    <p className="text-muted-foreground text-center py-8">
-                      No messages yet
+                    <p className="text-muted-foreground text-center py-8 text-sm">
+                      No messages yet. Start the conversation!
                     </p>
                   )}
                 </div>
@@ -586,85 +513,45 @@ export default function GameDetailPage() {
                     value={newMessage}
                     onChange={(e) => setNewMessage(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && handleSendMessage()}
+                    className="text-sm"
                   />
-                  <Button onClick={handleSendMessage}>Send</Button>
+                  <Button onClick={handleSendMessage} size="sm">
+                    Send
+                  </Button>
                 </div>
               </div>
             </TabsContent>
 
-            <TabsContent value="requests" className="pt-6">
-              {requests.filter((r) => r.status === "pending").length > 0 ? (
+            {/* Requests Tab (Host Only) */}
+            <TabsContent value="requests" className="pt-4 md:pt-6">
+              {requests.length > 0 ? (
                 <div className="space-y-3">
-                  {requests
-                    .filter((r) => r.status === "pending")
-                    .map((request) => (
-                      <div
-                        key={request.id}
-                        className="bg-card border border-border rounded-xl p-4"
-                      >
-                        <div className="flex items-start justify-between gap-4">
-                          <div className="flex items-center gap-3">
-                            <Avatar>
-                              <AvatarImage src={request.profiles?.avatar_url || undefined} />
-                              <AvatarFallback className="bg-primary/10 text-primary font-semibold">
-                                {request.profiles?.name?.charAt(0).toUpperCase()}
-                              </AvatarFallback>
-                            </Avatar>
-                            <div>
-                              <p className="font-medium">{request.profiles?.name}</p>
-                              {request.note && (
-                                <p className="text-sm text-muted-foreground">{request.note}</p>
-                              )}
-                            </div>
-                          </div>
-                          <div className="flex gap-2">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() =>
-                                handleRequestAction(request.id, request.user_id, "rejected")
-                              }
-                            >
-                              <X className="w-4 h-4" />
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="success"
-                              onClick={() =>
-                                handleRequestAction(request.id, request.user_id, "accepted")
-                              }
-                            >
-                              <Check className="w-4 h-4" />
-                            </Button>
-                          </div>
-                        </div>
-                        {request.payment_screenshot_url && (
-                          <div className="mt-3">
-                            <a
-                              href={request.payment_screenshot_url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-sm text-primary hover:underline"
-                            >
-                              View payment screenshot
-                            </a>
-                          </div>
-                        )}
-                      </div>
-                    ))}
+                  {requests.map((request) => (
+                    <HostRequestCard
+                      key={request.id}
+                      request={request}
+                      gameId={game.id}
+                      paymentMode={game.payment_mode}
+                      onUpdate={() => {
+                        fetchRequests();
+                        fetchPlayers();
+                      }}
+                    />
+                  ))}
                 </div>
               ) : (
-                <p className="text-muted-foreground text-center py-8">
-                  No pending requests
+                <p className="text-muted-foreground text-center py-8 text-sm">
+                  No join requests yet
                 </p>
               )}
             </TabsContent>
 
-            <TabsContent value="scoreboard" className="pt-6">
-              <div className="bg-card border border-border rounded-2xl p-6 text-center">
-                <Trophy className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                <h3 className="font-display font-bold text-lg mb-2">Scoreboard</h3>
-                <p className="text-muted-foreground">
+            {/* Scoreboard Tab */}
+            <TabsContent value="scoreboard" className="pt-4 md:pt-6">
+              <div className="bg-card border border-border rounded-xl p-6 text-center">
+                <Trophy className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
+                <h3 className="font-display font-bold text-lg mb-1">Scoreboard</h3>
+                <p className="text-sm text-muted-foreground">
                   Scores will be added after the game
                 </p>
               </div>
@@ -672,6 +559,48 @@ export default function GameDetailPage() {
           </Tabs>
         </motion.div>
       </div>
+
+      {/* Sticky Join CTA */}
+      {user && !isHost && !isPlayer && !myRequest && spotsLeft > 0 && (
+        <div className="fixed bottom-0 left-0 right-0 p-4 bg-background/95 backdrop-blur-sm border-t border-border md:hidden safe-bottom">
+          <Button
+            variant="hero"
+            className="w-full h-12 text-base"
+            onClick={() => setShowJoinModal(true)}
+          >
+            Request to Join · €{game.price_per_player > 0 ? game.price_per_player : "Free"}
+          </Button>
+        </div>
+      )}
+
+      {/* Desktop Join Button */}
+      {user && !isHost && !isPlayer && !myRequest && spotsLeft > 0 && (
+        <div className="hidden md:block fixed bottom-8 right-8">
+          <Button
+            variant="hero"
+            size="lg"
+            className="shadow-xl"
+            onClick={() => setShowJoinModal(true)}
+          >
+            Request to Join
+          </Button>
+        </div>
+      )}
+
+      {/* Join Request Modal */}
+      {game && user && (
+        <JoinRequestModal
+          open={showJoinModal}
+          onOpenChange={setShowJoinModal}
+          gameId={game.id}
+          userId={user.id}
+          paymentMode={game.payment_mode}
+          pricePerPlayer={game.price_per_player}
+          paymentInstructions={game.payment_instructions}
+          paymentDeadlineHours={game.payment_deadline_hours}
+          onSuccess={fetchMyRequest}
+        />
+      )}
     </div>
   );
 }

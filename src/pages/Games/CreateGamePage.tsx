@@ -16,7 +16,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Navbar } from "@/components/layout/Navbar";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
-import { ArrowLeft, Calendar, MapPin, Users, Euro, Trophy } from "lucide-react";
+import { ArrowLeft, Calendar, MapPin, Users, Euro, Trophy, CreditCard, Clock, Info } from "lucide-react";
 
 export default function CreateGamePage() {
   const navigate = useNavigate();
@@ -32,6 +32,8 @@ export default function CreateGamePage() {
     maxPlayers: 8,
     pricePerPlayer: 0,
     paymentInstructions: "",
+    paymentMode: "pay_to_join",
+    paymentDeadlineHours: 48,
     format: "casual_match",
     visibility: "public",
   });
@@ -54,6 +56,8 @@ export default function CreateGamePage() {
       max_players: formData.maxPlayers,
       price_per_player: formData.pricePerPlayer,
       payment_instructions: formData.paymentInstructions,
+      payment_mode: formData.paymentMode,
+      payment_deadline_hours: formData.paymentDeadlineHours,
       format: formData.format as "casual_match" | "americano" | "team_americano",
       visibility: formData.visibility as "public" | "private" | "club_only",
       host_id: user.id,
@@ -77,7 +81,7 @@ export default function CreateGamePage() {
     <div className="min-h-screen bg-background">
       <Navbar />
 
-      <div className="container py-8 max-w-2xl">
+      <div className="container py-6 md:py-8 max-w-2xl px-4">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
           <button
             onClick={() => navigate(-1)}
@@ -87,51 +91,53 @@ export default function CreateGamePage() {
             Back
           </button>
 
-          <div className="mb-8">
-            <h1 className="font-display text-3xl font-bold mb-2">Host a Game</h1>
-            <p className="text-muted-foreground">
+          <div className="mb-6 md:mb-8">
+            <h1 className="font-display text-2xl md:text-3xl font-bold mb-2">Host a Game</h1>
+            <p className="text-muted-foreground text-sm md:text-base">
               Create a new padel game and invite players to join
             </p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="bg-card border border-border rounded-2xl p-6 space-y-5">
-              <h2 className="font-display font-bold text-lg flex items-center gap-2">
-                <Trophy className="w-5 h-5 text-primary" />
+          <form onSubmit={handleSubmit} className="space-y-5 md:space-y-6">
+            {/* Game Details */}
+            <div className="bg-card border border-border rounded-xl md:rounded-2xl p-4 md:p-6 space-y-4 md:space-y-5">
+              <h2 className="font-display font-bold text-base md:text-lg flex items-center gap-2">
+                <Trophy className="w-4 h-4 md:w-5 md:h-5 text-primary" />
                 Game Details
               </h2>
 
-              <div className="space-y-2">
-                <Label htmlFor="title">Game Title</Label>
+              <div className="space-y-1.5">
+                <Label htmlFor="title" className="text-sm">Game Title</Label>
                 <Input
                   id="title"
                   placeholder="e.g., Friday Night Americano"
                   value={formData.title}
                   onChange={(e) => handleChange("title", e.target.value)}
                   required
-                  className="h-12"
+                  className="h-11"
                 />
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="description">Description (optional)</Label>
+              <div className="space-y-1.5">
+                <Label htmlFor="description" className="text-sm">Description (optional)</Label>
                 <Textarea
                   id="description"
                   placeholder="Tell players what to expect..."
                   value={formData.description}
                   onChange={(e) => handleChange("description", e.target.value)}
                   rows={3}
+                  className="text-sm resize-none"
                 />
               </div>
 
-              <div className="grid md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="format">Game Format</Label>
+              <div className="grid grid-cols-2 gap-3 md:gap-4">
+                <div className="space-y-1.5">
+                  <Label htmlFor="format" className="text-sm">Format</Label>
                   <Select
                     value={formData.format}
                     onValueChange={(v) => handleChange("format", v)}
                   >
-                    <SelectTrigger className="h-12">
+                    <SelectTrigger className="h-11">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -142,13 +148,13 @@ export default function CreateGamePage() {
                   </Select>
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="skill">Skill Level</Label>
+                <div className="space-y-1.5">
+                  <Label htmlFor="skill" className="text-sm">Skill Level</Label>
                   <Select
                     value={formData.skillLevel}
                     onValueChange={(v) => handleChange("skillLevel", v)}
                   >
-                    <SelectTrigger className="h-12">
+                    <SelectTrigger className="h-11">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -161,14 +167,15 @@ export default function CreateGamePage() {
               </div>
             </div>
 
-            <div className="bg-card border border-border rounded-2xl p-6 space-y-5">
-              <h2 className="font-display font-bold text-lg flex items-center gap-2">
-                <Calendar className="w-5 h-5 text-primary" />
+            {/* When & Where */}
+            <div className="bg-card border border-border rounded-xl md:rounded-2xl p-4 md:p-6 space-y-4 md:space-y-5">
+              <h2 className="font-display font-bold text-base md:text-lg flex items-center gap-2">
+                <Calendar className="w-4 h-4 md:w-5 md:h-5 text-primary" />
                 When & Where
               </h2>
 
-              <div className="space-y-2">
-                <Label htmlFor="location">Court / Location</Label>
+              <div className="space-y-1.5">
+                <Label htmlFor="location" className="text-sm">Court / Location</Label>
                 <div className="relative">
                   <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                   <Input
@@ -177,38 +184,39 @@ export default function CreateGamePage() {
                     value={formData.location}
                     onChange={(e) => handleChange("location", e.target.value)}
                     required
-                    className="h-12 pl-10"
+                    className="h-11 pl-10"
                   />
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="dateTime">Date & Time</Label>
+              <div className="space-y-1.5">
+                <Label htmlFor="dateTime" className="text-sm">Date & Time</Label>
                 <Input
                   id="dateTime"
                   type="datetime-local"
                   value={formData.dateTime}
                   onChange={(e) => handleChange("dateTime", e.target.value)}
                   required
-                  className="h-12"
+                  className="h-11"
                 />
               </div>
             </div>
 
-            <div className="bg-card border border-border rounded-2xl p-6 space-y-5">
-              <h2 className="font-display font-bold text-lg flex items-center gap-2">
-                <Users className="w-5 h-5 text-primary" />
+            {/* Players & Payment */}
+            <div className="bg-card border border-border rounded-xl md:rounded-2xl p-4 md:p-6 space-y-4 md:space-y-5">
+              <h2 className="font-display font-bold text-base md:text-lg flex items-center gap-2">
+                <Users className="w-4 h-4 md:w-5 md:h-5 text-primary" />
                 Players & Payment
               </h2>
 
-              <div className="grid md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="maxPlayers">Max Players</Label>
+              <div className="grid grid-cols-2 gap-3 md:gap-4">
+                <div className="space-y-1.5">
+                  <Label htmlFor="maxPlayers" className="text-sm">Max Players</Label>
                   <Select
                     value={String(formData.maxPlayers)}
                     onValueChange={(v) => handleChange("maxPlayers", parseInt(v))}
                   >
-                    <SelectTrigger className="h-12">
+                    <SelectTrigger className="h-11">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -221,8 +229,8 @@ export default function CreateGamePage() {
                   </Select>
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="price">Price per Player (€)</Label>
+                <div className="space-y-1.5">
+                  <Label htmlFor="price" className="text-sm">Price (€)</Label>
                   <div className="relative">
                     <Euro className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                     <Input
@@ -231,31 +239,102 @@ export default function CreateGamePage() {
                       min="0"
                       step="0.5"
                       value={formData.pricePerPlayer}
-                      onChange={(e) => handleChange("pricePerPlayer", parseFloat(e.target.value))}
-                      className="h-12 pl-10"
+                      onChange={(e) => handleChange("pricePerPlayer", parseFloat(e.target.value) || 0)}
+                      className="h-11 pl-10"
                     />
                   </div>
                 </div>
               </div>
 
+              {/* Payment Mode Selection */}
               <div className="space-y-2">
-                <Label htmlFor="payment">Payment Instructions</Label>
+                <Label className="text-sm">Payment Mode</Label>
+                <div className="grid grid-cols-1 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => handleChange("paymentMode", "pay_to_join")}
+                    className={`flex items-start gap-3 p-3 rounded-xl border-2 transition-all text-left ${
+                      formData.paymentMode === "pay_to_join"
+                        ? "border-primary bg-primary/5"
+                        : "border-border hover:border-primary/50"
+                    }`}
+                  >
+                    <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
+                      <CreditCard className="w-4 h-4 text-primary" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-sm">💸 Pay to Join</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        Players upload payment proof before you confirm them
+                      </p>
+                    </div>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleChange("paymentMode", "confirm_first")}
+                    className={`flex items-start gap-3 p-3 rounded-xl border-2 transition-all text-left ${
+                      formData.paymentMode === "confirm_first"
+                        ? "border-primary bg-primary/5"
+                        : "border-border hover:border-primary/50"
+                    }`}
+                  >
+                    <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
+                      <Clock className="w-4 h-4 text-primary" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-sm">🕒 Confirm First, Pay Later</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        Accept players first, request payment closer to game time
+                      </p>
+                    </div>
+                  </button>
+                </div>
+              </div>
+
+              {/* Payment Deadline (for Confirm First mode) */}
+              {formData.paymentMode === "confirm_first" && (
+                <div className="space-y-1.5">
+                  <Label className="text-sm">Request Payment</Label>
+                  <Select
+                    value={String(formData.paymentDeadlineHours)}
+                    onValueChange={(v) => handleChange("paymentDeadlineHours", parseInt(v))}
+                  >
+                    <SelectTrigger className="h-11">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="24">24 hours before game</SelectItem>
+                      <SelectItem value="48">48 hours before game</SelectItem>
+                      <SelectItem value="72">72 hours before game</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
+              <div className="space-y-1.5">
+                <Label htmlFor="payment" className="text-sm">Payment Instructions</Label>
                 <Textarea
                   id="payment"
                   placeholder="e.g., Pay via Revolut to @johndoe or bank transfer to ES1234..."
                   value={formData.paymentInstructions}
                   onChange={(e) => handleChange("paymentInstructions", e.target.value)}
                   rows={2}
+                  className="text-sm resize-none"
                 />
+                <p className="text-xs text-muted-foreground flex items-center gap-1">
+                  <Info className="w-3 h-3" />
+                  Include your Revolut, bank details, or other payment method
+                </p>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="visibility">Visibility</Label>
+              <div className="space-y-1.5">
+                <Label htmlFor="visibility" className="text-sm">Visibility</Label>
                 <Select
                   value={formData.visibility}
                   onValueChange={(v) => handleChange("visibility", v)}
                 >
-                  <SelectTrigger className="h-12">
+                  <SelectTrigger className="h-11">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -271,12 +350,12 @@ export default function CreateGamePage() {
               <Button
                 type="button"
                 variant="outline"
-                className="flex-1"
+                className="flex-1 h-11"
                 onClick={() => navigate(-1)}
               >
                 Cancel
               </Button>
-              <Button type="submit" variant="hero" className="flex-1" disabled={loading}>
+              <Button type="submit" variant="hero" className="flex-1 h-11" disabled={loading}>
                 {loading ? "Creating..." : "Create Game"}
               </Button>
             </div>
