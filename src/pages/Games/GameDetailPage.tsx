@@ -232,12 +232,12 @@ export default function GameDetailPage() {
     ? getJoinStatus(myRequest.status, myRequest.payment_status, game?.payment_mode || "pay_to_join")
     : null;
 
-  // Should show payment upload (for confirm_first after being accepted)
+  // Should show payment upload (after being accepted, for both payment modes)
   const showPaymentUpload =
     myRequest &&
     myRequest.status === "accepted" &&
-    game?.payment_mode === "confirm_first" &&
-    myRequest.payment_status === "pending";
+    myRequest.payment_status === "pending" &&
+    game?.price_per_player > 0;
 
   if (loading) {
     return (
