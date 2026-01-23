@@ -1,8 +1,5 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -31,7 +28,6 @@ export function JoinRequestModal({
   paymentDeadlineHours,
   onSuccess,
 }: JoinRequestModalProps) {
-  const [note, setNote] = useState("");
   const [uploading, setUploading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
@@ -66,7 +62,6 @@ export function JoinRequestModal({
     const { error } = await supabase.from("join_requests").insert({
       game_id: gameId,
       user_id: userId,
-      note: note || null,
       payment_screenshot_url: screenshotUrl || null,
       payment_status: screenshotUrl ? "submitted" : "not_required",
     });
@@ -85,7 +80,6 @@ export function JoinRequestModal({
     onOpenChange(false);
     onSuccess();
     setSubmitting(false);
-    setNote("");
   };
 
   const handleSubmitWithoutPayment = () => {
@@ -138,16 +132,6 @@ export function JoinRequestModal({
             </div>
           )}
 
-          {/* Note */}
-          <div className="space-y-1.5">
-            <Label className="text-sm">Add a note (optional)</Label>
-            <Textarea
-              placeholder="Introduce yourself to the host..."
-              value={note}
-              onChange={(e) => setNote(e.target.value)}
-              className="min-h-[80px] text-sm resize-none"
-            />
-          </div>
 
 
           {/* Actions */}
