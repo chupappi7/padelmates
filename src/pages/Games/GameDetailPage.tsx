@@ -48,7 +48,7 @@ interface Game {
 interface Player {
   id: string;
   user_id: string;
-  profiles: { name: string; avatar_url: string | null } | null;
+  profiles: { name: string; avatar_url: string | null; skill_level: "beginner" | "intermediate" | "advanced" } | null;
 }
 
 interface JoinRequest {
@@ -57,7 +57,7 @@ interface JoinRequest {
   status: "pending" | "accepted" | "rejected";
   note: string | null;
   payment_screenshot_url: string | null;
-  profiles: { name: string; avatar_url: string | null } | null;
+  profiles: { name: string; avatar_url: string | null; skill_level: "beginner" | "intermediate" | "advanced" } | null;
 }
 
 interface Message {
@@ -116,7 +116,7 @@ export default function GameDetailPage() {
     if (data) {
       const playersWithProfiles = await Promise.all(
         data.map(async (p) => {
-          const { data: profile } = await supabase.from("profiles").select("name, avatar_url").eq("user_id", p.user_id).single();
+          const { data: profile } = await supabase.from("profiles").select("name, avatar_url, skill_level").eq("user_id", p.user_id).single();
           return { ...p, profiles: profile };
         })
       );
@@ -130,7 +130,7 @@ export default function GameDetailPage() {
     if (data) {
       const requestsWithProfiles = await Promise.all(
         data.map(async (r) => {
-          const { data: profile } = await supabase.from("profiles").select("name, avatar_url").eq("user_id", r.user_id).single();
+          const { data: profile } = await supabase.from("profiles").select("name, avatar_url, skill_level").eq("user_id", r.user_id).single();
           return { ...r, profiles: profile };
         })
       );
@@ -141,7 +141,7 @@ export default function GameDetailPage() {
   const fetchMyRequest = async () => {
     const { data } = await supabase.from("join_requests").select("*").eq("game_id", id).eq("user_id", user?.id).maybeSingle();
     if (data) {
-      const { data: profile } = await supabase.from("profiles").select("name, avatar_url").eq("user_id", data.user_id).single();
+      const { data: profile } = await supabase.from("profiles").select("name, avatar_url, skill_level").eq("user_id", data.user_id).single();
       setMyRequest({ ...data, profiles: profile } as JoinRequest);
     }
   };
@@ -511,26 +511,42 @@ export default function GameDetailPage() {
             </TabsList>
 
             <TabsContent value="players" className="pt-4 md:pt-6">
+              {/* Join Request Button */}
+              {user && !isHost && !isPlayer && !myRequest && spotsLeft > 0 && (
+                <Button 
+                  variant="hero" 
+                  className="w-full mb-4" 
+                  onClick={() => setShowJoinModal(true)}
+                >
+                  Request to Join
+                </Button>
+              )}
+              
               {players.length > 0 ? (
-                <div className="grid sm:grid-cols-2 gap-2 md:gap-3">
+                <div className="space-y-2">
                   {players.map((player) => (
                     <div
                       key={player.id}
-                      className="flex items-center gap-2 md:gap-3 p-3 md:p-4 bg-card border border-border rounded-lg md:rounded-xl"
+                      className="flex items-center gap-2.5 p-2.5 md:p-3 bg-card border border-border rounded-lg"
                     >
-                      <Avatar>
+                      <Avatar className="h-9 w-9 md:h-10 md:w-10">
                         <AvatarImage src={player.profiles?.avatar_url || undefined} />
-                        <AvatarFallback className="bg-primary/10 text-primary font-semibold">
+                        <AvatarFallback className="bg-primary/10 text-primary font-semibold text-sm">
                           {player.profiles?.name?.charAt(0).toUpperCase()}
                         </AvatarFallback>
                       </Avatar>
-                      <span className="font-medium">{player.profiles?.name}</span>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium truncate">{player.profiles?.name}</p>
+                        {player.profiles?.skill_level && (
+                          <SkillBadge level={player.profiles.skill_level} />
+                        )}
+                      </div>
                     </div>
                   ))}
                 </div>
               ) : (
-                <p className="text-muted-foreground text-center py-8">
-                  No players have joined yet
+                <p className="text-muted-foreground text-center py-6 text-sm">
+                  No players have joined yet. Be the first!
                 </p>
               )}
             </TabsContent>
