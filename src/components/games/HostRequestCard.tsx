@@ -36,18 +36,13 @@ export function HostRequestCard({ request, gameId, paymentMode, onUpdate }: Host
 
     const updateData: Record<string, unknown> = { status: action };
 
-    // For confirm_first mode, set payment deadline when accepting
-    if (action === "accepted" && paymentMode === "confirm_first") {
+    // Set payment status to pending when accepting (both modes require payment after acceptance)
+    if (action === "accepted") {
       updateData.payment_status = "pending";
-      // Set payment due 48h before game (this should ideally use game date_time)
-      // For now, set it to 48h from now as a placeholder
+      // Set payment deadline
       const deadlineDate = new Date();
       deadlineDate.setHours(deadlineDate.getHours() + 48);
       updateData.payment_due_at = deadlineDate.toISOString();
-    }
-
-    if (action === "accepted" && paymentMode === "pay_to_join") {
-      updateData.payment_status = "verified";
     }
 
     const { error } = await supabase

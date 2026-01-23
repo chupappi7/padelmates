@@ -96,15 +96,9 @@ export function getJoinStatus(
     return "requested";
   }
   
-  // Accepted
-  if (paymentMode === "confirm_first") {
-    if (paymentStatus === "pending") return "payment_needed";
-    if (paymentStatus === "submitted") return "payment_submitted";
-    if (paymentStatus === "verified") return "confirmed_paid";
-    return "confirmed_no_payment";
-  }
-  
-  // pay_to_join mode
+  // Accepted - both modes now require payment after acceptance
+  if (paymentStatus === "pending") return "payment_needed";
+  if (paymentStatus === "submitted") return "payment_submitted";
   if (paymentStatus === "verified") return "confirmed_paid";
-  return "confirmed_paid"; // Already accepted means payment verified
+  return "confirmed_no_payment";
 }

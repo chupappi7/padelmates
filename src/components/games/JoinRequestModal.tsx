@@ -68,7 +68,7 @@ export function JoinRequestModal({
       user_id: userId,
       note: note || null,
       payment_screenshot_url: screenshotUrl || null,
-      payment_status: paymentMode === "pay_to_join" && screenshotUrl ? "submitted" : "not_required",
+      payment_status: screenshotUrl ? "submitted" : "not_required",
     });
 
     if (error) {
@@ -89,10 +89,6 @@ export function JoinRequestModal({
   };
 
   const handleSubmitWithoutPayment = () => {
-    if (paymentMode === "pay_to_join" && pricePerPlayer > 0) {
-      toast.error("Please upload payment proof to join");
-      return;
-    }
     submitRequest();
   };
 
@@ -112,7 +108,7 @@ export function JoinRequestModal({
                 <div>
                   <p className="text-sm font-medium">Pay to Join</p>
                   <p className="text-xs text-muted-foreground">
-                    Upload payment proof to complete your request
+                    Once accepted, you'll need to upload payment proof
                   </p>
                 </div>
               </>
@@ -153,33 +149,6 @@ export function JoinRequestModal({
             />
           </div>
 
-          {/* Upload Screenshot for Pay-to-Join */}
-          {paymentMode === "pay_to_join" && pricePerPlayer > 0 && (
-            <div className="space-y-1.5">
-              <Label className="text-sm">Payment Screenshot</Label>
-              <div className="border-2 border-dashed border-border rounded-xl p-6 text-center hover:border-primary/50 transition-colors">
-                <Input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleUploadAndSubmit}
-                  className="hidden"
-                  id="payment-screenshot"
-                  disabled={uploading || submitting}
-                />
-                <label
-                  htmlFor="payment-screenshot"
-                  className="cursor-pointer flex flex-col items-center gap-2"
-                >
-                  <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-                    <Upload className="w-5 h-5 text-primary" />
-                  </div>
-                  <span className="text-sm text-muted-foreground">
-                    {uploading ? "Uploading..." : "Click to upload payment proof"}
-                  </span>
-                </label>
-              </div>
-            </div>
-          )}
 
           {/* Actions */}
           <div className="flex gap-3 pt-2">
@@ -191,16 +160,14 @@ export function JoinRequestModal({
             >
               Cancel
             </Button>
-            {(paymentMode === "confirm_first" || pricePerPlayer === 0) && (
-              <Button
-                variant="hero"
-                className="flex-1"
-                onClick={handleSubmitWithoutPayment}
-                disabled={uploading || submitting}
-              >
-                {submitting ? "Sending..." : "Send Request"}
-              </Button>
-            )}
+            <Button
+              variant="hero"
+              className="flex-1"
+              onClick={handleSubmitWithoutPayment}
+              disabled={uploading || submitting}
+            >
+              {submitting ? "Sending..." : "Send Request"}
+            </Button>
           </div>
         </div>
       </DialogContent>
