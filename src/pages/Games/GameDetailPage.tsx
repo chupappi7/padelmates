@@ -281,119 +281,119 @@ export default function GameDetailPage() {
     <div className="min-h-screen bg-background">
       <Navbar />
 
-      <div className="container py-8 max-w-4xl">
+      <div className="container py-4 md:py-8 max-w-4xl px-3 md:px-6">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
           <button
             onClick={() => navigate("/games")}
-            className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors mb-6"
+            className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-3 md:mb-6"
           >
-            <ArrowLeft className="w-4 h-4" />
+            <ArrowLeft className="w-3.5 h-3.5" />
             Back to Games
           </button>
 
           {/* Header */}
-          <div className="bg-card border border-border rounded-2xl p-6 mb-6">
-            <div className="flex flex-wrap gap-2 mb-4">
+          <div className="bg-card border border-border rounded-xl md:rounded-2xl p-4 md:p-6 mb-4 md:mb-6">
+            <div className="flex flex-wrap gap-1.5 mb-2 md:mb-4">
               <SkillBadge level={game.skill_level} />
-              <Badge variant="outline" className="rounded-full">
+              <Badge variant="outline" className="rounded-full text-xs">
                 {formatLabels[game.format]}
               </Badge>
               {isHost && (
-                <Badge className="rounded-full bg-primary/10 text-primary border-0">
+                <Badge className="rounded-full bg-primary/10 text-primary border-0 text-xs">
                   You're hosting
                 </Badge>
               )}
               {isPlayer && !isHost && (
-                <Badge className="rounded-full bg-success/10 text-success border-0">
+                <Badge className="rounded-full bg-success/10 text-success border-0 text-xs">
                   You're playing
                 </Badge>
               )}
             </div>
 
-            <h1 className="font-display text-2xl md:text-3xl font-bold mb-4">
+            <h1 className="font-display text-xl md:text-3xl font-bold mb-2 md:mb-4">
               {game.title}
             </h1>
 
             {game.description && (
-              <p className="text-muted-foreground mb-6">{game.description}</p>
+              <p className="text-sm text-muted-foreground mb-3 md:mb-6">{game.description}</p>
             )}
 
-            <div className="grid sm:grid-cols-2 gap-4 mb-6">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
-                  <MapPin className="w-5 h-5 text-primary" />
+            <div className="grid grid-cols-2 gap-2.5 md:gap-4 mb-3 md:mb-6">
+              <div className="flex items-center gap-2 md:gap-3">
+                <div className="w-8 h-8 md:w-10 md:h-10 rounded-lg md:rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                  <MapPin className="w-4 h-4 md:w-5 md:h-5 text-primary" />
                 </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Location</p>
-                  <p className="font-medium">{game.location}</p>
+                <div className="min-w-0">
+                  <p className="text-xs text-muted-foreground">Location</p>
+                  <p className="text-sm md:text-base font-medium truncate">{game.location}</p>
                 </div>
               </div>
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
-                  <Calendar className="w-5 h-5 text-primary" />
+              <div className="flex items-center gap-2 md:gap-3">
+                <div className="w-8 h-8 md:w-10 md:h-10 rounded-lg md:rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                  <Calendar className="w-4 h-4 md:w-5 md:h-5 text-primary" />
                 </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Date & Time</p>
-                  <p className="font-medium">
+                <div className="min-w-0">
+                  <p className="text-xs text-muted-foreground">Date & Time</p>
+                  <p className="text-sm md:text-base font-medium truncate">
                     {format(new Date(game.date_time), "EEE, MMM d · h:mm a")}
                   </p>
                 </div>
               </div>
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
-                  <Users className="w-5 h-5 text-primary" />
+              <div className="flex items-center gap-2 md:gap-3">
+                <div className="w-8 h-8 md:w-10 md:h-10 rounded-lg md:rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                  <Users className="w-4 h-4 md:w-5 md:h-5 text-primary" />
                 </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Players</p>
-                  <p className="font-medium">
+                <div className="min-w-0">
+                  <p className="text-xs text-muted-foreground">Players</p>
+                  <p className="text-sm md:text-base font-medium">
                     {players.length}/{game.max_players}
                     {spotsLeft > 0 && (
-                      <span className="text-success ml-1">· {spotsLeft} spots left</span>
+                      <span className="text-success text-xs md:text-sm ml-1">· {spotsLeft} left</span>
                     )}
                   </p>
                 </div>
               </div>
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
-                  <Euro className="w-5 h-5 text-primary" />
+              <div className="flex items-center gap-2 md:gap-3">
+                <div className="w-8 h-8 md:w-10 md:h-10 rounded-lg md:rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                  <Euro className="w-4 h-4 md:w-5 md:h-5 text-primary" />
                 </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Price</p>
-                  <p className="font-medium">
+                <div className="min-w-0">
+                  <p className="text-xs text-muted-foreground">Price</p>
+                  <p className="text-sm md:text-base font-medium">
                     {game.price_per_player > 0 ? `€${game.price_per_player}` : "Free"}
                   </p>
                 </div>
               </div>
             </div>
 
-            <div className="flex items-center gap-3 pt-4 border-t border-border">
-              <Avatar className="h-10 w-10">
+            <div className="flex items-center gap-2 md:gap-3 pt-3 md:pt-4 border-t border-border">
+              <Avatar className="h-8 w-8 md:h-10 md:w-10">
                 <AvatarImage src={game.profiles?.avatar_url || undefined} />
-                <AvatarFallback className="bg-primary/10 text-primary font-semibold">
+                <AvatarFallback className="bg-primary/10 text-primary font-semibold text-sm">
                   {game.profiles?.name?.charAt(0).toUpperCase()}
                 </AvatarFallback>
               </Avatar>
               <div>
-                <p className="text-sm text-muted-foreground">Hosted by</p>
-                <p className="font-semibold">{game.profiles?.name}</p>
+                <p className="text-xs text-muted-foreground">Hosted by</p>
+                <p className="text-sm md:text-base font-semibold">{game.profiles?.name}</p>
               </div>
             </div>
           </div>
 
           {/* Join Request Status */}
           {myRequest && !isPlayer && !isHost && (
-            <div className="bg-card border border-border rounded-2xl p-6 mb-6">
-              <div className="flex items-center gap-3">
+            <div className="bg-card border border-border rounded-xl md:rounded-2xl p-3 md:p-6 mb-4 md:mb-6">
+              <div className="flex items-center gap-2 md:gap-3">
                 {myRequest.status === "pending" && (
                   <>
-                    <Clock className="w-5 h-5 text-warning" />
-                    <span className="font-medium">Your request is pending review</span>
+                    <Clock className="w-4 h-4 md:w-5 md:h-5 text-warning" />
+                    <span className="text-sm md:text-base font-medium">Your request is pending review</span>
                   </>
                 )}
                 {myRequest.status === "rejected" && (
                   <>
-                    <X className="w-5 h-5 text-destructive" />
-                    <span className="font-medium">Your request was declined</span>
+                    <X className="w-4 h-4 md:w-5 md:h-5 text-destructive" />
+                    <span className="text-sm md:text-base font-medium">Your request was declined</span>
                   </>
                 )}
               </div>
@@ -402,35 +402,36 @@ export default function GameDetailPage() {
 
           {/* Join Button */}
           {user && !isHost && !isPlayer && !myRequest && spotsLeft > 0 && (
-            <div className="bg-card border border-border rounded-2xl p-6 mb-6">
+            <div className="bg-card border border-border rounded-xl md:rounded-2xl p-4 md:p-6 mb-4 md:mb-6">
               {!showJoinModal ? (
                 <Button variant="hero" className="w-full" onClick={() => setShowJoinModal(true)}>
                   Request to Join
                 </Button>
               ) : (
-                <div className="space-y-4">
-                  <h3 className="font-display font-bold text-lg">Request to Join</h3>
+                <div className="space-y-3 md:space-y-4">
+                  <h3 className="font-display font-bold text-base md:text-lg">Request to Join</h3>
                   
                   {game.payment_instructions && (
-                    <div className="p-4 bg-muted rounded-xl">
-                      <p className="text-sm font-medium mb-1">Payment Instructions</p>
-                      <p className="text-sm text-muted-foreground">{game.payment_instructions}</p>
+                    <div className="p-3 md:p-4 bg-muted rounded-lg md:rounded-xl">
+                      <p className="text-xs md:text-sm font-medium mb-1">Payment Instructions</p>
+                      <p className="text-xs md:text-sm text-muted-foreground">{game.payment_instructions}</p>
                     </div>
                   )}
 
-                  <div className="space-y-2">
-                    <Label>Add a note (optional)</Label>
+                  <div className="space-y-1.5 md:space-y-2">
+                    <Label className="text-sm">Add a note (optional)</Label>
                     <Textarea
                       placeholder="Introduce yourself..."
                       value={joinNote}
                       onChange={(e) => setJoinNote(e.target.value)}
+                      className="min-h-[80px] text-sm"
                     />
                   </div>
 
                   {game.price_per_player > 0 && (
-                    <div className="space-y-2">
-                      <Label>Upload payment screenshot</Label>
-                      <div className="border-2 border-dashed border-border rounded-xl p-6 text-center">
+                    <div className="space-y-1.5 md:space-y-2">
+                      <Label className="text-sm">Upload payment screenshot</Label>
+                      <div className="border-2 border-dashed border-border rounded-lg md:rounded-xl p-4 md:p-6 text-center">
                         <Input
                           type="file"
                           accept="image/*"
@@ -443,8 +444,8 @@ export default function GameDetailPage() {
                           htmlFor="screenshot"
                           className="cursor-pointer flex flex-col items-center"
                         >
-                          <Upload className="w-8 h-8 text-muted-foreground mb-2" />
-                          <span className="text-sm text-muted-foreground">
+                          <Upload className="w-6 h-6 md:w-8 md:h-8 text-muted-foreground mb-1.5" />
+                          <span className="text-xs md:text-sm text-muted-foreground">
                             {uploading ? "Uploading..." : "Click to upload"}
                           </span>
                         </label>
@@ -452,7 +453,7 @@ export default function GameDetailPage() {
                     </div>
                   )}
 
-                  <div className="flex gap-3">
+                  <div className="flex gap-2 md:gap-3">
                     <Button
                       variant="outline"
                       className="flex-1"
@@ -475,48 +476,47 @@ export default function GameDetailPage() {
           )}
 
           {/* Tabs */}
-          <Tabs defaultValue="players" className="mt-6">
-            <TabsList className="w-full justify-start border-b border-border rounded-none bg-transparent p-0 h-auto">
+          <Tabs defaultValue="players" className="mt-4 md:mt-6">
+            <TabsList className="w-full justify-start border-b border-border rounded-none bg-transparent p-0 h-auto overflow-x-auto">
               <TabsTrigger
                 value="players"
-                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent"
+                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent text-sm px-3 py-2"
               >
-                <Users className="w-4 h-4 mr-2" />
+                <Users className="w-3.5 h-3.5 mr-1.5" />
                 Players ({players.length})
               </TabsTrigger>
               {(isHost || isPlayer) && (
                 <TabsTrigger
                   value="chat"
-                  className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent"
+                  className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent text-sm px-3 py-2"
                 >
-                  <MessageCircle className="w-4 h-4 mr-2" />
+                  <MessageCircle className="w-3.5 h-3.5 mr-1.5" />
                   Chat
                 </TabsTrigger>
               )}
               {isHost && (
                 <TabsTrigger
                   value="requests"
-                  className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent"
+                  className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent text-sm px-3 py-2"
                 >
                   Requests ({requests.filter((r) => r.status === "pending").length})
                 </TabsTrigger>
               )}
               <TabsTrigger
                 value="scoreboard"
-                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent"
+                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent text-sm px-3 py-2"
               >
-                <Trophy className="w-4 h-4 mr-2" />
-                Scoreboard
+                <Trophy className="w-3.5 h-3.5" />
               </TabsTrigger>
             </TabsList>
 
-            <TabsContent value="players" className="pt-6">
+            <TabsContent value="players" className="pt-4 md:pt-6">
               {players.length > 0 ? (
-                <div className="grid sm:grid-cols-2 gap-3">
+                <div className="grid sm:grid-cols-2 gap-2 md:gap-3">
                   {players.map((player) => (
                     <div
                       key={player.id}
-                      className="flex items-center gap-3 p-4 bg-card border border-border rounded-xl"
+                      className="flex items-center gap-2 md:gap-3 p-3 md:p-4 bg-card border border-border rounded-lg md:rounded-xl"
                     >
                       <Avatar>
                         <AvatarImage src={player.profiles?.avatar_url || undefined} />
