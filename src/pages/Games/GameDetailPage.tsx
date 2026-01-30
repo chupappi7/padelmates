@@ -457,33 +457,58 @@ export default function GameDetailPage() {
 
             {/* Players Tab */}
             <TabsContent value="players" className="pt-4 md:pt-6">
-              {players.length > 0 ? (
-                <div className="space-y-2">
-                  {players.map((player) => (
-                    <div
-                      key={player.id}
-                      className="flex items-center gap-2.5 p-2.5 md:p-3 bg-card border border-border rounded-lg"
-                    >
-                      <Avatar className="h-9 w-9 md:h-10 md:w-10">
-                        <AvatarImage src={player.profiles?.avatar_url || undefined} />
-                        <AvatarFallback className="bg-primary/10 text-primary font-semibold text-sm">
-                          {player.profiles?.name?.charAt(0).toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium truncate">{player.profiles?.name}</p>
-                        {player.profiles?.skill_level && (
-                          <SkillBadge level={player.profiles.skill_level} size="sm" />
-                        )}
+              <div className="space-y-2">
+                {/* Host as player (if playing) */}
+                {game.host_is_playing && game.profiles && (
+                  <div className="flex items-center gap-2.5 p-2.5 md:p-3 bg-card border border-border rounded-lg">
+                    <Avatar className="h-9 w-9 md:h-10 md:w-10">
+                      <AvatarImage src={game.profiles.avatar_url || undefined} />
+                      <AvatarFallback className="bg-primary/10 text-primary font-semibold text-sm">
+                        {game.profiles.name?.charAt(0).toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <p className="text-sm font-medium truncate">{game.profiles.name}</p>
+                        <Badge variant="outline" className="rounded-full text-xs bg-primary/10 text-primary border-primary/20">
+                          Host
+                        </Badge>
                       </div>
+                      {game.profiles.skill_level && (
+                        <SkillBadge level={game.profiles.skill_level as "beginner" | "intermediate" | "advanced"} size="sm" />
+                      )}
                     </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-muted-foreground text-center py-6 text-sm">
-                  No players have joined yet. Be the first!
-                </p>
-              )}
+                  </div>
+                )}
+
+                {/* Other players */}
+                {players.map((player) => (
+                  <div
+                    key={player.id}
+                    className="flex items-center gap-2.5 p-2.5 md:p-3 bg-card border border-border rounded-lg"
+                  >
+                    <Avatar className="h-9 w-9 md:h-10 md:w-10">
+                      <AvatarImage src={player.profiles?.avatar_url || undefined} />
+                      <AvatarFallback className="bg-primary/10 text-primary font-semibold text-sm">
+                        {player.profiles?.name?.charAt(0).toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">{player.profiles?.name}</p>
+                      {player.profiles?.skill_level && (
+                        <SkillBadge level={player.profiles.skill_level} size="sm" />
+                      )}
+                    </div>
+                  </div>
+                ))}
+
+                {/* Empty state */}
+                {!game.host_is_playing && players.length === 0 && (
+                  <p className="text-muted-foreground text-center py-6 text-sm">
+                    No players have joined yet. Be the first!
+                  </p>
+                )}
+              </div>
             </TabsContent>
 
             {/* Chat Tab */}
