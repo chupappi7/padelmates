@@ -456,27 +456,22 @@ export default function GameDetailPage() {
             </TabsList>
 
             {/* Players Tab */}
-            <TabsContent value="players" className="pt-4 md:pt-6">
-              <div className="space-y-2">
+            <TabsContent value="players" className="pt-3 md:pt-4">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
                 {/* Host as player (if playing) */}
                 {game.host_is_playing && game.profiles && (
-                  <div className="flex items-center gap-2.5 p-2.5 md:p-3 bg-card border border-border rounded-lg">
-                    <Avatar className="h-9 w-9 md:h-10 md:w-10">
+                  <div className="flex flex-col items-center gap-1.5 p-2.5 bg-card border border-border rounded-lg text-center">
+                    <Avatar className="h-10 w-10">
                       <AvatarImage src={game.profiles.avatar_url || undefined} />
                       <AvatarFallback className="bg-primary/10 text-primary font-semibold text-sm">
                         {game.profiles.name?.charAt(0).toUpperCase()}
                       </AvatarFallback>
                     </Avatar>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <p className="text-sm font-medium truncate">{game.profiles.name}</p>
-                        <Badge variant="outline" className="rounded-full text-xs bg-primary/10 text-primary border-primary/20">
-                          Host
-                        </Badge>
-                      </div>
-                      {game.profiles.skill_level && (
-                        <SkillBadge level={game.profiles.skill_level as "beginner" | "intermediate" | "advanced"} size="sm" />
-                      )}
+                    <div className="w-full min-w-0">
+                      <p className="text-xs font-medium truncate">{game.profiles.name}</p>
+                      <Badge variant="outline" className="mt-1 rounded-full text-[10px] px-1.5 py-0 bg-primary/10 text-primary border-primary/20">
+                        Host
+                      </Badge>
                     </div>
                   </div>
                 )}
@@ -485,29 +480,37 @@ export default function GameDetailPage() {
                 {players.map((player) => (
                   <div
                     key={player.id}
-                    className="flex items-center gap-2.5 p-2.5 md:p-3 bg-card border border-border rounded-lg"
+                    className="flex flex-col items-center gap-1.5 p-2.5 bg-card border border-border rounded-lg text-center"
                   >
-                    <Avatar className="h-9 w-9 md:h-10 md:w-10">
+                    <Avatar className="h-10 w-10">
                       <AvatarImage src={player.profiles?.avatar_url || undefined} />
                       <AvatarFallback className="bg-primary/10 text-primary font-semibold text-sm">
                         {player.profiles?.name?.charAt(0).toUpperCase()}
                       </AvatarFallback>
                     </Avatar>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">{player.profiles?.name}</p>
+                    <div className="w-full min-w-0">
+                      <p className="text-xs font-medium truncate">{player.profiles?.name}</p>
                       {player.profiles?.skill_level && (
-                        <SkillBadge level={player.profiles.skill_level} size="sm" />
+                        <div className="mt-1">
+                          <SkillBadge level={player.profiles.skill_level} size="sm" />
+                        </div>
                       )}
                     </div>
                   </div>
                 ))}
 
-                {/* Empty state */}
-                {!game.host_is_playing && players.length === 0 && (
-                  <p className="text-muted-foreground text-center py-6 text-sm">
-                    No players have joined yet. Be the first!
-                  </p>
-                )}
+                {/* Empty slots */}
+                {Array.from({ length: Math.max(0, (game.max_players || 4) - totalPlayers) }).map((_, i) => (
+                  <div
+                    key={`empty-${i}`}
+                    className="flex flex-col items-center justify-center gap-1.5 p-2.5 bg-muted/30 border border-dashed border-border rounded-lg text-center min-h-[88px]"
+                  >
+                    <div className="h-10 w-10 rounded-full bg-muted/50 flex items-center justify-center">
+                      <Users className="h-4 w-4 text-muted-foreground/50" />
+                    </div>
+                    <p className="text-[10px] text-muted-foreground">Open</p>
+                  </div>
+                ))}
               </div>
             </TabsContent>
 
