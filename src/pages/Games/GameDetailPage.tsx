@@ -43,6 +43,7 @@ interface Game {
   payment_deadline_hours: number;
   visibility: string;
   host_id: string;
+  host_is_playing: boolean;
   scoreboard: unknown;
   profiles: { name: string; avatar_url: string | null; skill_level?: string } | null;
 }
@@ -122,6 +123,7 @@ export default function GameDetailPage() {
         profiles: profile,
         payment_mode: data.payment_mode || "pay_to_join",
         payment_deadline_hours: data.payment_deadline_hours || 48,
+        host_is_playing: data.host_is_playing ?? true,
       } as Game);
     }
     setLoading(false);
@@ -225,7 +227,9 @@ export default function GameDetailPage() {
 
   const isHost = user?.id === game?.host_id;
   const isPlayer = players.some((p) => p.user_id === user?.id);
-  const spotsLeft = game ? game.max_players - players.length : 0;
+  const hostCount = game?.host_is_playing ? 1 : 0;
+  const totalPlayers = players.length + hostCount;
+  const spotsLeft = game ? game.max_players - totalPlayers : 0;
 
   // Get user's join status
   const userJoinStatus = myRequest
@@ -349,7 +353,7 @@ export default function GameDetailPage() {
                 <div className="min-w-0">
                   <p className="text-xs text-muted-foreground">Players</p>
                   <p className="text-sm md:text-base font-medium">
-                    {players.length}/{game.max_players}
+                    {totalPlayers}/{game.max_players}
                     {spotsLeft > 0 && (
                       <span className="text-success text-xs md:text-sm ml-1">· {spotsLeft} left</span>
                     )}
@@ -379,7 +383,12 @@ export default function GameDetailPage() {
               </Avatar>
               <div className="flex-1 min-w-0">
                 <p className="text-xs text-muted-foreground">Hosted by</p>
-                <p className="text-sm md:text-base font-semibold truncate">{game.profiles?.name}</p>
+                <div className="flex items-center gap-2">
+                  <p className="text-sm md:text-base font-semibold truncate">{game.profiles?.name}</p>
+                  <Badge variant="outline" className="rounded-full text-xs shrink-0">
+                    {game.host_is_playing ? "🎾 Playing" : "📋 Organizing"}
+                  </Badge>
+                </div>
               </div>
               {game.profiles?.skill_level && (
                 <SkillBadge level={game.profiles.skill_level as "beginner" | "intermediate" | "advanced"} size="sm" />

@@ -177,6 +177,7 @@ export type Database = {
           description: string | null
           format: Database["public"]["Enums"]["game_format"]
           host_id: string
+          host_is_playing: boolean
           id: string
           location: string
           max_players: number
@@ -197,6 +198,7 @@ export type Database = {
           description?: string | null
           format?: Database["public"]["Enums"]["game_format"]
           host_id: string
+          host_is_playing?: boolean
           id?: string
           location: string
           max_players?: number
@@ -217,6 +219,7 @@ export type Database = {
           description?: string | null
           format?: Database["public"]["Enums"]["game_format"]
           host_id?: string
+          host_is_playing?: boolean
           id?: string
           location?: string
           max_players?: number
