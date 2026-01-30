@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -12,7 +12,7 @@ import { SkillBadge } from "@/components/games/SkillBadge";
 import { JoinStatusBadge, getJoinStatus } from "@/components/games/JoinStatusBadge";
 import { JoinRequestModal } from "@/components/games/JoinRequestModal";
 import { PaymentUploadCard } from "@/components/games/PaymentUploadCard";
-import { HostRequestCard } from "@/components/games/HostRequestCard";
+import { ParticipantsTab } from "@/components/games/ParticipantsTab";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { format } from "date-fns";
@@ -92,6 +92,8 @@ export default function GameDetailPage() {
   const [loading, setLoading] = useState(true);
   const [newMessage, setNewMessage] = useState("");
   const [showJoinModal, setShowJoinModal] = useState(false);
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const paymentUploadRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (id) {
@@ -105,10 +107,11 @@ export default function GameDetailPage() {
   }, [id, user]);
 
   useEffect(() => {
-    if (user && game && game.host_id === user.id) {
+    if (game) {
+      // Fetch requests for the participants tab (host sees all, others see public info)
       fetchRequests();
     }
-  }, [user, game]);
+  }, [game]);
 
   const fetchGame = async () => {
     const { data } = await supabase.from("games").select("*").eq("id", id).single();
@@ -223,6 +226,73 @@ export default function GameDetailPage() {
 
     setNewMessage("");
     fetchMessages();
+  };
+
+  const handleAcceptRequest = async (requestId: string) => {
+    setActionLoading(requestId);
+    const request = requests.find((r) => r.id === requestId);
+    if (!request) return;
+
+    const deadlineDate = new Date();
+    deadlineDate.setHours(deadlineDate.getHours() + 48);
+
+    const { error } = await supabase
+      .from("join_requests")
+      .update({
+        status: "accepted",
+        payment_status: "pending",
+        payment_due_at: deadlineDate.toISOString(),
+      })
+      .eq("id", requestId);
+
+    if (error) {
+      toast.error("Failed to accept request");
+    } else {
+      await supabase.from("game_players").insert({
+        game_id: id,
+        user_id: request.user_id,
+      });
+      toast.success("Player accepted!");
+      fetchRequests();
+      fetchPlayers();
+    }
+    setActionLoading(null);
+  };
+
+  const handleRejectRequest = async (requestId: string) => {
+    setActionLoading(requestId);
+    const { error } = await supabase
+      .from("join_requests")
+      .update({ status: "rejected" })
+      .eq("id", requestId);
+
+    if (error) {
+      toast.error("Failed to reject request");
+    } else {
+      toast.success("Request rejected");
+      fetchRequests();
+    }
+    setActionLoading(null);
+  };
+
+  const handleVerifyPayment = async (requestId: string) => {
+    setActionLoading(requestId);
+    const { error } = await supabase
+      .from("join_requests")
+      .update({ payment_status: "verified" })
+      .eq("id", requestId);
+
+    if (error) {
+      toast.error("Failed to verify payment");
+    } else {
+      toast.success("Payment verified!");
+      fetchRequests();
+    }
+    setActionLoading(null);
+  };
+
+  const scrollToPaymentUpload = () => {
+    paymentUploadRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
   const isHost = user?.id === game?.host_id;
@@ -408,7 +478,7 @@ export default function GameDetailPage() {
 
           {/* Payment Upload Card for Confirm First mode */}
           {showPaymentUpload && game && (
-            <div className="mb-4">
+          <div className="mb-4" ref={paymentUploadRef}>
               <PaymentUploadCard
                 requestId={myRequest!.id}
                 userId={user!.id}
@@ -421,14 +491,14 @@ export default function GameDetailPage() {
           )}
 
           {/* Tabs */}
-          <Tabs defaultValue="players" className="mt-4 md:mt-6">
+          <Tabs defaultValue="participants" className="mt-4 md:mt-6">
             <TabsList className="w-full justify-start border-b border-border rounded-none bg-transparent p-0 h-auto overflow-x-auto">
               <TabsTrigger
-                value="players"
+                value="participants"
                 className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent text-sm px-3 py-2"
               >
                 <Users className="w-3.5 h-3.5 mr-1.5" />
-                Players ({players.length})
+                Participants
               </TabsTrigger>
               {(isHost || isPlayer) && (
                 <TabsTrigger
@@ -439,14 +509,6 @@ export default function GameDetailPage() {
                   Chat
                 </TabsTrigger>
               )}
-              {isHost && (
-                <TabsTrigger
-                  value="requests"
-                  className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent text-sm px-3 py-2"
-                >
-                  Requests ({requests.filter((r) => r.status === "pending").length})
-                </TabsTrigger>
-              )}
               <TabsTrigger
                 value="scoreboard"
                 className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent text-sm px-3 py-2"
@@ -455,63 +517,26 @@ export default function GameDetailPage() {
               </TabsTrigger>
             </TabsList>
 
-            {/* Players Tab */}
-            <TabsContent value="players" className="pt-3 md:pt-4">
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
-                {/* Host as player (if playing) */}
-                {game.host_is_playing && game.profiles && (
-                  <div className="flex flex-col items-center gap-1.5 p-2.5 bg-card border border-border rounded-lg text-center">
-                    <Avatar className="h-10 w-10">
-                      <AvatarImage src={game.profiles.avatar_url || undefined} />
-                      <AvatarFallback className="bg-primary/10 text-primary font-semibold text-sm">
-                        {game.profiles.name?.charAt(0).toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="w-full min-w-0">
-                      <p className="text-xs font-medium truncate">{game.profiles.name}</p>
-                      <Badge variant="outline" className="mt-1 rounded-full text-[10px] px-1.5 py-0 bg-primary/10 text-primary border-primary/20">
-                        Host
-                      </Badge>
-                    </div>
-                  </div>
-                )}
-
-                {/* Other players */}
-                {players.map((player) => (
-                  <div
-                    key={player.id}
-                    className="flex flex-col items-center gap-1.5 p-2.5 bg-card border border-border rounded-lg text-center"
-                  >
-                    <Avatar className="h-10 w-10">
-                      <AvatarImage src={player.profiles?.avatar_url || undefined} />
-                      <AvatarFallback className="bg-primary/10 text-primary font-semibold text-sm">
-                        {player.profiles?.name?.charAt(0).toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="w-full min-w-0">
-                      <p className="text-xs font-medium truncate">{player.profiles?.name}</p>
-                      {player.profiles?.skill_level && (
-                        <div className="mt-1">
-                          <SkillBadge level={player.profiles.skill_level} size="sm" />
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                ))}
-
-                {/* Empty slots */}
-                {Array.from({ length: Math.max(0, (game.max_players || 4) - totalPlayers) }).map((_, i) => (
-                  <div
-                    key={`empty-${i}`}
-                    className="flex flex-col items-center justify-center gap-1.5 p-2.5 bg-muted/30 border border-dashed border-border rounded-lg text-center min-h-[88px]"
-                  >
-                    <div className="h-10 w-10 rounded-full bg-muted/50 flex items-center justify-center">
-                      <Users className="h-4 w-4 text-muted-foreground/50" />
-                    </div>
-                    <p className="text-[10px] text-muted-foreground">Open</p>
-                  </div>
-                ))}
-              </div>
+            {/* Participants Tab */}
+            <TabsContent value="participants" className="pt-3 md:pt-4">
+              <ParticipantsTab
+                isHost={isHost}
+                hostIsPlaying={game.host_is_playing}
+                hostProfile={game.profiles ? {
+                  name: game.profiles.name,
+                  avatar_url: game.profiles.avatar_url,
+                  skill_level: game.profiles.skill_level as "beginner" | "intermediate" | "advanced" | undefined,
+                } : null}
+                requests={requests}
+                maxPlayers={game.max_players}
+                currentUserId={user?.id}
+                userRequest={myRequest}
+                onAcceptRequest={handleAcceptRequest}
+                onRejectRequest={handleRejectRequest}
+                onVerifyPayment={handleVerifyPayment}
+                onUploadPayment={showPaymentUpload ? scrollToPaymentUpload : undefined}
+                loadingAction={actionLoading}
+              />
             </TabsContent>
 
             {/* Chat Tab */}
@@ -559,29 +584,6 @@ export default function GameDetailPage() {
               </div>
             </TabsContent>
 
-            {/* Requests Tab (Host Only) */}
-            <TabsContent value="requests" className="pt-4 md:pt-6">
-              {requests.length > 0 ? (
-                <div className="space-y-3">
-                  {requests.map((request) => (
-                    <HostRequestCard
-                      key={request.id}
-                      request={request}
-                      gameId={game.id}
-                      paymentMode={game.payment_mode}
-                      onUpdate={() => {
-                        fetchRequests();
-                        fetchPlayers();
-                      }}
-                    />
-                  ))}
-                </div>
-              ) : (
-                <p className="text-muted-foreground text-center py-8 text-sm">
-                  No join requests yet
-                </p>
-              )}
-            </TabsContent>
 
             {/* Scoreboard Tab */}
             <TabsContent value="scoreboard" className="pt-4 md:pt-6">
