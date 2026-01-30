@@ -36,6 +36,7 @@ export default function CreateGamePage() {
     paymentDeadlineHours: 48,
     format: "casual_match",
     visibility: "public",
+    hostIsPlaying: true,
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -61,6 +62,7 @@ export default function CreateGamePage() {
       format: formData.format as "casual_match" | "americano" | "team_americano",
       visibility: formData.visibility as "public" | "private" | "club_only",
       host_id: user.id,
+      host_is_playing: formData.hostIsPlaying,
     }).select().single();
 
     if (error) {
@@ -73,7 +75,7 @@ export default function CreateGamePage() {
     navigate(`/games/${data.id}`);
   };
 
-  const handleChange = (field: string, value: string | number) => {
+  const handleChange = (field: string, value: string | number | boolean) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
@@ -245,6 +247,49 @@ export default function CreateGamePage() {
                   </div>
                 </div>
               </div>
+
+              {/* Host Role Selection */}
+              <div className="space-y-2">
+                <Label className="text-sm">Your Role</Label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => handleChange("hostIsPlaying", true)}
+                    className={`flex items-center gap-2 p-3 rounded-xl border-2 transition-all text-left ${
+                      formData.hostIsPlaying
+                        ? "border-primary bg-primary/5"
+                        : "border-border hover:border-primary/50"
+                    }`}
+                  >
+                    <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                      <Trophy className="w-4 h-4 text-primary" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-sm">🎾 Playing</p>
+                      <p className="text-xs text-muted-foreground">I'm joining the game</p>
+                    </div>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleChange("hostIsPlaying", false)}
+                    className={`flex items-center gap-2 p-3 rounded-xl border-2 transition-all text-left ${
+                      !formData.hostIsPlaying
+                        ? "border-primary bg-primary/5"
+                        : "border-border hover:border-primary/50"
+                    }`}
+                  >
+                    <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                      <Users className="w-4 h-4 text-primary" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-sm">📋 Organizer</p>
+                      <p className="text-xs text-muted-foreground">Just organizing</p>
+                    </div>
+                  </button>
+                </div>
+              </div>
+
 
               {/* Payment Mode Selection */}
               <div className="space-y-2">
