@@ -11,23 +11,30 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { TimeScrollPicker } from "@/components/games/TimeScrollPicker";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Navbar } from "@/components/layout/Navbar";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
+import { format } from "date-fns";
 import { ArrowLeft, Calendar, MapPin, Users, Euro, Trophy, CreditCard, Clock, Info } from "lucide-react";
 
 export default function CreateGamePage() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>();
+  const [selectedTime, setSelectedTime] = useState("18:00");
+  const [showTimePicker, setShowTimePicker] = useState(false);
+  const [showDatePicker, setShowDatePicker] = useState(false);
 
   const [formData, setFormData] = useState({
     title: "",
     description: "",
     location: "",
-    dateTime: "",
     skillLevel: "intermediate",
     maxPlayers: 8,
     pricePerPlayer: 0,
@@ -46,13 +53,23 @@ export default function CreateGamePage() {
       return;
     }
 
+    if (!selectedDate) {
+      toast.error("Please select a date");
+      return;
+    }
+
+    // Combine date and time
+    const [hours, minutes] = selectedTime.split(":").map(Number);
+    const dateTime = new Date(selectedDate);
+    dateTime.setHours(hours, minutes, 0, 0);
+
     setLoading(true);
 
     const { data, error } = await supabase.from("games").insert({
       title: formData.title,
       description: formData.description,
       location: formData.location,
-      date_time: new Date(formData.dateTime).toISOString(),
+      date_time: dateTime.toISOString(),
       skill_level: formData.skillLevel as "beginner" | "intermediate" | "advanced",
       max_players: formData.maxPlayers,
       price_per_player: formData.pricePerPlayer,
@@ -191,17 +208,56 @@ export default function CreateGamePage() {
                 </div>
               </div>
 
-              <div className="space-y-1.5">
-                <Label htmlFor="dateTime" className="text-sm">Date & Time</Label>
-                <Input
-                  id="dateTime"
-                  type="datetime-local"
-                  value={formData.dateTime}
-                  onChange={(e) => handleChange("dateTime", e.target.value)}
-                  required
-                  className="h-11"
-                />
+              {/* Date & Time */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label className="text-sm">Date</Label>
+                  <Popover open={showDatePicker} onOpenChange={setShowDatePicker}>
+                    <PopoverTrigger asChild>
+                      <button
+                        type="button"
+                        className="w-full h-11 px-3 flex items-center justify-between bg-background border border-input rounded-md text-sm hover:bg-accent transition-colors"
+                      >
+                        <span className={selectedDate ? "text-foreground" : "text-muted-foreground"}>
+                          {selectedDate ? format(selectedDate, "EEE, MMM d") : "Select date"}
+                        </span>
+                        <Calendar className="w-4 h-4 text-muted-foreground" />
+                      </button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <CalendarComponent
+                        mode="single"
+                        selected={selectedDate}
+                        onSelect={(date) => {
+                          setSelectedDate(date);
+                          setShowDatePicker(false);
+                        }}
+                        disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label className="text-sm">Time</Label>
+                  <button
+                    type="button"
+                    onClick={() => setShowTimePicker(true)}
+                    className="w-full h-11 px-3 flex items-center justify-between bg-background border border-input rounded-md text-sm hover:bg-accent transition-colors"
+                  >
+                    <span className="text-foreground">{selectedTime}</span>
+                    <Clock className="w-4 h-4 text-muted-foreground" />
+                  </button>
+                </div>
               </div>
+
+              <TimeScrollPicker
+                open={showTimePicker}
+                onOpenChange={setShowTimePicker}
+                value={selectedTime}
+                onChange={setSelectedTime}
+              />
             </div>
 
             {/* Players & Payment */}
