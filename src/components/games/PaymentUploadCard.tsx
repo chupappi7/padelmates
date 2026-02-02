@@ -42,15 +42,14 @@ export function PaymentUploadCard({
       return;
     }
 
-    const { data: { publicUrl } } = supabase.storage
-      .from("payment-screenshots")
-      .getPublicUrl(fileName);
+    // Store the file path (not public URL) for signed URL generation
+    const filePath = fileName;
 
-    // Update the join request with payment info
+    // Update the join request with payment file path
     const { error } = await supabase
       .from("join_requests")
       .update({
-        payment_screenshot_url: publicUrl,
+        payment_screenshot_url: filePath,
         payment_status: "submitted",
       })
       .eq("id", requestId);

@@ -1,12 +1,14 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { SkillBadge } from "./SkillBadge";
 import { ParticipantStatusBadge, getParticipantStatus } from "./ParticipantStatusBadge";
-import { Check, X, Users, AlertTriangle, Upload, Clock, Coins } from "lucide-react";
+import { Check, X, Users, AlertTriangle, Upload, Clock, Coins, Eye, ExternalLink } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
+import { supabase } from "@/integrations/supabase/client";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 interface Profile {
   name: string;
@@ -57,8 +59,26 @@ export function ParticipantsTab({
   loadingAction,
 }: ParticipantsTabProps) {
   const [activeFilter, setActiveFilter] = useState<FilterType>("all");
+  const [viewingProof, setViewingProof] = useState<{ url: string; name: string } | null>(null);
+  const [loadingProof, setLoadingProof] = useState<string | null>(null);
 
-  // Filter requests by status
+  const handleViewProof = async (filePath: string, playerName: string) => {
+    setLoadingProof(filePath);
+    try {
+      const { data, error } = await supabase.storage
+        .from("payment-screenshots")
+        .createSignedUrl(filePath, 60 * 5); // 5 minutes expiry
+      
+      if (error || !data?.signedUrl) {
+        console.error("Failed to get signed URL:", error);
+        return;
+      }
+      
+      setViewingProof({ url: data.signedUrl, name: playerName });
+    } finally {
+      setLoadingProof(null);
+    }
+  };
   const confirmedPlayers = requests.filter(
     (r) => r.status === "accepted" && r.payment_status === "verified"
   );
@@ -85,6 +105,24 @@ export function ParticipantsTab({
   const showRequests = activeFilter === "all" || activeFilter === "requests";
 
   return (
+    <>
+    <Dialog open={!!viewingProof} onOpenChange={() => setViewingProof(null)}>
+      <DialogContent className="max-w-lg">
+        <DialogHeader>
+          <DialogTitle>Payment Proof - {viewingProof?.name}</DialogTitle>
+        </DialogHeader>
+        <div className="mt-2">
+          {viewingProof && (
+            <img
+              src={viewingProof.url}
+              alt="Payment proof"
+              className="w-full rounded-lg max-h-[60vh] object-contain"
+            />
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
+
     <div className="space-y-4">
       {/* Filter Buttons */}
       <div className="flex items-center gap-2 overflow-x-auto pb-1">
@@ -268,14 +306,16 @@ export function ParticipantsTab({
                   {/* Host actions */}
                   {isHost && player.payment_status === "submitted" && player.payment_screenshot_url && (
                     <div className="flex items-center gap-2">
-                      <a
-                        href={player.payment_screenshot_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-xs text-primary underline"
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleViewProof(player.payment_screenshot_url!, player.profiles?.name || "Player")}
+                        disabled={loadingProof === player.payment_screenshot_url}
+                        className="h-8"
                       >
-                        View Proof
-                      </a>
+                        <Eye className="w-3.5 h-3.5 mr-1" />
+                        {loadingProof === player.payment_screenshot_url ? "Loading..." : "View"}
+                      </Button>
                       <Button
                         size="sm"
                         variant="success"
@@ -283,7 +323,7 @@ export function ParticipantsTab({
                         disabled={loadingAction === player.id}
                       >
                         <Check className="w-3.5 h-3.5 mr-1" />
-                        Verify
+                        Confirm
                       </Button>
                     </div>
                   )}
@@ -363,6 +403,7 @@ export function ParticipantsTab({
         </div>
       )}
     </div>
+    </>
   );
 }
 
