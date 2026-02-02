@@ -1,9 +1,10 @@
+import { useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { SkillBadge } from "./SkillBadge";
 import { ParticipantStatusBadge, getParticipantStatus } from "./ParticipantStatusBadge";
-import { Check, X, Users, AlertTriangle, Upload } from "lucide-react";
+import { Check, X, Users, AlertTriangle, Upload, Clock, Coins } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 
@@ -39,6 +40,8 @@ interface ParticipantsTabProps {
   loadingAction?: string | null;
 }
 
+type FilterType = "all" | "awaiting" | "requests";
+
 export function ParticipantsTab({
   isHost,
   hostIsPlaying,
@@ -53,6 +56,8 @@ export function ParticipantsTab({
   onUploadPayment,
   loadingAction,
 }: ParticipantsTabProps) {
+  const [activeFilter, setActiveFilter] = useState<FilterType>("all");
+
   // Filter requests by status
   const confirmedPlayers = requests.filter(
     (r) => r.status === "accepted" && r.payment_status === "verified"
@@ -74,8 +79,73 @@ export function ParticipantsTab({
   const isPaymentOverdue = userRequest?.payment_due_at && 
     new Date(userRequest.payment_due_at) < new Date();
 
+  // Determine which sections to show based on filter
+  const showConfirmed = activeFilter === "all";
+  const showAwaiting = activeFilter === "all" || activeFilter === "awaiting";
+  const showRequests = activeFilter === "all" || activeFilter === "requests";
+
   return (
-    <div className="space-y-5">
+    <div className="space-y-4">
+      {/* Filter Buttons */}
+      <div className="flex items-center gap-2 overflow-x-auto pb-1">
+        <Button
+          variant={activeFilter === "all" ? "default" : "outline"}
+          size="sm"
+          onClick={() => setActiveFilter("all")}
+          className="h-8 text-xs shrink-0"
+        >
+          All
+        </Button>
+        
+        {awaitingPayment.length > 0 && (
+          <Button
+            variant={activeFilter === "awaiting" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setActiveFilter("awaiting")}
+            className={cn(
+              "h-8 text-xs shrink-0 gap-1.5",
+              activeFilter !== "awaiting" && "border-warning/30 text-warning hover:bg-warning/10"
+            )}
+          >
+            <Coins className="w-3.5 h-3.5" />
+            Awaiting Payment
+            <Badge 
+              variant="secondary" 
+              className={cn(
+                "ml-1 h-5 px-1.5 text-[10px] rounded-full",
+                activeFilter === "awaiting" 
+                  ? "bg-background/20 text-primary-foreground" 
+                  : "bg-warning/20 text-warning"
+              )}
+            >
+              {awaitingPayment.length}
+            </Badge>
+          </Button>
+        )}
+        
+        {isHost && pendingRequests.length > 0 && (
+          <Button
+            variant={activeFilter === "requests" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setActiveFilter("requests")}
+            className="h-8 text-xs shrink-0 gap-1.5"
+          >
+            <Clock className="w-3.5 h-3.5" />
+            Requests
+            <Badge 
+              variant="secondary" 
+              className={cn(
+                "ml-1 h-5 px-1.5 text-[10px] rounded-full",
+                activeFilter === "requests" 
+                  ? "bg-background/20 text-primary-foreground" 
+                  : "bg-muted"
+              )}
+            >
+              {pendingRequests.length}
+            </Badge>
+          </Button>
+        )}
+      </div>
       {/* User Awaiting Payment Banner */}
       {isUserAwaitingPayment && (
         <div className={cn(
@@ -111,55 +181,57 @@ export function ParticipantsTab({
       )}
 
       {/* Confirmed Players Section */}
-      <section>
-        <div className="flex items-center gap-2 mb-3">
-          <span className="text-base">✅</span>
-          <h3 className="text-sm font-semibold">Confirmed Players</h3>
-          <Badge variant="outline" className="rounded-full text-xs ml-auto">
-            {totalConfirmed}/{maxPlayers}
-          </Badge>
-        </div>
-        
-        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
-          {/* Host */}
-          {hostIsPlaying && hostProfile && (
-            <PlayerCard
-              name={hostProfile.name}
-              avatarUrl={hostProfile.avatar_url}
-              skillLevel={hostProfile.skill_level}
-              isHost
-              statusBadge={<ParticipantStatusBadge status="confirmed_paid" />}
-            />
-          )}
+      {showConfirmed && (
+        <section>
+          <div className="flex items-center gap-2 mb-3">
+            <span className="text-base">✅</span>
+            <h3 className="text-sm font-semibold">Confirmed Players</h3>
+            <Badge variant="outline" className="rounded-full text-xs ml-auto">
+              {totalConfirmed}/{maxPlayers}
+            </Badge>
+          </div>
           
-          {/* Confirmed players */}
-          {confirmedPlayers.map((player) => (
-            <PlayerCard
-              key={player.id}
-              name={player.profiles?.name || "Player"}
-              avatarUrl={player.profiles?.avatar_url || null}
-              skillLevel={player.profiles?.skill_level}
-              statusBadge={<ParticipantStatusBadge status="confirmed_paid" />}
-            />
-          ))}
+          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
+            {/* Host */}
+            {hostIsPlaying && hostProfile && (
+              <PlayerCard
+                name={hostProfile.name}
+                avatarUrl={hostProfile.avatar_url}
+                skillLevel={hostProfile.skill_level}
+                isHost
+                statusBadge={<ParticipantStatusBadge status="confirmed_paid" />}
+              />
+            )}
+            
+            {/* Confirmed players */}
+            {confirmedPlayers.map((player) => (
+              <PlayerCard
+                key={player.id}
+                name={player.profiles?.name || "Player"}
+                avatarUrl={player.profiles?.avatar_url || null}
+                skillLevel={player.profiles?.skill_level}
+                statusBadge={<ParticipantStatusBadge status="confirmed_paid" />}
+              />
+            ))}
 
-          {/* Empty slots */}
-          {Array.from({ length: emptySlots }).map((_, i) => (
-            <div
-              key={`empty-${i}`}
-              className="flex flex-col items-center justify-center gap-1 p-2 bg-muted/20 border border-dashed border-border/50 rounded-lg min-h-[80px]"
-            >
-              <div className="h-8 w-8 rounded-full bg-muted/40 flex items-center justify-center">
-                <Users className="h-3.5 w-3.5 text-muted-foreground/40" />
+            {/* Empty slots */}
+            {Array.from({ length: emptySlots }).map((_, i) => (
+              <div
+                key={`empty-${i}`}
+                className="flex flex-col items-center justify-center gap-1 p-2 bg-muted/20 border border-dashed border-border/50 rounded-lg min-h-[80px]"
+              >
+                <div className="h-8 w-8 rounded-full bg-muted/40 flex items-center justify-center">
+                  <Users className="h-3.5 w-3.5 text-muted-foreground/40" />
+                </div>
+                <p className="text-[10px] text-muted-foreground/60">Open</p>
               </div>
-              <p className="text-[10px] text-muted-foreground/60">Open</p>
-            </div>
-          ))}
-        </div>
-      </section>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* Awaiting Payment Section */}
-      {awaitingPayment.length > 0 && (
+      {showAwaiting && awaitingPayment.length > 0 && (
         <section>
           <div className="flex items-center gap-2 mb-3">
             <span className="text-base">💸</span>
@@ -223,7 +295,7 @@ export function ParticipantsTab({
       )}
 
       {/* Pending Requests Section (Host Only) */}
-      {isHost && pendingRequests.length > 0 && (
+      {showRequests && isHost && pendingRequests.length > 0 && (
         <section>
           <div className="flex items-center gap-2 mb-3">
             <span className="text-base">⏳</span>
