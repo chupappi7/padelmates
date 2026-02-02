@@ -1,3 +1,4 @@
+import * as React from "react";
 import { cn } from "@/lib/utils";
 import { Check, Coins, AlertTriangle, Clock, X } from "lucide-react";
 
@@ -46,24 +47,28 @@ const statusConfig: Record<ParticipantStatus, {
   },
 };
 
-export function ParticipantStatusBadge({ status, size = "sm", className }: ParticipantStatusBadgeProps) {
-  const config = statusConfig[status];
-  const Icon = config.icon;
+export const ParticipantStatusBadge = React.forwardRef<HTMLSpanElement, ParticipantStatusBadgeProps>(
+  ({ status, size = "sm", className }, ref) => {
+    const config = statusConfig[status];
+    const Icon = config.icon;
 
-  return (
-    <span
-      className={cn(
-        "inline-flex items-center gap-1 rounded-full font-medium",
-        size === "sm" ? "px-2 py-0.5 text-[10px]" : "px-2.5 py-1 text-xs",
-        config.className,
-        className
-      )}
-    >
-      <Icon className={cn(size === "sm" ? "w-2.5 h-2.5" : "w-3 h-3")} />
-      {config.label}
-    </span>
-  );
-}
+    return (
+      <span
+        ref={ref}
+        className={cn(
+          "inline-flex items-center gap-1 rounded-full font-medium",
+          size === "sm" ? "px-2 py-0.5 text-[10px]" : "px-2.5 py-1 text-xs",
+          config.className,
+          className
+        )}
+      >
+        <Icon className={cn(size === "sm" ? "w-2.5 h-2.5" : "w-3 h-3")} />
+        {config.label}
+      </span>
+    );
+  }
+);
+ParticipantStatusBadge.displayName = "ParticipantStatusBadge";
 
 export function getParticipantStatus(
   requestStatus: "pending" | "accepted" | "rejected",
