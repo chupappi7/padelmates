@@ -96,7 +96,7 @@ export default function CreateGamePage() {
     <div className="min-h-screen bg-background">
       <Navbar />
 
-      <div className="container py-6 md:py-8 max-w-2xl px-4">
+      <div className="container py-6 md:py-8 max-w-2xl px-4 pb-32 md:pb-8">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
           <button
             onClick={() => navigate(-1)}
