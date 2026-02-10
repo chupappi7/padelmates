@@ -122,7 +122,7 @@ export default function GamesListPage() {
   const gamesOnDay = games.filter((g) => isSameDay(new Date(g.date_time), selectedDate)).length;
 
   return (
-    <div className="min-h-screen bg-background pb-20 sm:pb-0">
+    <div className="min-h-screen bg-background pb-24 md:pb-0">
       <Navbar />
 
       <div className="container py-4 sm:py-8">
@@ -254,19 +254,6 @@ export default function GamesListPage() {
         )}
       </div>
 
-      {/* Mobile sticky CTA */}
-      {user && isMobile && (
-        <div className="sticky-cta">
-          <Button 
-            variant="hero" 
-            className="w-full h-12"
-            onClick={() => navigate("/games/create")}
-          >
-            <Plus className="w-5 h-5" />
-            Host a Game
-          </Button>
-        </div>
-      )}
     </div>
   );
 }
