@@ -23,11 +23,18 @@ interface JoinRequest {
   profiles: Profile | null;
 }
 
+interface Player {
+  id: string;
+  user_id: string;
+  profiles: Profile | null;
+}
+
 interface ParticipantsTabProps {
   isHost: boolean;
   hostIsPlaying: boolean;
   hostProfile: Profile | null;
   requests: JoinRequest[];
+  players: Player[];
   maxPlayers: number;
   currentUserId?: string;
   userRequest?: JoinRequest | null;
@@ -43,6 +50,7 @@ export function ParticipantsTab({
   hostIsPlaying,
   hostProfile,
   requests,
+  players,
   maxPlayers,
   onAcceptRequest,
   onRejectRequest,
@@ -50,11 +58,15 @@ export function ParticipantsTab({
 }: ParticipantsTabProps) {
   const [activeFilter, setActiveFilter] = useState<FilterType>("all");
 
-  const confirmedPlayers = requests.filter((r) => r.status === "accepted");
+  // Merge accepted requests and direct players (dedup by user_id)
+  const acceptedUserIds = new Set(requests.filter(r => r.status === "accepted").map(r => r.user_id));
+  const directPlayers = players.filter(p => !acceptedUserIds.has(p.user_id) && p.user_id !== (hostProfile ? undefined : undefined));
+  
+  const confirmedFromRequests = requests.filter((r) => r.status === "accepted");
   const pendingRequests = requests.filter((r) => r.status === "pending");
 
   const hostCount = hostIsPlaying ? 1 : 0;
-  const totalConfirmed = confirmedPlayers.length + hostCount;
+  const totalConfirmed = confirmedFromRequests.length + directPlayers.length + hostCount;
   const emptySlots = Math.max(0, maxPlayers - totalConfirmed);
 
   const showConfirmed = activeFilter === "all";
@@ -119,8 +131,18 @@ export function ParticipantsTab({
               />
             )}
 
-            {/* Confirmed players */}
-            {confirmedPlayers.map((player) => (
+            {/* Confirmed players from requests */}
+            {confirmedFromRequests.map((player) => (
+              <PlayerCard
+                key={player.id}
+                name={player.profiles?.name || "Player"}
+                avatarUrl={player.profiles?.avatar_url || null}
+                skillLevel={player.profiles?.skill_level}
+              />
+            ))}
+
+            {/* Direct join players */}
+            {directPlayers.map((player) => (
               <PlayerCard
                 key={player.id}
                 name={player.profiles?.name || "Player"}
@@ -204,7 +226,7 @@ export function ParticipantsTab({
       )}
 
       {/* Empty state */}
-      {!hostIsPlaying && confirmedPlayers.length === 0 && (
+      {!hostIsPlaying && confirmedFromRequests.length === 0 && directPlayers.length === 0 && (
         <div className="text-center py-8">
           <Users className="w-10 h-10 text-muted-foreground/40 mx-auto mb-2" />
           <p className="text-sm text-muted-foreground">No players yet. Be the first to join!</p>

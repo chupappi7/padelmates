@@ -504,6 +504,7 @@ export default function GameDetailPage() {
                   skill_level: game.profiles.skill_level as "beginner" | "intermediate" | "advanced" | undefined,
                 } : null}
                 requests={requests}
+                players={players}
                 maxPlayers={game.max_players}
                 currentUserId={user?.id}
                 userRequest={myRequest}
