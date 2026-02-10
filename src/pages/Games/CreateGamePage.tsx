@@ -20,7 +20,7 @@ import { Navbar } from "@/components/layout/Navbar";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { format } from "date-fns";
-import { ArrowLeft, Calendar, MapPin, Users, Euro, Trophy, CreditCard, Clock, Info } from "lucide-react";
+import { ArrowLeft, Calendar, MapPin, Users, Trophy, Clock } from "lucide-react";
 
 export default function CreateGamePage() {
   const navigate = useNavigate();
@@ -37,10 +37,6 @@ export default function CreateGamePage() {
     location: "",
     skillLevel: "intermediate",
     maxPlayers: 8,
-    pricePerPlayer: 0,
-    paymentInstructions: "",
-    paymentMode: "pay_to_join",
-    paymentDeadlineHours: 48,
     format: "casual_match",
     visibility: "public",
     hostIsPlaying: true,
@@ -72,10 +68,8 @@ export default function CreateGamePage() {
       date_time: dateTime.toISOString(),
       skill_level: formData.skillLevel as "beginner" | "intermediate" | "advanced",
       max_players: formData.maxPlayers,
-      price_per_player: formData.pricePerPlayer,
-      payment_instructions: formData.paymentInstructions,
-      payment_mode: formData.paymentMode,
-      payment_deadline_hours: formData.paymentDeadlineHours,
+      price_per_player: 0,
+      payment_mode: "pay_to_join",
       format: formData.format as "casual_match" | "americano" | "team_americano",
       visibility: formData.visibility as "public" | "private" | "club_only",
       host_id: user.id,
@@ -260,48 +254,30 @@ export default function CreateGamePage() {
               />
             </div>
 
-            {/* Players & Payment */}
+            {/* Players & Settings */}
             <div className="bg-card border border-border rounded-xl md:rounded-2xl p-4 md:p-6 space-y-4 md:space-y-5">
               <h2 className="font-display font-bold text-base md:text-lg flex items-center gap-2">
                 <Users className="w-4 h-4 md:w-5 md:h-5 text-primary" />
-                Players & Payment
+                Players & Settings
               </h2>
 
-              <div className="grid grid-cols-2 gap-3 md:gap-4">
-                <div className="space-y-1.5">
-                  <Label htmlFor="maxPlayers" className="text-sm">Max Players</Label>
-                  <Select
-                    value={String(formData.maxPlayers)}
-                    onValueChange={(v) => handleChange("maxPlayers", parseInt(v))}
-                  >
-                    <SelectTrigger className="h-11">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="4">4 players</SelectItem>
-                      <SelectItem value="8">8 players</SelectItem>
-                      <SelectItem value="12">12 players</SelectItem>
-                      <SelectItem value="16">16 players</SelectItem>
-                      <SelectItem value="20">20 players</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-1.5">
-                  <Label htmlFor="price" className="text-sm">Price (€)</Label>
-                  <div className="relative">
-                    <Euro className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                    <Input
-                      id="price"
-                      type="number"
-                      min="0"
-                      step="0.5"
-                      value={formData.pricePerPlayer}
-                      onChange={(e) => handleChange("pricePerPlayer", parseFloat(e.target.value) || 0)}
-                      className="h-11 pl-10"
-                    />
-                  </div>
-                </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="maxPlayers" className="text-sm">Max Players</Label>
+                <Select
+                  value={String(formData.maxPlayers)}
+                  onValueChange={(v) => handleChange("maxPlayers", parseInt(v))}
+                >
+                  <SelectTrigger className="h-11">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="4">4 players</SelectItem>
+                    <SelectItem value="8">8 players</SelectItem>
+                    <SelectItem value="12">12 players</SelectItem>
+                    <SelectItem value="16">16 players</SelectItem>
+                    <SelectItem value="20">20 players</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
               {/* Host Role Selection */}
@@ -344,89 +320,6 @@ export default function CreateGamePage() {
                     </div>
                   </button>
                 </div>
-              </div>
-
-
-              {/* Payment Mode Selection */}
-              <div className="space-y-2">
-                <Label className="text-sm">Payment Mode</Label>
-                <div className="grid grid-cols-1 gap-2">
-                  <button
-                    type="button"
-                    onClick={() => handleChange("paymentMode", "pay_to_join")}
-                    className={`flex items-start gap-3 p-3 rounded-xl border-2 transition-all text-left ${
-                      formData.paymentMode === "pay_to_join"
-                        ? "border-primary bg-primary/5"
-                        : "border-border hover:border-primary/50"
-                    }`}
-                  >
-                    <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
-                      <CreditCard className="w-4 h-4 text-primary" />
-                    </div>
-                    <div>
-                      <p className="font-medium text-sm">💸 Pay to Join</p>
-                      <p className="text-xs text-muted-foreground mt-0.5">
-                        Players upload payment proof before you confirm them
-                      </p>
-                    </div>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => handleChange("paymentMode", "confirm_first")}
-                    className={`flex items-start gap-3 p-3 rounded-xl border-2 transition-all text-left ${
-                      formData.paymentMode === "confirm_first"
-                        ? "border-primary bg-primary/5"
-                        : "border-border hover:border-primary/50"
-                    }`}
-                  >
-                    <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
-                      <Clock className="w-4 h-4 text-primary" />
-                    </div>
-                    <div>
-                      <p className="font-medium text-sm">🕒 Confirm First, Pay Later</p>
-                      <p className="text-xs text-muted-foreground mt-0.5">
-                        Accept players first, request payment closer to game time
-                      </p>
-                    </div>
-                  </button>
-                </div>
-              </div>
-
-              {/* Payment Deadline (for Confirm First mode) */}
-              {formData.paymentMode === "confirm_first" && (
-                <div className="space-y-1.5">
-                  <Label className="text-sm">Request Payment</Label>
-                  <Select
-                    value={String(formData.paymentDeadlineHours)}
-                    onValueChange={(v) => handleChange("paymentDeadlineHours", parseInt(v))}
-                  >
-                    <SelectTrigger className="h-11">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="24">24 hours before game</SelectItem>
-                      <SelectItem value="48">48 hours before game</SelectItem>
-                      <SelectItem value="72">72 hours before game</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
-
-              <div className="space-y-1.5">
-                <Label htmlFor="payment" className="text-sm">Payment Instructions</Label>
-                <Textarea
-                  id="payment"
-                  placeholder="e.g., Pay via Revolut to @johndoe or bank transfer to ES1234..."
-                  value={formData.paymentInstructions}
-                  onChange={(e) => handleChange("paymentInstructions", e.target.value)}
-                  rows={2}
-                  className="text-sm resize-none"
-                />
-                <p className="text-xs text-muted-foreground flex items-center gap-1">
-                  <Info className="w-3 h-3" />
-                  Include your Revolut, bank details, or other payment method
-                </p>
               </div>
 
               <div className="space-y-1.5">
