@@ -20,7 +20,7 @@ import { Navbar } from "@/components/layout/Navbar";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { format } from "date-fns";
-import { ArrowLeft, Calendar, MapPin, Users, Trophy, Clock } from "lucide-react";
+import { ArrowLeft, Calendar, MapPin, Users, Trophy, Clock, DoorOpen, ShieldCheck, CreditCard } from "lucide-react";
 
 export default function CreateGamePage() {
   const navigate = useNavigate();
@@ -40,6 +40,7 @@ export default function CreateGamePage() {
     format: "casual_match",
     visibility: "public",
     hostIsPlaying: true,
+    joinMode: "request",
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -74,6 +75,7 @@ export default function CreateGamePage() {
       visibility: formData.visibility as "public" | "private" | "club_only",
       host_id: user.id,
       host_is_playing: formData.hostIsPlaying,
+      join_mode: formData.joinMode,
     }).select().single();
 
     if (error) {
@@ -317,6 +319,66 @@ export default function CreateGamePage() {
                     <div>
                       <p className="font-medium text-sm">📋 Organizer</p>
                       <p className="text-xs text-muted-foreground">Just organizing</p>
+                    </div>
+                  </button>
+                </div>
+              </div>
+
+              {/* Join Mode Selection */}
+              <div className="space-y-2">
+                <Label className="text-sm">Join Mode</Label>
+                <div className="space-y-2">
+                  <button
+                    type="button"
+                    onClick={() => handleChange("joinMode", "open")}
+                    className={`w-full flex items-center gap-3 p-3 rounded-xl border-2 transition-all text-left ${
+                      formData.joinMode === "open"
+                        ? "border-primary bg-primary/5"
+                        : "border-border hover:border-primary/50"
+                    }`}
+                  >
+                    <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                      <DoorOpen className="w-4 h-4 text-primary" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-sm">Open</p>
+                      <p className="text-xs text-muted-foreground">Anyone can join directly</p>
+                    </div>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleChange("joinMode", "request")}
+                    className={`w-full flex items-center gap-3 p-3 rounded-xl border-2 transition-all text-left ${
+                      formData.joinMode === "request"
+                        ? "border-primary bg-primary/5"
+                        : "border-border hover:border-primary/50"
+                    }`}
+                  >
+                    <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                      <ShieldCheck className="w-4 h-4 text-primary" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-sm">Request to Join</p>
+                      <p className="text-xs text-muted-foreground">You approve each player</p>
+                    </div>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleChange("joinMode", "request_and_pay")}
+                    className={`w-full flex items-center gap-3 p-3 rounded-xl border-2 transition-all text-left ${
+                      formData.joinMode === "request_and_pay"
+                        ? "border-primary bg-primary/5"
+                        : "border-border hover:border-primary/50"
+                    }`}
+                  >
+                    <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                      <CreditCard className="w-4 h-4 text-primary" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-sm">Request & Pay</p>
+                      <p className="text-xs text-muted-foreground">Players request and pay to confirm</p>
                     </div>
                   </button>
                 </div>
