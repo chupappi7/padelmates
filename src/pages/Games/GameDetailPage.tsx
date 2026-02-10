@@ -97,6 +97,31 @@ export default function GameDetailPage() {
     }
   }, [id, user]);
 
+  // Realtime subscription for player count updates
+  useEffect(() => {
+    if (!id) return;
+
+    const channel = supabase
+      .channel(`game-players-${id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'game_players',
+          filter: `game_id=eq.${id}`,
+        },
+        () => {
+          fetchPlayers();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [id]);
+
   useEffect(() => {
     if (game) {
       // Fetch requests for the participants tab (host sees all, others see public info)
