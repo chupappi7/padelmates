@@ -36,6 +36,7 @@ interface Game {
   visibility: string;
   host_id: string;
   host_is_playing: boolean;
+  join_mode: string;
   scoreboard: unknown;
   profiles: { name: string; avatar_url: string | null; skill_level?: string } | null;
 }
@@ -85,6 +86,7 @@ export default function GameDetailPage() {
   const [newMessage, setNewMessage] = useState("");
   const [showJoinModal, setShowJoinModal] = useState(false);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [joinLoading, setJoinLoading] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -287,6 +289,23 @@ export default function GameDetailPage() {
   const hostCount = game?.host_is_playing ? 1 : 0;
   const totalPlayers = players.length + hostCount;
   const spotsLeft = game ? game.max_players - totalPlayers : 0;
+  const isOpenJoin = game?.join_mode === "open";
+
+  const handleDirectJoin = async () => {
+    if (!user || !id) return;
+    setJoinLoading(true);
+    const { error } = await supabase.from("game_players").insert({
+      game_id: id,
+      user_id: user.id,
+    });
+    if (error) {
+      toast.error("Failed to join game");
+    } else {
+      toast.success("You've joined the game!");
+      fetchPlayers();
+    }
+    setJoinLoading(false);
+  };
 
   // Simple join status for display
   const userJoinStatus = myRequest?.status || null;
@@ -340,7 +359,7 @@ export default function GameDetailPage() {
                 {formatLabels[game.format]}
               </Badge>
               <Badge variant="outline" className="rounded-full text-xs">
-                Free to Join
+                {isOpenJoin ? "Open – Join Directly" : "Request to Join"}
               </Badge>
               {isHost && (
                 <Badge className="rounded-full bg-primary/10 text-primary border-0 text-xs">
@@ -560,9 +579,10 @@ export default function GameDetailPage() {
           <Button
             variant="hero"
             className="w-full h-12 text-base"
-            onClick={() => setShowJoinModal(true)}
+            disabled={joinLoading}
+            onClick={() => isOpenJoin ? handleDirectJoin() : setShowJoinModal(true)}
           >
-            Request to Join
+            {joinLoading ? "Joining..." : isOpenJoin ? "Join Game" : "Request to Join"}
           </Button>
         </div>
       )}
@@ -574,9 +594,10 @@ export default function GameDetailPage() {
             variant="hero"
             size="lg"
             className="shadow-xl"
-            onClick={() => setShowJoinModal(true)}
+            disabled={joinLoading}
+            onClick={() => isOpenJoin ? handleDirectJoin() : setShowJoinModal(true)}
           >
-            Request to Join
+            {joinLoading ? "Joining..." : isOpenJoin ? "Join Game" : "Request to Join"}
           </Button>
         </div>
       )}
