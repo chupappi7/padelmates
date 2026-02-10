@@ -179,6 +179,7 @@ export type Database = {
           host_id: string
           host_is_playing: boolean
           id: string
+          join_mode: string
           location: string
           max_players: number
           payment_deadline_hours: number | null
@@ -200,6 +201,7 @@ export type Database = {
           host_id: string
           host_is_playing?: boolean
           id?: string
+          join_mode?: string
           location: string
           max_players?: number
           payment_deadline_hours?: number | null
@@ -221,6 +223,7 @@ export type Database = {
           host_id?: string
           host_is_playing?: boolean
           id?: string
+          join_mode?: string
           location?: string
           max_players?: number
           payment_deadline_hours?: number | null

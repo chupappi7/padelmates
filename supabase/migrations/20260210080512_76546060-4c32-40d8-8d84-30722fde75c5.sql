@@ -1,0 +1,1 @@
+ALTER TABLE public.games ADD COLUMN join_mode text NOT NULL DEFAULT 'request' CHECK (join_mode IN ('open', 'request', 'request_and_pay'));
