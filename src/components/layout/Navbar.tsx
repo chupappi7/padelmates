@@ -29,8 +29,8 @@ export function Navbar() {
   ];
 
   return (
-    <nav className="sticky top-0 z-50 glass-card border-b border-border/50">
-      <div className="container flex items-center justify-between h-14 sm:h-16">
+    <nav className="sticky top-0 z-50 glass-card border-b border-border/50 hidden md:block">
+      <div className="container flex items-center justify-between h-16">
         <Link to="/" className="flex items-center gap-2">
           <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center">
             <span className="text-primary-foreground font-bold text-base sm:text-lg">🎾</span>
@@ -99,93 +99,7 @@ export function Navbar() {
           )}
         </div>
 
-        {/* Mobile Menu Button */}
-        <Button
-          variant="ghost"
-          size="icon"
-          className="md:hidden"
-          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-        >
-          {mobileMenuOpen ? <X /> : <Menu />}
-        </Button>
       </div>
-
-      {/* Mobile Menu */}
-      <AnimatePresence>
-        {mobileMenuOpen && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
-            className="md:hidden border-t border-border bg-background"
-          >
-            <div className="container py-4 flex flex-col gap-3">
-              {navLinks.map((link) => (
-                <Link
-                  key={link.href}
-                  to={link.href}
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted transition-colors"
-                >
-                  <link.icon className="w-5 h-5 text-primary" />
-                  <span className="font-medium">{link.label}</span>
-                </Link>
-              ))}
-              <div className="border-t border-border pt-3 mt-2">
-                {user ? (
-                  <>
-                    <Button
-                      variant="hero"
-                      className="w-full mb-2"
-                      onClick={() => {
-                        navigate("/games/create");
-                        setMobileMenuOpen(false);
-                      }}
-                    >
-                      <Plus className="w-4 h-4" />
-                      Host Game
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      className="w-full"
-                      onClick={() => {
-                        handleSignOut();
-                        setMobileMenuOpen(false);
-                      }}
-                    >
-                      <LogOut className="w-4 h-4" />
-                      Sign Out
-                    </Button>
-                  </>
-                ) : (
-                  <>
-                    <Button
-                      variant="ghost"
-                      className="w-full mb-2"
-                      onClick={() => {
-                        navigate("/login");
-                        setMobileMenuOpen(false);
-                      }}
-                    >
-                      Sign In
-                    </Button>
-                    <Button
-                      variant="hero"
-                      className="w-full"
-                      onClick={() => {
-                        navigate("/signup");
-                        setMobileMenuOpen(false);
-                      }}
-                    >
-                      Get Started
-                    </Button>
-                  </>
-                )}
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </nav>
   );
 }

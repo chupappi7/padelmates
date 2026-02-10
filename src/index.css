@@ -124,10 +124,17 @@
     @apply bg-background text-foreground antialiased;
     font-family: 'Inter', system-ui, sans-serif;
     -webkit-tap-highlight-color: transparent;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 
   h1, h2, h3, h4, h5, h6 {
     font-family: 'Space Grotesk', system-ui, sans-serif;
+  }
+
+  /* Safe area for notched devices */
+  html {
+    padding-top: env(safe-area-inset-top);
   }
 
   /* Better touch targets for mobile */
@@ -256,6 +263,15 @@
 
   .animate-fade-in {
     animation: fadeIn 0.4s ease-out;
+  }
+
+  .scrollbar-hide {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
   }
 }
 
