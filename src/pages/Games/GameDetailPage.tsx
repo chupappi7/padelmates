@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -9,9 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Navbar } from "@/components/layout/Navbar";
 import { SkillBadge } from "@/components/games/SkillBadge";
-import { JoinStatusBadge, getJoinStatus } from "@/components/games/JoinStatusBadge";
 import { JoinRequestModal } from "@/components/games/JoinRequestModal";
-import { PaymentUploadCard } from "@/components/games/PaymentUploadCard";
 import { ParticipantsTab } from "@/components/games/ParticipantsTab";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
@@ -21,11 +19,9 @@ import {
   Calendar,
   MapPin,
   Users,
-  Euro,
   MessageCircle,
   Trophy,
   Clock,
-  CreditCard,
 } from "lucide-react";
 
 interface Game {
@@ -37,10 +33,6 @@ interface Game {
   skill_level: "beginner" | "intermediate" | "advanced";
   format: "casual_match" | "americano" | "team_americano";
   max_players: number;
-  price_per_player: number;
-  payment_instructions: string | null;
-  payment_mode: "pay_to_join" | "confirm_first";
-  payment_deadline_hours: number;
   visibility: string;
   host_id: string;
   host_is_playing: boolean;
@@ -93,7 +85,6 @@ export default function GameDetailPage() {
   const [newMessage, setNewMessage] = useState("");
   const [showJoinModal, setShowJoinModal] = useState(false);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
-  const paymentUploadRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (id) {
@@ -124,8 +115,6 @@ export default function GameDetailPage() {
       setGame({ 
         ...data, 
         profiles: profile,
-        payment_mode: data.payment_mode || "pay_to_join",
-        payment_deadline_hours: data.payment_deadline_hours || 48,
         host_is_playing: data.host_is_playing ?? true,
       } as Game);
     }
@@ -233,16 +222,9 @@ export default function GameDetailPage() {
     const request = requests.find((r) => r.id === requestId);
     if (!request) return;
 
-    const deadlineDate = new Date();
-    deadlineDate.setHours(deadlineDate.getHours() + 48);
-
     const { error } = await supabase
       .from("join_requests")
-      .update({
-        status: "accepted",
-        payment_status: "pending",
-        payment_due_at: deadlineDate.toISOString(),
-      })
+      .update({ status: "accepted" })
       .eq("id", requestId);
 
     if (error) {
@@ -275,43 +257,14 @@ export default function GameDetailPage() {
     setActionLoading(null);
   };
 
-  const handleVerifyPayment = async (requestId: string) => {
-    setActionLoading(requestId);
-    const { error } = await supabase
-      .from("join_requests")
-      .update({ payment_status: "verified" })
-      .eq("id", requestId);
-
-    if (error) {
-      toast.error("Failed to verify payment");
-    } else {
-      toast.success("Payment verified!");
-      fetchRequests();
-    }
-    setActionLoading(null);
-  };
-
-  const scrollToPaymentUpload = () => {
-    paymentUploadRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
-
   const isHost = user?.id === game?.host_id;
   const isPlayer = players.some((p) => p.user_id === user?.id);
   const hostCount = game?.host_is_playing ? 1 : 0;
   const totalPlayers = players.length + hostCount;
   const spotsLeft = game ? game.max_players - totalPlayers : 0;
 
-  // Get user's join status
-  const userJoinStatus = myRequest
-    ? getJoinStatus(myRequest.status, myRequest.payment_status, game?.payment_mode || "pay_to_join")
-    : null;
-
-  // Should show payment upload (after being accepted, for both payment modes)
-  const showPaymentUpload =
-    myRequest &&
-    myRequest.status === "accepted" &&
-    myRequest.payment_status === "pending" &&
-    game?.price_per_player > 0;
+  // Simple join status for display
+  const userJoinStatus = myRequest?.status || null;
 
   if (loading) {
     return (
@@ -361,18 +314,8 @@ export default function GameDetailPage() {
               <Badge variant="outline" className="rounded-full text-xs">
                 {formatLabels[game.format]}
               </Badge>
-              <Badge variant="outline" className="rounded-full text-xs flex items-center gap-1">
-                {game.payment_mode === "pay_to_join" ? (
-                  <>
-                    <CreditCard className="w-3 h-3" />
-                    Pay to Join
-                  </>
-                ) : (
-                  <>
-                    <Clock className="w-3 h-3" />
-                    Pay Later
-                  </>
-                )}
+              <Badge variant="outline" className="rounded-full text-xs">
+                Free to Join
               </Badge>
               {isHost && (
                 <Badge className="rounded-full bg-primary/10 text-primary border-0 text-xs">
@@ -430,17 +373,6 @@ export default function GameDetailPage() {
                   </p>
                 </div>
               </div>
-              <div className="flex items-center gap-2 md:gap-3">
-                <div className="w-8 h-8 md:w-10 md:h-10 rounded-lg md:rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
-                  <Euro className="w-4 h-4 md:w-5 md:h-5 text-primary" />
-                </div>
-                <div className="min-w-0">
-                  <p className="text-xs text-muted-foreground">Price</p>
-                  <p className="text-sm md:text-base font-medium">
-                    {game.price_per_player > 0 ? `€${game.price_per_player}` : "Free"}
-                  </p>
-                </div>
-              </div>
             </div>
 
             {/* Host Info */}
@@ -467,26 +399,26 @@ export default function GameDetailPage() {
           </div>
 
           {/* Join Status Card */}
-          {myRequest && !isPlayer && userJoinStatus && (
+          {myRequest && !isPlayer && userJoinStatus === "pending" && (
             <div className="mb-4">
-              <JoinStatusBadge
-                status={userJoinStatus}
-                paymentDeadline={myRequest.payment_due_at ? new Date(myRequest.payment_due_at) : undefined}
-              />
+              <div className="flex items-center gap-2.5 p-3 rounded-xl border bg-warning/10 text-warning border-warning/20">
+                <Clock className="w-5 h-5 shrink-0" />
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-semibold">Pending</p>
+                  <p className="text-xs opacity-80">Request sent – waiting for host</p>
+                </div>
+              </div>
             </div>
           )}
-
-          {/* Payment Upload Card for Confirm First mode */}
-          {showPaymentUpload && game && (
-          <div className="mb-4" ref={paymentUploadRef}>
-              <PaymentUploadCard
-                requestId={myRequest!.id}
-                userId={user!.id}
-                pricePerPlayer={game.price_per_player}
-                paymentInstructions={game.payment_instructions}
-                paymentDueAt={myRequest!.payment_due_at}
-                onSuccess={fetchMyRequest}
-              />
+          {myRequest && myRequest.status === "rejected" && (
+            <div className="mb-4">
+              <div className="flex items-center gap-2.5 p-3 rounded-xl border bg-destructive/10 text-destructive border-destructive/20">
+                <Clock className="w-5 h-5 shrink-0" />
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-semibold">Rejected</p>
+                  <p className="text-xs opacity-80">Your request was not accepted</p>
+                </div>
+              </div>
             </div>
           )}
 
@@ -533,8 +465,6 @@ export default function GameDetailPage() {
                 userRequest={myRequest}
                 onAcceptRequest={handleAcceptRequest}
                 onRejectRequest={handleRejectRequest}
-                onVerifyPayment={handleVerifyPayment}
-                onUploadPayment={showPaymentUpload ? scrollToPaymentUpload : undefined}
                 loadingAction={actionLoading}
               />
             </TabsContent>
@@ -607,7 +537,7 @@ export default function GameDetailPage() {
             className="w-full h-12 text-base"
             onClick={() => setShowJoinModal(true)}
           >
-            Request to Join · €{game.price_per_player > 0 ? game.price_per_player : "Free"}
+            Request to Join
           </Button>
         </div>
       )}
@@ -633,10 +563,6 @@ export default function GameDetailPage() {
           onOpenChange={setShowJoinModal}
           gameId={game.id}
           userId={user.id}
-          paymentMode={game.payment_mode}
-          pricePerPlayer={game.price_per_player}
-          paymentInstructions={game.payment_instructions}
-          paymentDeadlineHours={game.payment_deadline_hours}
           onSuccess={fetchMyRequest}
         />
       )}
