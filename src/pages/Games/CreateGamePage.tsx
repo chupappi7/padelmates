@@ -40,7 +40,7 @@ export default function CreateGamePage() {
     format: "casual_match",
     visibility: "public",
     hostIsPlaying: true,
-    joinMode: "request",
+    joinMode: "open",
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
