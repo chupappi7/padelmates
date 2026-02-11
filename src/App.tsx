@@ -14,6 +14,7 @@ import CreateGamePage from "./pages/Games/CreateGamePage";
 import GameDetailPage from "./pages/Games/GameDetailPage";
 import ClubsListPage from "./pages/Clubs/ClubsListPage";
 import ProfilePage from "./pages/Profile/ProfilePage";
+import MyMatchesPage from "./pages/Games/MyMatchesPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -33,6 +34,7 @@ const App = () => (
             <Route path="/games/create" element={<CreateGamePage />} />
             <Route path="/games/:id" element={<GameDetailPage />} />
             <Route path="/clubs" element={<ClubsListPage />} />
+            <Route path="/my-matches" element={<MyMatchesPage />} />
             <Route path="/profile" element={<ProfilePage />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
