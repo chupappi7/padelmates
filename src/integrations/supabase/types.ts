@@ -145,18 +145,21 @@ export type Database = {
           game_id: string
           id: string
           joined_at: string
+          role: string
           user_id: string
         }
         Insert: {
           game_id: string
           id?: string
           joined_at?: string
+          role?: string
           user_id: string
         }
         Update: {
           game_id?: string
           id?: string
           joined_at?: string
+          role?: string
           user_id?: string
         }
         Relationships: [
@@ -337,7 +340,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      is_game_admin: {
+        Args: { _game_id: string; _user_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       game_format: "casual_match" | "americano" | "team_americano"

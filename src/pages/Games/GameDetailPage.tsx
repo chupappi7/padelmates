@@ -25,6 +25,7 @@ import {
   Info,
   Swords,
   Send,
+  Pencil,
 } from "lucide-react";
 
 interface Game {
@@ -47,6 +48,7 @@ interface Game {
 interface Player {
   id: string;
   user_id: string;
+  role: string;
   profiles: { name: string; avatar_url: string | null; skill_level: "beginner" | "intermediate" | "advanced" } | null;
 }
 
@@ -232,13 +234,22 @@ export default function GameDetailPage() {
   };
 
   const isHost = user?.id === game?.host_id;
+  const isAdmin = players.some((p) => p.user_id === user?.id && p.role === "admin");
   const isPlayer = players.some((p) => p.user_id === user?.id);
+  const canManage = isHost || isAdmin;
   const hostCount = game?.host_is_playing ? 1 : 0;
   const totalPlayers = players.length + hostCount;
   const spotsLeft = game ? game.max_players - totalPlayers : 0;
   const isOpenJoin = game?.join_mode === "open";
   const userJoinStatus = myRequest?.status || null;
   const canAccessChat = isHost || isPlayer;
+
+  const handleToggleRole = async (playerId: string, currentRole: string) => {
+    const newRole = currentRole === "admin" ? "player" : "admin";
+    const { error } = await supabase.from("game_players").update({ role: newRole }).eq("id", playerId);
+    if (error) { toast.error("Failed to update role"); }
+    else { toast.success(newRole === "admin" ? "Promoted to admin" : "Demoted to player"); fetchPlayers(); }
+  };
 
   if (loading) {
     return (
@@ -292,11 +303,22 @@ export default function GameDetailPage() {
                 {isHost && (
                   <Badge className="rounded-full bg-primary/10 text-primary border-0 text-[10px] h-5">Hosting</Badge>
                 )}
-                {isPlayer && !isHost && (
+                {isAdmin && !isHost && (
+                  <Badge className="rounded-full bg-accent/10 text-accent border-0 text-[10px] h-5">Admin</Badge>
+                )}
+                {isPlayer && !isHost && !isAdmin && (
                   <Badge className="rounded-full bg-success/10 text-success border-0 text-[10px] h-5">Playing</Badge>
                 )}
               </div>
             </div>
+            {canManage && (
+              <button
+                onClick={() => navigate(`/games/${id}/edit`)}
+                className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center hover:bg-muted/80 transition-colors shrink-0"
+              >
+                <Pencil className="w-4 h-4 text-muted-foreground" />
+              </button>
+            )}
           </div>
 
           {/* Join Status Banner */}
@@ -451,6 +473,7 @@ export default function GameDetailPage() {
             <motion.div key="participants" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
               <ParticipantsTab
                 isHost={isHost}
+                canManage={canManage}
                 hostIsPlaying={game.host_is_playing}
                 hostProfile={game.profiles ? {
                   name: game.profiles.name,
@@ -464,6 +487,7 @@ export default function GameDetailPage() {
                 userRequest={myRequest}
                 onAcceptRequest={handleAcceptRequest}
                 onRejectRequest={handleRejectRequest}
+                onToggleRole={handleToggleRole}
                 loadingAction={actionLoading}
               />
             </motion.div>
@@ -476,11 +500,11 @@ export default function GameDetailPage() {
                 <Trophy className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
                 <h3 className="font-display font-bold text-lg mb-1">Matches & Scores</h3>
                 <p className="text-sm text-muted-foreground mb-4">
-                  {isHost
+                  {canManage
                     ? "Generate matches or manually assign players once everyone has joined."
                     : "Matches and scores will appear here once the host sets them up."}
                 </p>
-                {isHost && (
+                {canManage && (
                   <Button variant="outline" disabled>
                     Generate Matches (Coming Soon)
                   </Button>
