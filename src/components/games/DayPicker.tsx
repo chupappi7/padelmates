@@ -22,7 +22,7 @@ export function DayPicker({ selectedDate, onSelectDate, daysToShow = 14 }: DayPi
   return (
     <div
       ref={scrollRef}
-      className="flex gap-1.5 overflow-x-auto scrollbar-hide py-1 -mx-1 px-1"
+      className="flex gap-1 overflow-x-auto scrollbar-hide py-1 -mx-1 px-1"
     >
       {days.map((day) => {
         const isSelected = isSameDay(day, selectedDate);
@@ -34,7 +34,7 @@ export function DayPicker({ selectedDate, onSelectDate, daysToShow = 14 }: DayPi
             data-selected={isSelected}
             onClick={() => onSelectDate(day)}
             className={cn(
-              "flex flex-col items-center justify-center shrink-0 w-12 h-16 rounded-xl transition-all text-center",
+              "flex flex-col items-center justify-center shrink-0 w-11 h-14 rounded-xl transition-all text-center",
               isSelected
                 ? "bg-primary text-primary-foreground shadow-md"
                 : "bg-card border border-border hover:border-primary/40"
@@ -47,7 +47,7 @@ export function DayPicker({ selectedDate, onSelectDate, daysToShow = 14 }: DayPi
               {isToday ? "Today" : format(day, "EEE")}
             </span>
             <span className={cn(
-              "text-lg font-bold leading-tight",
+              "text-base font-bold leading-tight",
               isSelected ? "text-primary-foreground" : "text-foreground"
             )}>
               {format(day, "d")}
