@@ -1,4 +1,4 @@
-import { useRef, useEffect } from "react";
+import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -10,108 +10,98 @@ interface TimeScrollPickerProps {
   onChange: (time: string) => void;
 }
 
-const hours = Array.from({ length: 24 }, (_, i) => i.toString().padStart(2, "0"));
-const minutes = ["00", "15", "30", "45"];
+const timeSlots = Array.from({ length: 24 * 4 }, (_, i) => {
+  const h = Math.floor(i / 4).toString().padStart(2, "0");
+  const m = ((i % 4) * 15).toString().padStart(2, "0");
+  return `${h}:${m}`;
+});
+
+const periods = [
+  { label: "Morning", range: [6, 12] },
+  { label: "Afternoon", range: [12, 17] },
+  { label: "Evening", range: [17, 22] },
+  { label: "Night", range: [22, 6] },
+] as const;
+
+function getDefaultPeriod(time: string) {
+  const hour = parseInt(time.split(":")[0]);
+  if (hour >= 6 && hour < 12) return "Morning";
+  if (hour >= 12 && hour < 17) return "Afternoon";
+  if (hour >= 17 && hour < 22) return "Evening";
+  return "Night";
+}
+
+function getSlotsForPeriod(period: string) {
+  const p = periods.find((pr) => pr.label === period)!;
+  return timeSlots.filter((slot) => {
+    const h = parseInt(slot.split(":")[0]);
+    if (p.range[0] < p.range[1]) {
+      return h >= p.range[0] && h < p.range[1];
+    }
+    // Night wraps around
+    return h >= p.range[0] || h < p.range[1];
+  });
+}
 
 export function TimeScrollPicker({ open, onOpenChange, value, onChange }: TimeScrollPickerProps) {
-  const [selectedHour, selectedMinute] = value ? value.split(":") : ["18", "00"];
-  const hourRef = useRef<HTMLDivElement>(null);
-  const minuteRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (open) {
-      // Scroll to selected values
-      setTimeout(() => {
-        const hourIndex = hours.indexOf(selectedHour);
-        const minuteIndex = minutes.indexOf(selectedMinute);
-        
-        if (hourRef.current && hourIndex !== -1) {
-          const itemHeight = 48;
-          hourRef.current.scrollTop = hourIndex * itemHeight - 96;
-        }
-        if (minuteRef.current && minuteIndex !== -1) {
-          const itemHeight = 48;
-          minuteRef.current.scrollTop = minuteIndex * itemHeight - 96;
-        }
-      }, 100);
-    }
-  }, [open, selectedHour, selectedMinute]);
-
-  const handleSelect = (hour: string, minute: string) => {
-    onChange(`${hour}:${minute}`);
-  };
+  const [activePeriod, setActivePeriod] = useState(() => getDefaultPeriod(value));
+  const slots = getSlotsForPeriod(activePeriod);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[300px] p-0">
+      <DialogContent className="max-w-[340px] p-0">
         <DialogHeader className="p-4 pb-2">
-          <DialogTitle className="text-center">Select Time</DialogTitle>
+          <DialogTitle className="text-center text-base">Select Time</DialogTitle>
         </DialogHeader>
-        
-        <div className="flex items-center justify-center gap-2 px-4 pb-4">
-          {/* Hour Scroll */}
-          <div className="relative h-[240px] w-20 overflow-hidden">
-            <div className="absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-background to-transparent z-10 pointer-events-none" />
-            <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-background to-transparent z-10 pointer-events-none" />
-            <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-12 bg-primary/10 rounded-lg z-0" />
-            <div
-              ref={hourRef}
-              className="h-full overflow-y-auto scrollbar-hide snap-y snap-mandatory"
-              style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
-            >
-              <div className="py-24">
-                {hours.map((hour) => (
-                  <button
-                    key={hour}
-                    onClick={() => handleSelect(hour, selectedMinute)}
-                    className={cn(
-                      "w-full h-12 flex items-center justify-center text-2xl font-medium snap-center transition-all",
-                      hour === selectedHour ? "text-primary scale-110" : "text-muted-foreground"
-                    )}
-                  >
-                    {hour}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
 
-          <span className="text-3xl font-bold text-primary">:</span>
-
-          {/* Minute Scroll */}
-          <div className="relative h-[240px] w-20 overflow-hidden">
-            <div className="absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-background to-transparent z-10 pointer-events-none" />
-            <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-background to-transparent z-10 pointer-events-none" />
-            <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-12 bg-primary/10 rounded-lg z-0" />
-            <div
-              ref={minuteRef}
-              className="h-full overflow-y-auto scrollbar-hide snap-y snap-mandatory"
-              style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+        {/* Period tabs */}
+        <div className="flex gap-1 px-4">
+          {periods.map((p) => (
+            <button
+              key={p.label}
+              type="button"
+              onClick={() => setActivePeriod(p.label)}
+              className={cn(
+                "flex-1 py-1.5 text-xs font-medium rounded-lg transition-colors",
+                activePeriod === p.label
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-muted text-muted-foreground hover:text-foreground"
+              )}
             >
-              <div className="py-24">
-                {minutes.map((minute) => (
-                  <button
-                    key={minute}
-                    onClick={() => handleSelect(selectedHour, minute)}
-                    className={cn(
-                      "w-full h-12 flex items-center justify-center text-2xl font-medium snap-center transition-all",
-                      minute === selectedMinute ? "text-primary scale-110" : "text-muted-foreground"
-                    )}
-                  >
-                    {minute}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
+              {p.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Time grid */}
+        <div className="grid grid-cols-4 gap-1.5 px-4 py-3 max-h-[280px] overflow-y-auto scrollbar-hide">
+          {slots.map((slot) => (
+            <button
+              key={slot}
+              type="button"
+              onClick={() => {
+                onChange(slot);
+                onOpenChange(false);
+              }}
+              className={cn(
+                "h-10 rounded-lg text-sm font-medium transition-all",
+                slot === value
+                  ? "bg-primary text-primary-foreground shadow-sm"
+                  : "bg-muted/50 text-foreground hover:bg-primary/10"
+              )}
+            >
+              {slot}
+            </button>
+          ))}
         </div>
 
         <div className="p-4 pt-0">
-          <Button 
-            className="w-full" 
+          <Button
+            variant="outline"
+            className="w-full"
             onClick={() => onOpenChange(false)}
           >
-            Confirm
+            Cancel
           </Button>
         </div>
       </DialogContent>
