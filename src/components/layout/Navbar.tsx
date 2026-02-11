@@ -29,8 +29,8 @@ export function Navbar() {
   ];
 
   return (
-    <nav className="sticky top-0 z-50 glass-card border-b border-border/50 hidden md:block">
-      <div className="container flex items-center justify-between h-16">
+    <nav className="sticky top-0 z-50 glass-card border-b border-border/50">
+      <div className="container flex items-center justify-between h-14 md:h-16">
         <Link to="/" className="flex items-center gap-2">
           <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center">
             <span className="text-primary-foreground font-bold text-base sm:text-lg">🎾</span>
@@ -52,6 +52,40 @@ export function Navbar() {
           ))}
         </div>
 
+        {/* Mobile right side */}
+        <div className="flex md:hidden items-center gap-2">
+          {user ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="relative h-9 w-9 rounded-full p-0">
+                  <Avatar className="h-9 w-9">
+                    <AvatarImage src="" alt="Profile" />
+                    <AvatarFallback className="bg-primary/10 text-primary font-semibold text-sm">
+                      {user.email?.charAt(0).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-48" align="end" forceMount>
+                <DropdownMenuItem onClick={() => navigate("/profile")}>
+                  <User className="mr-2 h-4 w-4" />
+                  Profile
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleSignOut}>
+                  <LogOut className="mr-2 h-4 w-4" />
+                  Sign Out
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <Button variant="hero" size="sm" onClick={() => navigate("/login")} className="text-xs h-8 px-3">
+              Sign In
+            </Button>
+          )}
+        </div>
+
+        {/* Desktop right side */}
         <div className="hidden md:flex items-center gap-3">
           {user ? (
             <>
@@ -98,7 +132,6 @@ export function Navbar() {
             </>
           )}
         </div>
-
       </div>
     </nav>
   );
