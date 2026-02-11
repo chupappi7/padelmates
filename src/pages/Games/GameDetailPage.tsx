@@ -340,7 +340,7 @@ export default function GameDetailPage() {
                   )}
                 >
                   <tab.icon className="w-4 h-4" />
-                  <span className="hidden sm:inline">{tab.label}</span>
+                  <span className="text-xs">{tab.label}</span>
                   {showBadge && (
                     <span className="w-5 h-5 rounded-full bg-secondary text-secondary-foreground text-[10px] font-bold flex items-center justify-center">
                       {pendingCount}
