@@ -3,7 +3,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { SkillBadge } from "./SkillBadge";
-import { Check, X, Users, Clock } from "lucide-react";
+import { Check, X, Users, Clock, ShieldCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface Profile {
@@ -26,11 +26,13 @@ interface JoinRequest {
 interface Player {
   id: string;
   user_id: string;
+  role: string;
   profiles: Profile | null;
 }
 
 interface ParticipantsTabProps {
   isHost: boolean;
+  canManage: boolean;
   hostIsPlaying: boolean;
   hostProfile: Profile | null;
   requests: JoinRequest[];
@@ -40,6 +42,7 @@ interface ParticipantsTabProps {
   userRequest?: JoinRequest | null;
   onAcceptRequest: (requestId: string) => void;
   onRejectRequest: (requestId: string) => void;
+  onToggleRole: (playerId: string, currentRole: string) => void;
   loadingAction?: string | null;
 }
 
@@ -47,6 +50,7 @@ type FilterType = "all" | "requests";
 
 export function ParticipantsTab({
   isHost,
+  canManage,
   hostIsPlaying,
   hostProfile,
   requests,
@@ -54,6 +58,7 @@ export function ParticipantsTab({
   maxPlayers,
   onAcceptRequest,
   onRejectRequest,
+  onToggleRole,
   loadingAction,
 }: ParticipantsTabProps) {
   const [activeFilter, setActiveFilter] = useState<FilterType>("all");
@@ -71,6 +76,7 @@ export function ParticipantsTab({
 
   const showConfirmed = activeFilter === "all";
   const showRequests = activeFilter === "all" || activeFilter === "requests";
+  const showRequestsSection = canManage;
 
   return (
     <div className="space-y-4">
@@ -85,7 +91,7 @@ export function ParticipantsTab({
           All
         </Button>
 
-        {isHost && pendingRequests.length > 0 && (
+        {canManage && pendingRequests.length > 0 && (
           <Button
             variant={activeFilter === "requests" ? "default" : "outline"}
             size="sm"
@@ -132,14 +138,20 @@ export function ParticipantsTab({
             )}
 
             {/* Confirmed players from requests */}
-            {confirmedFromRequests.map((player) => (
-              <PlayerCard
-                key={player.id}
-                name={player.profiles?.name || "Player"}
-                avatarUrl={player.profiles?.avatar_url || null}
-                skillLevel={player.profiles?.skill_level}
-              />
-            ))}
+            {confirmedFromRequests.map((request) => {
+              const matchingPlayer = players.find(p => p.user_id === request.user_id);
+              return (
+                <PlayerCard
+                  key={request.id}
+                  name={request.profiles?.name || "Player"}
+                  avatarUrl={request.profiles?.avatar_url || null}
+                  skillLevel={request.profiles?.skill_level}
+                  role={matchingPlayer?.role}
+                  showRoleToggle={isHost}
+                  onToggleRole={matchingPlayer ? () => onToggleRole(matchingPlayer.id, matchingPlayer.role) : undefined}
+                />
+              );
+            })}
 
             {/* Direct join players */}
             {directPlayers.map((player) => (
@@ -148,6 +160,9 @@ export function ParticipantsTab({
                 name={player.profiles?.name || "Player"}
                 avatarUrl={player.profiles?.avatar_url || null}
                 skillLevel={player.profiles?.skill_level}
+                role={player.role}
+                showRoleToggle={isHost}
+                onToggleRole={() => onToggleRole(player.id, player.role)}
               />
             ))}
 
@@ -168,7 +183,7 @@ export function ParticipantsTab({
       )}
 
       {/* Pending Requests Section (Host Only) */}
-      {showRequests && isHost && pendingRequests.length > 0 && (
+      {showRequests && canManage && pendingRequests.length > 0 && (
         <section>
           <div className="flex items-center gap-2 mb-3">
             <span className="text-base">⏳</span>
@@ -242,14 +257,22 @@ function PlayerCard({
   avatarUrl,
   skillLevel,
   isHost,
+  role,
+  showRoleToggle,
+  onToggleRole,
 }: {
   name: string;
   avatarUrl: string | null;
   skillLevel?: "beginner" | "intermediate" | "advanced";
   isHost?: boolean;
+  role?: string;
+  showRoleToggle?: boolean;
+  onToggleRole?: () => void;
 }) {
+  const isAdmin = role === "admin";
+
   return (
-    <div className="flex flex-col items-center gap-1 p-2 bg-card border border-border rounded-lg text-center">
+    <div className="flex flex-col items-center gap-1 p-2 bg-card border border-border rounded-lg text-center relative">
       <div className="relative">
         <Avatar className="h-9 w-9">
           <AvatarImage src={avatarUrl || undefined} />
@@ -262,12 +285,30 @@ function PlayerCard({
             <Check className="w-2 h-2" />
           </div>
         )}
+        {isAdmin && !isHost && (
+          <div className="absolute -bottom-0.5 -right-0.5 bg-accent text-accent-foreground rounded-full p-0.5">
+            <ShieldCheck className="w-2 h-2" />
+          </div>
+        )}
       </div>
       <p className="text-[11px] font-medium truncate w-full max-w-full">{name}</p>
       {isHost && (
         <Badge variant="outline" className="rounded-full text-[9px] px-1.5 py-0 bg-primary/10 text-primary border-primary/20">
           Host
         </Badge>
+      )}
+      {isAdmin && !isHost && (
+        <Badge variant="outline" className="rounded-full text-[9px] px-1.5 py-0 bg-accent/10 text-accent border-accent/20">
+          Admin
+        </Badge>
+      )}
+      {showRoleToggle && !isHost && onToggleRole && (
+        <button
+          onClick={onToggleRole}
+          className="text-[9px] text-muted-foreground hover:text-foreground transition-colors mt-0.5"
+        >
+          {isAdmin ? "Remove admin" : "Make admin"}
+        </button>
       )}
     </div>
   );
