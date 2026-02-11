@@ -36,7 +36,7 @@ export default function CreateGamePage() {
     description: "",
     location: "",
     skillLevel: "intermediate",
-    maxPlayers: 8,
+    maxPlayers: 4,
     format: "casual_match",
     visibility: "public",
     hostIsPlaying: true,
@@ -89,7 +89,15 @@ export default function CreateGamePage() {
   };
 
   const handleChange = (field: string, value: string | number | boolean) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
+    setFormData((prev) => {
+      const updated = { ...prev, [field]: value };
+      if (field === "format" && value === "casual_match") {
+        updated.maxPlayers = 4;
+      } else if (field === "format" && (value === "americano" || value === "team_americano")) {
+        updated.maxPlayers = 8;
+      }
+      return updated;
+    });
   };
 
   return (
