@@ -36,10 +36,10 @@ export function BottomTabBar() {
                 onClick={() => navigate(tab.path)}
                 className="flex flex-col items-center justify-center -mt-4"
               >
-                <div className="w-12 h-12 rounded-full bg-accent flex items-center justify-center shadow-md shadow-accent/30">
-                  <Plus className="w-6 h-6 text-accent-foreground" />
+                <div className="w-12 h-12 rounded-full bg-secondary flex items-center justify-center shadow-md shadow-secondary/30">
+                  <Plus className="w-6 h-6 text-secondary-foreground" />
                 </div>
-                <span className="text-[10px] font-semibold text-accent mt-0.5">Host</span>
+                <span className="text-[10px] font-semibold text-secondary mt-0.5">Host</span>
               </button>
             );
           }
