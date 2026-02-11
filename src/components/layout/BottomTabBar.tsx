@@ -6,7 +6,7 @@ import { useAuth } from "@/contexts/AuthContext";
 const tabs = [
   { path: "/", label: "Matches", icon: Home },
   { path: "/clubs", label: "Clubs", icon: Users },
-  { path: "/games/create", label: "Host", icon: Plus, alwaysPrimary: true },
+  { path: "/games/create", label: "Host", icon: Plus, isFab: true },
   { path: "/my-matches", label: "My Matches", icon: CalendarCheck },
   { path: "/profile", label: "Profile", icon: User },
 ];
@@ -29,6 +29,21 @@ export function BottomTabBar() {
             ? location.pathname === "/"
             : location.pathname.startsWith(tab.path);
 
+          if (tab.isFab) {
+            return (
+              <button
+                key={tab.path}
+                onClick={() => navigate(tab.path)}
+                className="flex flex-col items-center justify-center -mt-4"
+              >
+                <div className="w-12 h-12 rounded-full bg-accent flex items-center justify-center shadow-md shadow-accent/30">
+                  <Plus className="w-6 h-6 text-accent-foreground" />
+                </div>
+                <span className="text-[10px] font-semibold text-accent mt-0.5">Host</span>
+              </button>
+            );
+          }
+
           return (
             <button
               key={tab.path}
@@ -38,13 +53,13 @@ export function BottomTabBar() {
               <tab.icon
                 className={cn(
                   "w-5 h-5 transition-colors",
-                  tab.alwaysPrimary || isActive ? "text-primary" : "text-muted-foreground"
+                  isActive ? "text-primary" : "text-muted-foreground"
                 )}
               />
               <span
                 className={cn(
                   "text-[10px] mt-0.5 transition-colors",
-                  tab.alwaysPrimary || isActive ? "text-primary font-semibold" : "text-muted-foreground"
+                  isActive ? "text-primary font-semibold" : "text-muted-foreground"
                 )}
               >
                 {tab.label}
