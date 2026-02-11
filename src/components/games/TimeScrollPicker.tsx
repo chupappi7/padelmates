@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useEffect, useCallback, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -10,98 +10,151 @@ interface TimeScrollPickerProps {
   onChange: (time: string) => void;
 }
 
-const timeSlots = Array.from({ length: 24 * 4 }, (_, i) => {
-  const h = Math.floor(i / 4).toString().padStart(2, "0");
-  const m = ((i % 4) * 15).toString().padStart(2, "0");
-  return `${h}:${m}`;
-});
+const hours = Array.from({ length: 24 }, (_, i) => i.toString().padStart(2, "0"));
+const minutes = ["00", "15", "30", "45"];
 
-const periods = [
-  { label: "Morning", range: [6, 12] },
-  { label: "Afternoon", range: [12, 17] },
-  { label: "Evening", range: [17, 22] },
-  { label: "Night", range: [22, 6] },
-] as const;
+const ITEM_HEIGHT = 44;
+const VISIBLE_ITEMS = 5;
+const CONTAINER_HEIGHT = ITEM_HEIGHT * VISIBLE_ITEMS;
+const PADDING = ITEM_HEIGHT * Math.floor(VISIBLE_ITEMS / 2);
 
-function getDefaultPeriod(time: string) {
-  const hour = parseInt(time.split(":")[0]);
-  if (hour >= 6 && hour < 12) return "Morning";
-  if (hour >= 12 && hour < 17) return "Afternoon";
-  if (hour >= 17 && hour < 22) return "Evening";
-  return "Night";
-}
+function ScrollColumn({
+  items,
+  selected,
+  onSelect,
+}: {
+  items: string[];
+  selected: string;
+  onSelect: (val: string) => void;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+  const isScrolling = useRef(false);
+  const scrollTimeout = useRef<ReturnType<typeof setTimeout>>();
 
-function getSlotsForPeriod(period: string) {
-  const p = periods.find((pr) => pr.label === period)!;
-  return timeSlots.filter((slot) => {
-    const h = parseInt(slot.split(":")[0]);
-    if (p.range[0] < p.range[1]) {
-      return h >= p.range[0] && h < p.range[1];
+  const scrollToIndex = useCallback((index: number, smooth = true) => {
+    if (!ref.current) return;
+    ref.current.scrollTo({
+      top: index * ITEM_HEIGHT,
+      behavior: smooth ? "smooth" : "auto",
+    });
+  }, []);
+
+  // Scroll to selected on mount
+  useEffect(() => {
+    const index = items.indexOf(selected);
+    if (index !== -1) {
+      setTimeout(() => scrollToIndex(index, false), 50);
     }
-    // Night wraps around
-    return h >= p.range[0] || h < p.range[1];
-  });
+  }, [items, selected, scrollToIndex]);
+
+  const handleScroll = useCallback(() => {
+    isScrolling.current = true;
+    if (scrollTimeout.current) clearTimeout(scrollTimeout.current);
+
+    scrollTimeout.current = setTimeout(() => {
+      isScrolling.current = false;
+      if (!ref.current) return;
+      const scrollTop = ref.current.scrollTop;
+      const index = Math.round(scrollTop / ITEM_HEIGHT);
+      const clampedIndex = Math.max(0, Math.min(index, items.length - 1));
+
+      // Snap to nearest item
+      scrollToIndex(clampedIndex, true);
+
+      // Use functional update pattern to avoid stale state
+      onSelect(items[clampedIndex]);
+    }, 80);
+  }, [items, onSelect, scrollToIndex]);
+
+  const handleClick = useCallback(
+    (index: number) => {
+      scrollToIndex(index, true);
+      // Select after scroll animation
+      setTimeout(() => onSelect(items[index]), 200);
+    },
+    [items, onSelect, scrollToIndex]
+  );
+
+  return (
+    <div className="relative" style={{ height: CONTAINER_HEIGHT }}>
+      {/* Highlight band */}
+      <div
+        className="absolute inset-x-0 z-0 rounded-lg bg-primary/10"
+        style={{ top: PADDING, height: ITEM_HEIGHT }}
+      />
+      {/* Fade edges */}
+      <div className="absolute inset-x-0 top-0 z-10 pointer-events-none bg-gradient-to-b from-background to-transparent" style={{ height: PADDING }} />
+      <div className="absolute inset-x-0 bottom-0 z-10 pointer-events-none bg-gradient-to-t from-background to-transparent" style={{ height: PADDING }} />
+
+      <div
+        ref={ref}
+        onScroll={handleScroll}
+        className="h-full overflow-y-auto scrollbar-hide relative z-[1]"
+        style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+      >
+        {/* Top padding */}
+        <div style={{ height: PADDING }} />
+        {items.map((item, i) => (
+          <button
+            key={item}
+            type="button"
+            onClick={() => handleClick(i)}
+            className={cn(
+              "w-full flex items-center justify-center text-xl font-semibold transition-all",
+              item === selected
+                ? "text-primary scale-105"
+                : "text-muted-foreground/60"
+            )}
+            style={{ height: ITEM_HEIGHT }}
+          >
+            {item}
+          </button>
+        ))}
+        {/* Bottom padding */}
+        <div style={{ height: PADDING }} />
+      </div>
+    </div>
+  );
 }
 
 export function TimeScrollPicker({ open, onOpenChange, value, onChange }: TimeScrollPickerProps) {
-  const [activePeriod, setActivePeriod] = useState(() => getDefaultPeriod(value));
-  const slots = getSlotsForPeriod(activePeriod);
+  const [hour, setHour] = useState(() => value?.split(":")[0] ?? "18");
+  const [minute, setMinute] = useState(() => value?.split(":")[1] ?? "00");
+
+  // Sync when dialog opens
+  useEffect(() => {
+    if (open && value) {
+      const [h, m] = value.split(":");
+      setHour(h);
+      setMinute(m);
+    }
+  }, [open, value]);
+
+  const handleConfirm = () => {
+    onChange(`${hour}:${minute}`);
+    onOpenChange(false);
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[340px] p-0">
+      <DialogContent className="max-w-[280px] p-0">
         <DialogHeader className="p-4 pb-2">
           <DialogTitle className="text-center text-base">Select Time</DialogTitle>
         </DialogHeader>
 
-        {/* Period tabs */}
-        <div className="flex gap-1 px-4">
-          {periods.map((p) => (
-            <button
-              key={p.label}
-              type="button"
-              onClick={() => setActivePeriod(p.label)}
-              className={cn(
-                "flex-1 py-1.5 text-xs font-medium rounded-lg transition-colors",
-                activePeriod === p.label
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-muted text-muted-foreground hover:text-foreground"
-              )}
-            >
-              {p.label}
-            </button>
-          ))}
+        <div className="flex items-center justify-center gap-1 px-6 pb-2">
+          <div className="w-20">
+            <ScrollColumn items={hours} selected={hour} onSelect={setHour} />
+          </div>
+          <span className="text-2xl font-bold text-primary pb-1">:</span>
+          <div className="w-20">
+            <ScrollColumn items={minutes} selected={minute} onSelect={setMinute} />
+          </div>
         </div>
 
-        {/* Time grid */}
-        <div className="grid grid-cols-4 gap-1.5 px-4 py-3 max-h-[280px] overflow-y-auto scrollbar-hide">
-          {slots.map((slot) => (
-            <button
-              key={slot}
-              type="button"
-              onClick={() => {
-                onChange(slot);
-                onOpenChange(false);
-              }}
-              className={cn(
-                "h-10 rounded-lg text-sm font-medium transition-all",
-                slot === value
-                  ? "bg-primary text-primary-foreground shadow-sm"
-                  : "bg-muted/50 text-foreground hover:bg-primary/10"
-              )}
-            >
-              {slot}
-            </button>
-          ))}
-        </div>
-
-        <div className="p-4 pt-0">
-          <Button
-            variant="outline"
-            className="w-full"
-            onClick={() => onOpenChange(false)}
-          >
-            Cancel
+        <div className="px-4 pb-4">
+          <Button className="w-full" onClick={handleConfirm}>
+            Confirm {hour}:{minute}
           </Button>
         </div>
       </DialogContent>
