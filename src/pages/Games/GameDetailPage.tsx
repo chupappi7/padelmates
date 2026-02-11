@@ -3,7 +3,6 @@ import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -14,6 +13,7 @@ import { ParticipantsTab } from "@/components/games/ParticipantsTab";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { format } from "date-fns";
+import { cn } from "@/lib/utils";
 import {
   ArrowLeft,
   Calendar,
@@ -22,6 +22,9 @@ import {
   MessageCircle,
   Trophy,
   Clock,
+  Info,
+  Swords,
+  Send,
 } from "lucide-react";
 
 interface Game {
@@ -72,11 +75,21 @@ const formatLabels = {
   team_americano: "Team Americano",
 };
 
+type TabKey = "details" | "participants" | "matches" | "chat";
+
+const tabs: { key: TabKey; label: string; icon: typeof Info }[] = [
+  { key: "details", label: "Details", icon: Info },
+  { key: "participants", label: "Players", icon: Users },
+  { key: "matches", label: "Matches", icon: Swords },
+  { key: "chat", label: "Chat", icon: MessageCircle },
+];
+
 export default function GameDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
 
+  const [activeTab, setActiveTab] = useState<TabKey>("details");
   const [game, setGame] = useState<Game | null>(null);
   const [players, setPlayers] = useState<Player[]>([]);
   const [requests, setRequests] = useState<JoinRequest[]>([]);
@@ -99,36 +112,21 @@ export default function GameDetailPage() {
     }
   }, [id, user]);
 
-  // Realtime subscription for player count updates
   useEffect(() => {
     if (!id) return;
-
     const channel = supabase
       .channel(`game-players-${id}`)
       .on(
         'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'game_players',
-          filter: `game_id=eq.${id}`,
-        },
-        () => {
-          fetchPlayers();
-        }
+        { event: '*', schema: 'public', table: 'game_players', filter: `game_id=eq.${id}` },
+        () => { fetchPlayers(); }
       )
       .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
+    return () => { supabase.removeChannel(channel); };
   }, [id]);
 
   useEffect(() => {
-    if (game) {
-      // Fetch requests for the participants tab (host sees all, others see public info)
-      fetchRequests();
-    }
+    if (game) fetchRequests();
   }, [game]);
 
   const fetchGame = async () => {
@@ -139,11 +137,7 @@ export default function GameDetailPage() {
         .select("name, avatar_url, skill_level")
         .eq("user_id", data.host_id)
         .single();
-      setGame({ 
-        ...data, 
-        profiles: profile,
-        host_is_playing: data.host_is_playing ?? true,
-      } as Game);
+      setGame({ ...data, profiles: profile, host_is_playing: data.host_is_playing ?? true } as Game);
     }
     setLoading(false);
   };
@@ -153,11 +147,7 @@ export default function GameDetailPage() {
     if (data) {
       const playersWithProfiles = await Promise.all(
         data.map(async (p) => {
-          const { data: profile } = await supabase
-            .from("profiles")
-            .select("name, avatar_url, skill_level")
-            .eq("user_id", p.user_id)
-            .single();
+          const { data: profile } = await supabase.from("profiles").select("name, avatar_url, skill_level").eq("user_id", p.user_id).single();
           return { ...p, profiles: profile };
         })
       );
@@ -166,19 +156,11 @@ export default function GameDetailPage() {
   };
 
   const fetchRequests = async () => {
-    const { data } = await supabase
-      .from("join_requests")
-      .select("*")
-      .eq("game_id", id)
-      .order("created_at", { ascending: false });
+    const { data } = await supabase.from("join_requests").select("*").eq("game_id", id).order("created_at", { ascending: false });
     if (data) {
       const requestsWithProfiles = await Promise.all(
         data.map(async (r) => {
-          const { data: profile } = await supabase
-            .from("profiles")
-            .select("name, avatar_url, skill_level")
-            .eq("user_id", r.user_id)
-            .single();
+          const { data: profile } = await supabase.from("profiles").select("name, avatar_url, skill_level").eq("user_id", r.user_id).single();
           return { ...r, profiles: profile };
         })
       );
@@ -187,18 +169,9 @@ export default function GameDetailPage() {
   };
 
   const fetchMyRequest = async () => {
-    const { data } = await supabase
-      .from("join_requests")
-      .select("*")
-      .eq("game_id", id)
-      .eq("user_id", user?.id)
-      .maybeSingle();
+    const { data } = await supabase.from("join_requests").select("*").eq("game_id", id).eq("user_id", user?.id).maybeSingle();
     if (data) {
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("name, avatar_url, skill_level")
-        .eq("user_id", data.user_id)
-        .single();
+      const { data: profile } = await supabase.from("profiles").select("name, avatar_url, skill_level").eq("user_id", data.user_id).single();
       setMyRequest({ ...data, profiles: profile } as JoinRequest);
     } else {
       setMyRequest(null);
@@ -206,19 +179,11 @@ export default function GameDetailPage() {
   };
 
   const fetchMessages = async () => {
-    const { data } = await supabase
-      .from("game_messages")
-      .select("*")
-      .eq("game_id", id)
-      .order("created_at", { ascending: true });
+    const { data } = await supabase.from("game_messages").select("*").eq("game_id", id).order("created_at", { ascending: true });
     if (data) {
       const messagesWithProfiles = await Promise.all(
         data.map(async (m) => {
-          const { data: profile } = await supabase
-            .from("profiles")
-            .select("name, avatar_url")
-            .eq("user_id", m.user_id)
-            .single();
+          const { data: profile } = await supabase.from("profiles").select("name, avatar_url").eq("user_id", m.user_id).single();
           return { ...m, profiles: profile };
         })
       );
@@ -228,18 +193,8 @@ export default function GameDetailPage() {
 
   const handleSendMessage = async () => {
     if (!newMessage.trim() || !user || !id) return;
-
-    const { error } = await supabase.from("game_messages").insert({
-      game_id: id,
-      user_id: user.id,
-      message: newMessage,
-    });
-
-    if (error) {
-      toast.error("Failed to send message");
-      return;
-    }
-
+    const { error } = await supabase.from("game_messages").insert({ game_id: id, user_id: user.id, message: newMessage });
+    if (error) { toast.error("Failed to send message"); return; }
     setNewMessage("");
     fetchMessages();
   };
@@ -248,19 +203,10 @@ export default function GameDetailPage() {
     setActionLoading(requestId);
     const request = requests.find((r) => r.id === requestId);
     if (!request) return;
-
-    const { error } = await supabase
-      .from("join_requests")
-      .update({ status: "accepted" })
-      .eq("id", requestId);
-
-    if (error) {
-      toast.error("Failed to accept request");
-    } else {
-      await supabase.from("game_players").insert({
-        game_id: id,
-        user_id: request.user_id,
-      });
+    const { error } = await supabase.from("join_requests").update({ status: "accepted" }).eq("id", requestId);
+    if (error) { toast.error("Failed to accept request"); }
+    else {
+      await supabase.from("game_players").insert({ game_id: id, user_id: request.user_id });
       toast.success("Player accepted!");
       fetchRequests();
       fetchPlayers();
@@ -270,18 +216,19 @@ export default function GameDetailPage() {
 
   const handleRejectRequest = async (requestId: string) => {
     setActionLoading(requestId);
-    const { error } = await supabase
-      .from("join_requests")
-      .update({ status: "rejected" })
-      .eq("id", requestId);
-
-    if (error) {
-      toast.error("Failed to reject request");
-    } else {
-      toast.success("Request rejected");
-      fetchRequests();
-    }
+    const { error } = await supabase.from("join_requests").update({ status: "rejected" }).eq("id", requestId);
+    if (error) { toast.error("Failed to reject request"); }
+    else { toast.success("Request rejected"); fetchRequests(); }
     setActionLoading(null);
+  };
+
+  const handleDirectJoin = async () => {
+    if (!user || !id) return;
+    setJoinLoading(true);
+    const { error } = await supabase.from("game_players").insert({ game_id: id, user_id: user.id });
+    if (error) { toast.error("Failed to join game"); }
+    else { toast.success("You've joined the game!"); fetchPlayers(); }
+    setJoinLoading(false);
   };
 
   const isHost = user?.id === game?.host_id;
@@ -290,25 +237,8 @@ export default function GameDetailPage() {
   const totalPlayers = players.length + hostCount;
   const spotsLeft = game ? game.max_players - totalPlayers : 0;
   const isOpenJoin = game?.join_mode === "open";
-
-  const handleDirectJoin = async () => {
-    if (!user || !id) return;
-    setJoinLoading(true);
-    const { error } = await supabase.from("game_players").insert({
-      game_id: id,
-      user_id: user.id,
-    });
-    if (error) {
-      toast.error("Failed to join game");
-    } else {
-      toast.success("You've joined the game!");
-      fetchPlayers();
-    }
-    setJoinLoading(false);
-  };
-
-  // Simple join status for display
   const userJoinStatus = myRequest?.status || null;
+  const canAccessChat = isHost || isPlayer;
 
   if (loading) {
     return (
@@ -336,165 +266,189 @@ export default function GameDetailPage() {
     );
   }
 
+  const pendingCount = requests.filter((r) => r.status === "pending").length;
+
   return (
     <div className="min-h-screen bg-background pb-24 md:pb-8">
       <Navbar />
 
       <div className="container py-4 md:py-8 max-w-4xl px-3 md:px-6">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-          <button
-            onClick={() => navigate("/games")}
-            className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-3 md:mb-6"
-          >
-            <ArrowLeft className="w-3.5 h-3.5" />
-            Back to Games
-          </button>
-
-          {/* Header Card */}
-          <div className="bg-card border border-border rounded-xl md:rounded-2xl p-4 md:p-6 mb-4">
-            {/* Tags Row */}
-            <div className="flex flex-wrap gap-1.5 mb-2 md:mb-4">
-              <SkillBadge level={game.skill_level} />
-              <Badge variant="outline" className="rounded-full text-xs">
-                {formatLabels[game.format]}
-              </Badge>
-              <Badge variant="outline" className="rounded-full text-xs">
-                {isOpenJoin ? "Open – Join Directly" : "Request to Join"}
-              </Badge>
-              {isHost && (
-                <Badge className="rounded-full bg-primary/10 text-primary border-0 text-xs">
-                  Hosting
+          {/* Back + Title */}
+          <div className="flex items-center gap-3 mb-3">
+            <button
+              onClick={() => navigate("/")}
+              className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-muted hover:bg-muted/80 transition-colors shrink-0"
+            >
+              <ArrowLeft className="w-4 h-4" />
+            </button>
+            <div className="min-w-0 flex-1">
+              <h1 className="font-display text-lg md:text-2xl font-bold truncate">{game.title}</h1>
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <SkillBadge level={game.skill_level} size="sm" />
+                <Badge variant="outline" className="rounded-full text-[10px] h-5">
+                  {formatLabels[game.format]}
                 </Badge>
-              )}
-              {isPlayer && !isHost && (
-                <Badge className="rounded-full bg-success/10 text-success border-0 text-xs">
-                  Playing
-                </Badge>
-              )}
-            </div>
-
-            <h1 className="font-display text-xl md:text-3xl font-bold mb-2 md:mb-4">
-              {game.title}
-            </h1>
-
-            {game.description && (
-              <p className="text-sm text-muted-foreground mb-3 md:mb-6">{game.description}</p>
-            )}
-
-            {/* Info Grid */}
-            <div className="grid grid-cols-2 gap-2.5 md:gap-4 mb-3 md:mb-6">
-              <div className="flex items-center gap-2 md:gap-3">
-                <div className="w-8 h-8 md:w-10 md:h-10 rounded-lg md:rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
-                  <MapPin className="w-4 h-4 md:w-5 md:h-5 text-primary" />
-                </div>
-                <div className="min-w-0">
-                  <p className="text-xs text-muted-foreground">Location</p>
-                  <p className="text-sm md:text-base font-medium truncate">{game.location}</p>
-                </div>
+                {isHost && (
+                  <Badge className="rounded-full bg-primary/10 text-primary border-0 text-[10px] h-5">Hosting</Badge>
+                )}
+                {isPlayer && !isHost && (
+                  <Badge className="rounded-full bg-success/10 text-success border-0 text-[10px] h-5">Playing</Badge>
+                )}
               </div>
-              <div className="flex items-center gap-2 md:gap-3">
-                <div className="w-8 h-8 md:w-10 md:h-10 rounded-lg md:rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
-                  <Calendar className="w-4 h-4 md:w-5 md:h-5 text-primary" />
-                </div>
-                <div className="min-w-0">
-                  <p className="text-xs text-muted-foreground">Date & Time</p>
-                  <p className="text-sm md:text-base font-medium truncate">
-                    {format(new Date(game.date_time), "EEE, MMM d · h:mm a")}
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2 md:gap-3">
-                <div className="w-8 h-8 md:w-10 md:h-10 rounded-lg md:rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
-                  <Users className="w-4 h-4 md:w-5 md:h-5 text-primary" />
-                </div>
-                <div className="min-w-0">
-                  <p className="text-xs text-muted-foreground">Players</p>
-                  <p className="text-sm md:text-base font-medium">
-                    {totalPlayers}/{game.max_players}
-                    {spotsLeft > 0 && (
-                      <span className="text-success text-xs md:text-sm ml-1">· {spotsLeft} left</span>
-                    )}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Host Info */}
-            <div className="flex items-center gap-2 md:gap-3 pt-3 md:pt-4 border-t border-border">
-              <Avatar className="h-8 w-8 md:h-10 md:w-10">
-                <AvatarImage src={game.profiles?.avatar_url || undefined} />
-                <AvatarFallback className="bg-primary/10 text-primary font-semibold text-sm">
-                  {game.profiles?.name?.charAt(0).toUpperCase()}
-                </AvatarFallback>
-              </Avatar>
-              <div className="flex-1 min-w-0">
-                <p className="text-xs text-muted-foreground">Hosted by</p>
-                <div className="flex items-center gap-2">
-                  <p className="text-sm md:text-base font-semibold truncate">{game.profiles?.name}</p>
-                  <Badge variant="outline" className="rounded-full text-xs shrink-0">
-                    {game.host_is_playing ? "🎾 Playing" : "📋 Organizing"}
-                  </Badge>
-                </div>
-              </div>
-              {game.profiles?.skill_level && (
-                <SkillBadge level={game.profiles.skill_level as "beginner" | "intermediate" | "advanced"} size="sm" />
-              )}
             </div>
           </div>
 
-          {/* Join Status Card */}
+          {/* Join Status Banner */}
           {myRequest && !isPlayer && userJoinStatus === "pending" && (
-            <div className="mb-4">
-              <div className="flex items-center gap-2.5 p-3 rounded-xl border bg-warning/10 text-warning border-warning/20">
-                <Clock className="w-5 h-5 shrink-0" />
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-semibold">Pending</p>
-                  <p className="text-xs opacity-80">Request sent – waiting for host</p>
-                </div>
+            <div className="flex items-center gap-2.5 p-3 rounded-xl border bg-warning/10 text-warning border-warning/20 mb-3">
+              <Clock className="w-5 h-5 shrink-0" />
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-semibold">Pending</p>
+                <p className="text-xs opacity-80">Request sent – waiting for host</p>
               </div>
             </div>
           )}
           {myRequest && myRequest.status === "rejected" && (
-            <div className="mb-4">
-              <div className="flex items-center gap-2.5 p-3 rounded-xl border bg-destructive/10 text-destructive border-destructive/20">
-                <Clock className="w-5 h-5 shrink-0" />
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-semibold">Rejected</p>
-                  <p className="text-xs opacity-80">Your request was not accepted</p>
-                </div>
+            <div className="flex items-center gap-2.5 p-3 rounded-xl border bg-destructive/10 text-destructive border-destructive/20 mb-3">
+              <Clock className="w-5 h-5 shrink-0" />
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-semibold">Rejected</p>
+                <p className="text-xs opacity-80">Your request was not accepted</p>
               </div>
             </div>
           )}
 
-          {/* Tabs */}
-          <Tabs defaultValue="participants" className="mt-4 md:mt-6">
-            <TabsList className="w-full justify-start border-b border-border rounded-none bg-transparent p-0 h-auto overflow-x-auto">
-              <TabsTrigger
-                value="participants"
-                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent text-sm px-3 py-2"
-              >
-                <Users className="w-3.5 h-3.5 mr-1.5" />
-                Participants
-              </TabsTrigger>
-              {(isHost || isPlayer) && (
-                <TabsTrigger
-                  value="chat"
-                  className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent text-sm px-3 py-2"
-                >
-                  <MessageCircle className="w-3.5 h-3.5 mr-1.5" />
-                  Chat
-                </TabsTrigger>
-              )}
-              <TabsTrigger
-                value="scoreboard"
-                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent text-sm px-3 py-2"
-              >
-                <Trophy className="w-3.5 h-3.5" />
-              </TabsTrigger>
-            </TabsList>
+          {/* Tab Navigation Buttons */}
+          <div className="flex gap-1 bg-muted/50 rounded-xl p-1 mb-4 overflow-x-auto scrollbar-hide">
+            {tabs.map((tab) => {
+              // Hide chat for non-participants
+              if (tab.key === "chat" && !canAccessChat) return null;
 
-            {/* Participants Tab */}
-            <TabsContent value="participants" className="pt-3 md:pt-4">
+              const isActive = activeTab === tab.key;
+              const showBadge = tab.key === "participants" && isHost && pendingCount > 0;
+
+              return (
+                <button
+                  key={tab.key}
+                  onClick={() => setActiveTab(tab.key)}
+                  className={cn(
+                    "flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap flex-1 justify-center",
+                    isActive
+                      ? "bg-background text-foreground shadow-sm"
+                      : "text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  <tab.icon className="w-4 h-4" />
+                  <span className="hidden sm:inline">{tab.label}</span>
+                  {showBadge && (
+                    <span className="w-5 h-5 rounded-full bg-secondary text-secondary-foreground text-[10px] font-bold flex items-center justify-center">
+                      {pendingCount}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* TAB CONTENT */}
+
+          {/* Details Tab */}
+          {activeTab === "details" && (
+            <motion.div key="details" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-4">
+              {/* Info Card */}
+              <div className="bg-card border border-border rounded-xl p-4 space-y-3">
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                      <MapPin className="w-4 h-4 text-primary" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-[11px] text-muted-foreground">Location</p>
+                      <p className="text-sm font-medium truncate">{game.location}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                      <Calendar className="w-4 h-4 text-primary" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-[11px] text-muted-foreground">Date & Time</p>
+                      <p className="text-sm font-medium truncate">
+                        {format(new Date(game.date_time), "EEE, MMM d · h:mm a")}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                      <Users className="w-4 h-4 text-primary" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-[11px] text-muted-foreground">Players</p>
+                      <p className="text-sm font-medium">
+                        {totalPlayers}/{game.max_players}
+                        {spotsLeft > 0 && (
+                          <span className="text-success text-xs ml-1">· {spotsLeft} left</span>
+                        )}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                      <Info className="w-4 h-4 text-primary" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-[11px] text-muted-foreground">Join Mode</p>
+                      <p className="text-sm font-medium">
+                        {isOpenJoin ? "Open" : "Request"}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Host Info */}
+              <div className="bg-card border border-border rounded-xl p-4">
+                <div className="flex items-center gap-3">
+                  <Avatar className="h-10 w-10">
+                    <AvatarImage src={game.profiles?.avatar_url || undefined} />
+                    <AvatarFallback className="bg-primary/10 text-primary font-semibold text-sm">
+                      {game.profiles?.name?.charAt(0).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs text-muted-foreground">Hosted by</p>
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm font-semibold truncate">{game.profiles?.name}</p>
+                      <Badge variant="outline" className="rounded-full text-xs shrink-0">
+                        {game.host_is_playing ? "🎾 Playing" : "📋 Organizing"}
+                      </Badge>
+                    </div>
+                  </div>
+                  {game.profiles?.skill_level && (
+                    <SkillBadge level={game.profiles.skill_level as "beginner" | "intermediate" | "advanced"} size="sm" />
+                  )}
+                </div>
+              </div>
+
+              {/* Description / Notes */}
+              {game.description && (
+                <div className="bg-card border border-border rounded-xl p-4">
+                  <h3 className="font-display font-bold text-sm mb-2 flex items-center gap-2">
+                    <Info className="w-4 h-4 text-primary" />
+                    Notes from Host
+                  </h3>
+                  <p className="text-sm text-muted-foreground whitespace-pre-wrap leading-relaxed">
+                    {game.description}
+                  </p>
+                </div>
+              )}
+            </motion.div>
+          )}
+
+          {/* Participants Tab */}
+          {activeTab === "participants" && (
+            <motion.div key="participants" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
               <ParticipantsTab
                 isHost={isHost}
                 hostIsPlaying={game.host_is_playing}
@@ -512,36 +466,65 @@ export default function GameDetailPage() {
                 onRejectRequest={handleRejectRequest}
                 loadingAction={actionLoading}
               />
-            </TabsContent>
+            </motion.div>
+          )}
 
-            {/* Chat Tab */}
-            <TabsContent value="chat" className="pt-4 md:pt-6">
+          {/* Matches Tab */}
+          {activeTab === "matches" && (
+            <motion.div key="matches" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+              <div className="bg-card border border-border rounded-xl p-6 text-center">
+                <Trophy className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
+                <h3 className="font-display font-bold text-lg mb-1">Matches & Scores</h3>
+                <p className="text-sm text-muted-foreground mb-4">
+                  {isHost
+                    ? "Generate matches or manually assign players once everyone has joined."
+                    : "Matches and scores will appear here once the host sets them up."}
+                </p>
+                {isHost && (
+                  <Button variant="outline" disabled>
+                    Generate Matches (Coming Soon)
+                  </Button>
+                )}
+              </div>
+            </motion.div>
+          )}
+
+          {/* Chat Tab */}
+          {activeTab === "chat" && canAccessChat && (
+            <motion.div key="chat" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
               <div className="bg-card border border-border rounded-xl p-4">
-                <div className="h-64 overflow-y-auto mb-4 space-y-3">
+                <div className="h-[calc(100vh-340px)] min-h-[200px] overflow-y-auto mb-4 space-y-3">
                   {messages.length > 0 ? (
                     messages.map((msg) => (
-                      <div key={msg.id} className="flex gap-3">
-                        <Avatar className="h-8 w-8">
+                      <div key={msg.id} className={cn("flex gap-2.5", msg.user_id === user?.id && "flex-row-reverse")}>
+                        <Avatar className="h-7 w-7 shrink-0">
                           <AvatarImage src={msg.profiles?.avatar_url || undefined} />
-                          <AvatarFallback className="text-xs">
+                          <AvatarFallback className="text-[10px]">
                             {msg.profiles?.name?.charAt(0)}
                           </AvatarFallback>
                         </Avatar>
-                        <div>
-                          <p className="text-sm">
-                            <span className="font-semibold">{msg.profiles?.name}</span>
-                            <span className="text-muted-foreground ml-2 text-xs">
-                              {format(new Date(msg.created_at), "h:mm a")}
-                            </span>
+                        <div className={cn("max-w-[75%]", msg.user_id === user?.id && "text-right")}>
+                          <p className="text-[11px] text-muted-foreground mb-0.5">
+                            <span className="font-medium">{msg.profiles?.name}</span>
+                            <span className="ml-1.5">{format(new Date(msg.created_at), "h:mm a")}</span>
                           </p>
-                          <p className="text-sm">{msg.message}</p>
+                          <div className={cn(
+                            "inline-block px-3 py-2 rounded-2xl text-sm",
+                            msg.user_id === user?.id
+                              ? "bg-primary text-primary-foreground rounded-tr-sm"
+                              : "bg-muted rounded-tl-sm"
+                          )}>
+                            {msg.message}
+                          </div>
                         </div>
                       </div>
                     ))
                   ) : (
-                    <p className="text-muted-foreground text-center py-8 text-sm">
-                      No messages yet. Start the conversation!
-                    </p>
+                    <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+                      <MessageCircle className="w-8 h-8 mb-2" />
+                      <p className="text-sm">No messages yet</p>
+                      <p className="text-xs">Start the conversation!</p>
+                    </div>
                   )}
                 </div>
                 <div className="flex gap-2">
@@ -550,33 +533,21 @@ export default function GameDetailPage() {
                     value={newMessage}
                     onChange={(e) => setNewMessage(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && handleSendMessage()}
-                    className="text-sm"
+                    className="text-sm h-10"
                   />
-                  <Button onClick={handleSendMessage} size="sm">
-                    Send
+                  <Button onClick={handleSendMessage} size="icon" className="h-10 w-10 shrink-0">
+                    <Send className="w-4 h-4" />
                   </Button>
                 </div>
               </div>
-            </TabsContent>
-
-
-            {/* Scoreboard Tab */}
-            <TabsContent value="scoreboard" className="pt-4 md:pt-6">
-              <div className="bg-card border border-border rounded-xl p-6 text-center">
-                <Trophy className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
-                <h3 className="font-display font-bold text-lg mb-1">Scoreboard</h3>
-                <p className="text-sm text-muted-foreground">
-                  Scores will be added after the game
-                </p>
-              </div>
-            </TabsContent>
-          </Tabs>
+            </motion.div>
+          )}
         </motion.div>
       </div>
 
       {/* Sticky Join CTA */}
       {user && !isHost && !isPlayer && !myRequest && spotsLeft > 0 && (
-        <div className="fixed bottom-0 left-0 right-0 p-4 bg-background/95 backdrop-blur-sm border-t border-border md:hidden safe-bottom">
+        <div className="fixed bottom-0 left-0 right-0 p-4 bg-background/95 backdrop-blur-sm border-t border-border md:hidden safe-bottom z-40">
           <Button
             variant="hero"
             className="w-full h-12 text-base"
