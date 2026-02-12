@@ -1,11 +1,11 @@
 import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { ScoreScrollPicker } from "@/components/games/ScoreScrollPicker";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Trophy, Shuffle, Plus, Check, Trash2, Users, X } from "lucide-react";
+import { Trophy, Shuffle, Trash2, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   Dialog,
@@ -65,7 +65,7 @@ export function MatchesTab({
   const [matches, setMatches] = useState<Match[]>([]);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
-  const [editingScores, setEditingScores] = useState<Record<string, { t1: string; t2: string }>>({});
+  const [scoringMatchId, setScoringMatchId] = useState<string | null>(null);
   const [showTeamPicker, setShowTeamPicker] = useState(false);
   const [team1Picks, setTeam1Picks] = useState<string[]>([]);
   const [team2Picks, setTeam2Picks] = useState<string[]>([]);
@@ -238,31 +238,19 @@ export function MatchesTab({
     }
   };
 
-  const handleSubmitScore = async (matchId: string) => {
-    const scores = editingScores[matchId];
-    if (!scores) return;
-
-    const t1 = parseInt(scores.t1);
-    const t2 = parseInt(scores.t2);
-    if (isNaN(t1) || isNaN(t2)) {
-      toast.error("Enter valid scores");
-      return;
-    }
+  const handleSubmitScore = async (t1: number, t2: number) => {
+    if (!scoringMatchId) return;
 
     const { error } = await supabase
       .from("matches")
       .update({ team1_score: t1, team2_score: t2, status: "completed" })
-      .eq("id", matchId);
+      .eq("id", scoringMatchId);
 
     if (error) {
       toast.error("Failed to submit score");
     } else {
       toast.success("Score saved!");
-      setEditingScores((prev) => {
-        const next = { ...prev };
-        delete next[matchId];
-        return next;
-      });
+      setScoringMatchId(null);
       fetchMatches();
     }
   };
@@ -336,7 +324,6 @@ export function MatchesTab({
         const team1 = match.match_players.filter((mp) => mp.team === 1);
         const team2 = match.match_players.filter((mp) => mp.team === 2);
         const isCompleted = match.status === "completed";
-        const isEditing = !!editingScores[match.id];
 
         return (
           <div
@@ -392,83 +379,31 @@ export function MatchesTab({
 
               {/* Score */}
               <div className="flex flex-col items-center gap-1 shrink-0">
-                {isEditing ? (
-                  <div className="flex items-center gap-1">
-                    <Input
-                      type="number"
-                      min={0}
-                      value={editingScores[match.id]?.t1 ?? ""}
-                      onChange={(e) =>
-                        setEditingScores((prev) => ({
-                          ...prev,
-                          [match.id]: { ...prev[match.id], t1: e.target.value },
-                        }))
-                      }
-                      onWheel={(e) => (e.target as HTMLInputElement).blur()}
-                      className="w-12 h-10 text-center text-lg font-bold p-0"
-                    />
-                    <span className="text-muted-foreground font-bold">-</span>
-                    <Input
-                      type="number"
-                      min={0}
-                      value={editingScores[match.id]?.t2 ?? ""}
-                      onChange={(e) =>
-                        setEditingScores((prev) => ({
-                          ...prev,
-                          [match.id]: { ...prev[match.id], t2: e.target.value },
-                        }))
-                      }
-                      onWheel={(e) => (e.target as HTMLInputElement).blur()}
-                      className="w-12 h-10 text-center text-lg font-bold p-0"
-                    />
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-1.5">
-                    <span className={cn(
-                      "text-2xl font-bold",
-                      isCompleted && match.team1_score > match.team2_score && "text-success"
-                    )}>
-                      {match.team1_score}
-                    </span>
-                    <span className="text-muted-foreground text-lg">-</span>
-                    <span className={cn(
-                      "text-2xl font-bold",
-                      isCompleted && match.team2_score > match.team1_score && "text-success"
-                    )}>
-                      {match.team2_score}
-                    </span>
-                  </div>
-                )}
+                <div className="flex items-center gap-1.5">
+                  <span className={cn(
+                    "text-2xl font-bold",
+                    isCompleted && match.team1_score > match.team2_score && "text-success"
+                  )}>
+                    {match.team1_score}
+                  </span>
+                  <span className="text-muted-foreground text-lg">-</span>
+                  <span className={cn(
+                    "text-2xl font-bold",
+                    isCompleted && match.team2_score > match.team1_score && "text-success"
+                  )}>
+                    {match.team2_score}
+                  </span>
+                </div>
 
                 {canManage && (
-                  isEditing ? (
-                    <Button
-                      size="sm"
-                      variant="hero"
-                      className="h-7 text-xs px-3"
-                      onClick={() => handleSubmitScore(match.id)}
-                    >
-                      <Check className="w-3 h-3 mr-1" />
-                      Save
-                    </Button>
-                  ) : (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="h-7 text-xs px-3"
-                      onClick={() =>
-                        setEditingScores((prev) => ({
-                          ...prev,
-                          [match.id]: {
-                            t1: String(match.team1_score),
-                            t2: String(match.team2_score),
-                          },
-                        }))
-                      }
-                    >
-                      {isCompleted ? "Edit" : "Score"}
-                    </Button>
-                  )
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-7 text-xs px-3"
+                    onClick={() => setScoringMatchId(match.id)}
+                  >
+                    {isCompleted ? "Edit" : "Score"}
+                  </Button>
                 )}
               </div>
 
@@ -572,6 +507,21 @@ export function MatchesTab({
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Score Scroll Picker */}
+      {scoringMatchId && (() => {
+        const m = matches.find((x) => x.id === scoringMatchId);
+        if (!m) return null;
+        return (
+          <ScoreScrollPicker
+            open={true}
+            onOpenChange={(open) => { if (!open) setScoringMatchId(null); }}
+            team1Score={m.team1_score}
+            team2Score={m.team2_score}
+            onConfirm={handleSubmitScore}
+          />
+        );
+      })()}
     </div>
   );
 }
