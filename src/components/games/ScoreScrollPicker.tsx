@@ -130,9 +130,11 @@ export function ScoreScrollPicker({
     setSets((prev) => {
       const next = [...prev];
       const updated = { ...next[index], [team]: numVal };
-      // Prevent 7-7: if one team is 7, other can't exceed 6
-      if (updated.t1 === 7 && updated.t2 === 7) {
-        updated[team] = 6;
+      // When one team reaches 7, auto-set the other to 6
+      if (team === "t1" && updated.t1 === 7 && updated.t2 > 6) {
+        updated.t2 = 6;
+      } else if (team === "t2" && updated.t2 === 7 && updated.t1 > 6) {
+        updated.t1 = 6;
       }
       next[index] = updated;
       return next;
