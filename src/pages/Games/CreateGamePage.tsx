@@ -275,7 +275,7 @@ export default function CreateGamePage() {
                     type="number"
                     min="0"
                     step="0.5"
-                    placeholder="0 (free)"
+                    placeholder="0"
                     value={formData.pricePerPlayer}
                     onChange={(e) => handleChange("pricePerPlayer", e.target.value)}
                     className="h-11 pl-10"

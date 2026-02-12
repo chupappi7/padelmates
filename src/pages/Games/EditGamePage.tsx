@@ -285,7 +285,7 @@ export default function EditGamePage() {
                     type="number"
                     min="0"
                     step="0.5"
-                    placeholder="0 (free)"
+                    placeholder="0"
                     value={formData.pricePerPlayer}
                     onChange={(e) => setFormData((prev) => ({ ...prev, pricePerPlayer: e.target.value }))}
                     className="h-11 pl-10"
