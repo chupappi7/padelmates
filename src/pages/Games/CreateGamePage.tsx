@@ -140,7 +140,7 @@ export default function CreateGamePage() {
               </h2>
 
               <div className="space-y-1.5">
-                <Label htmlFor="title" className="text-sm">Game Title</Label>
+                <Label htmlFor="title" className="text-sm">Game Title <span className="text-destructive">*</span></Label>
                 <Input
                   id="title"
                   placeholder="e.g., Friday Night Americano"
@@ -210,7 +210,7 @@ export default function CreateGamePage() {
 
               <div className="grid grid-cols-3 gap-3">
                 <div className="col-span-2 space-y-1.5">
-                  <Label htmlFor="location" className="text-sm">Court / Location</Label>
+                  <Label htmlFor="location" className="text-sm">Court / Location <span className="text-destructive">*</span></Label>
                   <div className="relative">
                     <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                     <Input
@@ -237,7 +237,7 @@ export default function CreateGamePage() {
 
               {/* Date */}
               <div className="space-y-1.5">
-                <Label className="text-sm">Date</Label>
+                <Label className="text-sm">Date <span className="text-destructive">*</span></Label>
                 <Popover open={showDatePicker} onOpenChange={setShowDatePicker}>
                   <PopoverTrigger asChild>
                     <button
@@ -268,7 +268,7 @@ export default function CreateGamePage() {
               {/* Start & End Time */}
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
-                  <Label className="text-sm">Start Time</Label>
+                  <Label className="text-sm">Start Time <span className="text-destructive">*</span></Label>
                   <button
                     type="button"
                     onClick={() => setShowTimePicker(true)}
@@ -279,7 +279,7 @@ export default function CreateGamePage() {
                   </button>
                 </div>
                 <div className="space-y-1.5">
-                  <Label className="text-sm">End Time</Label>
+                  <Label className="text-sm">End Time <span className="text-destructive">*</span></Label>
                   <button
                     type="button"
                     onClick={() => setShowEndTimePicker(true)}
@@ -307,7 +307,7 @@ export default function CreateGamePage() {
 
               {/* Price per Player */}
               <div className="space-y-1.5">
-                <Label htmlFor="price" className="text-sm">Price per Player</Label>
+                <Label htmlFor="price" className="text-sm">Price per Player <span className="text-destructive">*</span></Label>
                 <div className="relative">
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-semibold text-sm">Kč</span>
                   <Input
