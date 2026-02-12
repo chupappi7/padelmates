@@ -408,7 +408,7 @@ export function MatchesTab({
                   <div className="flex gap-1.5">
                     {match.set_scores.map((s, i) => (
                       <span key={i} className="text-[10px] text-muted-foreground font-medium bg-muted px-1.5 py-0.5 rounded">
-                        {s.t1}-{s.t2}
+                        S{i + 1}: {s.t1}-{s.t2}
                       </span>
                     ))}
                   </div>
