@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, Fragment } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -206,31 +206,46 @@ export default function GamesListPage() {
             ))}
           </div>
         ) : filteredGames.length > 0 ? (
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-            {filteredGames.map((game, index) => (
-              <motion.div
-                key={game.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: Math.min(index * 0.02, 0.15) }}
-              >
-                <GameCard
-                  id={game.id}
-                  title={game.title}
-                  location={game.location}
-                  dateTime={game.date_time}
-                  endDateTime={game.end_date_time}
-                  skillLevel={game.skill_level}
-                  format={game.format}
-                  maxPlayers={game.max_players}
-                  currentPlayers={(game.game_players?.length || 0) + (game.host_is_playing ? 1 : 0)}
-                  pricePerPlayer={Number(game.price_per_player)}
-                  hostName={game.profiles?.name || "Unknown"}
-                  hostAvatar={game.profiles?.avatar_url || undefined}
-                  distance={game.distance}
-                />
-              </motion.div>
-            ))}
+          <div className="space-y-3 sm:space-y-4">
+            {(() => {
+              let lastTimeKey = "";
+              return filteredGames.map((game, index) => {
+                const timeKey = format(new Date(game.date_time), "h:mm a");
+                const showDivider = timeKey !== lastTimeKey;
+                lastTimeKey = timeKey;
+                return (
+                  <Fragment key={game.id}>
+                    {showDivider && (
+                      <div className="flex items-center gap-3 pt-2 first:pt-0">
+                        <span className="text-sm font-semibold text-primary whitespace-nowrap">{timeKey}</span>
+                        <div className="flex-1 h-px bg-border" />
+                      </div>
+                    )}
+                    <motion.div
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: Math.min(index * 0.02, 0.15) }}
+                    >
+                      <GameCard
+                        id={game.id}
+                        title={game.title}
+                        location={game.location}
+                        dateTime={game.date_time}
+                        endDateTime={game.end_date_time}
+                        skillLevel={game.skill_level}
+                        format={game.format}
+                        maxPlayers={game.max_players}
+                        currentPlayers={(game.game_players?.length || 0) + (game.host_is_playing ? 1 : 0)}
+                        pricePerPlayer={Number(game.price_per_player)}
+                        hostName={game.profiles?.name || "Unknown"}
+                        hostAvatar={game.profiles?.avatar_url || undefined}
+                        distance={game.distance}
+                      />
+                    </motion.div>
+                  </Fragment>
+                );
+              });
+            })()}
           </div>
         ) : (
           <motion.div
