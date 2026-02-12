@@ -74,11 +74,6 @@ export function GameCard({
                 {formatLabels[format]}
               </Badge>
             </div>
-            {pricePerPlayer > 0 && (
-              <div className="font-bold text-primary text-xs sm:text-base shrink-0">
-                {pricePerPlayer} Kč
-              </div>
-            )}
           </div>
 
           {/* Title + details in compact row on mobile */}
@@ -112,6 +107,11 @@ export function GameCard({
                     )}
                   </span>
                 </div>
+                {pricePerPlayer > 0 && (
+                  <div className="flex items-center gap-1 sm:gap-2">
+                    <span className="text-primary font-bold whitespace-nowrap">{pricePerPlayer} Kč</span>
+                  </div>
+                )}
               </div>
             </div>
           </div>
