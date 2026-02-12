@@ -147,27 +147,27 @@ export default function GameDetailPage() {
 
   const fetchPlayers = async () => {
     const { data } = await supabase.from("game_players").select("*").eq("game_id", id);
-    if (data) {
-      const playersWithProfiles = await Promise.all(
-        data.map(async (p) => {
-          const { data: profile } = await supabase.from("profiles").select("name, avatar_url, skill_level").eq("user_id", p.user_id).single();
-          return { ...p, profiles: profile };
-        })
-      );
-      setPlayers(playersWithProfiles as Player[]);
+    if (data && data.length > 0) {
+      const userIds = [...new Set(data.map((p) => p.user_id))];
+      const { data: profiles } = await supabase.from("profiles").select("user_id, name, avatar_url, skill_level").in("user_id", userIds);
+      const profileMap: Record<string, { name: string; avatar_url: string | null; skill_level: number }> = {};
+      profiles?.forEach((p) => { profileMap[p.user_id] = { name: p.name, avatar_url: p.avatar_url, skill_level: p.skill_level }; });
+      setPlayers(data.map((p) => ({ ...p, profiles: profileMap[p.user_id] || null })) as Player[]);
+    } else {
+      setPlayers([]);
     }
   };
 
   const fetchRequests = async () => {
     const { data } = await supabase.from("join_requests").select("*").eq("game_id", id).order("created_at", { ascending: false });
-    if (data) {
-      const requestsWithProfiles = await Promise.all(
-        data.map(async (r) => {
-          const { data: profile } = await supabase.from("profiles").select("name, avatar_url, skill_level").eq("user_id", r.user_id).single();
-          return { ...r, profiles: profile };
-        })
-      );
-      setRequests(requestsWithProfiles as JoinRequest[]);
+    if (data && data.length > 0) {
+      const userIds = [...new Set(data.map((r) => r.user_id))];
+      const { data: profiles } = await supabase.from("profiles").select("user_id, name, avatar_url, skill_level").in("user_id", userIds);
+      const profileMap: Record<string, { name: string; avatar_url: string | null; skill_level: number }> = {};
+      profiles?.forEach((p) => { profileMap[p.user_id] = { name: p.name, avatar_url: p.avatar_url, skill_level: p.skill_level }; });
+      setRequests(data.map((r) => ({ ...r, profiles: profileMap[r.user_id] || null })) as JoinRequest[]);
+    } else {
+      setRequests([]);
     }
   };
 
@@ -183,14 +183,14 @@ export default function GameDetailPage() {
 
   const fetchMessages = async () => {
     const { data } = await supabase.from("game_messages").select("*").eq("game_id", id).order("created_at", { ascending: true });
-    if (data) {
-      const messagesWithProfiles = await Promise.all(
-        data.map(async (m) => {
-          const { data: profile } = await supabase.from("profiles").select("name, avatar_url").eq("user_id", m.user_id).single();
-          return { ...m, profiles: profile };
-        })
-      );
-      setMessages(messagesWithProfiles as Message[]);
+    if (data && data.length > 0) {
+      const userIds = [...new Set(data.map((m) => m.user_id))];
+      const { data: profiles } = await supabase.from("profiles").select("user_id, name, avatar_url").in("user_id", userIds);
+      const profileMap: Record<string, { name: string; avatar_url: string | null }> = {};
+      profiles?.forEach((p) => { profileMap[p.user_id] = { name: p.name, avatar_url: p.avatar_url }; });
+      setMessages(data.map((m) => ({ ...m, profiles: profileMap[m.user_id] || null })) as Message[]);
+    } else {
+      setMessages([]);
     }
   };
 

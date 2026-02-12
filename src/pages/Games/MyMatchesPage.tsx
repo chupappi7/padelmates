@@ -77,17 +77,14 @@ export default function MyMatchesPage() {
       .order("date_time", { ascending: true });
 
     if (!error && data) {
-      const gamesWithProfiles = await Promise.all(
-        data.map(async (game) => {
-          const { data: profile } = await supabase
-            .from("profiles")
-            .select("name, avatar_url")
-            .eq("user_id", game.host_id)
-            .single();
-          return { ...game, profiles: profile };
-        })
-      );
-      setGames(gamesWithProfiles as Game[]);
+      const hostIds = [...new Set(data.map((g) => g.host_id))];
+      const { data: profiles } = await supabase
+        .from("profiles")
+        .select("user_id, name, avatar_url")
+        .in("user_id", hostIds);
+      const profileMap: Record<string, { name: string; avatar_url: string | null }> = {};
+      profiles?.forEach((p) => { profileMap[p.user_id] = { name: p.name, avatar_url: p.avatar_url }; });
+      setGames(data.map((game) => ({ ...game, profiles: profileMap[game.host_id] || null })) as Game[]);
     }
     setLoading(false);
   };
