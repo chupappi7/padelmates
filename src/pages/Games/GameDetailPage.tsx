@@ -42,6 +42,7 @@ interface Game {
   format: "casual_match" | "americano" | "team_americano";
   max_players: number;
   price_per_player: number;
+  payment_mode: string;
   visibility: string;
   host_id: string;
   host_is_playing: boolean;
@@ -599,7 +600,13 @@ export default function GameDetailPage() {
             disabled={joinLoading}
             onClick={() => isOpenJoin ? handleDirectJoin() : setShowJoinModal(true)}
           >
-            {joinLoading ? "Joining..." : isOpenJoin ? "Join Game" : "Request to Join"}
+            {joinLoading
+              ? "Joining..."
+              : game?.payment_mode === "court_sharing"
+                ? "🏟️ Secure Court"
+                : game?.payment_mode === "spot_selling"
+                  ? "🔄 Take This Spot"
+                  : isOpenJoin ? "Join Game" : "Request to Join"}
           </Button>
         </div>
       )}
@@ -614,7 +621,13 @@ export default function GameDetailPage() {
             disabled={joinLoading}
             onClick={() => isOpenJoin ? handleDirectJoin() : setShowJoinModal(true)}
           >
-            {joinLoading ? "Joining..." : isOpenJoin ? "Join Game" : "Request to Join"}
+            {joinLoading
+              ? "Joining..."
+              : game?.payment_mode === "court_sharing"
+                ? "🏟️ Secure Court"
+                : game?.payment_mode === "spot_selling"
+                  ? "🔄 Take This Spot"
+                  : isOpenJoin ? "Join Game" : "Request to Join"}
           </Button>
         </div>
       )}
