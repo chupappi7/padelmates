@@ -20,7 +20,7 @@ import { Navbar } from "@/components/layout/Navbar";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { format } from "date-fns";
-import { ArrowLeft, Calendar, MapPin, Users, Trophy, Clock, DoorOpen, ShieldCheck, CreditCard } from "lucide-react";
+import { ArrowLeft, Calendar, MapPin, Users, Trophy, Clock, DoorOpen, ShieldCheck, CreditCard, Euro } from "lucide-react";
 
 export default function EditGamePage() {
   const { id } = useParams<{ id: string }>();
@@ -43,6 +43,7 @@ export default function EditGamePage() {
     visibility: "public",
     hostIsPlaying: true,
     joinMode: "open",
+    pricePerPlayer: "",
   });
 
   useEffect(() => {
@@ -69,6 +70,7 @@ export default function EditGamePage() {
       visibility: data.visibility,
       hostIsPlaying: data.host_is_playing,
       joinMode: data.join_mode,
+      pricePerPlayer: data.price_per_player > 0 ? String(data.price_per_player) : "",
     });
     setFetching(false);
   };
@@ -90,6 +92,7 @@ export default function EditGamePage() {
       date_time: dateTime.toISOString(),
       skill_level: formData.skillLevel,
       max_players: formData.maxPlayers,
+      price_per_player: formData.pricePerPlayer ? parseFloat(formData.pricePerPlayer) : 0,
       format: formData.format as "casual_match" | "americano" | "team_americano",
       visibility: formData.visibility as "public" | "private" | "club_only",
       host_is_playing: formData.hostIsPlaying,
@@ -345,6 +348,25 @@ export default function EditGamePage() {
                     <SelectItem value="club_only">🏠 Club Only</SelectItem>
                   </SelectContent>
                 </Select>
+              </div>
+
+              {/* Price per Player */}
+              <div className="space-y-1.5">
+                <Label htmlFor="price" className="text-sm">Price per Player (€)</Label>
+                <div className="relative">
+                  <Euro className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    id="price"
+                    type="number"
+                    min="0"
+                    step="0.5"
+                    placeholder="0 (free)"
+                    value={formData.pricePerPlayer}
+                    onChange={(e) => setFormData((prev) => ({ ...prev, pricePerPlayer: e.target.value }))}
+                    className="h-11 pl-10"
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground">Leave empty or 0 for free games</p>
               </div>
             </div>
 
