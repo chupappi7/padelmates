@@ -34,7 +34,7 @@ interface Game {
   description: string | null;
   location: string;
   date_time: string;
-  skill_level: "beginner" | "intermediate" | "advanced";
+  skill_level: number;
   format: "casual_match" | "americano" | "team_americano";
   max_players: number;
   visibility: string;
@@ -42,14 +42,14 @@ interface Game {
   host_is_playing: boolean;
   join_mode: string;
   scoreboard: unknown;
-  profiles: { name: string; avatar_url: string | null; skill_level?: string } | null;
+  profiles: { name: string; avatar_url: string | null; skill_level?: number } | null;
 }
 
 interface Player {
   id: string;
   user_id: string;
   role: string;
-  profiles: { name: string; avatar_url: string | null; skill_level: "beginner" | "intermediate" | "advanced" } | null;
+  profiles: { name: string; avatar_url: string | null; skill_level: number } | null;
 }
 
 interface JoinRequest {
@@ -60,7 +60,7 @@ interface JoinRequest {
   payment_screenshot_url: string | null;
   payment_status: string;
   payment_due_at: string | null;
-  profiles: { name: string; avatar_url: string | null; skill_level: "beginner" | "intermediate" | "advanced" } | null;
+  profiles: { name: string; avatar_url: string | null; skill_level: number } | null;
 }
 
 interface Message {
@@ -296,7 +296,7 @@ export default function GameDetailPage() {
             <div className="min-w-0 flex-1">
               <h1 className="font-display text-lg md:text-2xl font-bold truncate">{game.title}</h1>
               <div className="flex items-center gap-1.5 flex-wrap">
-                <SkillBadge level={game.skill_level} size="sm" />
+                <SkillBadge level={game.skill_level as number} size="sm" />
                 <Badge variant="outline" className="rounded-full text-[10px] h-5">
                   {formatLabels[game.format]}
                 </Badge>
@@ -380,14 +380,14 @@ export default function GameDetailPage() {
             <motion.div key="details" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-4">
               {/* Info Card */}
               <div className="bg-card border border-border rounded-xl p-4 space-y-3">
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div className="flex items-center gap-2.5">
                     <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
                       <MapPin className="w-4 h-4 text-primary" />
                     </div>
                     <div className="min-w-0">
                       <p className="text-[11px] text-muted-foreground">Location</p>
-                      <p className="text-sm font-medium truncate">{game.location}</p>
+                      <p className="text-sm font-medium break-words">{game.location}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-2.5">
@@ -396,7 +396,7 @@ export default function GameDetailPage() {
                     </div>
                     <div className="min-w-0">
                       <p className="text-[11px] text-muted-foreground">Date & Time</p>
-                      <p className="text-sm font-medium truncate">
+                      <p className="text-sm font-medium">
                         {format(new Date(game.date_time), "EEE, MMM d · h:mm a")}
                       </p>
                     </div>
@@ -441,14 +441,14 @@ export default function GameDetailPage() {
                   <div className="flex-1 min-w-0">
                     <p className="text-xs text-muted-foreground">Hosted by</p>
                     <div className="flex items-center gap-2">
-                      <p className="text-sm font-semibold truncate">{game.profiles?.name}</p>
+                      <p className="text-sm font-semibold break-words">{game.profiles?.name}</p>
                       <Badge variant="outline" className="rounded-full text-xs shrink-0">
                         {game.host_is_playing ? "🎾 Playing" : "📋 Organizing"}
                       </Badge>
                     </div>
                   </div>
                   {game.profiles?.skill_level && (
-                    <SkillBadge level={game.profiles.skill_level as "beginner" | "intermediate" | "advanced"} size="sm" />
+                    <SkillBadge level={game.profiles.skill_level as number} size="sm" />
                   )}
                 </div>
               </div>
@@ -478,13 +478,13 @@ export default function GameDetailPage() {
                 hostProfile={game.profiles ? {
                   name: game.profiles.name,
                   avatar_url: game.profiles.avatar_url,
-                  skill_level: game.profiles.skill_level as "beginner" | "intermediate" | "advanced" | undefined,
+                  skill_level: game.profiles.skill_level as number | undefined,
                 } : null}
-                requests={requests}
-                players={players}
+                requests={requests as any}
+                players={players as any}
                 maxPlayers={game.max_players}
                 currentUserId={user?.id}
-                userRequest={myRequest}
+                userRequest={myRequest as any}
                 onAcceptRequest={handleAcceptRequest}
                 onRejectRequest={handleRejectRequest}
                 onToggleRole={handleToggleRole}

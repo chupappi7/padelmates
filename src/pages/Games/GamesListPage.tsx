@@ -28,7 +28,7 @@ interface Game {
   location_lat?: number | null;
   location_lng?: number | null;
   date_time: string;
-  skill_level: "beginner" | "intermediate" | "advanced";
+  skill_level: number;
   format: "casual_match" | "americano" | "team_americano";
   max_players: number;
   price_per_player: number;
@@ -92,7 +92,7 @@ export default function GamesListPage() {
       const matchesSearch =
         game.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
         game.location.toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesSkill = skillFilter === "all" || game.skill_level === skillFilter;
+      const matchesSkill = skillFilter === "all" || game.skill_level >= Number(skillFilter);
       const matchesFormat = formatFilter === "all" || game.format === formatFilter;
       return matchesDay && matchesSearch && matchesSkill && matchesFormat;
     });
@@ -176,9 +176,10 @@ export default function GamesListPage() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Levels</SelectItem>
-                    <SelectItem value="beginner">Beginner</SelectItem>
-                    <SelectItem value="intermediate">Intermediate</SelectItem>
-                    <SelectItem value="advanced">Advanced</SelectItem>
+                    <SelectItem value="2">Level 2+</SelectItem>
+                    <SelectItem value="3">Level 3+</SelectItem>
+                    <SelectItem value="4">Level 4+</SelectItem>
+                    <SelectItem value="5">Level 5</SelectItem>
                   </SelectContent>
                 </Select>
                 <Select value={formatFilter} onValueChange={setFormatFilter}>
