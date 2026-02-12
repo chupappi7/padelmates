@@ -39,6 +39,7 @@ export default function EditGamePage() {
     title: "",
     description: "",
     location: "",
+    courtNumber: "",
     skillLevel: 3,
     maxPlayers: 4,
     format: "casual_match",
@@ -70,6 +71,7 @@ export default function EditGamePage() {
       title: data.title,
       description: data.description || "",
       location: data.location,
+      courtNumber: data.court_number || "",
       skillLevel: data.skill_level as number,
       maxPlayers: data.max_players,
       format: data.format,
@@ -99,6 +101,7 @@ export default function EditGamePage() {
       title: formData.title,
       description: formData.description,
       location: formData.location,
+      court_number: formData.courtNumber || null,
       date_time: dateTime.toISOString(),
       end_date_time: endDateTime.toISOString(),
       skill_level: formData.skillLevel,
@@ -227,15 +230,26 @@ export default function EditGamePage() {
                 When & Where
               </h2>
 
-              <div className="space-y-1.5">
-                <Label className="text-sm">Court / Location</Label>
-                <div className="relative">
-                  <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <div className="grid grid-cols-3 gap-3">
+                <div className="col-span-2 space-y-1.5">
+                  <Label className="text-sm">Court / Location</Label>
+                  <div className="relative">
+                    <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Input
+                      value={formData.location}
+                      onChange={(e) => setFormData((prev) => ({ ...prev, location: e.target.value }))}
+                      required
+                      className="h-11 pl-10"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-sm">Court #</Label>
                   <Input
-                    value={formData.location}
-                    onChange={(e) => setFormData((prev) => ({ ...prev, location: e.target.value }))}
-                    required
-                    className="h-11 pl-10"
+                    placeholder="e.g., 3"
+                    value={formData.courtNumber}
+                    onChange={(e) => setFormData((prev) => ({ ...prev, courtNumber: e.target.value }))}
+                    className="h-11"
                   />
                 </div>
               </div>

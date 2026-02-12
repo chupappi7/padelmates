@@ -35,6 +35,7 @@ interface Game {
   title: string;
   description: string | null;
   location: string;
+  court_number: string | null;
   date_time: string;
   end_date_time: string | null;
   skill_level: number;
@@ -391,7 +392,10 @@ export default function GameDetailPage() {
                     </div>
                     <div className="min-w-0">
                       <p className="text-[11px] text-muted-foreground">Location</p>
-                      <p className="text-sm font-medium break-words">{game.location}</p>
+                      <p className="text-sm font-medium break-words">
+                        {game.location}
+                        {game.court_number && <span className="text-muted-foreground"> · Court {game.court_number}</span>}
+                      </p>
                     </div>
                   </div>
                   <div className="flex items-center gap-2.5">
