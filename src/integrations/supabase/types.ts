@@ -190,7 +190,7 @@ export type Database = {
           payment_mode: string
           price_per_player: number
           scoreboard: Json | null
-          skill_level: Database["public"]["Enums"]["skill_level"]
+          skill_level: number
           title: string
           updated_at: string
           visibility: Database["public"]["Enums"]["visibility_type"]
@@ -212,7 +212,7 @@ export type Database = {
           payment_mode?: string
           price_per_player?: number
           scoreboard?: Json | null
-          skill_level?: Database["public"]["Enums"]["skill_level"]
+          skill_level?: number
           title: string
           updated_at?: string
           visibility?: Database["public"]["Enums"]["visibility_type"]
@@ -234,7 +234,7 @@ export type Database = {
           payment_mode?: string
           price_per_player?: number
           scoreboard?: Json | null
-          skill_level?: Database["public"]["Enums"]["skill_level"]
+          skill_level?: number
           title?: string
           updated_at?: string
           visibility?: Database["public"]["Enums"]["visibility_type"]
@@ -307,7 +307,7 @@ export type Database = {
           games_played: number | null
           id: string
           name: string
-          skill_level: Database["public"]["Enums"]["skill_level"]
+          skill_level: number
           updated_at: string
           user_id: string
         }
@@ -318,7 +318,7 @@ export type Database = {
           games_played?: number | null
           id?: string
           name: string
-          skill_level?: Database["public"]["Enums"]["skill_level"]
+          skill_level?: number
           updated_at?: string
           user_id: string
         }
@@ -329,7 +329,7 @@ export type Database = {
           games_played?: number | null
           id?: string
           name?: string
-          skill_level?: Database["public"]["Enums"]["skill_level"]
+          skill_level?: number
           updated_at?: string
           user_id?: string
         }
@@ -348,7 +348,6 @@ export type Database = {
     Enums: {
       game_format: "casual_match" | "americano" | "team_americano"
       request_status: "pending" | "accepted" | "rejected"
-      skill_level: "beginner" | "intermediate" | "advanced"
       visibility_type: "public" | "private" | "club_only"
     }
     CompositeTypes: {
@@ -479,7 +478,6 @@ export const Constants = {
     Enums: {
       game_format: ["casual_match", "americano", "team_americano"],
       request_status: ["pending", "accepted", "rejected"],
-      skill_level: ["beginner", "intermediate", "advanced"],
       visibility_type: ["public", "private", "club_only"],
     },
   },

@@ -20,7 +20,7 @@ export default function SignupPage() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [skillLevel, setSkillLevel] = useState<string>("intermediate");
+  const [skillLevel, setSkillLevel] = useState<string>("3");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const { signUp } = useAuth();
@@ -43,7 +43,7 @@ export default function SignupPage() {
     if (user) {
       await supabase
         .from("profiles")
-        .update({ skill_level: skillLevel as "beginner" | "intermediate" | "advanced" })
+        .update({ skill_level: parseInt(skillLevel) })
         .eq("user_id", user.id);
     }
 
@@ -135,9 +135,10 @@ export default function SignupPage() {
                   <SelectValue placeholder="Select your skill level" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="beginner">🟢 Beginner</SelectItem>
-                  <SelectItem value="intermediate">🟡 Intermediate</SelectItem>
-                  <SelectItem value="advanced">🔴 Advanced</SelectItem>
+                  <SelectItem value="2">Level 2 – Beginner</SelectItem>
+                  <SelectItem value="3">Level 3 – Intermediate</SelectItem>
+                  <SelectItem value="4">Level 4 – Upper-Int</SelectItem>
+                  <SelectItem value="5">Level 5 – Pro</SelectItem>
                 </SelectContent>
               </Select>
             </div>

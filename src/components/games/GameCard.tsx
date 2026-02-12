@@ -4,13 +4,14 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { MapPin, Calendar, Users, Euro } from "lucide-react";
 import { format as formatDate } from "date-fns";
 import { motion } from "framer-motion";
+import { getSkillLabel } from "./SkillBadge";
 
 interface GameCardProps {
   id: string;
   title: string;
   location: string;
   dateTime: string;
-  skillLevel: "beginner" | "intermediate" | "advanced";
+  skillLevel: number;
   format: "casual_match" | "americano" | "team_americano";
   maxPlayers: number;
   currentPlayers: number;
@@ -26,10 +27,10 @@ const formatLabels = {
   team_americano: "Team Americano",
 };
 
-const skillColors = {
-  beginner: "badge-beginner",
-  intermediate: "badge-intermediate",
-  advanced: "badge-advanced",
+const getSkillColor = (level: number) => {
+  if (level <= 2) return "badge-beginner";
+  if (level <= 3) return "badge-intermediate";
+  return "badge-advanced";
 };
 
 export function GameCard({
@@ -66,8 +67,8 @@ export function GameCard({
           {/* Header row: badges + price */}
           <div className="flex items-center justify-between gap-2 mb-1.5 sm:mb-3">
             <div className="flex items-center gap-1 sm:gap-2 min-w-0">
-              <span className={`badge-skill text-[9px] sm:text-xs px-1.5 sm:px-3 py-0.5 ${skillColors[skillLevel]}`}>
-                {skillLevel.slice(0, 3).toUpperCase()}
+              <span className={`badge-skill text-[9px] sm:text-xs px-1.5 sm:px-3 py-0.5 ${getSkillColor(skillLevel)}`}>
+                Lvl {skillLevel}
               </span>
               <Badge variant="outline" className="rounded-full text-[9px] sm:text-xs h-4 sm:h-6 px-1.5 sm:px-2 truncate">
                 {formatLabels[format]}

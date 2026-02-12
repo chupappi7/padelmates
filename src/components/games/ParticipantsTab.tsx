@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
 interface Profile {
   name: string;
   avatar_url: string | null;
-  skill_level?: "beginner" | "intermediate" | "advanced";
+  skill_level?: number;
 }
 
 interface JoinRequest {
@@ -263,7 +263,7 @@ function PlayerCard({
 }: {
   name: string;
   avatarUrl: string | null;
-  skillLevel?: "beginner" | "intermediate" | "advanced";
+  skillLevel?: number;
   isHost?: boolean;
   role?: string;
   showRoleToggle?: boolean;

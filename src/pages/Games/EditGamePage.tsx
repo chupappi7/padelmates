@@ -37,7 +37,7 @@ export default function EditGamePage() {
     title: "",
     description: "",
     location: "",
-    skillLevel: "intermediate",
+    skillLevel: 3,
     maxPlayers: 4,
     format: "casual_match",
     visibility: "public",
@@ -63,7 +63,7 @@ export default function EditGamePage() {
       title: data.title,
       description: data.description || "",
       location: data.location,
-      skillLevel: data.skill_level,
+      skillLevel: data.skill_level as number,
       maxPlayers: data.max_players,
       format: data.format,
       visibility: data.visibility,
@@ -88,7 +88,7 @@ export default function EditGamePage() {
       description: formData.description,
       location: formData.location,
       date_time: dateTime.toISOString(),
-      skill_level: formData.skillLevel as "beginner" | "intermediate" | "advanced",
+      skill_level: formData.skillLevel,
       max_players: formData.maxPlayers,
       format: formData.format as "casual_match" | "americano" | "team_americano",
       visibility: formData.visibility as "public" | "private" | "club_only",
@@ -192,13 +192,14 @@ export default function EditGamePage() {
                   </Select>
                 </div>
                 <div className="space-y-1.5">
-                  <Label className="text-sm">Skill Level</Label>
-                  <Select value={formData.skillLevel} onValueChange={(v) => handleChange("skillLevel", v)}>
+                  <Label className="text-sm">Min Skill Level</Label>
+                  <Select value={String(formData.skillLevel)} onValueChange={(v) => handleChange("skillLevel", parseInt(v))}>
                     <SelectTrigger className="h-11"><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="beginner">🟢 Beginner</SelectItem>
-                      <SelectItem value="intermediate">🟡 Intermediate</SelectItem>
-                      <SelectItem value="advanced">🔴 Advanced</SelectItem>
+                      <SelectItem value="2">Level 2 – Beginner</SelectItem>
+                      <SelectItem value="3">Level 3 – Intermediate</SelectItem>
+                      <SelectItem value="4">Level 4 – Upper-Int</SelectItem>
+                      <SelectItem value="5">Level 5 – Pro</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

@@ -80,9 +80,10 @@ export function MobileFilterSheet({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Levels</SelectItem>
-                <SelectItem value="beginner">🟢 Beginner</SelectItem>
-                <SelectItem value="intermediate">🟡 Intermediate</SelectItem>
-                <SelectItem value="advanced">🔴 Advanced</SelectItem>
+                <SelectItem value="2">Level 2+</SelectItem>
+                <SelectItem value="3">Level 3+</SelectItem>
+                <SelectItem value="4">Level 4+</SelectItem>
+                <SelectItem value="5">Level 5</SelectItem>
               </SelectContent>
             </Select>
           </div>

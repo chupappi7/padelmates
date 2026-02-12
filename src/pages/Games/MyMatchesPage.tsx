@@ -13,7 +13,7 @@ interface Game {
   title: string;
   location: string;
   date_time: string;
-  skill_level: "beginner" | "intermediate" | "advanced";
+  skill_level: number;
   format: "casual_match" | "americano" | "team_americano";
   max_players: number;
   price_per_player: number;

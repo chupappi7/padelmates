@@ -24,7 +24,7 @@ interface Profile {
   id: string;
   name: string;
   avatar_url: string | null;
-  skill_level: "beginner" | "intermediate" | "advanced";
+  skill_level: number;
   bio: string | null;
   games_played: number;
 }
@@ -40,7 +40,7 @@ export default function ProfilePage() {
   const [formData, setFormData] = useState({
     name: "",
     bio: "",
-    skill_level: "intermediate" as "beginner" | "intermediate" | "advanced",
+    skill_level: 3 as number,
   });
 
   useEffect(() => {
@@ -178,11 +178,11 @@ export default function ProfilePage() {
                 <div className="space-y-2">
                   <Label>Skill Level</Label>
                   <Select
-                    value={formData.skill_level}
+                    value={String(formData.skill_level)}
                     onValueChange={(v) =>
                       setFormData((prev) => ({
                         ...prev,
-                        skill_level: v as "beginner" | "intermediate" | "advanced",
+                        skill_level: parseInt(v),
                       }))
                     }
                   >
@@ -190,9 +190,10 @@ export default function ProfilePage() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="beginner">🟢 Beginner</SelectItem>
-                      <SelectItem value="intermediate">🟡 Intermediate</SelectItem>
-                      <SelectItem value="advanced">🔴 Advanced</SelectItem>
+                      <SelectItem value="2">Level 2 – Beginner</SelectItem>
+                      <SelectItem value="3">Level 3 – Intermediate</SelectItem>
+                      <SelectItem value="4">Level 4 – Upper-Int</SelectItem>
+                      <SelectItem value="5">Level 5 – Pro</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -230,7 +231,7 @@ export default function ProfilePage() {
                   {profile?.name}
                 </h1>
                 <div className="flex justify-center mb-4">
-                  <SkillBadge level={profile?.skill_level || "intermediate"} />
+                  <SkillBadge level={profile?.skill_level || 3} />
                 </div>
                 {profile?.bio && (
                   <p className="text-muted-foreground mb-4">{profile.bio}</p>

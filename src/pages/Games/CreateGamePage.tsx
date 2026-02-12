@@ -35,7 +35,7 @@ export default function CreateGamePage() {
     title: "",
     description: "",
     location: "",
-    skillLevel: "intermediate",
+    skillLevel: 3,
     maxPlayers: 4,
     format: "casual_match",
     visibility: "public",
@@ -67,7 +67,7 @@ export default function CreateGamePage() {
       description: formData.description,
       location: formData.location,
       date_time: dateTime.toISOString(),
-      skill_level: formData.skillLevel as "beginner" | "intermediate" | "advanced",
+      skill_level: formData.skillLevel,
       max_players: formData.maxPlayers,
       price_per_player: 0,
       payment_mode: "pay_to_join",
@@ -172,18 +172,19 @@ export default function CreateGamePage() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label htmlFor="skill" className="text-sm">Skill Level</Label>
+                  <Label htmlFor="skill" className="text-sm">Min Skill Level</Label>
                   <Select
-                    value={formData.skillLevel}
-                    onValueChange={(v) => handleChange("skillLevel", v)}
+                    value={String(formData.skillLevel)}
+                    onValueChange={(v) => handleChange("skillLevel", parseInt(v))}
                   >
                     <SelectTrigger className="h-11">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="beginner">🟢 Beginner</SelectItem>
-                      <SelectItem value="intermediate">🟡 Intermediate</SelectItem>
-                      <SelectItem value="advanced">🔴 Advanced</SelectItem>
+                      <SelectItem value="2">Level 2 – Beginner</SelectItem>
+                      <SelectItem value="3">Level 3 – Intermediate</SelectItem>
+                      <SelectItem value="4">Level 4 – Upper-Int</SelectItem>
+                      <SelectItem value="5">Level 5 – Pro</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

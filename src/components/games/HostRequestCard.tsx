@@ -20,7 +20,7 @@ interface HostRequestCardProps {
     profiles: {
       name: string;
       avatar_url: string | null;
-      skill_level: "beginner" | "intermediate" | "advanced";
+      skill_level: number;
     } | null;
   };
   gameId: string;
