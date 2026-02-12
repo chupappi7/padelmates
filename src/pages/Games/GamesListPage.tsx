@@ -33,6 +33,7 @@ interface Game {
   format: "casual_match" | "americano" | "team_americano";
   max_players: number;
   price_per_player: number;
+  payment_mode: string;
   host_id: string;
   host_is_playing: boolean;
   profiles: {
@@ -240,6 +241,7 @@ export default function GamesListPage() {
                         hostName={game.profiles?.name || "Unknown"}
                         hostAvatar={game.profiles?.avatar_url || undefined}
                         distance={game.distance}
+                        paymentMode={game.payment_mode}
                       />
                     </motion.div>
                   </Fragment>
