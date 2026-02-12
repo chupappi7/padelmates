@@ -16,7 +16,7 @@ interface ScoreScrollPickerProps {
   onConfirm: (setScores: SetScore[], setsWonT1: number, setsWonT2: number) => void;
 }
 
-const gameScores = Array.from({ length: 100 }, (_, i) => i.toString()); // 0-99
+const allGameScores = Array.from({ length: 8 }, (_, i) => i.toString()); // 0-7
 
 const ITEM_HEIGHT = 40;
 const VISIBLE_ITEMS = 5;
@@ -130,8 +130,10 @@ export function ScoreScrollPicker({
     setSets((prev) => {
       const next = [...prev];
       const updated = { ...next[index], [team]: numVal };
-      // Prevent 7-7
-      if (updated.t1 === 7 && updated.t2 === 7) return prev;
+      // Prevent 7-7: if one team is 7, other can't exceed 6
+      if (updated.t1 === 7 && updated.t2 === 7) {
+        updated[team] = 6;
+      }
       next[index] = updated;
       return next;
     });
@@ -199,7 +201,7 @@ export function ScoreScrollPicker({
             <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Team 1</p>
             <div className="w-14">
               <ScrollColumn
-                items={gameScores}
+                items={currentSet.t2 === 7 ? allGameScores.slice(0, 7) : allGameScores}
                 selected={String(currentSet.t1)}
                 onSelect={(v) => updateSet(activeSet, "t1", v)}
               />
@@ -210,7 +212,7 @@ export function ScoreScrollPicker({
             <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Team 2</p>
             <div className="w-14">
               <ScrollColumn
-                items={gameScores}
+                items={currentSet.t1 === 7 ? allGameScores.slice(0, 7) : allGameScores}
                 selected={String(currentSet.t2)}
                 onSelect={(v) => updateSet(activeSet, "t2", v)}
               />
