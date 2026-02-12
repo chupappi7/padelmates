@@ -1,0 +1,2 @@
+ALTER TABLE public.games DROP CONSTRAINT IF EXISTS games_payment_mode_check;
+ALTER TABLE public.games ADD CONSTRAINT games_payment_mode_check CHECK (payment_mode IN ('pay_to_join', 'free', 'confirm_first', 'court_sharing', 'spot_selling'));
