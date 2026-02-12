@@ -113,17 +113,22 @@ export function GameCard({
                     )}
                   </span>
                 </div>
-                {paymentMode !== 'court_sharing' && paymentMode !== 'spot_selling' && (
-                  <div className="flex items-center gap-1 sm:gap-2">
-                    <Users className="w-3 h-3 sm:w-4 sm:h-4 text-primary shrink-0" />
-                    <span className="whitespace-nowrap">
+                {paymentMode !== 'court_sharing' && paymentMode !== 'spot_selling' && (() => {
+                  const ratio = currentPlayers / maxPlayers;
+                  const isFull = spotsLeft === 0;
+                  const bubbleColor = isFull
+                    ? "bg-destructive/15 text-destructive border-destructive/20"
+                    : spotsLeft <= 2
+                      ? "bg-warning/15 text-warning border-warning/20"
+                      : "bg-success/15 text-success border-success/20";
+                  return (
+                    <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] sm:text-xs font-semibold ${bubbleColor}`}>
+                      <Users className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
                       {currentPlayers}/{maxPlayers}
-                      {spotsLeft > 0 && (
-                        <span className="text-success ml-0.5 sm:ml-1">· {spotsLeft} left</span>
-                      )}
+                      {isFull ? " Full" : ` · ${spotsLeft} left`}
                     </span>
-                  </div>
-                )}
+                  );
+                })()}
               </div>
             </div>
           </div>
