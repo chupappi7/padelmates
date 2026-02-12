@@ -20,7 +20,7 @@ import { Navbar } from "@/components/layout/Navbar";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { format } from "date-fns";
-import { ArrowLeft, Calendar, MapPin, Users, Trophy, Clock, DoorOpen, ShieldCheck, CreditCard, Euro } from "lucide-react";
+import { ArrowLeft, Calendar, MapPin, Users, Trophy, Clock, DoorOpen, ShieldCheck, CreditCard } from "lucide-react";
 
 export default function EditGamePage() {
   const { id } = useParams<{ id: string }>();
@@ -277,9 +277,9 @@ export default function EditGamePage() {
 
               {/* Price per Player */}
               <div className="space-y-1.5">
-                <Label htmlFor="price" className="text-sm">Price per Player (Kč)</Label>
+                <Label htmlFor="price" className="text-sm">Price per Player</Label>
                 <div className="relative">
-                  <Euro className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-semibold text-sm">Kč</span>
                   <Input
                     id="price"
                     type="number"
