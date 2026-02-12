@@ -386,29 +386,6 @@ export function MatchesTab({
 
               {/* Score */}
               <div className="flex flex-col items-center shrink-0 min-w-[80px]">
-                {/* Individual set scores stacked */}
-                {match.set_scores && match.set_scores.length > 0 && (
-                  <div className="flex flex-col items-center gap-0.5 mb-1.5">
-                    {match.set_scores.map((s, i) => {
-                      const t1Won = s.t1 > s.t2;
-                      const t2Won = s.t2 > s.t1;
-                      return (
-                        <div key={i} className="flex items-center gap-1">
-                          <span className={cn(
-                            "text-[11px] font-bold w-4 text-right tabular-nums",
-                            t1Won ? "text-success" : "text-muted-foreground"
-                          )}>{s.t1}</span>
-                          <span className="text-[9px] text-muted-foreground/40">·</span>
-                          <span className={cn(
-                            "text-[11px] font-bold w-4 text-left tabular-nums",
-                            t2Won ? "text-success" : "text-muted-foreground"
-                          )}>{s.t2}</span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-
                 {/* Sets won */}
                 <div className="flex items-center gap-1.5">
                   <span className={cn(
@@ -426,6 +403,19 @@ export function MatchesTab({
                   </span>
                 </div>
                 <p className="text-[9px] text-muted-foreground/60 uppercase tracking-wider">Sets</p>
+
+                {/* Set score pills */}
+                {match.set_scores && match.set_scores.length > 0 && (
+                  <div className="flex flex-wrap justify-center gap-1 mt-1">
+                    {match.set_scores.map((s, i) => (
+                      <span key={i} className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-muted text-[10px] font-semibold tabular-nums">
+                        <span className={cn(s.t1 > s.t2 ? "text-success" : "text-muted-foreground")}>{s.t1}</span>
+                        <span className="text-muted-foreground/40">-</span>
+                        <span className={cn(s.t2 > s.t1 ? "text-success" : "text-muted-foreground")}>{s.t2}</span>
+                      </span>
+                    ))}
+                  </div>
+                )}
 
                 {canManage && (
                   <Button
