@@ -239,6 +239,21 @@ export default function GameDetailPage() {
     setJoinLoading(false);
   };
 
+  const handleLeaveGame = async () => {
+    if (!user || !id) return;
+    setJoinLoading(true);
+    const { error } = await supabase.from("game_players").delete().eq("game_id", id).eq("user_id", user.id);
+    if (error) { toast.error("Failed to leave game"); }
+    else {
+      toast.success("You've left the game");
+      fetchPlayers();
+      // Also clean up any join request
+      await supabase.from("join_requests").delete().eq("game_id", id).eq("user_id", user.id);
+      setMyRequest(null);
+    }
+    setJoinLoading(false);
+  };
+
   const isHost = user?.id === game?.host_id;
   const isAdmin = players.some((p) => p.user_id === user?.id && p.role === "admin");
   const isPlayer = players.some((p) => p.user_id === user?.id);
@@ -591,6 +606,21 @@ export default function GameDetailPage() {
         </motion.div>
       </div>
 
+      {/* Sticky Leave CTA */}
+      {user && !isHost && isPlayer && (
+        <div className="fixed left-0 right-0 p-4 bg-background/95 backdrop-blur-md border-t border-border md:hidden z-40" style={{ bottom: "calc(3.5rem + env(safe-area-inset-bottom))" }}>
+          <Button
+            variant="outline"
+            size="xl"
+            className="w-full h-14 text-lg font-bold border-destructive text-destructive hover:bg-destructive/10"
+            disabled={joinLoading}
+            onClick={handleLeaveGame}
+          >
+            {joinLoading ? "Leaving..." : "Leave Game"}
+          </Button>
+        </div>
+      )}
+
       {/* Sticky Join CTA */}
       {user && !isHost && !isPlayer && !myRequest && spotsLeft > 0 && (
         <div className="fixed left-0 right-0 p-4 bg-background/95 backdrop-blur-md border-t border-border md:hidden z-40" style={{ bottom: "calc(3.5rem + env(safe-area-inset-bottom))" }}>
@@ -608,6 +638,21 @@ export default function GameDetailPage() {
                 : game?.payment_mode === "spot_selling"
                   ? "🔄 Take This Spot"
                   : isOpenJoin ? "⚡ Join Now" : "📩 Request to Join"}
+          </Button>
+        </div>
+      )}
+
+      {/* Desktop Leave Button */}
+      {user && !isHost && isPlayer && (
+        <div className="hidden md:block fixed bottom-8 right-8">
+          <Button
+            variant="outline"
+            size="lg"
+            className="shadow-xl border-destructive text-destructive hover:bg-destructive/10"
+            disabled={joinLoading}
+            onClick={handleLeaveGame}
+          >
+            {joinLoading ? "Leaving..." : "Leave Game"}
           </Button>
         </div>
       )}
