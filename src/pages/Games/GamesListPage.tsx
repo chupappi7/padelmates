@@ -28,6 +28,7 @@ interface Game {
   location_lat?: number | null;
   location_lng?: number | null;
   date_time: string;
+  end_date_time: string | null;
   skill_level: number;
   format: "casual_match" | "americano" | "team_americano";
   max_players: number;
@@ -218,6 +219,7 @@ export default function GamesListPage() {
                   title={game.title}
                   location={game.location}
                   dateTime={game.date_time}
+                  endDateTime={game.end_date_time}
                   skillLevel={game.skill_level}
                   format={game.format}
                   maxPlayers={game.max_players}

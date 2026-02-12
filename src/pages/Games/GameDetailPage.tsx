@@ -36,6 +36,7 @@ interface Game {
   description: string | null;
   location: string;
   date_time: string;
+  end_date_time: string | null;
   skill_level: number;
   format: "casual_match" | "americano" | "team_americano";
   max_players: number;
@@ -401,6 +402,11 @@ export default function GameDetailPage() {
                       <p className="text-[11px] text-muted-foreground">Date & Time</p>
                       <p className="text-sm font-medium">
                         {format(new Date(game.date_time), "EEE, MMM d · h:mm a")}
+                        {game.end_date_time && ` – ${format(new Date(game.end_date_time), "h:mm a")}`}
+                        {game.end_date_time && (() => {
+                          const hrs = (new Date(game.end_date_time).getTime() - new Date(game.date_time).getTime()) / 3600000;
+                          return hrs > 0 ? ` (${hrs % 1 === 0 ? hrs : hrs.toFixed(1)}h)` : "";
+                        })()}
                       </p>
                     </div>
                   </div>

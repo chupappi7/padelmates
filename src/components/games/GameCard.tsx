@@ -11,6 +11,7 @@ interface GameCardProps {
   title: string;
   location: string;
   dateTime: string;
+  endDateTime?: string | null;
   skillLevel: number;
   format: "casual_match" | "americano" | "team_americano";
   maxPlayers: number;
@@ -38,6 +39,7 @@ export function GameCard({
   title,
   location,
   dateTime,
+  endDateTime,
   skillLevel,
   format,
   maxPlayers,
@@ -49,6 +51,9 @@ export function GameCard({
 }: GameCardProps) {
   const spotsLeft = maxPlayers - currentPlayers;
   const date = new Date(dateTime);
+  const durationHrs = endDateTime
+    ? (new Date(endDateTime).getTime() - date.getTime()) / 3600000
+    : null;
 
   const formatDistance = (km: number) => {
     if (km < 1) return `${Math.round(km * 1000)}m`;
@@ -96,7 +101,12 @@ export function GameCard({
                 </div>
                 <div className="flex items-center gap-1 sm:gap-2">
                   <Calendar className="w-3 h-3 sm:w-4 sm:h-4 text-primary shrink-0" />
-                  <span className="whitespace-nowrap">{formatDate(date, "EEE, MMM d · h:mm a")}</span>
+                  <span className="whitespace-nowrap">
+                    {formatDate(date, "EEE, MMM d · h:mm a")}
+                    {durationHrs && durationHrs > 0 && (
+                      <span className="text-primary font-medium ml-0.5 sm:ml-1">· {durationHrs % 1 === 0 ? durationHrs : durationHrs.toFixed(1)}h</span>
+                    )}
+                  </span>
                 </div>
                 <div className="flex items-center gap-1 sm:gap-2">
                   <Users className="w-3 h-3 sm:w-4 sm:h-4 text-primary shrink-0" />

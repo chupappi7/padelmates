@@ -178,6 +178,7 @@ export type Database = {
           created_at: string
           date_time: string
           description: string | null
+          end_date_time: string | null
           format: Database["public"]["Enums"]["game_format"]
           host_id: string
           host_is_playing: boolean
@@ -200,6 +201,7 @@ export type Database = {
           created_at?: string
           date_time: string
           description?: string | null
+          end_date_time?: string | null
           format?: Database["public"]["Enums"]["game_format"]
           host_id: string
           host_is_playing?: boolean
@@ -222,6 +224,7 @@ export type Database = {
           created_at?: string
           date_time?: string
           description?: string | null
+          end_date_time?: string | null
           format?: Database["public"]["Enums"]["game_format"]
           host_id?: string
           host_is_playing?: boolean
