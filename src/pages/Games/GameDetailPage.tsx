@@ -436,7 +436,7 @@ export default function GameDetailPage() {
                       </div>
                       <div className="min-w-0">
                         <p className="text-[11px] text-muted-foreground">Price</p>
-                        <p className="text-sm font-medium">€{Number(game.price_per_player)} per player</p>
+                        <p className="text-sm font-medium">{Number(game.price_per_player)} Kč per player</p>
                       </div>
                     </div>
                   )}
