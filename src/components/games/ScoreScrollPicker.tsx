@@ -16,7 +16,7 @@ interface ScoreScrollPickerProps {
   onConfirm: (setScores: SetScore[], setsWonT1: number, setsWonT2: number) => void;
 }
 
-const gameScores = Array.from({ length: 8 }, (_, i) => i.toString()); // 0-7 for tiebreak
+const gameScores = Array.from({ length: 100 }, (_, i) => i.toString()); // 0-99
 
 const ITEM_HEIGHT = 40;
 const VISIBLE_ITEMS = 5;
@@ -126,9 +126,13 @@ export function ScoreScrollPicker({
   }, [open, initialSetScores]);
 
   const updateSet = (index: number, team: "t1" | "t2", value: string) => {
+    const numVal = parseInt(value);
     setSets((prev) => {
       const next = [...prev];
-      next[index] = { ...next[index], [team]: parseInt(value) };
+      const updated = { ...next[index], [team]: numVal };
+      // Prevent 7-7
+      if (updated.t1 === 7 && updated.t2 === 7) return prev;
+      next[index] = updated;
       return next;
     });
   };
