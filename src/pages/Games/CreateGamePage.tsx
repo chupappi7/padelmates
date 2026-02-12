@@ -28,7 +28,9 @@ export default function CreateGamePage() {
   const [loading, setLoading] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
   const [selectedTime, setSelectedTime] = useState("18:00");
+  const [selectedEndTime, setSelectedEndTime] = useState("19:30");
   const [showTimePicker, setShowTimePicker] = useState(false);
+  const [showEndTimePicker, setShowEndTimePicker] = useState(false);
   const [showDatePicker, setShowDatePicker] = useState(false);
 
   const [formData, setFormData] = useState({
@@ -61,6 +63,10 @@ export default function CreateGamePage() {
     const dateTime = new Date(selectedDate);
     dateTime.setHours(hours, minutes, 0, 0);
 
+    const [endHours, endMinutes] = selectedEndTime.split(":").map(Number);
+    const endDateTime = new Date(selectedDate);
+    endDateTime.setHours(endHours, endMinutes, 0, 0);
+
     setLoading(true);
 
     const { data, error } = await supabase.from("games").insert({
@@ -68,6 +74,7 @@ export default function CreateGamePage() {
       description: formData.description,
       location: formData.location,
       date_time: dateTime.toISOString(),
+      end_date_time: endDateTime.toISOString(),
       skill_level: formData.skillLevel,
       max_players: formData.maxPlayers,
       price_per_player: formData.pricePerPlayer ? parseFloat(formData.pricePerPlayer) : 0,
@@ -246,13 +253,25 @@ export default function CreateGamePage() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label className="text-sm">Time</Label>
+                  <Label className="text-sm">Start Time</Label>
                   <button
                     type="button"
                     onClick={() => setShowTimePicker(true)}
                     className="w-full h-11 px-3 flex items-center justify-between bg-background border border-input rounded-md text-sm hover:bg-accent transition-colors"
                   >
                     <span className="text-foreground">{selectedTime}</span>
+                    <Clock className="w-4 h-4 text-muted-foreground" />
+                  </button>
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label className="text-sm">End Time</Label>
+                  <button
+                    type="button"
+                    onClick={() => setShowEndTimePicker(true)}
+                    className="w-full h-11 px-3 flex items-center justify-between bg-background border border-input rounded-md text-sm hover:bg-accent transition-colors"
+                  >
+                    <span className="text-foreground">{selectedEndTime}</span>
                     <Clock className="w-4 h-4 text-muted-foreground" />
                   </button>
                 </div>
@@ -263,6 +282,13 @@ export default function CreateGamePage() {
                 onOpenChange={setShowTimePicker}
                 value={selectedTime}
                 onChange={setSelectedTime}
+              />
+
+              <TimeScrollPicker
+                open={showEndTimePicker}
+                onOpenChange={setShowEndTimePicker}
+                value={selectedEndTime}
+                onChange={setSelectedEndTime}
               />
 
               {/* Price per Player */}
