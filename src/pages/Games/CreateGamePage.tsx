@@ -221,37 +221,38 @@ export default function CreateGamePage() {
                 </div>
               </div>
 
-              {/* Date & Time */}
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1.5">
-                  <Label className="text-sm">Date</Label>
-                  <Popover open={showDatePicker} onOpenChange={setShowDatePicker}>
-                    <PopoverTrigger asChild>
-                      <button
-                        type="button"
-                        className="w-full h-11 px-3 flex items-center justify-between bg-background border border-input rounded-md text-sm hover:bg-accent transition-colors"
-                      >
-                        <span className={selectedDate ? "text-foreground" : "text-muted-foreground"}>
-                          {selectedDate ? format(selectedDate, "EEE, MMM d") : "Select date"}
-                        </span>
-                        <Calendar className="w-4 h-4 text-muted-foreground" />
-                      </button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <CalendarComponent
-                        mode="single"
-                        selected={selectedDate}
-                        onSelect={(date) => {
-                          setSelectedDate(date);
-                          setShowDatePicker(false);
-                        }}
-                        disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
-                        initialFocus
-                      />
-                    </PopoverContent>
-                  </Popover>
-                </div>
+              {/* Date */}
+              <div className="space-y-1.5">
+                <Label className="text-sm">Date</Label>
+                <Popover open={showDatePicker} onOpenChange={setShowDatePicker}>
+                  <PopoverTrigger asChild>
+                    <button
+                      type="button"
+                      className="w-full h-11 px-3 flex items-center justify-between bg-background border border-input rounded-md text-sm hover:bg-accent transition-colors"
+                    >
+                      <span className={selectedDate ? "text-foreground" : "text-muted-foreground"}>
+                        {selectedDate ? format(selectedDate, "EEE, MMM d") : "Select date"}
+                      </span>
+                      <Calendar className="w-4 h-4 text-muted-foreground" />
+                    </button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <CalendarComponent
+                      mode="single"
+                      selected={selectedDate}
+                      onSelect={(date) => {
+                        setSelectedDate(date);
+                        setShowDatePicker(false);
+                      }}
+                      disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
 
+              {/* Start & End Time */}
+              <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
                   <Label className="text-sm">Start Time</Label>
                   <button
@@ -263,7 +264,6 @@ export default function CreateGamePage() {
                     <Clock className="w-4 h-4 text-muted-foreground" />
                   </button>
                 </div>
-
                 <div className="space-y-1.5">
                   <Label className="text-sm">End Time</Label>
                   <button
