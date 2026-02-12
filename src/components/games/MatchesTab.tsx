@@ -5,8 +5,14 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Trophy, Shuffle, Plus, Check, Trash2, Users } from "lucide-react";
+import { Trophy, Shuffle, Plus, Check, Trash2, Users, X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 interface Profile {
   name: string;
@@ -60,6 +66,9 @@ export function MatchesTab({
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [editingScores, setEditingScores] = useState<Record<string, { t1: string; t2: string }>>({});
+  const [showTeamPicker, setShowTeamPicker] = useState(false);
+  const [team1Picks, setTeam1Picks] = useState<string[]>([]);
+  const [team2Picks, setTeam2Picks] = useState<string[]>([]);
 
   // All available players (including host if playing)
   const allPlayers = [
@@ -174,6 +183,61 @@ export function MatchesTab({
     setGenerating(false);
   };
 
+  const handleCreateChosenMatch = async () => {
+    if (team1Picks.length !== 2 || team2Picks.length !== 2) {
+      toast.error("Select exactly 2 players per team");
+      return;
+    }
+
+    setGenerating(true);
+    const nextRound = matches.length > 0 ? Math.max(...matches.map((m) => m.round_number)) + 1 : 1;
+
+    try {
+      const { data: matchData, error: matchError } = await supabase
+        .from("matches")
+        .insert({ game_id: gameId, round_number: nextRound })
+        .select()
+        .single();
+      if (matchError) throw matchError;
+
+      const matchPlayers = [
+        ...team1Picks.map((uid) => ({ match_id: matchData.id, user_id: uid, team: 1 })),
+        ...team2Picks.map((uid) => ({ match_id: matchData.id, user_id: uid, team: 2 })),
+      ];
+
+      const { error: mpError } = await supabase.from("match_players").insert(matchPlayers);
+      if (mpError) throw mpError;
+
+      toast.success("Match created with chosen teams!");
+      setShowTeamPicker(false);
+      setTeam1Picks([]);
+      setTeam2Picks([]);
+      fetchMatches();
+    } catch {
+      toast.error("Failed to create match");
+    }
+    setGenerating(false);
+  };
+
+  const togglePlayerPick = (userId: string, team: 1 | 2) => {
+    if (team === 1) {
+      if (team1Picks.includes(userId)) {
+        setTeam1Picks((p) => p.filter((id) => id !== userId));
+      } else if (team1Picks.length < 2) {
+        // Remove from team 2 if present
+        setTeam2Picks((p) => p.filter((id) => id !== userId));
+        setTeam1Picks((p) => [...p, userId]);
+      }
+    } else {
+      if (team2Picks.includes(userId)) {
+        setTeam2Picks((p) => p.filter((id) => id !== userId));
+      } else if (team2Picks.length < 2) {
+        setTeam1Picks((p) => p.filter((id) => id !== userId));
+        setTeam2Picks((p) => [...p, userId]);
+      }
+    }
+  };
+
   const handleSubmitScore = async (matchId: string) => {
     const scores = editingScores[matchId];
     if (!scores) return;
@@ -236,6 +300,20 @@ export function MatchesTab({
           >
             <Shuffle className="w-4 h-4" />
             {generating ? "Generating..." : "Random Teams"}
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              setTeam1Picks([]);
+              setTeam2Picks([]);
+              setShowTeamPicker(true);
+            }}
+            disabled={allPlayers.length < 4}
+            className="gap-1.5"
+          >
+            <Users className="w-4 h-4" />
+            Choose Teams
           </Button>
         </div>
       )}
@@ -411,6 +489,87 @@ export function MatchesTab({
           </div>
         );
       })}
+
+      {/* Choose Teams Dialog */}
+      <Dialog open={showTeamPicker} onOpenChange={setShowTeamPicker}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Choose Teams</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+                Team 1 ({team1Picks.length}/2)
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {allPlayers.map((p) => {
+                  const picked = team1Picks.includes(p.user_id);
+                  return (
+                    <button
+                      key={p.user_id}
+                      onClick={() => togglePlayerPick(p.user_id, 1)}
+                      className={cn(
+                        "flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-medium transition-colors",
+                        picked
+                          ? "bg-primary text-primary-foreground border-primary"
+                          : "bg-card border-border hover:border-primary/50"
+                      )}
+                    >
+                      <Avatar className="h-5 w-5">
+                        <AvatarImage src={p.profiles?.avatar_url || undefined} />
+                        <AvatarFallback className="text-[8px]">
+                          {p.profiles?.name?.charAt(0).toUpperCase() || "?"}
+                        </AvatarFallback>
+                      </Avatar>
+                      {p.profiles?.name || "Player"}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div>
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+                Team 2 ({team2Picks.length}/2)
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {allPlayers.map((p) => {
+                  const picked = team2Picks.includes(p.user_id);
+                  return (
+                    <button
+                      key={p.user_id}
+                      onClick={() => togglePlayerPick(p.user_id, 2)}
+                      className={cn(
+                        "flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-medium transition-colors",
+                        picked
+                          ? "bg-primary text-primary-foreground border-primary"
+                          : "bg-card border-border hover:border-primary/50"
+                      )}
+                    >
+                      <Avatar className="h-5 w-5">
+                        <AvatarImage src={p.profiles?.avatar_url || undefined} />
+                        <AvatarFallback className="text-[8px]">
+                          {p.profiles?.name?.charAt(0).toUpperCase() || "?"}
+                        </AvatarFallback>
+                      </Avatar>
+                      {p.profiles?.name || "Player"}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <Button
+              variant="hero"
+              className="w-full"
+              disabled={team1Picks.length !== 2 || team2Picks.length !== 2 || generating}
+              onClick={handleCreateChosenMatch}
+            >
+              {generating ? "Creating..." : "Create Match"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
