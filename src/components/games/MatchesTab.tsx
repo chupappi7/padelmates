@@ -385,8 +385,31 @@ export function MatchesTab({
               </div>
 
               {/* Score */}
-              <div className="flex flex-col items-center gap-1 shrink-0">
-                <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Sets</p>
+              <div className="flex flex-col items-center shrink-0 min-w-[80px]">
+                {/* Individual set scores stacked */}
+                {match.set_scores && match.set_scores.length > 0 && (
+                  <div className="flex flex-col items-center gap-0.5 mb-1.5">
+                    {match.set_scores.map((s, i) => {
+                      const t1Won = s.t1 > s.t2;
+                      const t2Won = s.t2 > s.t1;
+                      return (
+                        <div key={i} className="flex items-center gap-1">
+                          <span className={cn(
+                            "text-[11px] font-bold w-4 text-right tabular-nums",
+                            t1Won ? "text-success" : "text-muted-foreground"
+                          )}>{s.t1}</span>
+                          <span className="text-[9px] text-muted-foreground/40">·</span>
+                          <span className={cn(
+                            "text-[11px] font-bold w-4 text-left tabular-nums",
+                            t2Won ? "text-success" : "text-muted-foreground"
+                          )}>{s.t2}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {/* Sets won */}
                 <div className="flex items-center gap-1.5">
                   <span className={cn(
                     "text-2xl font-bold",
@@ -402,23 +425,13 @@ export function MatchesTab({
                     {match.team2_score}
                   </span>
                 </div>
-
-                {/* Per-set scores */}
-                {match.set_scores && match.set_scores.length > 0 && (
-                  <div className="flex gap-1.5">
-                    {match.set_scores.map((s, i) => (
-                      <span key={i} className="text-[10px] text-muted-foreground font-medium bg-muted px-1.5 py-0.5 rounded">
-                        S{i + 1}: {s.t1}-{s.t2}
-                      </span>
-                    ))}
-                  </div>
-                )}
+                <p className="text-[9px] text-muted-foreground/60 uppercase tracking-wider">Sets</p>
 
                 {canManage && (
                   <Button
                     size="sm"
                     variant="outline"
-                    className="h-7 text-xs px-3"
+                    className="h-7 text-xs px-3 mt-1.5"
                     onClick={() => setScoringMatchId(match.id)}
                   >
                     {isCompleted ? "Edit" : "Score"}
