@@ -277,7 +277,7 @@ export default function EditGamePage() {
 
               {/* Price per Player */}
               <div className="space-y-1.5">
-                <Label htmlFor="price" className="text-sm">Price per Player (€)</Label>
+                <Label htmlFor="price" className="text-sm">Price per Player (Kč)</Label>
                 <div className="relative">
                   <Euro className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                   <Input

@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { MapPin, Calendar, Users, Euro } from "lucide-react";
+import { MapPin, Calendar, Users } from "lucide-react";
 import { format as formatDate } from "date-fns";
 import { motion } from "framer-motion";
 import { getSkillLabel } from "./SkillBadge";
@@ -75,9 +75,8 @@ export function GameCard({
               </Badge>
             </div>
             {pricePerPlayer > 0 && (
-              <div className="flex items-center gap-0.5 font-bold text-primary text-xs sm:text-base shrink-0">
-                <Euro className="w-3 h-3 sm:w-4 sm:h-4" />
-                {pricePerPlayer}
+              <div className="font-bold text-primary text-xs sm:text-base shrink-0">
+                {pricePerPlayer} Kč
               </div>
             )}
           </div>
