@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useMemo } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -21,9 +21,45 @@ import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { format } from "date-fns";
 import { ArrowLeft, Calendar, MapPin, Users, Trophy, Clock, DoorOpen, ShieldCheck, CreditCard } from "lucide-react";
+import type { HostType } from "@/components/games/HostTypeModal";
+
+const HOST_TYPE_CONFIG: Record<HostType, { title: string; subtitle: string; format: string; defaultMaxPlayers: number; defaultJoinMode: string }> = {
+  find_players: {
+    title: "Find Players",
+    subtitle: "Create a casual match and find players",
+    format: "casual_match",
+    defaultMaxPlayers: 4,
+    defaultJoinMode: "open",
+  },
+  americano: {
+    title: "Host Americano",
+    subtitle: "Organize an Americano tournament",
+    format: "americano",
+    defaultMaxPlayers: 8,
+    defaultJoinMode: "request",
+  },
+  sell_court: {
+    title: "Sell / Give Away Court",
+    subtitle: "Share or sell your booked court",
+    format: "casual_match",
+    defaultMaxPlayers: 4,
+    defaultJoinMode: "open",
+  },
+  sell_spots: {
+    title: "Find Backup",
+    subtitle: "Find a replacement player for your spot",
+    format: "casual_match",
+    defaultMaxPlayers: 4,
+    defaultJoinMode: "open",
+  },
+};
 
 export default function CreateGamePage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const hostType = (searchParams.get("type") as HostType) || "find_players";
+  const config = HOST_TYPE_CONFIG[hostType] || HOST_TYPE_CONFIG.find_players;
+
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
@@ -39,11 +75,11 @@ export default function CreateGamePage() {
     location: "",
     courtNumber: "",
     skillLevel: 3,
-    maxPlayers: 4,
-    format: "casual_match",
+    maxPlayers: config.defaultMaxPlayers,
+    format: config.format,
     visibility: "public",
-    hostIsPlaying: true,
-    joinMode: "open",
+    hostIsPlaying: hostType !== "sell_court",
+    joinMode: config.defaultJoinMode,
     pricePerPlayer: "",
   });
 
@@ -70,13 +106,13 @@ export default function CreateGamePage() {
 
     setLoading(true);
 
-    const dbFormat = formData.format === "court_sharing" ? "casual_match" : formData.format;
+    const paymentMode = hostType === "sell_court" ? "court_sharing" 
+      : hostType === "sell_spots" ? "spot_selling" 
+      : "pay_to_join";
 
     const { data, error } = await supabase.from("games").insert({
       title: formData.title,
-      description: formData.format === "court_sharing" 
-        ? `[Court Sharing] ${formData.description || "Court available"}` 
-        : formData.description,
+      description: formData.description || null,
       location: formData.location,
       court_number: formData.courtNumber || null,
       date_time: dateTime.toISOString(),
@@ -84,8 +120,8 @@ export default function CreateGamePage() {
       skill_level: formData.skillLevel,
       max_players: formData.maxPlayers,
       price_per_player: formData.pricePerPlayer ? parseFloat(formData.pricePerPlayer) : 0,
-      payment_mode: formData.format === "court_sharing" ? "court_sharing" : "pay_to_join",
-      format: dbFormat as "casual_match" | "americano" | "team_americano",
+      payment_mode: paymentMode,
+      format: formData.format as "casual_match" | "americano" | "team_americano",
       visibility: formData.visibility as "public" | "private" | "club_only",
       host_id: user.id,
       host_is_playing: formData.hostIsPlaying,
@@ -131,9 +167,9 @@ export default function CreateGamePage() {
           </button>
 
           <div className="mb-6 md:mb-8">
-            <h1 className="font-display text-2xl md:text-3xl font-bold mb-2">Host a Game</h1>
+            <h1 className="font-display text-2xl md:text-3xl font-bold mb-2">{config.title}</h1>
             <p className="text-muted-foreground text-sm md:text-base">
-              Create a new padel game and invite players to join
+              {config.subtitle}
             </p>
           </div>
 
@@ -169,25 +205,45 @@ export default function CreateGamePage() {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3 md:gap-4">
-                <div className="space-y-1.5">
-                  <Label htmlFor="format" className="text-sm">Format</Label>
-                  <Select
-                    value={formData.format}
-                    onValueChange={(v) => handleChange("format", v)}
-                  >
-                    <SelectTrigger className="h-11">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="casual_match">Casual Match</SelectItem>
-                      <SelectItem value="americano">Americano</SelectItem>
-                      <SelectItem value="team_americano">Team Americano</SelectItem>
-                      <SelectItem value="court_sharing">🏟️ Selling / Giving Away Court</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+              {hostType === "americano" && (
+                <div className="grid grid-cols-2 gap-3 md:gap-4">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="format" className="text-sm">Americano Type</Label>
+                    <Select
+                      value={formData.format}
+                      onValueChange={(v) => handleChange("format", v)}
+                    >
+                      <SelectTrigger className="h-11">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="americano">Americano</SelectItem>
+                        <SelectItem value="team_americano">Team Americano</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
 
+                  <div className="space-y-1.5">
+                    <Label htmlFor="skill" className="text-sm">Min Skill Level</Label>
+                    <Select
+                      value={String(formData.skillLevel)}
+                      onValueChange={(v) => handleChange("skillLevel", parseInt(v))}
+                    >
+                      <SelectTrigger className="h-11">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="2">Level 2 – Beginner</SelectItem>
+                        <SelectItem value="3">Level 3 – Intermediate</SelectItem>
+                        <SelectItem value="4">Level 4 – Upper-Int</SelectItem>
+                        <SelectItem value="5">Level 5 – Pro</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              )}
+
+              {hostType !== "americano" && (
                 <div className="space-y-1.5">
                   <Label htmlFor="skill" className="text-sm">Min Skill Level</Label>
                   <Select
@@ -205,7 +261,7 @@ export default function CreateGamePage() {
                     </SelectContent>
                   </Select>
                 </div>
-              </div>
+              )}
             </div>
 
             {/* When & Where */}
