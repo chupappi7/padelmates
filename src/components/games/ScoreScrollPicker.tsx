@@ -2,20 +2,23 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { Plus, Trash2 } from "lucide-react";
+
+interface SetScore {
+  t1: number;
+  t2: number;
+}
 
 interface ScoreScrollPickerProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  team1Score: number;
-  team2Score: number;
-  onConfirm: (t1: number, t2: number) => void;
-  team1Label?: string;
-  team2Label?: string;
+  setScores: SetScore[];
+  onConfirm: (setScores: SetScore[], setsWonT1: number, setsWonT2: number) => void;
 }
 
-const scores = Array.from({ length: 31 }, (_, i) => i.toString());
+const gameScores = Array.from({ length: 8 }, (_, i) => i.toString()); // 0-7 for tiebreak
 
-const ITEM_HEIGHT = 44;
+const ITEM_HEIGHT = 40;
 const VISIBLE_ITEMS = 5;
 const CONTAINER_HEIGHT = ITEM_HEIGHT * VISIBLE_ITEMS;
 const PADDING = ITEM_HEIGHT * Math.floor(VISIBLE_ITEMS / 2);
@@ -89,7 +92,7 @@ function ScrollColumn({
             type="button"
             onClick={() => handleClick(i)}
             className={cn(
-              "w-full flex items-center justify-center text-xl font-semibold transition-all",
+              "w-full flex items-center justify-center text-lg font-semibold transition-all",
               item === selected ? "text-primary scale-105" : "text-muted-foreground/60"
             )}
             style={{ height: ITEM_HEIGHT }}
@@ -106,53 +109,137 @@ function ScrollColumn({
 export function ScoreScrollPicker({
   open,
   onOpenChange,
-  team1Score,
-  team2Score,
+  setScores: initialSetScores,
   onConfirm,
-  team1Label = "Team 1",
-  team2Label = "Team 2",
 }: ScoreScrollPickerProps) {
-  const [t1, setT1] = useState(() => String(team1Score));
-  const [t2, setT2] = useState(() => String(team2Score));
+  const [sets, setSets] = useState<SetScore[]>(() =>
+    initialSetScores.length > 0 ? initialSetScores : [{ t1: 0, t2: 0 }]
+  );
+  const [activeSet, setActiveSet] = useState(0);
 
   useEffect(() => {
     if (open) {
-      setT1(String(team1Score));
-      setT2(String(team2Score));
+      const initial = initialSetScores.length > 0 ? initialSetScores : [{ t1: 0, t2: 0 }];
+      setSets(initial);
+      setActiveSet(0);
     }
-  }, [open, team1Score, team2Score]);
+  }, [open, initialSetScores]);
+
+  const updateSet = (index: number, team: "t1" | "t2", value: string) => {
+    setSets((prev) => {
+      const next = [...prev];
+      next[index] = { ...next[index], [team]: parseInt(value) };
+      return next;
+    });
+  };
+
+  const addSet = () => {
+    if (sets.length < 3) {
+      setSets((prev) => [...prev, { t1: 0, t2: 0 }]);
+      setActiveSet(sets.length);
+    }
+  };
+
+  const removeSet = (index: number) => {
+    if (sets.length <= 1) return;
+    setSets((prev) => prev.filter((_, i) => i !== index));
+    setActiveSet(Math.max(0, activeSet - 1));
+  };
 
   const handleConfirm = () => {
-    onConfirm(parseInt(t1), parseInt(t2));
+    const setsWonT1 = sets.filter((s) => s.t1 > s.t2).length;
+    const setsWonT2 = sets.filter((s) => s.t2 > s.t1).length;
+    onConfirm(sets, setsWonT1, setsWonT2);
     onOpenChange(false);
   };
 
+  const currentSet = sets[activeSet] || { t1: 0, t2: 0 };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[300px] p-0">
+      <DialogContent className="max-w-[320px] p-0">
         <DialogHeader className="p-4 pb-2">
           <DialogTitle className="text-center text-base">Set Score</DialogTitle>
         </DialogHeader>
 
-        <div className="flex items-center justify-center gap-2 px-6 pb-2">
+        {/* Set tabs */}
+        <div className="flex items-center justify-center gap-1.5 px-4">
+          {sets.map((s, i) => (
+            <button
+              key={i}
+              onClick={() => setActiveSet(i)}
+              className={cn(
+                "relative px-3 py-1.5 rounded-full text-xs font-semibold transition-colors",
+                i === activeSet
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-muted text-muted-foreground hover:bg-muted/80"
+              )}
+            >
+              Set {i + 1}
+              <span className="ml-1 opacity-70">({s.t1}-{s.t2})</span>
+            </button>
+          ))}
+          {sets.length < 3 && (
+            <button
+              onClick={addSet}
+              className="w-7 h-7 rounded-full bg-muted flex items-center justify-center text-muted-foreground hover:bg-muted/80 transition-colors"
+            >
+              <Plus className="w-3.5 h-3.5" />
+            </button>
+          )}
+        </div>
+
+        {/* Score pickers for active set */}
+        <div className="flex items-center justify-center gap-2 px-6 py-2">
           <div className="flex flex-col items-center gap-1">
-            <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">{team1Label}</p>
-            <div className="w-16">
-              <ScrollColumn items={scores} selected={t1} onSelect={setT1} />
+            <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Team 1</p>
+            <div className="w-14">
+              <ScrollColumn
+                items={gameScores}
+                selected={String(currentSet.t1)}
+                onSelect={(v) => updateSet(activeSet, "t1", v)}
+              />
             </div>
           </div>
           <span className="text-2xl font-bold text-muted-foreground mt-4">-</span>
           <div className="flex flex-col items-center gap-1">
-            <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">{team2Label}</p>
-            <div className="w-16">
-              <ScrollColumn items={scores} selected={t2} onSelect={setT2} />
+            <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Team 2</p>
+            <div className="w-14">
+              <ScrollColumn
+                items={gameScores}
+                selected={String(currentSet.t2)}
+                onSelect={(v) => updateSet(activeSet, "t2", v)}
+              />
             </div>
           </div>
         </div>
 
+        {/* Remove set button */}
+        {sets.length > 1 && (
+          <div className="flex justify-center">
+            <button
+              onClick={() => removeSet(activeSet)}
+              className="text-xs text-muted-foreground hover:text-destructive transition-colors flex items-center gap-1"
+            >
+              <Trash2 className="w-3 h-3" />
+              Remove Set {activeSet + 1}
+            </button>
+          </div>
+        )}
+
+        {/* Summary */}
+        <div className="px-4 text-center">
+          <p className="text-sm text-muted-foreground">
+            {sets.map((s, i) => `${s.t1}-${s.t2}`).join(" / ")}
+          </p>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            Sets: {sets.filter((s) => s.t1 > s.t2).length} - {sets.filter((s) => s.t2 > s.t1).length}
+          </p>
+        </div>
+
         <div className="px-4 pb-4">
           <Button variant="hero" className="w-full" onClick={handleConfirm}>
-            Confirm {t1} - {t2}
+            Confirm Score
           </Button>
         </div>
       </DialogContent>

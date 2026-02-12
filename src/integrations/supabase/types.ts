@@ -337,6 +337,7 @@ export type Database = {
           game_id: string
           id: string
           round_number: number
+          set_scores: Json | null
           status: string
           team1_score: number | null
           team2_score: number | null
@@ -346,6 +347,7 @@ export type Database = {
           game_id: string
           id?: string
           round_number?: number
+          set_scores?: Json | null
           status?: string
           team1_score?: number | null
           team2_score?: number | null
@@ -355,6 +357,7 @@ export type Database = {
           game_id?: string
           id?: string
           round_number?: number
+          set_scores?: Json | null
           status?: string
           team1_score?: number | null
           team2_score?: number | null
