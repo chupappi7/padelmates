@@ -386,7 +386,7 @@ export function MatchesTab({
 
               {/* Score */}
               <div className="flex flex-col items-center gap-1 shrink-0">
-                {/* Sets won */}
+                <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Sets</p>
                 <div className="flex items-center gap-1.5">
                   <span className={cn(
                     "text-2xl font-bold",
