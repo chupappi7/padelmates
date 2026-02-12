@@ -593,20 +593,21 @@ export default function GameDetailPage() {
 
       {/* Sticky Join CTA */}
       {user && !isHost && !isPlayer && !myRequest && spotsLeft > 0 && (
-        <div className="fixed bottom-0 left-0 right-0 p-4 bg-background/95 backdrop-blur-sm border-t border-border md:hidden safe-bottom z-40">
+        <div className="fixed bottom-0 left-0 right-0 p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] bg-background/95 backdrop-blur-md border-t border-border md:hidden z-40">
           <Button
             variant="hero"
-            className="w-full h-12 text-base"
+            size="xl"
+            className="w-full h-14 text-lg font-bold tracking-wide shadow-lg"
             disabled={joinLoading}
             onClick={() => isOpenJoin ? handleDirectJoin() : setShowJoinModal(true)}
           >
             {joinLoading
               ? "Joining..."
               : game?.payment_mode === "court_sharing"
-                ? "🏟️ Secure Court"
+                ? "🏟️ Secure This Court"
                 : game?.payment_mode === "spot_selling"
                   ? "🔄 Take This Spot"
-                  : isOpenJoin ? "Join Game" : "Request to Join"}
+                  : isOpenJoin ? "⚡ Join Now" : "📩 Request to Join"}
           </Button>
         </div>
       )}
@@ -616,18 +617,18 @@ export default function GameDetailPage() {
         <div className="hidden md:block fixed bottom-8 right-8">
           <Button
             variant="hero"
-            size="lg"
-            className="shadow-xl"
+            size="xl"
+            className="shadow-2xl text-lg"
             disabled={joinLoading}
             onClick={() => isOpenJoin ? handleDirectJoin() : setShowJoinModal(true)}
           >
             {joinLoading
               ? "Joining..."
               : game?.payment_mode === "court_sharing"
-                ? "🏟️ Secure Court"
+                ? "🏟️ Secure This Court"
                 : game?.payment_mode === "spot_selling"
                   ? "🔄 Take This Spot"
-                  : isOpenJoin ? "Join Game" : "Request to Join"}
+                  : isOpenJoin ? "⚡ Join Now" : "📩 Request to Join"}
           </Button>
         </div>
       )}
