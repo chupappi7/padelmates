@@ -42,6 +42,7 @@ interface Match {
   team2_score: number;
   status: string;
   created_at: string;
+  set_scores: Array<{t1: number; t2: number}> | null;
   match_players: MatchPlayer[];
 }
 
@@ -109,6 +110,7 @@ export function MatchesTab({
         ...m,
         team1_score: m.team1_score ?? 0,
         team2_score: m.team2_score ?? 0,
+        set_scores: (Array.isArray(m.set_scores) ? m.set_scores : []) as Array<{t1: number; t2: number}>,
         match_players: (mpData || [])
           .filter((mp) => mp.match_id === m.id)
           .map((mp) => ({ ...mp, profiles: profileMap[mp.user_id] || null })),
@@ -238,12 +240,17 @@ export function MatchesTab({
     }
   };
 
-  const handleSubmitScore = async (t1: number, t2: number) => {
+  const handleSubmitScore = async (setScores: Array<{t1: number; t2: number}>, setsWonT1: number, setsWonT2: number) => {
     if (!scoringMatchId) return;
 
     const { error } = await supabase
       .from("matches")
-      .update({ team1_score: t1, team2_score: t2, status: "completed" })
+      .update({
+        team1_score: setsWonT1,
+        team2_score: setsWonT2,
+        set_scores: setScores,
+        status: "completed",
+      })
       .eq("id", scoringMatchId);
 
     if (error) {
@@ -379,6 +386,7 @@ export function MatchesTab({
 
               {/* Score */}
               <div className="flex flex-col items-center gap-1 shrink-0">
+                {/* Sets won */}
                 <div className="flex items-center gap-1.5">
                   <span className={cn(
                     "text-2xl font-bold",
@@ -394,6 +402,17 @@ export function MatchesTab({
                     {match.team2_score}
                   </span>
                 </div>
+
+                {/* Per-set scores */}
+                {match.set_scores && match.set_scores.length > 0 && (
+                  <div className="flex gap-1.5">
+                    {match.set_scores.map((s, i) => (
+                      <span key={i} className="text-[10px] text-muted-foreground font-medium bg-muted px-1.5 py-0.5 rounded">
+                        {s.t1}-{s.t2}
+                      </span>
+                    ))}
+                  </div>
+                )}
 
                 {canManage && (
                   <Button
@@ -516,8 +535,7 @@ export function MatchesTab({
           <ScoreScrollPicker
             open={true}
             onOpenChange={(open) => { if (!open) setScoringMatchId(null); }}
-            team1Score={m.team1_score}
-            team2Score={m.team2_score}
+            setScores={Array.isArray(m.set_scores) ? (m.set_scores as Array<{t1: number; t2: number}>) : []}
             onConfirm={handleSubmitScore}
           />
         );
