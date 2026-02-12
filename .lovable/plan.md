@@ -1,23 +1,27 @@
 
 
-## Flatten the Host Button into a Regular Tab
+## Improved Set Score Display
 
-The raised circular FAB (Floating Action Button) feels visually disconnected with 5 tabs. The fix is to make "Host" a normal tab item like the rest, but keep it visually distinct using the primary color.
+The current vertical stacking of individual set scores (7·6, 4·6, 6·3) above the big sets-won number works but feels disconnected and takes up vertical space. Here's a cleaner approach inspired by professional sports scoreboards:
 
-### What changes
+### Design: Horizontal Set Score Pills
 
-**File: `src/components/layout/BottomTabBar.tsx`**
+Replace the vertically stacked mini-scores with a **horizontal row of compact pill badges** below the main sets-won score. Each pill shows one set result (e.g., `7-6`) with the winner's score highlighted in green.
 
-- Remove the `isFab: true` flag from the Host tab definition
-- Remove the special FAB rendering branch (the `-mt-5`, `w-14 h-14 rounded-full` circle)
-- Render "Host" as a standard tab with the `Plus` icon, same as Matches/Clubs/My Matches/Profile
-- The `Plus` icon will use the primary color (teal) regardless of active state to keep it visually prominent
+**Layout (top to bottom):**
+1. Main sets-won score: **2 - 1** (large, bold)
+2. "SETS" label (tiny, muted)
+3. Row of set pills: `[7-6]` `[4-6]` `[6-3]` (small rounded badges, inline)
+4. Edit button
 
-### Result
+This is more compact, reads left-to-right naturally (Set 1, Set 2, Set 3), and scales well whether there are 1, 2, or 3 sets.
 
-All 5 tabs render uniformly in a single row: same icon size, same label style, same vertical alignment. The Host tab stands out via its teal-colored icon, making it easy to find without the visual bulk of the floating circle.
+### Technical Details
 
-### Technical details
+**File: `src/components/games/MatchesTab.tsx`**
 
-Remove the `isFab` property and the conditional rendering block. All tabs follow the same render path. For the Host tab specifically, force `text-primary` on the icon so it always appears teal (not gray).
+- Move the set scores from **above** the main score to **below** the "SETS" label
+- Render each set as a small rounded pill/badge with `bg-muted` background
+- Inside each pill: show `t1-t2` with the winning side's number in `text-success`
+- Use `flex-wrap` so it handles 3 sets gracefully on narrow screens
 
