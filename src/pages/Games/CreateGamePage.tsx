@@ -264,6 +264,25 @@ export default function CreateGamePage() {
                 value={selectedTime}
                 onChange={setSelectedTime}
               />
+
+              {/* Price per Player */}
+              <div className="space-y-1.5">
+                <Label htmlFor="price" className="text-sm">Price per Player (€)</Label>
+                <div className="relative">
+                  <Euro className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    id="price"
+                    type="number"
+                    min="0"
+                    step="0.5"
+                    placeholder="0 (free)"
+                    value={formData.pricePerPlayer}
+                    onChange={(e) => handleChange("pricePerPlayer", e.target.value)}
+                    className="h-11 pl-10"
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground">Leave empty or 0 for free games</p>
+              </div>
             </div>
 
             {/* Players & Settings */}
@@ -411,24 +430,6 @@ export default function CreateGamePage() {
                 </Select>
               </div>
 
-              {/* Price per Player */}
-              <div className="space-y-1.5">
-                <Label htmlFor="price" className="text-sm">Price per Player (€)</Label>
-                <div className="relative">
-                  <Euro className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                  <Input
-                    id="price"
-                    type="number"
-                    min="0"
-                    step="0.5"
-                    placeholder="0 (free)"
-                    value={formData.pricePerPlayer}
-                    onChange={(e) => handleChange("pricePerPlayer", e.target.value)}
-                    className="h-11 pl-10"
-                  />
-                </div>
-                <p className="text-xs text-muted-foreground">Leave empty or 0 for free games</p>
-              </div>
             </div>
 
             <div className="flex gap-3">
