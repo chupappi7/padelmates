@@ -20,7 +20,7 @@ import { Navbar } from "@/components/layout/Navbar";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { format } from "date-fns";
-import { ArrowLeft, Calendar, MapPin, Users, Trophy, Clock, DoorOpen, ShieldCheck, CreditCard } from "lucide-react";
+import { ArrowLeft, Calendar, MapPin, Users, Trophy, Clock, DoorOpen, ShieldCheck, CreditCard, Building2 } from "lucide-react";
 import type { HostType } from "@/components/games/HostTypeModal";
 
 const HOST_TYPE_CONFIG: Record<HostType, { title: string; subtitle: string; format: string; defaultMaxPlayers: number; defaultJoinMode: string }> = {
@@ -83,6 +83,8 @@ export default function CreateGamePage() {
     pricePerPlayer: "",
   });
 
+  const isSellCourt = hostType === "sell_court";
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) {
@@ -95,7 +97,6 @@ export default function CreateGamePage() {
       return;
     }
 
-    // Combine date and time
     const [hours, minutes] = selectedTime.split(":").map(Number);
     const dateTime = new Date(selectedDate);
     dateTime.setHours(hours, minutes, 0, 0);
@@ -110,8 +111,10 @@ export default function CreateGamePage() {
       : hostType === "sell_spots" ? "spot_selling" 
       : "pay_to_join";
 
+    const title = isSellCourt ? "Sell / Give Away Court" : formData.title;
+
     const { data, error } = await supabase.from("games").insert({
-      title: formData.title,
+      title,
       description: formData.description || null,
       location: formData.location,
       court_number: formData.courtNumber || null,
@@ -124,8 +127,8 @@ export default function CreateGamePage() {
       format: formData.format as "casual_match" | "americano" | "team_americano",
       visibility: formData.visibility as "public" | "private" | "club_only",
       host_id: user.id,
-      host_is_playing: formData.hostIsPlaying,
-      join_mode: formData.joinMode,
+      host_is_playing: isSellCourt ? false : formData.hostIsPlaying,
+      join_mode: isSellCourt ? "open" : formData.joinMode,
     }).select().single();
 
     if (error) {
@@ -134,7 +137,7 @@ export default function CreateGamePage() {
       return;
     }
 
-    toast.success("Game created successfully!");
+    toast.success(isSellCourt ? "Court listing created!" : "Game created successfully!");
     navigate(`/games/${data.id}`);
   };
 
@@ -174,366 +177,485 @@ export default function CreateGamePage() {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-5 md:space-y-6">
-            {/* Game Details */}
-            <div className="bg-card border border-border rounded-xl md:rounded-2xl p-4 md:p-6 space-y-4 md:space-y-5">
-              <h2 className="font-display font-bold text-base md:text-lg flex items-center gap-2">
-                <Trophy className="w-4 h-4 md:w-5 md:h-5 text-primary" />
-                Game Details
-              </h2>
+            {isSellCourt ? (
+              /* ========== SELL / GIVE AWAY COURT — Simplified ========== */
+              <div className="bg-card border border-border rounded-xl md:rounded-2xl p-4 md:p-6 space-y-4 md:space-y-5">
+                <h2 className="font-display font-bold text-base md:text-lg flex items-center gap-2">
+                  <Building2 className="w-4 h-4 md:w-5 md:h-5 text-primary" />
+                  Court Details
+                </h2>
 
-              <div className="space-y-1.5">
-                <Label htmlFor="title" className="text-sm">Game Title <span className="text-destructive">*</span></Label>
-                <Input
-                  id="title"
-                  placeholder="e.g., Friday Night Americano"
-                  value={formData.title}
-                  onChange={(e) => handleChange("title", e.target.value)}
-                  required
-                  className="h-11"
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <Label htmlFor="description" className="text-sm">Description (optional)</Label>
-                <Textarea
-                  id="description"
-                  placeholder="Tell players what to expect..."
-                  value={formData.description}
-                  onChange={(e) => handleChange("description", e.target.value)}
-                  rows={3}
-                  className="text-sm resize-none"
-                />
-              </div>
-
-              {hostType === "americano" && (
-                <div className="grid grid-cols-2 gap-3 md:gap-4">
-                  <div className="space-y-1.5">
-                    <Label htmlFor="format" className="text-sm">Americano Type</Label>
-                    <Select
-                      value={formData.format}
-                      onValueChange={(v) => handleChange("format", v)}
-                    >
-                      <SelectTrigger className="h-11">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="americano">Americano</SelectItem>
-                        <SelectItem value="team_americano">Team Americano</SelectItem>
-                      </SelectContent>
-                    </Select>
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="col-span-2 space-y-1.5">
+                    <Label htmlFor="location" className="text-sm">Location <span className="text-destructive">*</span></Label>
+                    <div className="relative">
+                      <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                      <Input
+                        id="location"
+                        placeholder="e.g., Padel Club Barcelona"
+                        value={formData.location}
+                        onChange={(e) => handleChange("location", e.target.value)}
+                        required
+                        className="h-11 pl-10"
+                      />
+                    </div>
                   </div>
-
                   <div className="space-y-1.5">
-                    <Label htmlFor="skill" className="text-sm">Min Skill Level</Label>
-                    <Select
-                      value={String(formData.skillLevel)}
-                      onValueChange={(v) => handleChange("skillLevel", parseInt(v))}
-                    >
-                      <SelectTrigger className="h-11">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="2">Level 2 – Beginner</SelectItem>
-                        <SelectItem value="3">Level 3 – Intermediate</SelectItem>
-                        <SelectItem value="4">Level 4 – Upper-Int</SelectItem>
-                        <SelectItem value="5">Level 5 – Pro</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-              )}
-
-              {hostType !== "americano" && (
-                <div className="space-y-1.5">
-                  <Label htmlFor="skill" className="text-sm">Min Skill Level</Label>
-                  <Select
-                    value={String(formData.skillLevel)}
-                    onValueChange={(v) => handleChange("skillLevel", parseInt(v))}
-                  >
-                    <SelectTrigger className="h-11">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="2">Level 2 – Beginner</SelectItem>
-                      <SelectItem value="3">Level 3 – Intermediate</SelectItem>
-                      <SelectItem value="4">Level 4 – Upper-Int</SelectItem>
-                      <SelectItem value="5">Level 5 – Pro</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
-            </div>
-
-            {/* When & Where */}
-            <div className="bg-card border border-border rounded-xl md:rounded-2xl p-4 md:p-6 space-y-4 md:space-y-5">
-              <h2 className="font-display font-bold text-base md:text-lg flex items-center gap-2">
-                <Calendar className="w-4 h-4 md:w-5 md:h-5 text-primary" />
-                When & Where
-              </h2>
-
-              <div className="grid grid-cols-3 gap-3">
-                <div className="col-span-2 space-y-1.5">
-                  <Label htmlFor="location" className="text-sm">Court / Location <span className="text-destructive">*</span></Label>
-                  <div className="relative">
-                    <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Label htmlFor="courtNumber" className="text-sm">Court #</Label>
                     <Input
-                      id="location"
-                      placeholder="e.g., Padel Club Barcelona"
-                      value={formData.location}
-                      onChange={(e) => handleChange("location", e.target.value)}
-                      required
+                      id="courtNumber"
+                      placeholder="e.g., 3"
+                      value={formData.courtNumber}
+                      onChange={(e) => handleChange("courtNumber", e.target.value)}
+                      className="h-11"
+                    />
+                  </div>
+                </div>
+
+                {/* Date */}
+                <div className="space-y-1.5">
+                  <Label className="text-sm">Date <span className="text-destructive">*</span></Label>
+                  <Popover open={showDatePicker} onOpenChange={setShowDatePicker}>
+                    <PopoverTrigger asChild>
+                      <button
+                        type="button"
+                        className="w-full h-11 px-3 flex items-center justify-between bg-background border border-input rounded-md text-sm hover:bg-accent transition-colors"
+                      >
+                        <span className={selectedDate ? "text-foreground" : "text-muted-foreground"}>
+                          {selectedDate ? format(selectedDate, "EEE, MMM d") : "Select date"}
+                        </span>
+                        <Calendar className="w-4 h-4 text-muted-foreground" />
+                      </button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <CalendarComponent
+                        mode="single"
+                        selected={selectedDate}
+                        onSelect={(date) => {
+                          setSelectedDate(date);
+                          setShowDatePicker(false);
+                        }}
+                        disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+
+                {/* Start & End Time */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <Label className="text-sm">Start Time <span className="text-destructive">*</span></Label>
+                    <button
+                      type="button"
+                      onClick={() => setShowTimePicker(true)}
+                      className="w-full h-11 px-3 flex items-center justify-between bg-background border border-input rounded-md text-sm hover:bg-accent transition-colors"
+                    >
+                      <span className="text-foreground">{selectedTime}</span>
+                      <Clock className="w-4 h-4 text-muted-foreground" />
+                    </button>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-sm">End Time <span className="text-destructive">*</span></Label>
+                    <button
+                      type="button"
+                      onClick={() => setShowEndTimePicker(true)}
+                      className="w-full h-11 px-3 flex items-center justify-between bg-background border border-input rounded-md text-sm hover:bg-accent transition-colors"
+                    >
+                      <span className="text-foreground">{selectedEndTime}</span>
+                      <Clock className="w-4 h-4 text-muted-foreground" />
+                    </button>
+                  </div>
+                </div>
+
+                <TimeScrollPicker open={showTimePicker} onOpenChange={setShowTimePicker} value={selectedTime} onChange={setSelectedTime} />
+                <TimeScrollPicker open={showEndTimePicker} onOpenChange={setShowEndTimePicker} value={selectedEndTime} onChange={setSelectedEndTime} />
+
+                {/* Price for the court */}
+                <div className="space-y-1.5">
+                  <Label htmlFor="price" className="text-sm">Price for the Court</Label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-semibold text-sm">Kč</span>
+                    <Input
+                      id="price"
+                      type="number"
+                      min="0"
+                      step="1"
+                      placeholder="0"
+                      value={formData.pricePerPlayer}
+                      onChange={(e) => handleChange("pricePerPlayer", e.target.value)}
                       className="h-11 pl-10"
                     />
                   </div>
+                  <p className="text-xs text-muted-foreground">Leave empty or 0 if giving away for free</p>
                 </div>
+
+                {/* Optional note */}
                 <div className="space-y-1.5">
-                  <Label htmlFor="courtNumber" className="text-sm">Court #</Label>
-                  <Input
-                    id="courtNumber"
-                    placeholder="e.g., 3"
-                    value={formData.courtNumber}
-                    onChange={(e) => handleChange("courtNumber", e.target.value)}
-                    className="h-11"
+                  <Label htmlFor="description" className="text-sm">Note (optional)</Label>
+                  <Textarea
+                    id="description"
+                    placeholder="Any details about the court booking..."
+                    value={formData.description}
+                    onChange={(e) => handleChange("description", e.target.value)}
+                    rows={2}
+                    className="text-sm resize-none"
                   />
                 </div>
               </div>
+            ) : (
+              <>
+                {/* ========== OTHER HOST TYPES — Full form ========== */}
+                {/* Game Details */}
+                <div className="bg-card border border-border rounded-xl md:rounded-2xl p-4 md:p-6 space-y-4 md:space-y-5">
+                  <h2 className="font-display font-bold text-base md:text-lg flex items-center gap-2">
+                    <Trophy className="w-4 h-4 md:w-5 md:h-5 text-primary" />
+                    Game Details
+                  </h2>
 
-              {/* Date */}
-              <div className="space-y-1.5">
-                <Label className="text-sm">Date <span className="text-destructive">*</span></Label>
-                <Popover open={showDatePicker} onOpenChange={setShowDatePicker}>
-                  <PopoverTrigger asChild>
-                    <button
-                      type="button"
-                      className="w-full h-11 px-3 flex items-center justify-between bg-background border border-input rounded-md text-sm hover:bg-accent transition-colors"
-                    >
-                      <span className={selectedDate ? "text-foreground" : "text-muted-foreground"}>
-                        {selectedDate ? format(selectedDate, "EEE, MMM d") : "Select date"}
-                      </span>
-                      <Calendar className="w-4 h-4 text-muted-foreground" />
-                    </button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <CalendarComponent
-                      mode="single"
-                      selected={selectedDate}
-                      onSelect={(date) => {
-                        setSelectedDate(date);
-                        setShowDatePicker(false);
-                      }}
-                      disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
-                      initialFocus
+                  <div className="space-y-1.5">
+                    <Label htmlFor="title" className="text-sm">Game Title <span className="text-destructive">*</span></Label>
+                    <Input
+                      id="title"
+                      placeholder="e.g., Friday Night Americano"
+                      value={formData.title}
+                      onChange={(e) => handleChange("title", e.target.value)}
+                      required
+                      className="h-11"
                     />
-                  </PopoverContent>
-                </Popover>
-              </div>
+                  </div>
 
-              {/* Start & End Time */}
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1.5">
-                  <Label className="text-sm">Start Time <span className="text-destructive">*</span></Label>
-                  <button
-                    type="button"
-                    onClick={() => setShowTimePicker(true)}
-                    className="w-full h-11 px-3 flex items-center justify-between bg-background border border-input rounded-md text-sm hover:bg-accent transition-colors"
-                  >
-                    <span className="text-foreground">{selectedTime}</span>
-                    <Clock className="w-4 h-4 text-muted-foreground" />
-                  </button>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="description" className="text-sm">Description (optional)</Label>
+                    <Textarea
+                      id="description"
+                      placeholder="Tell players what to expect..."
+                      value={formData.description}
+                      onChange={(e) => handleChange("description", e.target.value)}
+                      rows={3}
+                      className="text-sm resize-none"
+                    />
+                  </div>
+
+                  {hostType === "americano" && (
+                    <div className="grid grid-cols-2 gap-3 md:gap-4">
+                      <div className="space-y-1.5">
+                        <Label htmlFor="format" className="text-sm">Americano Type</Label>
+                        <Select
+                          value={formData.format}
+                          onValueChange={(v) => handleChange("format", v)}
+                        >
+                          <SelectTrigger className="h-11">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="americano">Americano</SelectItem>
+                            <SelectItem value="team_americano">Team Americano</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <Label htmlFor="skill" className="text-sm">Min Skill Level</Label>
+                        <Select
+                          value={String(formData.skillLevel)}
+                          onValueChange={(v) => handleChange("skillLevel", parseInt(v))}
+                        >
+                          <SelectTrigger className="h-11">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="2">Level 2 – Beginner</SelectItem>
+                            <SelectItem value="3">Level 3 – Intermediate</SelectItem>
+                            <SelectItem value="4">Level 4 – Upper-Int</SelectItem>
+                            <SelectItem value="5">Level 5 – Pro</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                  )}
+
+                  {hostType !== "americano" && (
+                    <div className="space-y-1.5">
+                      <Label htmlFor="skill" className="text-sm">Min Skill Level</Label>
+                      <Select
+                        value={String(formData.skillLevel)}
+                        onValueChange={(v) => handleChange("skillLevel", parseInt(v))}
+                      >
+                        <SelectTrigger className="h-11">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="2">Level 2 – Beginner</SelectItem>
+                          <SelectItem value="3">Level 3 – Intermediate</SelectItem>
+                          <SelectItem value="4">Level 4 – Upper-Int</SelectItem>
+                          <SelectItem value="5">Level 5 – Pro</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
                 </div>
-                <div className="space-y-1.5">
-                  <Label className="text-sm">End Time <span className="text-destructive">*</span></Label>
-                  <button
-                    type="button"
-                    onClick={() => setShowEndTimePicker(true)}
-                    className="w-full h-11 px-3 flex items-center justify-between bg-background border border-input rounded-md text-sm hover:bg-accent transition-colors"
-                  >
-                    <span className="text-foreground">{selectedEndTime}</span>
-                    <Clock className="w-4 h-4 text-muted-foreground" />
-                  </button>
+
+                {/* When & Where */}
+                <div className="bg-card border border-border rounded-xl md:rounded-2xl p-4 md:p-6 space-y-4 md:space-y-5">
+                  <h2 className="font-display font-bold text-base md:text-lg flex items-center gap-2">
+                    <Calendar className="w-4 h-4 md:w-5 md:h-5 text-primary" />
+                    When & Where
+                  </h2>
+
+                  <div className="grid grid-cols-3 gap-3">
+                    <div className="col-span-2 space-y-1.5">
+                      <Label htmlFor="location" className="text-sm">Court / Location <span className="text-destructive">*</span></Label>
+                      <div className="relative">
+                        <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                        <Input
+                          id="location"
+                          placeholder="e.g., Padel Club Barcelona"
+                          value={formData.location}
+                          onChange={(e) => handleChange("location", e.target.value)}
+                          required
+                          className="h-11 pl-10"
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="courtNumber" className="text-sm">Court #</Label>
+                      <Input
+                        id="courtNumber"
+                        placeholder="e.g., 3"
+                        value={formData.courtNumber}
+                        onChange={(e) => handleChange("courtNumber", e.target.value)}
+                        className="h-11"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Date */}
+                  <div className="space-y-1.5">
+                    <Label className="text-sm">Date <span className="text-destructive">*</span></Label>
+                    <Popover open={showDatePicker} onOpenChange={setShowDatePicker}>
+                      <PopoverTrigger asChild>
+                        <button
+                          type="button"
+                          className="w-full h-11 px-3 flex items-center justify-between bg-background border border-input rounded-md text-sm hover:bg-accent transition-colors"
+                        >
+                          <span className={selectedDate ? "text-foreground" : "text-muted-foreground"}>
+                            {selectedDate ? format(selectedDate, "EEE, MMM d") : "Select date"}
+                          </span>
+                          <Calendar className="w-4 h-4 text-muted-foreground" />
+                        </button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <CalendarComponent
+                          mode="single"
+                          selected={selectedDate}
+                          onSelect={(date) => {
+                            setSelectedDate(date);
+                            setShowDatePicker(false);
+                          }}
+                          disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+
+                  {/* Start & End Time */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1.5">
+                      <Label className="text-sm">Start Time <span className="text-destructive">*</span></Label>
+                      <button
+                        type="button"
+                        onClick={() => setShowTimePicker(true)}
+                        className="w-full h-11 px-3 flex items-center justify-between bg-background border border-input rounded-md text-sm hover:bg-accent transition-colors"
+                      >
+                        <span className="text-foreground">{selectedTime}</span>
+                        <Clock className="w-4 h-4 text-muted-foreground" />
+                      </button>
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-sm">End Time <span className="text-destructive">*</span></Label>
+                      <button
+                        type="button"
+                        onClick={() => setShowEndTimePicker(true)}
+                        className="w-full h-11 px-3 flex items-center justify-between bg-background border border-input rounded-md text-sm hover:bg-accent transition-colors"
+                      >
+                        <span className="text-foreground">{selectedEndTime}</span>
+                        <Clock className="w-4 h-4 text-muted-foreground" />
+                      </button>
+                    </div>
+                  </div>
+
+                  <TimeScrollPicker open={showTimePicker} onOpenChange={setShowTimePicker} value={selectedTime} onChange={setSelectedTime} />
+                  <TimeScrollPicker open={showEndTimePicker} onOpenChange={setShowEndTimePicker} value={selectedEndTime} onChange={setSelectedEndTime} />
+
+                  {/* Price per Player */}
+                  <div className="space-y-1.5">
+                    <Label htmlFor="price" className="text-sm">Price per Player</Label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-semibold text-sm">Kč</span>
+                      <Input
+                        id="price"
+                        type="number"
+                        min="0"
+                        step="0.5"
+                        placeholder="0"
+                        value={formData.pricePerPlayer}
+                        onChange={(e) => handleChange("pricePerPlayer", e.target.value)}
+                        className="h-11 pl-10"
+                      />
+                    </div>
+                    <p className="text-xs text-muted-foreground">Leave empty or 0 for free games</p>
+                  </div>
                 </div>
-              </div>
 
-              <TimeScrollPicker
-                open={showTimePicker}
-                onOpenChange={setShowTimePicker}
-                value={selectedTime}
-                onChange={setSelectedTime}
-              />
+                {/* Players & Settings */}
+                <div className="bg-card border border-border rounded-xl md:rounded-2xl p-4 md:p-6 space-y-4 md:space-y-5">
+                  <h2 className="font-display font-bold text-base md:text-lg flex items-center gap-2">
+                    <Users className="w-4 h-4 md:w-5 md:h-5 text-primary" />
+                    Players & Settings
+                  </h2>
 
-              <TimeScrollPicker
-                open={showEndTimePicker}
-                onOpenChange={setShowEndTimePicker}
-                value={selectedEndTime}
-                onChange={setSelectedEndTime}
-              />
+                  <div className="space-y-1.5">
+                    <Label htmlFor="maxPlayers" className="text-sm">Max Players</Label>
+                    <Select
+                      value={String(formData.maxPlayers)}
+                      onValueChange={(v) => handleChange("maxPlayers", parseInt(v))}
+                    >
+                      <SelectTrigger className="h-11">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="4">4 players</SelectItem>
+                        <SelectItem value="8">8 players</SelectItem>
+                        <SelectItem value="12">12 players</SelectItem>
+                        <SelectItem value="16">16 players</SelectItem>
+                        <SelectItem value="20">20 players</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
 
-              {/* Price per Player */}
-              <div className="space-y-1.5">
-                <Label htmlFor="price" className="text-sm">Price per Player</Label>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-semibold text-sm">Kč</span>
-                  <Input
-                    id="price"
-                    type="number"
-                    min="0"
-                    step="0.5"
-                    placeholder="0"
-                    value={formData.pricePerPlayer}
-                    onChange={(e) => handleChange("pricePerPlayer", e.target.value)}
-                    className="h-11 pl-10"
-                  />
+                  {/* Host Role Selection */}
+                  <div className="space-y-2">
+                    <Label className="text-sm">Your Role</Label>
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => handleChange("hostIsPlaying", true)}
+                        className={`flex items-center gap-2 p-3 rounded-xl border-2 transition-all text-left ${
+                          formData.hostIsPlaying
+                            ? "border-primary bg-primary/5"
+                            : "border-border hover:border-primary/50"
+                        }`}
+                      >
+                        <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                          <Trophy className="w-4 h-4 text-primary" />
+                        </div>
+                        <div>
+                          <p className="font-medium text-sm">🎾 Playing</p>
+                          <p className="text-xs text-muted-foreground">I'm joining the game</p>
+                        </div>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => handleChange("hostIsPlaying", false)}
+                        className={`flex items-center gap-2 p-3 rounded-xl border-2 transition-all text-left ${
+                          !formData.hostIsPlaying
+                            ? "border-primary bg-primary/5"
+                            : "border-border hover:border-primary/50"
+                        }`}
+                      >
+                        <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                          <Users className="w-4 h-4 text-primary" />
+                        </div>
+                        <div>
+                          <p className="font-medium text-sm">📋 Organizer</p>
+                          <p className="text-xs text-muted-foreground">Just organizing</p>
+                        </div>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Join Mode Selection */}
+                  <div className="space-y-2">
+                    <Label className="text-sm">Join Mode</Label>
+                    <div className="space-y-2">
+                      <button
+                        type="button"
+                        onClick={() => handleChange("joinMode", "open")}
+                        className={`w-full flex items-center gap-3 p-3 rounded-xl border-2 transition-all text-left ${
+                          formData.joinMode === "open"
+                            ? "border-primary bg-primary/5"
+                            : "border-border hover:border-primary/50"
+                        }`}
+                      >
+                        <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                          <DoorOpen className="w-4 h-4 text-primary" />
+                        </div>
+                        <div>
+                          <p className="font-medium text-sm">Open</p>
+                          <p className="text-xs text-muted-foreground">Anyone can join directly</p>
+                        </div>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => handleChange("joinMode", "request")}
+                        className={`w-full flex items-center gap-3 p-3 rounded-xl border-2 transition-all text-left ${
+                          formData.joinMode === "request"
+                            ? "border-primary bg-primary/5"
+                            : "border-border hover:border-primary/50"
+                        }`}
+                      >
+                        <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                          <ShieldCheck className="w-4 h-4 text-primary" />
+                        </div>
+                        <div>
+                          <p className="font-medium text-sm">Request to Join</p>
+                          <p className="text-xs text-muted-foreground">You approve each player</p>
+                        </div>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => handleChange("joinMode", "request_and_pay")}
+                        className={`w-full flex items-center gap-3 p-3 rounded-xl border-2 transition-all text-left ${
+                          formData.joinMode === "request_and_pay"
+                            ? "border-primary bg-primary/5"
+                            : "border-border hover:border-primary/50"
+                        }`}
+                      >
+                        <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                          <CreditCard className="w-4 h-4 text-primary" />
+                        </div>
+                        <div>
+                          <p className="font-medium text-sm">Request & Pay</p>
+                          <p className="text-xs text-muted-foreground">Players request and pay to confirm</p>
+                        </div>
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label htmlFor="visibility" className="text-sm">Visibility</Label>
+                    <Select
+                      value={formData.visibility}
+                      onValueChange={(v) => handleChange("visibility", v)}
+                    >
+                      <SelectTrigger className="h-11">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="public">🌍 Public - Anyone can find</SelectItem>
+                        <SelectItem value="private">🔗 Private - Link only</SelectItem>
+                        <SelectItem value="club_only">🏠 Club Only</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
-                <p className="text-xs text-muted-foreground">Leave empty or 0 for free games</p>
-              </div>
-            </div>
-
-            {/* Players & Settings */}
-            <div className="bg-card border border-border rounded-xl md:rounded-2xl p-4 md:p-6 space-y-4 md:space-y-5">
-              <h2 className="font-display font-bold text-base md:text-lg flex items-center gap-2">
-                <Users className="w-4 h-4 md:w-5 md:h-5 text-primary" />
-                Players & Settings
-              </h2>
-
-              <div className="space-y-1.5">
-                <Label htmlFor="maxPlayers" className="text-sm">Max Players</Label>
-                <Select
-                  value={String(formData.maxPlayers)}
-                  onValueChange={(v) => handleChange("maxPlayers", parseInt(v))}
-                >
-                  <SelectTrigger className="h-11">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="4">4 players</SelectItem>
-                    <SelectItem value="8">8 players</SelectItem>
-                    <SelectItem value="12">12 players</SelectItem>
-                    <SelectItem value="16">16 players</SelectItem>
-                    <SelectItem value="20">20 players</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* Host Role Selection */}
-              <div className="space-y-2">
-                <Label className="text-sm">Your Role</Label>
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    type="button"
-                    onClick={() => handleChange("hostIsPlaying", true)}
-                    className={`flex items-center gap-2 p-3 rounded-xl border-2 transition-all text-left ${
-                      formData.hostIsPlaying
-                        ? "border-primary bg-primary/5"
-                        : "border-border hover:border-primary/50"
-                    }`}
-                  >
-                    <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                      <Trophy className="w-4 h-4 text-primary" />
-                    </div>
-                    <div>
-                      <p className="font-medium text-sm">🎾 Playing</p>
-                      <p className="text-xs text-muted-foreground">I'm joining the game</p>
-                    </div>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => handleChange("hostIsPlaying", false)}
-                    className={`flex items-center gap-2 p-3 rounded-xl border-2 transition-all text-left ${
-                      !formData.hostIsPlaying
-                        ? "border-primary bg-primary/5"
-                        : "border-border hover:border-primary/50"
-                    }`}
-                  >
-                    <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                      <Users className="w-4 h-4 text-primary" />
-                    </div>
-                    <div>
-                      <p className="font-medium text-sm">📋 Organizer</p>
-                      <p className="text-xs text-muted-foreground">Just organizing</p>
-                    </div>
-                  </button>
-                </div>
-              </div>
-
-              {/* Join Mode Selection */}
-              <div className="space-y-2">
-                <Label className="text-sm">Join Mode</Label>
-                <div className="space-y-2">
-                  <button
-                    type="button"
-                    onClick={() => handleChange("joinMode", "open")}
-                    className={`w-full flex items-center gap-3 p-3 rounded-xl border-2 transition-all text-left ${
-                      formData.joinMode === "open"
-                        ? "border-primary bg-primary/5"
-                        : "border-border hover:border-primary/50"
-                    }`}
-                  >
-                    <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                      <DoorOpen className="w-4 h-4 text-primary" />
-                    </div>
-                    <div>
-                      <p className="font-medium text-sm">Open</p>
-                      <p className="text-xs text-muted-foreground">Anyone can join directly</p>
-                    </div>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => handleChange("joinMode", "request")}
-                    className={`w-full flex items-center gap-3 p-3 rounded-xl border-2 transition-all text-left ${
-                      formData.joinMode === "request"
-                        ? "border-primary bg-primary/5"
-                        : "border-border hover:border-primary/50"
-                    }`}
-                  >
-                    <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                      <ShieldCheck className="w-4 h-4 text-primary" />
-                    </div>
-                    <div>
-                      <p className="font-medium text-sm">Request to Join</p>
-                      <p className="text-xs text-muted-foreground">You approve each player</p>
-                    </div>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => handleChange("joinMode", "request_and_pay")}
-                    className={`w-full flex items-center gap-3 p-3 rounded-xl border-2 transition-all text-left ${
-                      formData.joinMode === "request_and_pay"
-                        ? "border-primary bg-primary/5"
-                        : "border-border hover:border-primary/50"
-                    }`}
-                  >
-                    <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                      <CreditCard className="w-4 h-4 text-primary" />
-                    </div>
-                    <div>
-                      <p className="font-medium text-sm">Request & Pay</p>
-                      <p className="text-xs text-muted-foreground">Players request and pay to confirm</p>
-                    </div>
-                  </button>
-                </div>
-              </div>
-
-              <div className="space-y-1.5">
-                <Label htmlFor="visibility" className="text-sm">Visibility</Label>
-                <Select
-                  value={formData.visibility}
-                  onValueChange={(v) => handleChange("visibility", v)}
-                >
-                  <SelectTrigger className="h-11">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="public">🌍 Public - Anyone can find</SelectItem>
-                    <SelectItem value="private">🔗 Private - Link only</SelectItem>
-                    <SelectItem value="club_only">🏠 Club Only</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-            </div>
+              </>
+            )}
 
             <div className="flex gap-3">
               <Button
@@ -545,7 +667,7 @@ export default function CreateGamePage() {
                 Cancel
               </Button>
               <Button type="submit" variant="hero" className="flex-1 h-11" disabled={loading}>
-                {loading ? "Creating..." : "Create Game"}
+                {loading ? "Creating..." : isSellCourt ? "🏟️ List Court" : "Create Game"}
               </Button>
             </div>
           </form>
