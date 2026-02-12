@@ -175,6 +175,7 @@ export type Database = {
       games: {
         Row: {
           club_id: string | null
+          court_number: string | null
           created_at: string
           date_time: string
           description: string | null
@@ -198,6 +199,7 @@ export type Database = {
         }
         Insert: {
           club_id?: string | null
+          court_number?: string | null
           created_at?: string
           date_time: string
           description?: string | null
@@ -221,6 +223,7 @@ export type Database = {
         }
         Update: {
           club_id?: string | null
+          court_number?: string | null
           created_at?: string
           date_time?: string
           description?: string | null

@@ -1,0 +1,1 @@
+ALTER TABLE public.games ADD COLUMN court_number text;

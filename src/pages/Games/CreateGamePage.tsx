@@ -37,6 +37,7 @@ export default function CreateGamePage() {
     title: "",
     description: "",
     location: "",
+    courtNumber: "",
     skillLevel: 3,
     maxPlayers: 4,
     format: "casual_match",
@@ -73,6 +74,7 @@ export default function CreateGamePage() {
       title: formData.title,
       description: formData.description,
       location: formData.location,
+      court_number: formData.courtNumber || null,
       date_time: dateTime.toISOString(),
       end_date_time: endDateTime.toISOString(),
       skill_level: formData.skillLevel,
@@ -206,17 +208,29 @@ export default function CreateGamePage() {
                 When & Where
               </h2>
 
-              <div className="space-y-1.5">
-                <Label htmlFor="location" className="text-sm">Court / Location</Label>
-                <div className="relative">
-                  <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <div className="grid grid-cols-3 gap-3">
+                <div className="col-span-2 space-y-1.5">
+                  <Label htmlFor="location" className="text-sm">Court / Location</Label>
+                  <div className="relative">
+                    <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Input
+                      id="location"
+                      placeholder="e.g., Padel Club Barcelona"
+                      value={formData.location}
+                      onChange={(e) => handleChange("location", e.target.value)}
+                      required
+                      className="h-11 pl-10"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="courtNumber" className="text-sm">Court #</Label>
                   <Input
-                    id="location"
-                    placeholder="e.g., Padel Club Barcelona"
-                    value={formData.location}
-                    onChange={(e) => handleChange("location", e.target.value)}
-                    required
-                    className="h-11 pl-10"
+                    id="courtNumber"
+                    placeholder="e.g., 3"
+                    value={formData.courtNumber}
+                    onChange={(e) => handleChange("courtNumber", e.target.value)}
+                    className="h-11"
                   />
                 </div>
               </div>
