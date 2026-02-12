@@ -404,6 +404,7 @@ export function MatchesTab({
                           [match.id]: { ...prev[match.id], t1: e.target.value },
                         }))
                       }
+                      onWheel={(e) => (e.target as HTMLInputElement).blur()}
                       className="w-12 h-10 text-center text-lg font-bold p-0"
                     />
                     <span className="text-muted-foreground font-bold">-</span>
@@ -417,6 +418,7 @@ export function MatchesTab({
                           [match.id]: { ...prev[match.id], t2: e.target.value },
                         }))
                       }
+                      onWheel={(e) => (e.target as HTMLInputElement).blur()}
                       className="w-12 h-10 text-center text-lg font-bold p-0"
                     />
                   </div>
