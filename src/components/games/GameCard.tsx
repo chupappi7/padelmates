@@ -20,6 +20,7 @@ interface GameCardProps {
   hostName: string;
   hostAvatar?: string;
   distance?: number;
+  paymentMode?: string;
 }
 
 const formatLabels = {
@@ -48,6 +49,7 @@ export function GameCard({
   hostName,
   hostAvatar,
   distance,
+  paymentMode,
 }: GameCardProps) {
   const spotsLeft = maxPlayers - currentPlayers;
   const date = new Date(dateTime);
@@ -111,15 +113,17 @@ export function GameCard({
                     )}
                   </span>
                 </div>
-                <div className="flex items-center gap-1 sm:gap-2">
-                  <Users className="w-3 h-3 sm:w-4 sm:h-4 text-primary shrink-0" />
-                  <span className="whitespace-nowrap">
-                    {currentPlayers}/{maxPlayers}
-                    {spotsLeft > 0 && (
-                      <span className="text-success ml-0.5 sm:ml-1">· {spotsLeft} left</span>
-                    )}
-                  </span>
-                </div>
+                {paymentMode !== 'court_sharing' && paymentMode !== 'spot_selling' && (
+                  <div className="flex items-center gap-1 sm:gap-2">
+                    <Users className="w-3 h-3 sm:w-4 sm:h-4 text-primary shrink-0" />
+                    <span className="whitespace-nowrap">
+                      {currentPlayers}/{maxPlayers}
+                      {spotsLeft > 0 && (
+                        <span className="text-success ml-0.5 sm:ml-1">· {spotsLeft} left</span>
+                      )}
+                    </span>
+                  </div>
+                )}
               </div>
             </div>
           </div>
