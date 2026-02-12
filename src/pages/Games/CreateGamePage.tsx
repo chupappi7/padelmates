@@ -20,7 +20,7 @@ import { Navbar } from "@/components/layout/Navbar";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { format } from "date-fns";
-import { ArrowLeft, Calendar, MapPin, Users, Trophy, Clock, DoorOpen, ShieldCheck, CreditCard } from "lucide-react";
+import { ArrowLeft, Calendar, MapPin, Users, Trophy, Clock, DoorOpen, ShieldCheck, CreditCard, Euro } from "lucide-react";
 
 export default function CreateGamePage() {
   const navigate = useNavigate();
@@ -41,6 +41,7 @@ export default function CreateGamePage() {
     visibility: "public",
     hostIsPlaying: true,
     joinMode: "open",
+    pricePerPlayer: "",
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -69,7 +70,7 @@ export default function CreateGamePage() {
       date_time: dateTime.toISOString(),
       skill_level: formData.skillLevel,
       max_players: formData.maxPlayers,
-      price_per_player: 0,
+      price_per_player: formData.pricePerPlayer ? parseFloat(formData.pricePerPlayer) : 0,
       payment_mode: "pay_to_join",
       format: formData.format as "casual_match" | "americano" | "team_americano",
       visibility: formData.visibility as "public" | "private" | "club_only",
@@ -408,6 +409,25 @@ export default function CreateGamePage() {
                     <SelectItem value="club_only">🏠 Club Only</SelectItem>
                   </SelectContent>
                 </Select>
+              </div>
+
+              {/* Price per Player */}
+              <div className="space-y-1.5">
+                <Label htmlFor="price" className="text-sm">Price per Player (€)</Label>
+                <div className="relative">
+                  <Euro className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    id="price"
+                    type="number"
+                    min="0"
+                    step="0.5"
+                    placeholder="0 (free)"
+                    value={formData.pricePerPlayer}
+                    onChange={(e) => handleChange("pricePerPlayer", e.target.value)}
+                    className="h-11 pl-10"
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground">Leave empty or 0 for free games</p>
               </div>
             </div>
 
