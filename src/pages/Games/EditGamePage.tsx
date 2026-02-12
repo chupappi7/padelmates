@@ -161,7 +161,7 @@ export default function EditGamePage() {
                 <Input
                   id="title"
                   value={formData.title}
-                  onChange={(e) => handleChange("title", e.target.value)}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, title: e.target.value }))}
                   required
                   className="h-11"
                 />
@@ -173,7 +173,7 @@ export default function EditGamePage() {
                   id="description"
                   placeholder="Details, rules, what to bring..."
                   value={formData.description}
-                  onChange={(e) => handleChange("description", e.target.value)}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, description: e.target.value }))}
                   rows={4}
                   className="text-sm resize-none"
                 />
@@ -219,7 +219,7 @@ export default function EditGamePage() {
                   <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                   <Input
                     value={formData.location}
-                    onChange={(e) => handleChange("location", e.target.value)}
+                    onChange={(e) => setFormData((prev) => ({ ...prev, location: e.target.value }))}
                     required
                     className="h-11 pl-10"
                   />
