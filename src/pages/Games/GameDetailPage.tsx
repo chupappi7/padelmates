@@ -593,7 +593,7 @@ export default function GameDetailPage() {
 
       {/* Sticky Join CTA */}
       {user && !isHost && !isPlayer && !myRequest && spotsLeft > 0 && (
-        <div className="fixed bottom-0 left-0 right-0 p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] bg-background/95 backdrop-blur-md border-t border-border md:hidden z-40">
+        <div className="fixed left-0 right-0 p-4 bg-background/95 backdrop-blur-md border-t border-border md:hidden z-40" style={{ bottom: "calc(3.5rem + env(safe-area-inset-bottom))" }}>
           <Button
             variant="hero"
             size="xl"
