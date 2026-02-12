@@ -70,9 +70,13 @@ export default function CreateGamePage() {
 
     setLoading(true);
 
+    const dbFormat = formData.format === "court_sharing" ? "casual_match" : formData.format;
+
     const { data, error } = await supabase.from("games").insert({
       title: formData.title,
-      description: formData.description,
+      description: formData.format === "court_sharing" 
+        ? `[Court Sharing] ${formData.description || "Court available"}` 
+        : formData.description,
       location: formData.location,
       court_number: formData.courtNumber || null,
       date_time: dateTime.toISOString(),
@@ -80,8 +84,8 @@ export default function CreateGamePage() {
       skill_level: formData.skillLevel,
       max_players: formData.maxPlayers,
       price_per_player: formData.pricePerPlayer ? parseFloat(formData.pricePerPlayer) : 0,
-      payment_mode: "pay_to_join",
-      format: formData.format as "casual_match" | "americano" | "team_americano",
+      payment_mode: formData.format === "court_sharing" ? "court_sharing" : "pay_to_join",
+      format: dbFormat as "casual_match" | "americano" | "team_americano",
       visibility: formData.visibility as "public" | "private" | "club_only",
       host_id: user.id,
       host_is_playing: formData.hostIsPlaying,
@@ -101,10 +105,12 @@ export default function CreateGamePage() {
   const handleChange = (field: string, value: string | number | boolean) => {
     setFormData((prev) => {
       const updated = { ...prev, [field]: value };
-      if (field === "format" && value === "casual_match") {
-        updated.maxPlayers = 4;
-      } else if (field === "format" && (value === "americano" || value === "team_americano")) {
-        updated.maxPlayers = 8;
+      if (field === "format") {
+        if (value === "casual_match" || value === "court_sharing") {
+          updated.maxPlayers = 4;
+        } else if (value === "americano" || value === "team_americano") {
+          updated.maxPlayers = 8;
+        }
       }
       return updated;
     });
@@ -177,6 +183,7 @@ export default function CreateGamePage() {
                       <SelectItem value="casual_match">Casual Match</SelectItem>
                       <SelectItem value="americano">Americano</SelectItem>
                       <SelectItem value="team_americano">Team Americano</SelectItem>
+                      <SelectItem value="court_sharing">🏟️ Selling / Giving Away Court</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
