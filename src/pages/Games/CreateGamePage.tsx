@@ -28,7 +28,7 @@ export default function CreateGamePage() {
   const [loading, setLoading] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
   const [selectedTime, setSelectedTime] = useState("18:00");
-  const [selectedEndTime, setSelectedEndTime] = useState("19:30");
+  const [selectedEndTime, setSelectedEndTime] = useState("20:00");
   const [showTimePicker, setShowTimePicker] = useState(false);
   const [showEndTimePicker, setShowEndTimePicker] = useState(false);
   const [showDatePicker, setShowDatePicker] = useState(false);
