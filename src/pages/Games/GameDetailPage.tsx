@@ -10,6 +10,7 @@ import { Navbar } from "@/components/layout/Navbar";
 import { SkillBadge } from "@/components/games/SkillBadge";
 import { JoinRequestModal } from "@/components/games/JoinRequestModal";
 import { ParticipantsTab } from "@/components/games/ParticipantsTab";
+import { MatchesTab } from "@/components/games/MatchesTab";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { format } from "date-fns";
@@ -496,20 +497,17 @@ export default function GameDetailPage() {
           {/* Matches Tab */}
           {activeTab === "matches" && (
             <motion.div key="matches" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-              <div className="bg-card border border-border rounded-xl p-6 text-center">
-                <Trophy className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
-                <h3 className="font-display font-bold text-lg mb-1">Matches & Scores</h3>
-                <p className="text-sm text-muted-foreground mb-4">
-                  {canManage
-                    ? "Generate matches or manually assign players once everyone has joined."
-                    : "Matches and scores will appear here once the host sets them up."}
-                </p>
-                {canManage && (
-                  <Button variant="outline" disabled>
-                    Generate Matches (Coming Soon)
-                  </Button>
-                )}
-              </div>
+              <MatchesTab
+                gameId={game.id}
+                canManage={canManage}
+                players={players}
+                hostIsPlaying={game.host_is_playing}
+                hostId={game.host_id}
+                hostProfile={game.profiles ? {
+                  name: game.profiles.name,
+                  avatar_url: game.profiles.avatar_url,
+                } : null}
+              />
             </motion.div>
           )}
 

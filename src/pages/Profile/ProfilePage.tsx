@@ -36,6 +36,7 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [editing, setEditing] = useState(false);
+  const [matchStats, setMatchStats] = useState({ played: 0, wins: 0 });
 
   const [formData, setFormData] = useState({
     name: "",
@@ -44,7 +45,10 @@ export default function ProfilePage() {
   });
 
   useEffect(() => {
-    if (user) fetchProfile();
+    if (user) {
+      fetchProfile();
+      fetchMatchStats();
+    }
   }, [user]);
 
   const fetchProfile = async () => {
@@ -63,6 +67,40 @@ export default function ProfilePage() {
       });
     }
     setLoading(false);
+  };
+
+  const fetchMatchStats = async () => {
+    if (!user) return;
+    // Get all match_players entries for this user
+    const { data: myMatchPlayers } = await supabase
+      .from("match_players")
+      .select("match_id, team")
+      .eq("user_id", user.id);
+
+    if (!myMatchPlayers || myMatchPlayers.length === 0) return;
+
+    const matchIds = myMatchPlayers.map((mp) => mp.match_id);
+    const { data: matchesData } = await supabase
+      .from("matches")
+      .select("id, team1_score, team2_score, status")
+      .in("id", matchIds)
+      .eq("status", "completed");
+
+    if (!matchesData) return;
+
+    let wins = 0;
+    matchesData.forEach((m) => {
+      const mp = myMatchPlayers.find((p) => p.match_id === m.id);
+      if (!mp) return;
+      if (
+        (mp.team === 1 && m.team1_score > m.team2_score) ||
+        (mp.team === 2 && m.team2_score > m.team1_score)
+      ) {
+        wins++;
+      }
+    });
+
+    setMatchStats({ played: matchesData.length, wins });
   };
 
   const handleSave = async () => {
@@ -248,14 +286,14 @@ export default function ProfilePage() {
               <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center mx-auto mb-2">
                 <Calendar className="w-5 h-5 text-primary" />
               </div>
-              <p className="text-2xl font-bold">{profile?.games_played || 0}</p>
-              <p className="text-sm text-muted-foreground">Games Played</p>
+              <p className="text-2xl font-bold">{matchStats.played || profile?.games_played || 0}</p>
+              <p className="text-sm text-muted-foreground">Matches</p>
             </div>
             <div className="bg-card border border-border rounded-xl p-4 text-center">
               <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center mx-auto mb-2">
                 <Trophy className="w-5 h-5 text-primary" />
               </div>
-              <p className="text-2xl font-bold">0</p>
+              <p className="text-2xl font-bold">{matchStats.wins}</p>
               <p className="text-sm text-muted-foreground">Wins</p>
             </div>
             <div className="bg-card border border-border rounded-xl p-4 text-center">
