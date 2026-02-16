@@ -1,38 +1,53 @@
 
 
-# Replace End Time Picker with Duration Chips
+# Simplify Price to "Total Court Price + Auto Split"
 
-## Summary
-Replace the separate End Time scroll picker with a row of duration chips (60 / 90 / 120 min). The end time will be auto-calculated from Start Time + Duration and shown as a read-only label. This applies to both the Create Game and Edit Game pages, and both the "sell court" and regular form layouts.
+## What Changes
 
-## UI Layout (After Change)
+Across all game creation flows (Find Players, Americano, etc.) and the Edit Game page, replace the current price inputs with a single **optional** "Total Court Price" field. When filled in, it auto-splits across `maxPlayers` and shows the per-player amount. When left empty, the game is free.
+
+The price field becomes **required only** when the join mode is set to "Request and Pay".
+
+## Current vs New Behavior
 
 ```text
-Start Time:   [ 18:00 ]          (scroll picker, same as now)
+CURRENT (Find Players):
+- Total Amount input + Per Player read-only display (already split logic)
+- But "Sell Court" flow has a separate "Price for the Court" field
+- Edit page has a plain "Price per Player" input with no split
 
-Duration:     [60 min] [90 min] [120 min]   (toggle chips, 90 default)
-
-Ends at:      19:30              (auto-calculated, read-only text)
+NEW (All flows):
+- One optional field: "Total Court Price" (Kč)
+- Auto-calculated label: "X Kč per player" (based on maxPlayers)
+- If empty/0: shows "Free"
+- Required only when joinMode = "request_and_pay"
 ```
 
 ## Technical Details
 
-### State Changes (both CreateGamePage and EditGamePage)
-- Remove `selectedEndTime` and `showEndTimePicker` state variables
-- Add `duration` state: `useState<number>(90)` (minutes, default 90)
-- Compute end time with a `useMemo`: add `duration` minutes to `selectedTime`
-- On form submit, calculate `endDateTime` from start time + duration instead of parsing `selectedEndTime`
+### File: `src/pages/Games/CreateGamePage.tsx`
 
-### EditGamePage: Loading Existing Data
-- When fetching an existing game, calculate the duration by diffing `end_date_time - date_time` in minutes
-- Snap to nearest chip value (60/90/120); if it doesn't match exactly, default to the closest one
+1. **Sell Court flow (lines 269-286)**: Replace "Price for the Court" input (which currently saves to `pricePerPlayer`) to use `totalPrice` field instead, with per-player split display below.
 
-### UI Changes (both pages, both sell-court and regular layouts)
-- Remove the End Time button and its `TimeScrollPicker`
-- Replace with a row of 3 toggle-style chips (60 / 90 / 120 min) using simple styled buttons
-- Add a small "Ends at HH:MM" label below or beside the duration chips
-- The Start Time picker remains unchanged
+2. **Regular flow price section (lines 516-546)**: Already has total + split UI -- keep this as-is, it's already correct.
 
-### Files Modified
-1. **src/pages/Games/CreateGamePage.tsx** -- Remove end time state/picker, add duration chips + auto-calculated end time (in both sell-court and regular form sections)
-2. **src/pages/Games/EditGamePage.tsx** -- Same changes, plus infer duration from existing game data on load
+3. **Submission logic (lines 127-129)**: Unify -- always compute `price_per_player` as `Math.ceil(totalPrice / maxPlayers)`. Remove the `pricePerPlayer` field from formData entirely since everything goes through `totalPrice`.
+
+4. **Validation**: When `joinMode === "request_and_pay"`, require `totalPrice > 0` before submit. Show toast error if missing.
+
+### File: `src/pages/Games/EditGamePage.tsx`
+
+1. **Replace the current "Price per Player" input** (lines ~210-225) with the same "Total Court Price" + auto-split UI used in CreateGamePage.
+
+2. **On load**: Reverse-calculate `totalPrice` from `price_per_player * max_players` when fetching existing game data.
+
+3. **On submit**: Calculate `price_per_player = Math.ceil(totalPrice / maxPlayers)`.
+
+4. **Add same validation**: Require price when `joinMode === "request_and_pay"`.
+
+### FormData Changes
+
+- Remove `pricePerPlayer` field from both pages
+- Use `totalPrice` as the single price input field everywhere
+- Default to empty string (optional/free)
+
