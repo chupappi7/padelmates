@@ -76,6 +76,7 @@ export default function CreateGamePage() {
     courtNumber: "",
     skillLevel: 3,
     maxPlayers: config.defaultMaxPlayers,
+    lookingFor: 2,
     format: config.format,
     visibility: "public",
     hostIsPlaying: hostType !== "sell_court",
@@ -111,7 +112,7 @@ export default function CreateGamePage() {
       : "pay_to_join";
 
     const title = isSellCourt ? "Sell / Give Away Court" 
-      : hostType === "find_players" ? `Looking for ${formData.maxPlayers} players`
+      : hostType === "find_players" ? `Looking for ${formData.lookingFor} players`
       : formData.title;
 
     const { data, error } = await supabase.from("games").insert({
@@ -313,6 +314,20 @@ export default function CreateGamePage() {
                       <div className="flex items-center gap-3">
                         <span className="text-sm text-muted-foreground whitespace-nowrap">Looking for</span>
                         <Select
+                          value={String(formData.lookingFor)}
+                          onValueChange={(v) => handleChange("lookingFor", parseInt(v))}
+                        >
+                          <SelectTrigger className="h-11 w-24">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {[1, 2, 3, 4, 5, 6, 7].map((n) => (
+                              <SelectItem key={n} value={String(n)}>{n}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <span className="text-sm text-muted-foreground whitespace-nowrap">out of</span>
+                        <Select
                           value={String(formData.maxPlayers)}
                           onValueChange={(v) => handleChange("maxPlayers", parseInt(v))}
                         >
@@ -320,14 +335,14 @@ export default function CreateGamePage() {
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            {[1, 2, 3, 4, 5, 6, 7, 8].map((n) => (
+                            {[2, 3, 4, 5, 6, 7, 8].map((n) => (
                               <SelectItem key={n} value={String(n)}>{n}</SelectItem>
                             ))}
                           </SelectContent>
                         </Select>
-                        <span className="text-sm text-muted-foreground">players</span>
+                        <span className="text-sm text-muted-foreground">total</span>
                       </div>
-                      <p className="text-xs text-muted-foreground">Title will be "Looking for {formData.maxPlayers} players"</p>
+                      <p className="text-xs text-muted-foreground">Price splits across {formData.maxPlayers} players</p>
                     </div>
                   ) : (
                     <div className="space-y-1.5">
