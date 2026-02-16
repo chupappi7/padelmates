@@ -86,14 +86,10 @@ export function GameCard({
                 {formatLabels[format]}
               </Badge>
             </div>
-            {priceMode === 'split_evenly' || (pricePerPlayer > 0 && priceMode !== 'free') ? (
-              priceMode === 'split_evenly' && pricePerPlayer === 0 ? (
-                <span className="text-xs sm:text-sm font-semibold text-primary whitespace-nowrap">🤝 Split</span>
-              ) : (
-                <span className="text-primary font-bold text-xs sm:text-sm whitespace-nowrap">
-                  {pricePerPlayer} Kč{priceMode === 'split_evenly' ? ' /pp' : ''}
-                </span>
-              )
+            {pricePerPlayer > 0 && priceMode !== 'free' ? (
+              <span className="text-primary font-bold text-xs sm:text-sm whitespace-nowrap">
+                {pricePerPlayer} Kč
+              </span>
             ) : null}
           </div>
 
