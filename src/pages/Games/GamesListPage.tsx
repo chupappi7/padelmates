@@ -34,6 +34,7 @@ interface Game {
   max_players: number;
   price_per_player: number;
   payment_mode: string;
+  price_mode?: string;
   host_id: string;
   host_is_playing: boolean;
   profiles: {
@@ -268,6 +269,7 @@ export default function GamesListPage() {
                       hostAvatar={game.profiles?.avatar_url || undefined}
                       distance={game.distance}
                       paymentMode={game.payment_mode}
+                      priceMode={game.price_mode}
                     />
                   </motion.div>
                 );

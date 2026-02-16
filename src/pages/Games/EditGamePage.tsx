@@ -47,6 +47,7 @@ export default function EditGamePage() {
     hostIsPlaying: true,
     joinMode: "open",
     totalPrice: "",
+    priceMode: "free" as "split_evenly" | "free" | "set_price",
   });
 
   useEffect(() => {
@@ -80,6 +81,7 @@ export default function EditGamePage() {
       hostIsPlaying: data.host_is_playing,
       joinMode: data.join_mode,
       totalPrice: data.price_per_player > 0 ? String(data.price_per_player * data.max_players) : "",
+      priceMode: (data as any).price_mode || "free",
     });
     setFetching(false);
   };
@@ -111,6 +113,7 @@ export default function EditGamePage() {
       price_per_player: formData.totalPrice && Number(formData.totalPrice) > 0
         ? Math.ceil(Number(formData.totalPrice) / formData.maxPlayers)
         : 0,
+      price_mode: formData.priceMode,
       format: formData.format as "casual_match" | "americano" | "team_americano",
       visibility: formData.visibility as "public" | "private" | "club_only",
       host_is_playing: formData.hostIsPlaying,
@@ -304,28 +307,84 @@ export default function EditGamePage() {
                 <DurationChips duration={duration} onDurationChange={setDuration} selectedTime={selectedTime} />
               </div>
 
-              {/* Total Court Price */}
-              <div className="space-y-1.5">
-                <Label htmlFor="price" className="text-sm">Total Court Price</Label>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-semibold text-sm">Kč</span>
-                  <Input
-                    id="price"
-                    type="number"
-                    min="0"
-                    step="1"
-                    placeholder="0"
-                    value={formData.totalPrice}
-                    onChange={(e) => setFormData((prev) => ({ ...prev, totalPrice: e.target.value }))}
-                    className="h-11 pl-10"
-                  />
+              {/* Price Mode */}
+              <div className="space-y-3">
+                <Label className="text-sm">Price</Label>
+                <div className="flex gap-2">
+                  {([
+                    { value: "split_evenly", label: "Split evenly", emoji: "🤝" },
+                    { value: "free", label: "Free", emoji: "🆓" },
+                    { value: "set_price", label: "Set price", emoji: "💰" },
+                  ] as const).map((mode) => (
+                    <button
+                      key={mode.value}
+                      type="button"
+                      onClick={() => setFormData((prev) => ({ ...prev, priceMode: mode.value }))}
+                      className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl border-2 text-sm font-medium transition-all ${
+                        formData.priceMode === mode.value
+                          ? "border-primary bg-primary/5 text-foreground"
+                          : "border-border hover:border-primary/50 text-muted-foreground"
+                      }`}
+                    >
+                      <span>{mode.emoji}</span>
+                      <span>{mode.label}</span>
+                    </button>
+                  ))}
                 </div>
-                {formData.totalPrice && Number(formData.totalPrice) > 0 ? (
-                  <p className="text-xs text-muted-foreground">
-                    {Math.ceil(Number(formData.totalPrice) / formData.maxPlayers)} Kč per player (split across {formData.maxPlayers})
-                  </p>
-                ) : (
-                  <p className="text-xs text-muted-foreground">Leave empty or 0 for free games</p>
+
+                {formData.priceMode === "split_evenly" && (
+                  <div className="space-y-2">
+                    <p className="text-xs text-muted-foreground">Players will split the court cost evenly</p>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs text-muted-foreground">Total Court Price (optional)</Label>
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-semibold text-sm">Kč</span>
+                        <Input
+                          type="number"
+                          min="0"
+                          step="1"
+                          placeholder="0"
+                          value={formData.totalPrice}
+                          onChange={(e) => setFormData((prev) => ({ ...prev, totalPrice: e.target.value }))}
+                          className="h-11 pl-10"
+                        />
+                      </div>
+                      {formData.totalPrice && Number(formData.totalPrice) > 0 && (
+                        <p className="text-xs text-muted-foreground">
+                          ≈ {Math.ceil(Number(formData.totalPrice) / formData.maxPlayers)} Kč per player
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {formData.priceMode === "set_price" && (
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1.5">
+                      <Label className="text-xs text-muted-foreground">Total Amount</Label>
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-semibold text-sm">Kč</span>
+                        <Input
+                          type="number"
+                          min="0"
+                          step="1"
+                          placeholder="0"
+                          value={formData.totalPrice}
+                          onChange={(e) => setFormData((prev) => ({ ...prev, totalPrice: e.target.value }))}
+                          className="h-11 pl-10"
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs text-muted-foreground">Per Player</Label>
+                      <div className="h-11 px-3 flex items-center bg-muted/50 border border-input rounded-md text-sm font-semibold">
+                        {formData.totalPrice && Number(formData.totalPrice) > 0
+                          ? `${Math.ceil(Number(formData.totalPrice) / formData.maxPlayers)} Kč`
+                          : "Free"}
+                      </div>
+                    </div>
+                    <p className="col-span-2 text-xs text-muted-foreground">Enter the total court cost — split across {formData.maxPlayers} players</p>
+                  </div>
                 )}
               </div>
             </div>
