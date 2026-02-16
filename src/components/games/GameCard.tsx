@@ -16,6 +16,7 @@ interface GameCardProps {
   format: "casual_match" | "americano" | "team_americano";
   maxPlayers: number;
   currentPlayers: number;
+  prefilledCount?: number;
   pricePerPlayer: number;
   hostName: string;
   hostAvatar?: string;
@@ -46,6 +47,7 @@ export function GameCard({
   format,
   maxPlayers,
   currentPlayers,
+  prefilledCount = 0,
   pricePerPlayer,
   hostName,
   hostAvatar,
@@ -53,7 +55,8 @@ export function GameCard({
   paymentMode,
   priceMode,
 }: GameCardProps) {
-  const spotsLeft = maxPlayers - currentPlayers;
+  const totalPlayers = currentPlayers + prefilledCount;
+  const spotsLeft = maxPlayers - totalPlayers;
   const date = new Date(dateTime);
   const durationHrs = endDateTime
     ? (new Date(endDateTime).getTime() - date.getTime()) / 3600000
@@ -122,8 +125,8 @@ export function GameCard({
                   </span>
                 </div>
                 {paymentMode !== 'court_sharing' && paymentMode !== 'spot_selling' && (() => {
-                  const ratio = currentPlayers / maxPlayers;
-                  const isFull = spotsLeft === 0;
+                  const ratio = totalPlayers / maxPlayers;
+                  const isFull = spotsLeft <= 0;
                   const bubbleColor = isFull
                     ? "bg-destructive/15 text-destructive border-destructive/20"
                     : spotsLeft <= 2
@@ -132,7 +135,7 @@ export function GameCard({
                   return (
                     <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] sm:text-xs font-semibold ${bubbleColor}`}>
                       <Users className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
-                      {currentPlayers}/{maxPlayers}
+                      {totalPlayers}/{maxPlayers}
                       {isFull ? " Full" : ` · ${spotsLeft} left`}
                     </span>
                   );
