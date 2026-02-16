@@ -139,7 +139,7 @@ export default function GamesListPage() {
             <div>
               <h1 className="font-display text-2xl sm:text-3xl font-bold mb-0.5">Matches</h1>
               <p className="text-sm text-muted-foreground">
-                {selectedDate ? format(selectedDate, "EEEE, MMMM d") : "All upcoming"}
+                {selectedDate ? format(selectedDate, "EEEE, MMMM d, yyyy") : "All upcoming"}
               </p>
             </div>
             {user && !isMobile && (
@@ -224,7 +224,7 @@ export default function GamesListPage() {
                     let dayLabel: string;
                     if (isToday(gameDate)) dayLabel = "Today";
                     else if (isTomorrow(gameDate)) dayLabel = "Tomorrow";
-                    else dayLabel = format(gameDate, "EEE, MMM d");
+                    else dayLabel = format(gameDate, "EEE, MMM d, yyyy");
                     elements.push(
                       <div key={`date-${dateKey}`} className="flex items-center gap-3 pt-4 first:pt-0">
                         <span className="text-sm font-semibold text-foreground whitespace-nowrap">{dayLabel}</span>

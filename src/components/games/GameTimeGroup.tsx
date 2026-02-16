@@ -13,7 +13,7 @@ export function GameTimeGroup({ dateTime }: GameTimeGroupProps) {
   } else if (isTomorrow(date)) {
     dayLabel = "Tomorrow";
   } else {
-    dayLabel = format(date, "EEE, MMM d");
+    dayLabel = format(date, "EEE, MMM d, yyyy");
   }
   
   const timeLabel = format(date, "h:mm a");
