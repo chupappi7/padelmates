@@ -46,7 +46,7 @@ export default function EditGamePage() {
     visibility: "public",
     hostIsPlaying: true,
     joinMode: "open",
-    pricePerPlayer: "",
+    totalPrice: "",
   });
 
   useEffect(() => {
@@ -79,7 +79,7 @@ export default function EditGamePage() {
       visibility: data.visibility,
       hostIsPlaying: data.host_is_playing,
       joinMode: data.join_mode,
-      pricePerPlayer: data.price_per_player > 0 ? String(data.price_per_player) : "",
+      totalPrice: data.price_per_player > 0 ? String(data.price_per_player * data.max_players) : "",
     });
     setFetching(false);
   };
@@ -88,6 +88,9 @@ export default function EditGamePage() {
     e.preventDefault();
     if (!user || !id) return;
     if (!selectedDate) { toast.error("Please select a date"); return; }
+    if (formData.joinMode === "request_and_pay" && (!formData.totalPrice || Number(formData.totalPrice) <= 0)) {
+      toast.error("Price is required for 'Request & Pay' mode"); return;
+    }
 
     const [hours, minutes] = selectedTime.split(":").map(Number);
     const dateTime = new Date(selectedDate);
@@ -105,7 +108,9 @@ export default function EditGamePage() {
       end_date_time: endDateTime.toISOString(),
       skill_level: formData.skillLevel,
       max_players: formData.maxPlayers,
-      price_per_player: formData.pricePerPlayer ? parseFloat(formData.pricePerPlayer) : 0,
+      price_per_player: formData.totalPrice && Number(formData.totalPrice) > 0
+        ? Math.ceil(Number(formData.totalPrice) / formData.maxPlayers)
+        : 0,
       format: formData.format as "casual_match" | "americano" | "team_americano",
       visibility: formData.visibility as "public" | "private" | "club_only",
       host_is_playing: formData.hostIsPlaying,
@@ -299,23 +304,29 @@ export default function EditGamePage() {
                 <DurationChips duration={duration} onDurationChange={setDuration} selectedTime={selectedTime} />
               </div>
 
-              {/* Price per Player */}
+              {/* Total Court Price */}
               <div className="space-y-1.5">
-                <Label htmlFor="price" className="text-sm">Price per Player</Label>
+                <Label htmlFor="price" className="text-sm">Total Court Price</Label>
                 <div className="relative">
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-semibold text-sm">Kč</span>
                   <Input
                     id="price"
                     type="number"
                     min="0"
-                    step="0.5"
+                    step="1"
                     placeholder="0"
-                    value={formData.pricePerPlayer}
-                    onChange={(e) => setFormData((prev) => ({ ...prev, pricePerPlayer: e.target.value }))}
+                    value={formData.totalPrice}
+                    onChange={(e) => setFormData((prev) => ({ ...prev, totalPrice: e.target.value }))}
                     className="h-11 pl-10"
                   />
                 </div>
-                <p className="text-xs text-muted-foreground">Leave empty or 0 for free games</p>
+                {formData.totalPrice && Number(formData.totalPrice) > 0 ? (
+                  <p className="text-xs text-muted-foreground">
+                    {Math.ceil(Number(formData.totalPrice) / formData.maxPlayers)} Kč per player (split across {formData.maxPlayers})
+                  </p>
+                ) : (
+                  <p className="text-xs text-muted-foreground">Leave empty or 0 for free games</p>
+                )}
               </div>
             </div>
 
