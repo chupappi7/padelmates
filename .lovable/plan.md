@@ -1,27 +1,39 @@
 
 
-## Improved Set Score Display
+## Default "All Events" View with Optional Date Filtering
 
-The current vertical stacking of individual set scores (7·6, 4·6, 6·3) above the big sets-won number works but feels disconnected and takes up vertical space. Here's a cleaner approach inspired by professional sports scoreboards:
+### Problem
+Right now the games list defaults to showing only today's matches. Since the app is new with few users, this often results in an empty screen -- not a great first impression.
 
-### Design: Horizontal Set Score Pills
+### Solution
+Change the default to show **all upcoming events** across all dates, with the day picker acting as an optional filter users can tap into.
 
-Replace the vertically stacked mini-scores with a **horizontal row of compact pill badges** below the main sets-won score. Each pill shows one set result (e.g., `7-6`) with the winner's score highlighted in green.
+### How it works
 
-**Layout (top to bottom):**
-1. Main sets-won score: **2 - 1** (large, bold)
-2. "SETS" label (tiny, muted)
-3. Row of set pills: `[7-6]` `[4-6]` `[6-3]` (small rounded badges, inline)
-4. Edit button
+1. **DayPicker gets an "All" button** -- a new first item in the horizontal scroll labeled "All" that, when selected, shows every upcoming game regardless of date.
 
-This is more compact, reads left-to-right naturally (Set 1, Set 2, Set 3), and scales well whether there are 1, 2, or 3 sets.
+2. **Default state is "All"** -- `selectedDate` starts as `null` instead of today's date. When null, no date filtering is applied and all upcoming games are listed.
+
+3. **Date grouping in "All" mode** -- when showing all events, games are grouped by date with section headers (e.g., "Today", "Tomorrow", "Wednesday, Feb 18") so users can still scan by day.
+
+4. **Subtitle updates dynamically** -- the subtitle under "Matches" shows "All upcoming" when no date is selected, or the specific date when one is chosen.
+
+5. **Empty state text adjusts** -- says "No upcoming matches" in All mode vs. "No matches on this day" when a specific date is selected.
+
+---
 
 ### Technical Details
 
-**File: `src/components/games/MatchesTab.tsx`**
+**`src/components/games/DayPicker.tsx`**
+- Change prop type: `selectedDate: Date | null`
+- Add an "All" button as the first item in the scroll list
+- When "All" is selected (`null`), highlight it with primary styling
+- Clicking a specific day sets that date; clicking the already-selected day or "All" resets to `null`
 
-- Move the set scores from **above** the main score to **below** the "SETS" label
-- Render each set as a small rounded pill/badge with `bg-muted` background
-- Inside each pill: show `t1-t2` with the winning side's number in `text-success`
-- Use `flex-wrap` so it handles 3 sets gracefully on narrow screens
+**`src/pages/Games/GamesListPage.tsx`**
+- Change `selectedDate` state from `useState<Date>(new Date())` to `useState<Date | null>(null)`
+- Update `filteredGames` filter: skip `isSameDay` check when `selectedDate` is `null`
+- In "All" mode, group games by date with date headers (e.g., "Today -- Feb 16", "Tomorrow -- Feb 17", "Wed, Feb 18")
+- Update subtitle: show "All upcoming" when `selectedDate` is null
+- Update empty state messaging accordingly
 
