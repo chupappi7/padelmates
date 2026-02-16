@@ -81,6 +81,7 @@ export default function CreateGamePage() {
     hostIsPlaying: hostType !== "sell_court",
     joinMode: config.defaultJoinMode,
     pricePerPlayer: "",
+    totalPrice: "",
   });
 
   const isSellCourt = hostType === "sell_court";
@@ -124,7 +125,9 @@ export default function CreateGamePage() {
       end_date_time: endDateTime.toISOString(),
       skill_level: formData.skillLevel,
       max_players: formData.maxPlayers,
-      price_per_player: formData.pricePerPlayer ? parseFloat(formData.pricePerPlayer) : 0,
+      price_per_player: formData.totalPrice && Number(formData.totalPrice) > 0
+        ? Math.ceil(Number(formData.totalPrice) / formData.maxPlayers)
+        : formData.pricePerPlayer ? parseFloat(formData.pricePerPlayer) : 0,
       payment_mode: paymentMode,
       format: formData.format as "casual_match" | "americano" | "team_americano",
       visibility: formData.visibility as "public" | "private" | "club_only",
@@ -515,23 +518,36 @@ export default function CreateGamePage() {
                   <TimeScrollPicker open={showTimePicker} onOpenChange={setShowTimePicker} value={selectedTime} onChange={setSelectedTime} />
                   <TimeScrollPicker open={showEndTimePicker} onOpenChange={setShowEndTimePicker} value={selectedEndTime} onChange={setSelectedEndTime} />
 
-                  {/* Price per Player */}
-                  <div className="space-y-1.5">
-                    <Label htmlFor="price" className="text-sm">Price per Player</Label>
-                    <div className="relative">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-semibold text-sm">Kč</span>
-                      <Input
-                        id="price"
-                        type="number"
-                        min="0"
-                        step="0.5"
-                        placeholder="0"
-                        value={formData.pricePerPlayer}
-                        onChange={(e) => handleChange("pricePerPlayer", e.target.value)}
-                        className="h-11 pl-10"
-                      />
+                  {/* Price */}
+                  <div className="space-y-3">
+                    <Label className="text-sm">Price</Label>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1.5">
+                        <Label className="text-xs text-muted-foreground">Total Amount</Label>
+                        <div className="relative">
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-semibold text-sm">Kč</span>
+                          <Input
+                            id="totalPrice"
+                            type="number"
+                            min="0"
+                            step="1"
+                            placeholder="0"
+                            value={formData.totalPrice}
+                            onChange={(e) => handleChange("totalPrice", e.target.value)}
+                            className="h-11 pl-10"
+                          />
+                        </div>
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label className="text-xs text-muted-foreground">Per Player</Label>
+                        <div className="h-11 px-3 flex items-center bg-muted/50 border border-input rounded-md text-sm font-semibold">
+                          {formData.totalPrice && Number(formData.totalPrice) > 0
+                            ? `${Math.ceil(Number(formData.totalPrice) / formData.maxPlayers)} Kč`
+                            : "Free"}
+                        </div>
+                      </div>
                     </div>
-                    <p className="text-xs text-muted-foreground">Leave empty or 0 for free games</p>
+                    <p className="text-xs text-muted-foreground">Enter the total court cost — it'll be split across {formData.maxPlayers} players automatically</p>
                   </div>
                 </div>
 
