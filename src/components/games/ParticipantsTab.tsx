@@ -129,7 +129,7 @@ export function ParticipantsTab({
             </Badge>
           </div>
 
-          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
+          <div className={`grid gap-2 ${maxPlayers <= 4 ? "grid-cols-2" : "grid-cols-3 sm:grid-cols-4 md:grid-cols-5"}`}>
             {/* Host */}
             {hostIsPlaying && hostProfile && (
               <PlayerCard
