@@ -97,7 +97,7 @@ export default function GamesListPage() {
       const matchesSearch =
         game.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
         game.location.toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesSkill = skillFilter === "all" || game.skill_level >= Number(skillFilter);
+      const matchesSkill = skillFilter === "all" || game.skill_level === Number(skillFilter);
       const matchesFormat = formatFilter === "all" || game.format === formatFilter;
       return matchesDay && matchesSearch && matchesSkill && matchesFormat;
     });
@@ -176,14 +176,14 @@ export default function GamesListPage() {
               <>
                 <Select value={skillFilter} onValueChange={setSkillFilter}>
                   <SelectTrigger className="w-40 h-11">
-                    <SelectValue placeholder="Skill level" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Levels</SelectItem>
-                    <SelectItem value="2">Level 2+</SelectItem>
-                    <SelectItem value="3">Level 3+</SelectItem>
-                    <SelectItem value="4">Level 4+</SelectItem>
-                    <SelectItem value="5">Level 5</SelectItem>
+                     <SelectValue placeholder="Skill level" />
+                   </SelectTrigger>
+                   <SelectContent>
+                     <SelectItem value="all">All Levels</SelectItem>
+                     <SelectItem value="2">Level 2</SelectItem>
+                     <SelectItem value="3">Level 3</SelectItem>
+                     <SelectItem value="4">Level 4</SelectItem>
+                     <SelectItem value="5">Level 5</SelectItem>
                   </SelectContent>
                 </Select>
                 <Select value={formatFilter} onValueChange={setFormatFilter}>
