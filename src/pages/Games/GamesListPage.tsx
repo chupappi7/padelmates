@@ -19,7 +19,7 @@ import { Plus, Search, Calendar } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useUserLocation, calculateDistance } from "@/hooks/useUserLocation";
-import { isSameDay, format, startOfDay, endOfDay } from "date-fns";
+import { isSameDay, format, startOfDay, endOfDay, isToday, isTomorrow } from "date-fns";
 
 interface Game {
   id: string;
@@ -50,7 +50,7 @@ export default function GamesListPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [skillFilter, setSkillFilter] = useState<string>("all");
   const [formatFilter, setFormatFilter] = useState<string>("all");
-  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const navigate = useNavigate();
   const { user } = useAuth();
   const isMobile = useIsMobile();
@@ -90,7 +90,7 @@ export default function GamesListPage() {
   const filteredGames = useMemo(() => {
     let result = games.filter((game) => {
       const gameDate = new Date(game.date_time);
-      const matchesDay = isSameDay(gameDate, selectedDate);
+      const matchesDay = selectedDate === null || isSameDay(gameDate, selectedDate);
       const matchesSearch =
         game.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
         game.location.toLowerCase().includes(searchQuery.toLowerCase());
@@ -120,8 +120,7 @@ export default function GamesListPage() {
     return result;
   }, [games, selectedDate, searchQuery, skillFilter, formatFilter, userLocation]);
 
-  // Count games per selected day for empty state
-  const gamesOnDay = games.filter((g) => isSameDay(new Date(g.date_time), selectedDate)).length;
+  const isAllMode = selectedDate === null;
 
   return (
     <div className="min-h-screen bg-background pb-24 md:pb-0">
@@ -137,7 +136,7 @@ export default function GamesListPage() {
             <div>
               <h1 className="font-display text-2xl sm:text-3xl font-bold mb-0.5">Matches</h1>
               <p className="text-sm text-muted-foreground">
-                {format(selectedDate, "EEEE, MMMM d")}
+                {selectedDate ? format(selectedDate, "EEEE, MMMM d") : "All upcoming"}
               </p>
             </div>
             {user && !isMobile && (
@@ -209,43 +208,68 @@ export default function GamesListPage() {
         ) : filteredGames.length > 0 ? (
           <div className="space-y-3 sm:space-y-4">
             {(() => {
-              let lastTimeKey = "";
+              let lastGroupKey = "";
               return filteredGames.map((game, index) => {
-                const timeKey = format(new Date(game.date_time), "h:mm a");
-                const showDivider = timeKey !== lastTimeKey;
-                lastTimeKey = timeKey;
-                return (
-                  <Fragment key={game.id}>
-                    {showDivider && (
-                      <div className="flex items-center gap-3 pt-2 first:pt-0">
+                const gameDate = new Date(game.date_time);
+                const elements: React.ReactNode[] = [];
+
+                // In "All" mode, show date group headers
+                if (isAllMode) {
+                  const dateKey = format(gameDate, "yyyy-MM-dd");
+                  if (dateKey !== lastGroupKey) {
+                    lastGroupKey = dateKey;
+                    let dayLabel: string;
+                    if (isToday(gameDate)) dayLabel = "Today";
+                    else if (isTomorrow(gameDate)) dayLabel = "Tomorrow";
+                    else dayLabel = format(gameDate, "EEE, MMM d");
+                    elements.push(
+                      <div key={`date-${dateKey}`} className="flex items-center gap-3 pt-4 first:pt-0">
+                        <span className="text-sm font-semibold text-foreground whitespace-nowrap">{dayLabel}</span>
+                        <div className="flex-1 h-px bg-border" />
+                      </div>
+                    );
+                  }
+                } else {
+                  // Single day mode: group by time
+                  const timeKey = format(gameDate, "h:mm a");
+                  if (timeKey !== lastGroupKey) {
+                    lastGroupKey = timeKey;
+                    elements.push(
+                      <div key={`time-${timeKey}`} className="flex items-center gap-3 pt-2 first:pt-0">
                         <span className="text-sm font-semibold text-primary whitespace-nowrap">{timeKey}</span>
                         <div className="flex-1 h-px bg-border" />
                       </div>
-                    )}
-                    <motion.div
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: Math.min(index * 0.02, 0.15) }}
-                    >
-                      <GameCard
-                        id={game.id}
-                        title={game.title}
-                        location={game.location}
-                        dateTime={game.date_time}
-                        endDateTime={game.end_date_time}
-                        skillLevel={game.skill_level}
-                        format={game.format}
-                        maxPlayers={game.max_players}
-                        currentPlayers={(game.game_players?.length || 0) + (game.host_is_playing ? 1 : 0)}
-                        pricePerPlayer={Number(game.price_per_player)}
-                        hostName={game.profiles?.name || "Unknown"}
-                        hostAvatar={game.profiles?.avatar_url || undefined}
-                        distance={game.distance}
-                        paymentMode={game.payment_mode}
-                      />
-                    </motion.div>
-                  </Fragment>
+                    );
+                  }
+                }
+
+                elements.push(
+                  <motion.div
+                    key={game.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: Math.min(index * 0.02, 0.15) }}
+                  >
+                    <GameCard
+                      id={game.id}
+                      title={game.title}
+                      location={game.location}
+                      dateTime={game.date_time}
+                      endDateTime={game.end_date_time}
+                      skillLevel={game.skill_level}
+                      format={game.format}
+                      maxPlayers={game.max_players}
+                      currentPlayers={(game.game_players?.length || 0) + (game.host_is_playing ? 1 : 0)}
+                      pricePerPlayer={Number(game.price_per_player)}
+                      hostName={game.profiles?.name || "Unknown"}
+                      hostAvatar={game.profiles?.avatar_url || undefined}
+                      distance={game.distance}
+                      paymentMode={game.payment_mode}
+                    />
+                  </motion.div>
                 );
+
+                return elements;
               });
             })()}
           </div>
@@ -258,7 +282,9 @@ export default function GamesListPage() {
             <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-muted flex items-center justify-center mx-auto mb-4">
               <Calendar className="w-7 h-7 sm:w-8 sm:h-8 text-muted-foreground" />
             </div>
-            <h3 className="font-display text-lg sm:text-xl font-bold mb-2">No matches on this day</h3>
+            <h3 className="font-display text-lg sm:text-xl font-bold mb-2">
+              {isAllMode ? "No upcoming matches" : "No matches on this day"}
+            </h3>
             <p className="text-sm sm:text-base text-muted-foreground mb-6">
               {searchQuery || skillFilter !== "all" || formatFilter !== "all"
                 ? "Try adjusting your filters"
