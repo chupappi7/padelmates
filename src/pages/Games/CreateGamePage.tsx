@@ -81,7 +81,6 @@ export default function CreateGamePage() {
     visibility: "public",
     hostIsPlaying: hostType !== "sell_court",
     joinMode: config.defaultJoinMode,
-    pricePerPlayer: "",
     totalPrice: "",
   });
 
@@ -96,6 +95,11 @@ export default function CreateGamePage() {
 
     if (!selectedDate) {
       toast.error("Please select a date");
+      return;
+    }
+
+    if (formData.joinMode === "request_and_pay" && (!formData.totalPrice || Number(formData.totalPrice) <= 0)) {
+      toast.error("Price is required for 'Request & Pay' mode");
       return;
     }
 
@@ -126,7 +130,7 @@ export default function CreateGamePage() {
       max_players: formData.maxPlayers,
       price_per_player: formData.totalPrice && Number(formData.totalPrice) > 0
         ? Math.ceil(Number(formData.totalPrice) / formData.maxPlayers)
-        : formData.pricePerPlayer ? parseFloat(formData.pricePerPlayer) : 0,
+        : 0,
       payment_mode: paymentMode,
       format: formData.format as "casual_match" | "americano" | "team_americano",
       visibility: formData.visibility as "public" | "private" | "club_only",
@@ -266,9 +270,9 @@ export default function CreateGamePage() {
                   <DurationChips duration={duration} onDurationChange={setDuration} selectedTime={selectedTime} />
                 </div>
 
-                {/* Price for the court */}
+                {/* Total Court Price */}
                 <div className="space-y-1.5">
-                  <Label htmlFor="price" className="text-sm">Price for the Court</Label>
+                  <Label htmlFor="price" className="text-sm">Total Court Price</Label>
                   <div className="relative">
                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-semibold text-sm">Kč</span>
                     <Input
@@ -277,12 +281,18 @@ export default function CreateGamePage() {
                       min="0"
                       step="1"
                       placeholder="0"
-                      value={formData.pricePerPlayer}
-                      onChange={(e) => handleChange("pricePerPlayer", e.target.value)}
+                      value={formData.totalPrice}
+                      onChange={(e) => handleChange("totalPrice", e.target.value)}
                       className="h-11 pl-10"
                     />
                   </div>
-                  <p className="text-xs text-muted-foreground">Leave empty or 0 if giving away for free</p>
+                  {formData.totalPrice && Number(formData.totalPrice) > 0 ? (
+                    <p className="text-xs text-muted-foreground">
+                      {Math.ceil(Number(formData.totalPrice) / formData.maxPlayers)} Kč per player (split across {formData.maxPlayers})
+                    </p>
+                  ) : (
+                    <p className="text-xs text-muted-foreground">Leave empty or 0 if giving away for free</p>
+                  )}
                 </div>
 
                 {/* Optional note */}
