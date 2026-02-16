@@ -111,7 +111,9 @@ export default function CreateGamePage() {
       : hostType === "sell_spots" ? "spot_selling" 
       : "pay_to_join";
 
-    const title = isSellCourt ? "Sell / Give Away Court" : formData.title;
+    const title = isSellCourt ? "Sell / Give Away Court" 
+      : hostType === "find_players" ? `Looking for ${formData.maxPlayers} players`
+      : formData.title;
 
     const { data, error } = await supabase.from("games").insert({
       title,
@@ -313,17 +315,41 @@ export default function CreateGamePage() {
                     Game Details
                   </h2>
 
-                  <div className="space-y-1.5">
-                    <Label htmlFor="title" className="text-sm">Game Title <span className="text-destructive">*</span></Label>
-                    <Input
-                      id="title"
-                      placeholder="e.g., Friday Night Americano"
-                      value={formData.title}
-                      onChange={(e) => handleChange("title", e.target.value)}
-                      required
-                      className="h-11"
-                    />
-                  </div>
+                  {hostType === "find_players" ? (
+                    <div className="space-y-1.5">
+                      <Label className="text-sm">Looking for how many players? <span className="text-destructive">*</span></Label>
+                      <div className="flex items-center gap-3">
+                        <span className="text-sm text-muted-foreground whitespace-nowrap">Looking for</span>
+                        <Select
+                          value={String(formData.maxPlayers)}
+                          onValueChange={(v) => handleChange("maxPlayers", parseInt(v))}
+                        >
+                          <SelectTrigger className="h-11 w-24">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {[1, 2, 3, 4, 5, 6, 7, 8].map((n) => (
+                              <SelectItem key={n} value={String(n)}>{n}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <span className="text-sm text-muted-foreground">players</span>
+                      </div>
+                      <p className="text-xs text-muted-foreground">Title will be "Looking for {formData.maxPlayers} players"</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-1.5">
+                      <Label htmlFor="title" className="text-sm">Game Title <span className="text-destructive">*</span></Label>
+                      <Input
+                        id="title"
+                        placeholder="e.g., Friday Night Americano"
+                        value={formData.title}
+                        onChange={(e) => handleChange("title", e.target.value)}
+                        required
+                        className="h-11"
+                      />
+                    </div>
+                  )}
 
                   <div className="space-y-1.5">
                     <Label htmlFor="description" className="text-sm">Description (optional)</Label>
@@ -516,24 +542,26 @@ export default function CreateGamePage() {
                     Players & Settings
                   </h2>
 
-                  <div className="space-y-1.5">
-                    <Label htmlFor="maxPlayers" className="text-sm">Max Players</Label>
-                    <Select
-                      value={String(formData.maxPlayers)}
-                      onValueChange={(v) => handleChange("maxPlayers", parseInt(v))}
-                    >
-                      <SelectTrigger className="h-11">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="4">4 players</SelectItem>
-                        <SelectItem value="8">8 players</SelectItem>
-                        <SelectItem value="12">12 players</SelectItem>
-                        <SelectItem value="16">16 players</SelectItem>
-                        <SelectItem value="20">20 players</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+                  {hostType !== "find_players" && (
+                    <div className="space-y-1.5">
+                      <Label htmlFor="maxPlayers" className="text-sm">Max Players</Label>
+                      <Select
+                        value={String(formData.maxPlayers)}
+                        onValueChange={(v) => handleChange("maxPlayers", parseInt(v))}
+                      >
+                        <SelectTrigger className="h-11">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="4">4 players</SelectItem>
+                          <SelectItem value="8">8 players</SelectItem>
+                          <SelectItem value="12">12 players</SelectItem>
+                          <SelectItem value="16">16 players</SelectItem>
+                          <SelectItem value="20">20 players</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
 
                   {/* Host Role Selection */}
                   <div className="space-y-2">
