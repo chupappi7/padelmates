@@ -1,39 +1,38 @@
 
 
-## Default "All Events" View with Optional Date Filtering
+# Replace End Time Picker with Duration Chips
 
-### Problem
-Right now the games list defaults to showing only today's matches. Since the app is new with few users, this often results in an empty screen -- not a great first impression.
+## Summary
+Replace the separate End Time scroll picker with a row of duration chips (60 / 90 / 120 min). The end time will be auto-calculated from Start Time + Duration and shown as a read-only label. This applies to both the Create Game and Edit Game pages, and both the "sell court" and regular form layouts.
 
-### Solution
-Change the default to show **all upcoming events** across all dates, with the day picker acting as an optional filter users can tap into.
+## UI Layout (After Change)
 
-### How it works
+```text
+Start Time:   [ 18:00 ]          (scroll picker, same as now)
 
-1. **DayPicker gets an "All" button** -- a new first item in the horizontal scroll labeled "All" that, when selected, shows every upcoming game regardless of date.
+Duration:     [60 min] [90 min] [120 min]   (toggle chips, 90 default)
 
-2. **Default state is "All"** -- `selectedDate` starts as `null` instead of today's date. When null, no date filtering is applied and all upcoming games are listed.
+Ends at:      19:30              (auto-calculated, read-only text)
+```
 
-3. **Date grouping in "All" mode** -- when showing all events, games are grouped by date with section headers (e.g., "Today", "Tomorrow", "Wednesday, Feb 18") so users can still scan by day.
+## Technical Details
 
-4. **Subtitle updates dynamically** -- the subtitle under "Matches" shows "All upcoming" when no date is selected, or the specific date when one is chosen.
+### State Changes (both CreateGamePage and EditGamePage)
+- Remove `selectedEndTime` and `showEndTimePicker` state variables
+- Add `duration` state: `useState<number>(90)` (minutes, default 90)
+- Compute end time with a `useMemo`: add `duration` minutes to `selectedTime`
+- On form submit, calculate `endDateTime` from start time + duration instead of parsing `selectedEndTime`
 
-5. **Empty state text adjusts** -- says "No upcoming matches" in All mode vs. "No matches on this day" when a specific date is selected.
+### EditGamePage: Loading Existing Data
+- When fetching an existing game, calculate the duration by diffing `end_date_time - date_time` in minutes
+- Snap to nearest chip value (60/90/120); if it doesn't match exactly, default to the closest one
 
----
+### UI Changes (both pages, both sell-court and regular layouts)
+- Remove the End Time button and its `TimeScrollPicker`
+- Replace with a row of 3 toggle-style chips (60 / 90 / 120 min) using simple styled buttons
+- Add a small "Ends at HH:MM" label below or beside the duration chips
+- The Start Time picker remains unchanged
 
-### Technical Details
-
-**`src/components/games/DayPicker.tsx`**
-- Change prop type: `selectedDate: Date | null`
-- Add an "All" button as the first item in the scroll list
-- When "All" is selected (`null`), highlight it with primary styling
-- Clicking a specific day sets that date; clicking the already-selected day or "All" resets to `null`
-
-**`src/pages/Games/GamesListPage.tsx`**
-- Change `selectedDate` state from `useState<Date>(new Date())` to `useState<Date | null>(null)`
-- Update `filteredGames` filter: skip `isSameDay` check when `selectedDate` is `null`
-- In "All" mode, group games by date with date headers (e.g., "Today -- Feb 16", "Tomorrow -- Feb 17", "Wed, Feb 18")
-- Update subtitle: show "All upcoming" when `selectedDate` is null
-- Update empty state messaging accordingly
-
+### Files Modified
+1. **src/pages/Games/CreateGamePage.tsx** -- Remove end time state/picker, add duration chips + auto-calculated end time (in both sell-court and regular form sections)
+2. **src/pages/Games/EditGamePage.tsx** -- Same changes, plus infer duration from existing game data on load
