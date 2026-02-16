@@ -1,53 +1,63 @@
 
 
-# Simplify Price to "Total Court Price + Auto Split"
+# Add "Split Evenly" Price Option
 
-## What Changes
+## What It Does
 
-Across all game creation flows (Find Players, Americano, etc.) and the Edit Game page, replace the current price inputs with a single **optional** "Total Court Price" field. When filled in, it auto-splits across `maxPlayers` and shows the per-player amount. When left empty, the game is free.
+Add a "Split Evenly" toggle to the price section. When enabled, the host skips entering a specific price -- the game just shows a label like "Split evenly" to signal players that the court cost will be shared equally. The host can still optionally enter a total price for transparency, but it's not required.
 
-The price field becomes **required only** when the join mode is set to "Request and Pay".
-
-## Current vs New Behavior
+## UI Layout
 
 ```text
-CURRENT (Find Players):
-- Total Amount input + Per Player read-only display (already split logic)
-- But "Sell Court" flow has a separate "Price for the Court" field
-- Edit page has a plain "Price per Player" input with no split
+Price:
+  [x] Split evenly     [ ] Free     [ ] Set price
 
-NEW (All flows):
-- One optional field: "Total Court Price" (Kč)
-- Auto-calculated label: "X Kč per player" (based on maxPlayers)
-- If empty/0: shows "Free"
-- Required only when joinMode = "request_and_pay"
+  (If "Split evenly" selected)
+  -> Shows: "Players will split the court cost evenly"
+  -> Optional: Total Court Price input (collapsed/optional)
+
+  (If "Free" selected)
+  -> No price input shown
+
+  (If "Set price" selected)
+  -> Total Amount input + Per Player calculated display (current behavior)
 ```
+
+## How It Works
+
+- **Split Evenly (default for Find Players)**: Signals to joining players that costs will be shared. No price input required. Optionally, the host can still enter a total to show the per-player estimate.
+- **Free**: No cost at all. Current behavior when price is 0/empty.
+- **Set Price**: Current behavior -- host enters total, per-player is auto-calculated.
 
 ## Technical Details
 
+### Database
+
+- Add a `price_mode` column to the `games` table with values: `'split_evenly'`, `'free'`, `'set_price'` (default `'free'`).
+- Migration: `ALTER TABLE games ADD COLUMN price_mode text NOT NULL DEFAULT 'free' CHECK (price_mode IN ('split_evenly', 'free', 'set_price'));`
+
 ### File: `src/pages/Games/CreateGamePage.tsx`
 
-1. **Sell Court flow (lines 269-286)**: Replace "Price for the Court" input (which currently saves to `pricePerPlayer`) to use `totalPrice` field instead, with per-player split display below.
-
-2. **Regular flow price section (lines 516-546)**: Already has total + split UI -- keep this as-is, it's already correct.
-
-3. **Submission logic (lines 127-129)**: Unify -- always compute `price_per_player` as `Math.ceil(totalPrice / maxPlayers)`. Remove the `pricePerPlayer` field from formData entirely since everything goes through `totalPrice`.
-
-4. **Validation**: When `joinMode === "request_and_pay"`, require `totalPrice > 0` before submit. Show toast error if missing.
+1. Add `priceMode` to formData state (default `'free'`, or `'split_evenly'` for `find_players` host type).
+2. Replace the current price section with 3 toggle chips: "Split evenly", "Free", "Set price".
+3. Conditionally render price input only when `priceMode === 'set_price'`, or optionally when `priceMode === 'split_evenly'`.
+4. On submit, include `price_mode` in the insert payload. When `priceMode === 'split_evenly'` and no total entered, set `price_per_player` to 0.
 
 ### File: `src/pages/Games/EditGamePage.tsx`
 
-1. **Replace the current "Price per Player" input** (lines ~210-225) with the same "Total Court Price" + auto-split UI used in CreateGamePage.
+1. Same UI changes -- add price mode chips.
+2. Load `price_mode` from fetched game data.
+3. On submit, include `price_mode` in the update payload.
 
-2. **On load**: Reverse-calculate `totalPrice` from `price_per_player * max_players` when fetching existing game data.
+### File: `src/components/games/GameCard.tsx` (and GameDetailPage)
 
-3. **On submit**: Calculate `price_per_player = Math.ceil(totalPrice / maxPlayers)`.
+1. When `price_mode === 'split_evenly'` and `price_per_player === 0`, show a badge/label like "Split evenly" instead of "Free".
+2. When `price_mode === 'split_evenly'` and `price_per_player > 0`, show the per-player amount with a "split" indicator.
 
-4. **Add same validation**: Require price when `joinMode === "request_and_pay"`.
-
-### FormData Changes
-
-- Remove `pricePerPlayer` field from both pages
-- Use `totalPrice` as the single price input field everywhere
-- Default to empty string (optional/free)
+### Files Modified
+1. Database migration (add `price_mode` column)
+2. `src/pages/Games/CreateGamePage.tsx`
+3. `src/pages/Games/EditGamePage.tsx`
+4. `src/components/games/GameCard.tsx` -- display logic
+5. `src/pages/Games/GameDetailPage.tsx` -- display logic
 
