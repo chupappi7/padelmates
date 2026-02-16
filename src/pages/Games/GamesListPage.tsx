@@ -88,8 +88,11 @@ export default function GamesListPage() {
   };
 
   const filteredGames = useMemo(() => {
+    const now = new Date();
+    const todayStart = startOfDay(now);
     let result = games.filter((game) => {
       const gameDate = new Date(game.date_time);
+      if (gameDate < todayStart) return false; // exclude past games
       const matchesDay = selectedDate === null || isSameDay(gameDate, selectedDate);
       const matchesSearch =
         game.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
