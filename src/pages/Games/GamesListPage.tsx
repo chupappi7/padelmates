@@ -68,7 +68,7 @@ export default function GamesListPage() {
         game_players(id)
       `)
       .eq("visibility", "public")
-      .gte("date_time", new Date().toISOString())
+      .gte("date_time", startOfDay(new Date()).toISOString())
       .order("date_time", { ascending: true });
 
     if (!error && data) {
