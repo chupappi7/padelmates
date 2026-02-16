@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
+import { UserPlus, X as XIcon } from "lucide-react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -33,6 +34,7 @@ export default function EditGamePage() {
   const [selectedTime, setSelectedTime] = useState("18:00");
   const [duration, setDuration] = useState(90);
   const [showTimePicker, setShowTimePicker] = useState(false);
+  const [prefilledPlayers, setPrefilledPlayers] = useState<string[]>([]);
   const [showDatePicker, setShowDatePicker] = useState(false);
 
   const [formData, setFormData] = useState({
@@ -83,6 +85,7 @@ export default function EditGamePage() {
       totalPrice: data.price_per_player > 0 ? String(data.price_per_player * data.max_players) : "",
       priceMode: (data as any).price_mode || "free",
     });
+    setPrefilledPlayers(Array.isArray((data as any).prefilled_players) ? (data as any).prefilled_players : []);
     setFetching(false);
   };
 
@@ -118,7 +121,8 @@ export default function EditGamePage() {
       visibility: formData.visibility as "public" | "private" | "club_only",
       host_is_playing: formData.hostIsPlaying,
       join_mode: formData.joinMode,
-    }).eq("id", id);
+      prefilled_players: prefilledPlayers.filter(n => n.trim() !== ""),
+    } as any).eq("id", id);
 
     if (error) {
       toast.error("Failed to update game");
@@ -408,6 +412,45 @@ export default function EditGamePage() {
                     <SelectItem value="20">20 players</SelectItem>
                   </SelectContent>
                 </Select>
+              </div>
+
+              {/* Pre-filled players */}
+              <div className="space-y-2">
+                <Label className="text-sm flex items-center gap-1.5">
+                  <UserPlus className="w-3.5 h-3.5 text-primary" />
+                  Players already joining
+                </Label>
+                {prefilledPlayers.map((name, index) => (
+                  <div key={index} className="flex items-center gap-2">
+                    <Input
+                      placeholder="Player name"
+                      value={name}
+                      onChange={(e) => {
+                        const updated = [...prefilledPlayers];
+                        updated[index] = e.target.value;
+                        setPrefilledPlayers(updated);
+                      }}
+                      className="h-10 flex-1"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setPrefilledPlayers(prev => prev.filter((_, i) => i !== index))}
+                      className="w-8 h-8 rounded-lg bg-muted hover:bg-destructive/10 flex items-center justify-center transition-colors shrink-0"
+                    >
+                      <XIcon className="w-3.5 h-3.5 text-muted-foreground" />
+                    </button>
+                  </div>
+                ))}
+                {prefilledPlayers.length < Math.max(0, formData.maxPlayers - (formData.hostIsPlaying ? 1 : 0) - 1) && (
+                  <button
+                    type="button"
+                    onClick={() => setPrefilledPlayers(prev => [...prev, ""])}
+                    className="w-full flex items-center justify-center gap-1.5 h-9 rounded-lg border border-dashed border-border text-sm text-muted-foreground hover:text-foreground hover:border-primary/50 transition-colors"
+                  >
+                    <UserPlus className="w-3.5 h-3.5" />
+                    Add player
+                  </button>
+                )}
               </div>
 
               {/* Host Role */}

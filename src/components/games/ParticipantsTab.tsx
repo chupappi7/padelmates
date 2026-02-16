@@ -40,6 +40,7 @@ interface ParticipantsTabProps {
   maxPlayers: number;
   currentUserId?: string;
   userRequest?: JoinRequest | null;
+  prefilledPlayers?: string[];
   onAcceptRequest: (requestId: string) => void;
   onRejectRequest: (requestId: string) => void;
   onToggleRole: (playerId: string, currentRole: string) => void;
@@ -56,6 +57,7 @@ export function ParticipantsTab({
   requests,
   players,
   maxPlayers,
+  prefilledPlayers = [],
   onAcceptRequest,
   onRejectRequest,
   onToggleRole,
@@ -70,8 +72,9 @@ export function ParticipantsTab({
   const confirmedFromRequests = requests.filter((r) => r.status === "accepted");
   const pendingRequests = requests.filter((r) => r.status === "pending");
 
+  const prefilledCount = prefilledPlayers.filter(n => n.trim()).length;
   const hostCount = hostIsPlaying ? 1 : 0;
-  const totalConfirmed = confirmedFromRequests.length + directPlayers.length + hostCount;
+  const totalConfirmed = confirmedFromRequests.length + directPlayers.length + hostCount + prefilledCount;
   const emptySlots = Math.max(0, maxPlayers - totalConfirmed);
 
   const showConfirmed = activeFilter === "all";
@@ -166,6 +169,16 @@ export function ParticipantsTab({
               />
             ))}
 
+            {/* Pre-filled guest players */}
+            {prefilledPlayers.filter(n => n.trim()).map((name, i) => (
+              <PlayerCard
+                key={`guest-${i}`}
+                name={name}
+                avatarUrl={null}
+                isGuest
+              />
+            ))}
+
             {/* Empty slots */}
             {Array.from({ length: emptySlots }).map((_, i) => (
               <div
@@ -257,6 +270,7 @@ function PlayerCard({
   avatarUrl,
   skillLevel,
   isHost,
+  isGuest,
   role,
   showRoleToggle,
   onToggleRole,
@@ -265,6 +279,7 @@ function PlayerCard({
   avatarUrl: string | null;
   skillLevel?: number;
   isHost?: boolean;
+  isGuest?: boolean;
   role?: string;
   showRoleToggle?: boolean;
   onToggleRole?: () => void;
@@ -300,6 +315,11 @@ function PlayerCard({
       {isAdmin && !isHost && (
         <Badge variant="outline" className="rounded-full text-[9px] px-1.5 py-0 bg-accent/10 text-accent border-accent/20">
           Admin
+        </Badge>
+      )}
+      {isGuest && (
+        <Badge variant="outline" className="rounded-full text-[9px] px-1.5 py-0 bg-muted text-muted-foreground border-border">
+          Guest
         </Badge>
       )}
       {showRoleToggle && !isHost && onToggleRole && (

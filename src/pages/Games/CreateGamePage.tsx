@@ -2,6 +2,7 @@ import { useState, useMemo } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { UserPlus, X as XIcon } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import {
@@ -21,6 +22,7 @@ import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { format } from "date-fns";
 import { ArrowLeft, Calendar, MapPin, Users, Trophy, Clock, DoorOpen, ShieldCheck, CreditCard, Building2 } from "lucide-react";
+// UserPlus and XIcon imported at top
 import { DurationChips } from "@/components/games/DurationChips";
 import type { HostType } from "@/components/games/HostTypeModal";
 
@@ -69,6 +71,8 @@ export default function CreateGamePage() {
   const [showTimePicker, setShowTimePicker] = useState(false);
   const [showDatePicker, setShowDatePicker] = useState(false);
 
+  const [prefilledPlayers, setPrefilledPlayers] = useState<string[]>([]);
+
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -84,6 +88,15 @@ export default function CreateGamePage() {
     totalPrice: "",
     priceMode: hostType === "find_players" ? "split_evenly" : "free" as "split_evenly" | "free" | "set_price",
   });
+
+  // Auto-calculate lookingFor when prefilled players change
+  const effectiveLookingFor = hostType === "find_players"
+    ? Math.max(0, formData.maxPlayers - prefilledPlayers.length - (formData.hostIsPlaying ? 1 : 0))
+    : formData.lookingFor;
+
+  const maxPrefilledSlots = hostType === "find_players"
+    ? Math.max(0, formData.maxPlayers - (formData.hostIsPlaying ? 1 : 0) - 1) // at least 1 open slot
+    : 0;
 
   const isSellCourt = hostType === "sell_court";
 
@@ -117,7 +130,7 @@ export default function CreateGamePage() {
       : "pay_to_join";
 
     const title = isSellCourt ? "Sell / Give Away Court" 
-      : hostType === "find_players" ? `Looking for ${formData.lookingFor} players`
+      : hostType === "find_players" ? `Looking for ${effectiveLookingFor} player${effectiveLookingFor !== 1 ? 's' : ''}`
       : formData.title;
 
     const { data, error } = await supabase.from("games").insert({
@@ -139,7 +152,8 @@ export default function CreateGamePage() {
       host_id: user.id,
       host_is_playing: isSellCourt ? false : formData.hostIsPlaying,
       join_mode: isSellCourt ? "open" : formData.joinMode,
-    }).select().single();
+      prefilled_players: prefilledPlayers.filter(n => n.trim() !== ""),
+    } as any).select().single();
 
     if (error) {
       toast.error("Failed to create game");
@@ -321,40 +335,87 @@ export default function CreateGamePage() {
                   </h2>
 
                   {hostType === "find_players" ? (
-                    <div className="space-y-1.5">
-                      <Label className="text-sm">Looking for how many players? <span className="text-destructive">*</span></Label>
-                      <div className="flex items-center gap-3">
-                        <span className="text-sm text-muted-foreground whitespace-nowrap">Looking for</span>
-                        <Select
-                          value={String(formData.lookingFor)}
-                          onValueChange={(v) => handleChange("lookingFor", parseInt(v))}
-                        >
-                          <SelectTrigger className="h-11 w-24">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {[1, 2, 3, 4, 5, 6, 7].map((n) => (
-                              <SelectItem key={n} value={String(n)}>{n}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <span className="text-sm text-muted-foreground whitespace-nowrap">out of</span>
-                        <Select
-                          value={String(formData.maxPlayers)}
-                          onValueChange={(v) => handleChange("maxPlayers", parseInt(v))}
-                        >
-                          <SelectTrigger className="h-11 w-24">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {[2, 3, 4, 5, 6, 7, 8].map((n) => (
-                              <SelectItem key={n} value={String(n)}>{n}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <span className="text-sm text-muted-foreground">total</span>
+                    <div className="space-y-4">
+                      <div className="space-y-1.5">
+                        <Label className="text-sm">Total players <span className="text-destructive">*</span></Label>
+                        <div className="flex items-center gap-3">
+                          <span className="text-sm text-muted-foreground whitespace-nowrap">Looking for</span>
+                          <span className="h-11 w-24 flex items-center justify-center bg-muted/50 border border-input rounded-md text-sm font-semibold">
+                            {effectiveLookingFor}
+                          </span>
+                          <span className="text-sm text-muted-foreground whitespace-nowrap">out of</span>
+                          <Select
+                            value={String(formData.maxPlayers)}
+                            onValueChange={(v) => {
+                              handleChange("maxPlayers", parseInt(v));
+                              // Trim prefilled players if they exceed new max
+                              const newMax = parseInt(v);
+                              const maxPrefilled = Math.max(0, newMax - (formData.hostIsPlaying ? 1 : 0) - 1);
+                              if (prefilledPlayers.length > maxPrefilled) {
+                                setPrefilledPlayers(prev => prev.slice(0, maxPrefilled));
+                              }
+                            }}
+                          >
+                            <SelectTrigger className="h-11 w-24">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {[2, 3, 4, 5, 6, 7, 8].map((n) => (
+                                <SelectItem key={n} value={String(n)}>{n}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <span className="text-sm text-muted-foreground">total</span>
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          {formData.hostIsPlaying ? "You" : ""}
+                          {formData.hostIsPlaying && prefilledPlayers.filter(n => n.trim()).length > 0 ? " + " : ""}
+                          {prefilledPlayers.filter(n => n.trim()).length > 0
+                            ? `${prefilledPlayers.filter(n => n.trim()).length} guest${prefilledPlayers.filter(n => n.trim()).length !== 1 ? "s" : ""}`
+                            : ""}
+                          {(formData.hostIsPlaying || prefilledPlayers.filter(n => n.trim()).length > 0) ? " already in · " : ""}
+                          {effectiveLookingFor} spot{effectiveLookingFor !== 1 ? "s" : ""} open
+                        </p>
                       </div>
-                      <p className="text-xs text-muted-foreground">Price splits across {formData.maxPlayers} players</p>
+
+                      {/* Pre-filled players */}
+                      <div className="space-y-2">
+                        <Label className="text-sm flex items-center gap-1.5">
+                          <UserPlus className="w-3.5 h-3.5 text-primary" />
+                          Players already joining
+                        </Label>
+                        {prefilledPlayers.map((name, index) => (
+                          <div key={index} className="flex items-center gap-2">
+                            <Input
+                              placeholder={`Player name`}
+                              value={name}
+                              onChange={(e) => {
+                                const updated = [...prefilledPlayers];
+                                updated[index] = e.target.value;
+                                setPrefilledPlayers(updated);
+                              }}
+                              className="h-10 flex-1"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setPrefilledPlayers(prev => prev.filter((_, i) => i !== index))}
+                              className="w-8 h-8 rounded-lg bg-muted hover:bg-destructive/10 flex items-center justify-center transition-colors shrink-0"
+                            >
+                              <XIcon className="w-3.5 h-3.5 text-muted-foreground" />
+                            </button>
+                          </div>
+                        ))}
+                        {prefilledPlayers.length < maxPrefilledSlots && (
+                          <button
+                            type="button"
+                            onClick={() => setPrefilledPlayers(prev => [...prev, ""])}
+                            className="w-full flex items-center justify-center gap-1.5 h-9 rounded-lg border border-dashed border-border text-sm text-muted-foreground hover:text-foreground hover:border-primary/50 transition-colors"
+                          >
+                            <UserPlus className="w-3.5 h-3.5" />
+                            Add player
+                          </button>
+                        )}
+                      </div>
                     </div>
                   ) : (
                     <div className="space-y-1.5">

@@ -135,6 +135,7 @@ export default function MyMatchesPage() {
                       format={game.format}
                       maxPlayers={game.max_players}
                       currentPlayers={(game.game_players?.length || 0) + (game.host_is_playing ? 1 : 0)}
+                      prefilledCount={Array.isArray((game as any).prefilled_players) ? (game as any).prefilled_players.filter((n: string) => n.trim()).length : 0}
                       pricePerPlayer={Number(game.price_per_player)}
                       hostName={game.profiles?.name || "Unknown"}
                       hostAvatar={game.profiles?.avatar_url || undefined}
@@ -168,6 +169,7 @@ export default function MyMatchesPage() {
                       format={game.format}
                       maxPlayers={game.max_players}
                       currentPlayers={(game.game_players?.length || 0) + (game.host_is_playing ? 1 : 0)}
+                      prefilledCount={Array.isArray((game as any).prefilled_players) ? (game as any).prefilled_players.filter((n: string) => n.trim()).length : 0}
                       pricePerPlayer={Number(game.price_per_player)}
                       hostName={game.profiles?.name || "Unknown"}
                       hostAvatar={game.profiles?.avatar_url || undefined}
