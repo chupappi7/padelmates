@@ -21,6 +21,7 @@ import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { format } from "date-fns";
 import { ArrowLeft, Calendar, MapPin, Users, Trophy, Clock, DoorOpen, ShieldCheck, CreditCard, Building2 } from "lucide-react";
+import { DurationChips } from "@/components/games/DurationChips";
 import type { HostType } from "@/components/games/HostTypeModal";
 
 const HOST_TYPE_CONFIG: Record<HostType, { title: string; subtitle: string; format: string; defaultMaxPlayers: number; defaultJoinMode: string }> = {
@@ -64,9 +65,8 @@ export default function CreateGamePage() {
   const [loading, setLoading] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
   const [selectedTime, setSelectedTime] = useState("18:00");
-  const [selectedEndTime, setSelectedEndTime] = useState("20:00");
+  const [duration, setDuration] = useState(90);
   const [showTimePicker, setShowTimePicker] = useState(false);
-  const [showEndTimePicker, setShowEndTimePicker] = useState(false);
   const [showDatePicker, setShowDatePicker] = useState(false);
 
   const [formData, setFormData] = useState({
@@ -102,9 +102,7 @@ export default function CreateGamePage() {
     const dateTime = new Date(selectedDate);
     dateTime.setHours(hours, minutes, 0, 0);
 
-    const [endHours, endMinutes] = selectedEndTime.split(":").map(Number);
-    const endDateTime = new Date(selectedDate);
-    endDateTime.setHours(endHours, endMinutes, 0, 0);
+    const endDateTime = new Date(dateTime.getTime() + duration * 60 * 1000);
 
     setLoading(true);
 
@@ -247,34 +245,25 @@ export default function CreateGamePage() {
                   </Popover>
                 </div>
 
-                {/* Start & End Time */}
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1.5">
-                    <Label className="text-sm">Start Time <span className="text-destructive">*</span></Label>
-                    <button
-                      type="button"
-                      onClick={() => setShowTimePicker(true)}
-                      className="w-full h-11 px-3 flex items-center justify-between bg-background border border-input rounded-md text-sm hover:bg-accent transition-colors"
-                    >
-                      <span className="text-foreground">{selectedTime}</span>
-                      <Clock className="w-4 h-4 text-muted-foreground" />
-                    </button>
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-sm">End Time <span className="text-destructive">*</span></Label>
-                    <button
-                      type="button"
-                      onClick={() => setShowEndTimePicker(true)}
-                      className="w-full h-11 px-3 flex items-center justify-between bg-background border border-input rounded-md text-sm hover:bg-accent transition-colors"
-                    >
-                      <span className="text-foreground">{selectedEndTime}</span>
-                      <Clock className="w-4 h-4 text-muted-foreground" />
-                    </button>
-                  </div>
+                {/* Start Time & Duration */}
+                <div className="space-y-1.5">
+                  <Label className="text-sm">Start Time <span className="text-destructive">*</span></Label>
+                  <button
+                    type="button"
+                    onClick={() => setShowTimePicker(true)}
+                    className="w-full h-11 px-3 flex items-center justify-between bg-background border border-input rounded-md text-sm hover:bg-accent transition-colors"
+                  >
+                    <span className="text-foreground">{selectedTime}</span>
+                    <Clock className="w-4 h-4 text-muted-foreground" />
+                  </button>
                 </div>
 
                 <TimeScrollPicker open={showTimePicker} onOpenChange={setShowTimePicker} value={selectedTime} onChange={setSelectedTime} />
-                <TimeScrollPicker open={showEndTimePicker} onOpenChange={setShowEndTimePicker} value={selectedEndTime} onChange={setSelectedEndTime} />
+
+                <div className="space-y-1.5">
+                  <Label className="text-sm">Duration</Label>
+                  <DurationChips duration={duration} onDurationChange={setDuration} selectedTime={selectedTime} />
+                </div>
 
                 {/* Price for the court */}
                 <div className="space-y-1.5">
@@ -489,34 +478,25 @@ export default function CreateGamePage() {
                     </Popover>
                   </div>
 
-                  {/* Start & End Time */}
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-1.5">
-                      <Label className="text-sm">Start Time <span className="text-destructive">*</span></Label>
-                      <button
-                        type="button"
-                        onClick={() => setShowTimePicker(true)}
-                        className="w-full h-11 px-3 flex items-center justify-between bg-background border border-input rounded-md text-sm hover:bg-accent transition-colors"
-                      >
-                        <span className="text-foreground">{selectedTime}</span>
-                        <Clock className="w-4 h-4 text-muted-foreground" />
-                      </button>
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label className="text-sm">End Time <span className="text-destructive">*</span></Label>
-                      <button
-                        type="button"
-                        onClick={() => setShowEndTimePicker(true)}
-                        className="w-full h-11 px-3 flex items-center justify-between bg-background border border-input rounded-md text-sm hover:bg-accent transition-colors"
-                      >
-                        <span className="text-foreground">{selectedEndTime}</span>
-                        <Clock className="w-4 h-4 text-muted-foreground" />
-                      </button>
-                    </div>
+                  {/* Start Time & Duration */}
+                  <div className="space-y-1.5">
+                    <Label className="text-sm">Start Time <span className="text-destructive">*</span></Label>
+                    <button
+                      type="button"
+                      onClick={() => setShowTimePicker(true)}
+                      className="w-full h-11 px-3 flex items-center justify-between bg-background border border-input rounded-md text-sm hover:bg-accent transition-colors"
+                    >
+                      <span className="text-foreground">{selectedTime}</span>
+                      <Clock className="w-4 h-4 text-muted-foreground" />
+                    </button>
                   </div>
 
                   <TimeScrollPicker open={showTimePicker} onOpenChange={setShowTimePicker} value={selectedTime} onChange={setSelectedTime} />
-                  <TimeScrollPicker open={showEndTimePicker} onOpenChange={setShowEndTimePicker} value={selectedEndTime} onChange={setSelectedEndTime} />
+
+                  <div className="space-y-1.5">
+                    <Label className="text-sm">Duration</Label>
+                    <DurationChips duration={duration} onDurationChange={setDuration} selectedTime={selectedTime} />
+                  </div>
 
                   {/* Price */}
                   <div className="space-y-3">
