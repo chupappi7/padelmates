@@ -1,0 +1,1 @@
+ALTER TABLE public.games ADD COLUMN price_mode text NOT NULL DEFAULT 'free' CHECK (price_mode IN ('split_evenly', 'free', 'set_price'));

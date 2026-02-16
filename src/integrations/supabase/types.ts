@@ -190,6 +190,7 @@ export type Database = {
           payment_deadline_hours: number | null
           payment_instructions: string | null
           payment_mode: string
+          price_mode: string
           price_per_player: number
           scoreboard: Json | null
           skill_level: number
@@ -214,6 +215,7 @@ export type Database = {
           payment_deadline_hours?: number | null
           payment_instructions?: string | null
           payment_mode?: string
+          price_mode?: string
           price_per_player?: number
           scoreboard?: Json | null
           skill_level?: number
@@ -238,6 +240,7 @@ export type Database = {
           payment_deadline_hours?: number | null
           payment_instructions?: string | null
           payment_mode?: string
+          price_mode?: string
           price_per_player?: number
           scoreboard?: Json | null
           skill_level?: number

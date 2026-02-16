@@ -21,6 +21,7 @@ interface GameCardProps {
   hostAvatar?: string;
   distance?: number;
   paymentMode?: string;
+  priceMode?: string;
 }
 
 const formatLabels = {
@@ -50,6 +51,7 @@ export function GameCard({
   hostAvatar,
   distance,
   paymentMode,
+  priceMode,
 }: GameCardProps) {
   const spotsLeft = maxPlayers - currentPlayers;
   const date = new Date(dateTime);
@@ -81,9 +83,15 @@ export function GameCard({
                 {formatLabels[format]}
               </Badge>
             </div>
-            {pricePerPlayer > 0 && (
-              <span className="text-primary font-bold text-xs sm:text-sm whitespace-nowrap">{pricePerPlayer} Kč</span>
-            )}
+            {priceMode === 'split_evenly' || (pricePerPlayer > 0 && priceMode !== 'free') ? (
+              priceMode === 'split_evenly' && pricePerPlayer === 0 ? (
+                <span className="text-xs sm:text-sm font-semibold text-primary whitespace-nowrap">🤝 Split</span>
+              ) : (
+                <span className="text-primary font-bold text-xs sm:text-sm whitespace-nowrap">
+                  {pricePerPlayer} Kč{priceMode === 'split_evenly' ? ' /pp' : ''}
+                </span>
+              )
+            ) : null}
           </div>
 
           {/* Title + details in compact row on mobile */}

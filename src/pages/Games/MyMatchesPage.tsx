@@ -138,6 +138,7 @@ export default function MyMatchesPage() {
                       pricePerPlayer={Number(game.price_per_player)}
                       hostName={game.profiles?.name || "Unknown"}
                       hostAvatar={game.profiles?.avatar_url || undefined}
+                      priceMode={(game as any).price_mode}
                     />
                   </motion.div>
                 ))}
@@ -170,6 +171,7 @@ export default function MyMatchesPage() {
                       pricePerPlayer={Number(game.price_per_player)}
                       hostName={game.profiles?.name || "Unknown"}
                       hostAvatar={game.profiles?.avatar_url || undefined}
+                      priceMode={(game as any).price_mode}
                     />
                   </motion.div>
                 ))}
