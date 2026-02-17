@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Navbar } from "@/components/layout/Navbar";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -16,9 +16,10 @@ type Tab = "friends" | "requests" | "search";
 
 export default function FriendsPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { user } = useAuth();
   const { friends, incomingRequests, outgoingRequests, acceptRequest, rejectRequest, removeFriend, sendRequest, loading } = useFriends();
-  const [activeTab, setActiveTab] = useState<Tab>("friends");
+  const [activeTab, setActiveTab] = useState<Tab>((searchParams.get("tab") as Tab) || "friends");
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [searching, setSearching] = useState(false);
@@ -97,9 +98,11 @@ export default function FriendsPage() {
                     variant="secondary"
                     className={cn(
                       "ml-1 h-5 px-1.5 text-[10px] rounded-full",
-                      activeTab === tab.value
-                        ? "bg-background/20 text-primary-foreground"
-                        : "bg-muted"
+                      tab.value === "requests" && activeTab !== tab.value
+                        ? "bg-destructive text-destructive-foreground"
+                        : activeTab === tab.value
+                          ? "bg-background/20 text-primary-foreground"
+                          : "bg-muted"
                     )}
                   >
                     {tab.count}

@@ -47,7 +47,7 @@ export function useNotifications() {
           message: `${nameMap.get(f.requester_id) || "Someone"} sent you a friend request`,
           created_at: f.created_at,
           read: false,
-          link: "/friends",
+          link: "/friends?tab=requests",
         });
       });
     }
