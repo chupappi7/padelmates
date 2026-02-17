@@ -416,6 +416,7 @@ export type Database = {
           avatar_url: string | null
           bio: string | null
           created_at: string
+          friend_code: string | null
           games_played: number | null
           id: string
           name: string
@@ -427,6 +428,7 @@ export type Database = {
           avatar_url?: string | null
           bio?: string | null
           created_at?: string
+          friend_code?: string | null
           games_played?: number | null
           id?: string
           name: string
@@ -438,6 +440,7 @@ export type Database = {
           avatar_url?: string | null
           bio?: string | null
           created_at?: string
+          friend_code?: string | null
           games_played?: number | null
           id?: string
           name?: string
