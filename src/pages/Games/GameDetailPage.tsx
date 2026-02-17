@@ -39,6 +39,7 @@ import {
   Send,
   Pencil,
   Euro,
+  Share2,
 } from "lucide-react";
 
 interface Game {
@@ -387,6 +388,16 @@ export default function GameDetailPage() {
                 )}
               </div>
             </div>
+            <button
+              onClick={() => {
+                const url = `${window.location.origin}/games/${id}`;
+                navigator.clipboard.writeText(url);
+                toast.success("Invite link copied!");
+              }}
+              className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center hover:bg-muted/80 transition-colors shrink-0"
+            >
+              <Share2 className="w-4 h-4 text-muted-foreground" />
+            </button>
             {canManage && (
               <button
                 onClick={() => navigate(`/games/${id}/edit`)}
