@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { format } from "date-fns";
 
 export interface AppNotification {
   id: string;
@@ -76,7 +77,7 @@ export function useNotifications() {
       });
     }
 
-    // 3. Accepted join requests (game confirmed)
+    // 3. Accepted join requests (game confirmed) – enriched with context
     const { data: acceptedJoins } = await supabase
       .from("join_requests")
       .select("id, game_id, updated_at, status")
@@ -89,17 +90,34 @@ export function useNotifications() {
       const gameIds = acceptedJoins.map((j) => j.game_id);
       const { data: games } = await supabase
         .from("games")
-        .select("id, title")
+        .select("id, title, location, date_time, max_players")
         .in("id", gameIds);
 
-      const gameMap = new Map(games?.map((g) => [g.id, g.title]) || []);
+      const gameMap = new Map(games?.map((g) => [g.id, g]) || []);
+
+      // Get player counts per game
+      const { data: playerRows } = await supabase
+        .from("game_players")
+        .select("game_id")
+        .in("game_id", gameIds);
+
+      const countMap = new Map<string, number>();
+      playerRows?.forEach((p) => countMap.set(p.game_id, (countMap.get(p.game_id) || 0) + 1));
 
       acceptedJoins.forEach((j) => {
+        const g = gameMap.get(j.game_id);
+        const title = g?.title || "a game";
+        let ctx = "";
+        if (g) {
+          const dateStr = format(new Date(g.date_time), "MMM d, h:mm a");
+          const count = countMap.get(j.game_id) || 0;
+          ctx = ` | ${g.location} · ${dateStr} · ${count}/${g.max_players}`;
+        }
         results.push({
           id: `jc_${j.id}`,
           type: "game_confirmed",
           title: "Confirmed to Play",
-          message: `You've been confirmed for "${gameMap.get(j.game_id) || "a game"}"`,
+          message: `You've been confirmed for "${title}"${ctx}`,
           created_at: j.updated_at,
           read: false,
           link: `/games/${j.game_id}`,

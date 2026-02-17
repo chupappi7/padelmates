@@ -5,6 +5,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerTrigger } from "@/components/ui/drawer";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Bell, UserPlus, CalendarCheck, Megaphone, LogIn, LogOut, Inbox, CheckCheck } from "lucide-react";
+import { formatDistanceToNow } from "date-fns";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
 
@@ -60,7 +61,7 @@ function NotificationItem({
         <p className={cn("text-sm", !n.read ? "font-semibold" : "font-medium text-muted-foreground")}>{n.title}</p>
         <p className="text-xs text-muted-foreground truncate">{n.message}</p>
         <p className="text-[10px] text-muted-foreground/60 mt-0.5">
-          {new Date(n.created_at).toLocaleDateString()}
+          {formatDistanceToNow(new Date(n.created_at), { addSuffix: true })}
         </p>
       </div>
     </button>

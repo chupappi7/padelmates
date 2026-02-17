@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { formatGameContext } from "@/lib/formatGameContext";
 
 interface JoinRequestModalProps {
   open: boolean;
@@ -11,6 +12,8 @@ interface JoinRequestModalProps {
   userId: string;
   hostId?: string;
   gameTitle?: string;
+  gameLocation?: string;
+  gameDateTime?: string;
   onSuccess: () => void;
 }
 
@@ -21,6 +24,8 @@ export function JoinRequestModal({
   userId,
   hostId,
   gameTitle,
+  gameLocation,
+  gameDateTime,
   onSuccess,
 }: JoinRequestModalProps) {
   const [submitting, setSubmitting] = useState(false);
@@ -43,11 +48,12 @@ export function JoinRequestModal({
     // Notify host
     if (hostId && hostId !== userId) {
       const { data: profile } = await supabase.from("profiles").select("name").eq("user_id", userId).single();
+      const ctx = gameLocation && gameDateTime ? ` | ${formatGameContext(gameLocation, gameDateTime)}` : "";
       await supabase.from("notifications").insert({
         user_id: hostId,
         type: "game_request",
         title: "Join Request",
-        message: `${profile?.name || "Someone"} wants to join "${gameTitle || "your game"}"`,
+        message: `${profile?.name || "Someone"} wants to join "${gameTitle || "your game"}"${ctx}`,
         link: `/games/${gameId}`,
       });
     }

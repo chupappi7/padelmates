@@ -25,6 +25,7 @@ import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
+import { formatGameContext } from "@/lib/formatGameContext";
 import {
   ArrowLeft,
   Calendar,
@@ -277,7 +278,8 @@ export default function GameDetailPage() {
       toast.success("You've joined the game!");
       fetchPlayers();
       const { data: profile } = await supabase.from("profiles").select("name").eq("user_id", user.id).single();
-      notifyHost("game_join", "Player Joined", `${profile?.name || "Someone"} joined "${game?.title}"`);
+      const ctx = game ? ` | ${formatGameContext(game.location, game.date_time, players.length + 1, game.max_players)}` : "";
+      notifyHost("game_join", "Player Joined", `${profile?.name || "Someone"} joined "${game?.title}"${ctx}`);
     }
     setJoinLoading(false);
   };
@@ -294,7 +296,8 @@ export default function GameDetailPage() {
       fetchPlayers();
       await supabase.from("join_requests").delete().eq("game_id", id).eq("user_id", user.id);
       setMyRequest(null);
-      notifyHost("game_leave", "Player Left", `${profile?.name || "Someone"} left "${game?.title}"`);
+      const ctx = game ? ` | ${formatGameContext(game.location, game.date_time, players.length - 1, game.max_players)}` : "";
+      notifyHost("game_leave", "Player Left", `${profile?.name || "Someone"} left "${game?.title}"${ctx}`);
     }
     setJoinLoading(false);
   };
@@ -746,6 +749,8 @@ export default function GameDetailPage() {
           userId={user.id}
           hostId={game.host_id}
           gameTitle={game.title}
+          gameLocation={game.location}
+          gameDateTime={game.date_time}
           onSuccess={fetchMyRequest}
         />
       )}
