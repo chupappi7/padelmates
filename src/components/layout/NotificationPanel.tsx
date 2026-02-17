@@ -4,7 +4,7 @@ import { useNotifications, AppNotification } from "@/hooks/useNotifications";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerTrigger } from "@/components/ui/drawer";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Bell, UserPlus, CalendarCheck, Megaphone } from "lucide-react";
+import { Bell, UserPlus, CalendarCheck, Megaphone, LogIn, LogOut, Inbox } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
 
@@ -12,12 +12,18 @@ const iconMap: Record<AppNotification["type"], typeof Bell> = {
   friend_request: UserPlus,
   game_confirmed: CalendarCheck,
   announcement: Megaphone,
+  game_join: LogIn,
+  game_leave: LogOut,
+  game_request: Inbox,
 };
 
 const colorMap: Record<AppNotification["type"], string> = {
   friend_request: "bg-primary/10 text-primary",
   game_confirmed: "bg-secondary/10 text-secondary",
   announcement: "bg-accent/50 text-accent-foreground",
+  game_join: "bg-primary/10 text-primary",
+  game_leave: "bg-destructive/10 text-destructive",
+  game_request: "bg-warning/10 text-warning",
 };
 
 function NotificationItem({ n, onClose }: { n: AppNotification; onClose: () => void }) {

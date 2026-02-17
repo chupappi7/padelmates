@@ -3,19 +3,25 @@ import { Navbar } from "@/components/layout/Navbar";
 import { useNotifications, AppNotification } from "@/hooks/useNotifications";
 import { useAuth } from "@/contexts/AuthContext";
 import { motion } from "framer-motion";
-import { ArrowLeft, Bell, UserPlus, CalendarCheck, Megaphone } from "lucide-react";
+import { ArrowLeft, Bell, UserPlus, CalendarCheck, Megaphone, LogIn, LogOut, Inbox } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const iconMap: Record<AppNotification["type"], typeof Bell> = {
   friend_request: UserPlus,
   game_confirmed: CalendarCheck,
   announcement: Megaphone,
+  game_join: LogIn,
+  game_leave: LogOut,
+  game_request: Inbox,
 };
 
 const colorMap: Record<AppNotification["type"], string> = {
   friend_request: "bg-primary/10 text-primary",
   game_confirmed: "bg-secondary/10 text-secondary",
   announcement: "bg-accent/50 text-accent-foreground",
+  game_join: "bg-primary/10 text-primary",
+  game_leave: "bg-destructive/10 text-destructive",
+  game_request: "bg-warning/10 text-warning",
 };
 
 export default function NotificationsPage() {

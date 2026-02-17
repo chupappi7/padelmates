@@ -4,7 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 
 export interface AppNotification {
   id: string;
-  type: "friend_request" | "game_confirmed" | "announcement";
+  type: "friend_request" | "game_confirmed" | "announcement" | "game_join" | "game_leave" | "game_request";
   title: string;
   message: string;
   created_at: string;
@@ -23,7 +23,27 @@ export function useNotifications() {
 
     const results: AppNotification[] = [];
 
-    // 1. Incoming friend requests (pending)
+    // 1. DB-persisted notifications (game joins, leaves, requests)
+    const { data: dbNotifs } = await supabase
+      .from("notifications")
+      .select("*")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false })
+      .limit(20);
+
+    dbNotifs?.forEach((n: any) => {
+      results.push({
+        id: `notif_${n.id}`,
+        type: n.type as AppNotification["type"],
+        title: n.title,
+        message: n.message,
+        created_at: n.created_at,
+        read: n.read,
+        link: n.link,
+      });
+    });
+
+    // 2. Incoming friend requests (pending)
     const { data: friendReqs } = await supabase
       .from("friendships")
       .select("id, requester_id, created_at")
@@ -52,7 +72,7 @@ export function useNotifications() {
       });
     }
 
-    // 2. Accepted join requests (game confirmed)
+    // 3. Accepted join requests (game confirmed)
     const { data: acceptedJoins } = await supabase
       .from("join_requests")
       .select("id, game_id, updated_at, status")
@@ -83,7 +103,7 @@ export function useNotifications() {
       });
     }
 
-    // 3. Club announcements (from clubs user follows)
+    // 4. Club announcements (from clubs user follows)
     const { data: follows } = await supabase
       .from("club_followers")
       .select("club_id")
