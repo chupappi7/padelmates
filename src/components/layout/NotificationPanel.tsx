@@ -4,7 +4,7 @@ import { useNotifications, AppNotification } from "@/hooks/useNotifications";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerTrigger } from "@/components/ui/drawer";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Bell, UserPlus, CalendarCheck, Megaphone, LogIn, LogOut, Inbox } from "lucide-react";
+import { Bell, UserPlus, CalendarCheck, Megaphone, LogIn, LogOut, Inbox, CheckCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
 
@@ -26,23 +26,38 @@ const colorMap: Record<AppNotification["type"], string> = {
   game_request: "bg-warning/10 text-warning",
 };
 
-function NotificationItem({ n, onClose }: { n: AppNotification; onClose: () => void }) {
+function NotificationItem({
+  n,
+  onClose,
+  onRead,
+}: {
+  n: AppNotification;
+  onClose: () => void;
+  onRead: (n: AppNotification) => void;
+}) {
   const navigate = useNavigate();
   const Icon = iconMap[n.type];
 
   return (
     <button
       onClick={() => {
+        onRead(n);
         if (n.link) navigate(n.link);
         onClose();
       }}
-      className="w-full text-left flex items-start gap-3 p-3 rounded-lg hover:bg-muted/50 transition-colors"
+      className={cn(
+        "w-full text-left flex items-start gap-3 p-3 rounded-lg hover:bg-muted/50 transition-colors relative",
+        !n.read && "bg-primary/5"
+      )}
     >
+      {!n.read && (
+        <span className="absolute top-3 right-3 w-2 h-2 rounded-full bg-primary" />
+      )}
       <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center shrink-0", colorMap[n.type])}>
         <Icon className="w-4 h-4" />
       </div>
-      <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium">{n.title}</p>
+      <div className="flex-1 min-w-0 pr-4">
+        <p className={cn("text-sm", !n.read ? "font-semibold" : "font-medium text-muted-foreground")}>{n.title}</p>
         <p className="text-xs text-muted-foreground truncate">{n.message}</p>
         <p className="text-[10px] text-muted-foreground/60 mt-0.5">
           {new Date(n.created_at).toLocaleDateString()}
@@ -52,7 +67,17 @@ function NotificationItem({ n, onClose }: { n: AppNotification; onClose: () => v
   );
 }
 
-function NotificationList({ notifications, loading, onClose }: { notifications: AppNotification[]; loading: boolean; onClose: () => void }) {
+function NotificationList({
+  notifications,
+  loading,
+  onClose,
+  onRead,
+}: {
+  notifications: AppNotification[];
+  loading: boolean;
+  onClose: () => void;
+  onRead: (n: AppNotification) => void;
+}) {
   const navigate = useNavigate();
   const items = notifications.slice(0, 5);
 
@@ -79,7 +104,7 @@ function NotificationList({ notifications, loading, onClose }: { notifications: 
     <>
       <div className="space-y-0.5 p-1">
         {items.map((n) => (
-          <NotificationItem key={n.id} n={n} onClose={onClose} />
+          <NotificationItem key={n.id} n={n} onClose={onClose} onRead={onRead} />
         ))}
       </div>
       <button
@@ -94,19 +119,45 @@ function NotificationList({ notifications, loading, onClose }: { notifications: 
 
 export function NotificationPanel({ children }: { children: React.ReactNode }) {
   const isMobile = useIsMobile();
-  const { notifications, loading } = useNotifications();
+  const { notifications, loading, unreadCount, markAsRead, markAllAsRead } = useNotifications();
   const [open, setOpen] = useState(false);
+
+  const header = (
+    <div className="flex items-center justify-between px-4 py-3 border-b border-border">
+      <h3 className="font-semibold text-sm">Notifications</h3>
+      {unreadCount > 0 && (
+        <button
+          onClick={markAllAsRead}
+          className="inline-flex items-center gap-1 text-xs text-primary hover:underline font-medium"
+        >
+          <CheckCheck className="w-3.5 h-3.5" />
+          Mark all read
+        </button>
+      )}
+    </div>
+  );
 
   if (isMobile) {
     return (
       <Drawer open={open} onOpenChange={setOpen}>
         <DrawerTrigger asChild>{children}</DrawerTrigger>
         <DrawerContent className="max-h-[60vh]">
-          <DrawerHeader>
-            <DrawerTitle>Notifications</DrawerTitle>
+          <DrawerHeader className="pb-0">
+            <div className="flex items-center justify-between">
+              <DrawerTitle>Notifications</DrawerTitle>
+              {unreadCount > 0 && (
+                <button
+                  onClick={markAllAsRead}
+                  className="inline-flex items-center gap-1 text-xs text-primary hover:underline font-medium"
+                >
+                  <CheckCheck className="w-3.5 h-3.5" />
+                  Mark all read
+                </button>
+              )}
+            </div>
           </DrawerHeader>
           <ScrollArea className="flex-1 overflow-auto px-2 pb-4">
-            <NotificationList notifications={notifications} loading={loading} onClose={() => setOpen(false)} />
+            <NotificationList notifications={notifications} loading={loading} onClose={() => setOpen(false)} onRead={markAsRead} />
           </ScrollArea>
         </DrawerContent>
       </Drawer>
@@ -117,11 +168,9 @@ export function NotificationPanel({ children }: { children: React.ReactNode }) {
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>{children}</PopoverTrigger>
       <PopoverContent className="w-80 p-0" align="end">
-        <div className="px-4 py-3 border-b border-border">
-          <h3 className="font-semibold text-sm">Notifications</h3>
-        </div>
+        {header}
         <ScrollArea className="max-h-[350px]">
-          <NotificationList notifications={notifications} loading={loading} onClose={() => setOpen(false)} />
+          <NotificationList notifications={notifications} loading={loading} onClose={() => setOpen(false)} onRead={markAsRead} />
         </ScrollArea>
       </PopoverContent>
     </Popover>
