@@ -1,13 +1,13 @@
 import { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Home, Plus, Users, User, CalendarCheck } from "lucide-react";
+import { Home, Plus, Users, User, CalendarCheck, UserPlus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { HostTypeModal } from "@/components/games/HostTypeModal";
 
 const tabs = [
   { path: "/", label: "Matches", icon: Home },
-  { path: "/clubs", label: "Clubs", icon: Users },
+  { path: "/friends", label: "Friends", icon: UserPlus },
   { path: "__host__", label: "Host", icon: Plus, isFab: true },
   { path: "/my-matches", label: "My Matches", icon: CalendarCheck },
   { path: "/profile", label: "Profile", icon: User },
