@@ -1,73 +1,71 @@
 
+## Enrich Game Notifications with Context
 
-# Notification Popover (Desktop) + Bottom Drawer (Mobile)
+### Problem
+Game notifications like "Player Joined", "Join Request", and "Confirmed to Play" only show the game title. When multiple games have similar titles (e.g., "Looking for 2 players"), notifications become indistinguishable.
 
-## Overview
-Replace the current full-page-only notification experience with a quick-access popover on desktop and a bottom drawer on mobile. The full notifications page remains as a "See all" destination for history.
+### Solution
+Add date, location, time, and player count to all game-related notification messages so each one is uniquely identifiable at a glance.
 
-## What Changes for the User
-
-1. **Desktop** -- clicking the bell icon opens a small dropdown popover showing the latest 5 notifications, with a "See all" link
-2. **Mobile** -- clicking the bell icon slides up a bottom drawer (~60% height) with scrollable notifications and a "See all" link
-3. The existing `/notifications` page stays as the full history view
-4. Each notification is tappable and navigates to the relevant item (friend request, game, etc.)
-
-## User Flow
-
-```text
-Desktop:
-  [Bell icon] -> Click
-  -> Popover drops down (max-h ~350px, scrollable)
-  -> Shows latest 5 notifications
-  -> [See all notifications] link at bottom -> /notifications page
-  -> Click a notification -> navigates to relevant page, popover closes
-
-Mobile:
-  [Bell icon] -> Click
-  -> Bottom drawer slides up (~60% screen)
-  -> Scrollable list of latest notifications
-  -> [See all] link at bottom -> /notifications page
-  -> Tap a notification -> navigates, drawer closes
+**Before:**
+```
+Player Joined
+Ahmed joined "Looking for 2 players"
 ```
 
-## Technical Details
-
-### New Component: `NotificationPanel.tsx`
-
-A single component that renders either a Popover (desktop) or a Drawer (mobile) based on the `useIsMobile()` hook -- following the same responsive pattern already used in `MobileFilterSheet` and `FriendPickerSheet`.
-
-Contains:
-- Header with "Notifications" title
-- ScrollArea with notification items (reuses the same icon/color maps from NotificationsPage)
-- "See all" footer link to `/notifications`
-- Clicking a notification calls `navigate(n.link)` and closes the panel
-
-### Files Modified
-
-| File | Change |
-|------|--------|
-| `src/components/layout/NotificationPanel.tsx` | New component: responsive popover/drawer with notification list |
-| `src/components/layout/Navbar.tsx` | Replace `navigate("/notifications")` on bell click with opening the NotificationPanel inline |
-| `src/pages/Notifications/NotificationsPage.tsx` | No changes -- stays as the full "See all" history page |
-
-### Component Structure
-
-```text
-NotificationPanel
-  if mobile:
-    Drawer (vaul) with DrawerContent
-      -> ScrollArea with notification items
-      -> "See all" footer
-  if desktop:
-    Popover (radix) with PopoverContent
-      -> ScrollArea with notification items (max-h-[350px])
-      -> "See all" footer
+**After:**
+```
+Player Joined
+Ahmed joined "Looking for 2 players" | Club XYZ · Feb 18, 6:00 PM · 3/4
 ```
 
-### Implementation Steps
+### Changes
 
-1. Create `NotificationPanel.tsx` with responsive popover/drawer pattern using `useIsMobile()`
-2. Extract notification item rendering into a shared `NotificationItem` sub-component (used by both the panel and the full page)
-3. Update `Navbar.tsx` to render `NotificationPanel` around the bell icon instead of navigating on click
-4. Keep the badge count on the bell icon as-is
+#### 1. GameDetailPage.tsx -- Enrich outgoing notifications (lines ~260-300)
 
+Update `notifyHost` calls in `handleDirectJoin` and `handleLeaveGame` to include game location, date, and current player count in the message string. The `game` object already has `location`, `date_time`, and `max_players` available in scope, and `players.length` gives the current count.
+
+- `handleDirectJoin` message becomes:
+  `Ahmed joined "Looking for 2" | Club XYZ · Feb 18, 6:00 PM · 3/4`
+- `handleLeaveGame` message becomes:
+  `Ahmed left "Looking for 2" | Club XYZ · Feb 18, 6:00 PM · 2/4`
+
+#### 2. JoinRequestModal.tsx -- Add location/date props
+
+- Add `gameLocation` and `gameDateTime` props to `JoinRequestModalProps`
+- Update the notification insert message to include context:
+  `Ahmed wants to join "Looking for 2" | Club XYZ · Feb 18, 6:00 PM`
+- Pass these new props from `GameDetailPage.tsx` where the modal is used
+
+#### 3. useNotifications.ts -- Enrich "Confirmed to Play" notifications (lines ~79-108)
+
+- When fetching accepted join requests, also select `location`, `date_time`, and `max_players` from the games table (alongside `title`)
+- Also query `game_players` count for those game IDs
+- Update the message to include context:
+  `You're confirmed for "Looking for 2" | Club XYZ · Feb 18, 6:00 PM · 3/4`
+
+#### 4. NotificationPanel.tsx and NotificationsPage.tsx -- Display improvements
+
+- Use `formatDistanceToNow` from date-fns for relative timestamps (e.g., "2h ago" instead of just a date)
+- The enriched message text will naturally display the extra context since it's embedded in the message string -- no UI layout changes needed
+
+### Technical Details
+
+A helper function `formatGameContext` will be created to consistently format the context suffix:
+
+```typescript
+// Shared helper (inline in each file or extracted)
+const formatGameContext = (location: string, dateTime: string, current?: number, max?: number) => {
+  const d = new Date(dateTime);
+  const dateStr = format(d, "MMM d, h:mm a");
+  const countStr = current !== undefined && max !== undefined ? ` · ${current}/${max}` : "";
+  return `${location} · ${dateStr}${countStr}`;
+};
+```
+
+Files to modify:
+- `src/pages/Games/GameDetailPage.tsx` -- enrich notifyHost messages
+- `src/components/games/JoinRequestModal.tsx` -- add props, enrich message
+- `src/hooks/useNotifications.ts` -- enrich "Confirmed to Play" fetch
+- `src/components/layout/NotificationPanel.tsx` -- relative time
+- `src/pages/Notifications/NotificationsPage.tsx` -- relative time
