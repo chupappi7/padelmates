@@ -351,11 +351,11 @@ export default function GameDetailPage() {
   const pendingCount = requests.filter((r) => r.status === "pending").length;
 
   return (
-    <div className="min-h-screen bg-background pb-32 md:pb-8">
+    <div className={cn("min-h-screen bg-background md:pb-8", activeTab === "chat" ? "h-screen overflow-hidden pb-0" : "pb-32")}>
       <Navbar />
 
-      <div className="container py-4 md:py-8 max-w-4xl px-3 md:px-6">
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+      <div className={cn("container max-w-4xl px-3 md:px-6", activeTab === "chat" ? "py-2 md:py-4 flex flex-col overflow-hidden" : "py-4 md:py-8")} style={activeTab === "chat" ? { height: "calc(100vh - 64px - 4.5rem)" } : undefined}>
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className={activeTab === "chat" ? "flex flex-col flex-1 min-h-0 overflow-hidden" : ""}>
           {/* Back + Title */}
           <div className="flex items-center gap-3 mb-3">
             <button
@@ -610,7 +610,7 @@ export default function GameDetailPage() {
 
           {/* Chat Tab */}
           {activeTab === "chat" && canAccessChat && (
-            <motion.div key="chat" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col" style={{ height: "calc(100vh - 280px)", minHeight: "300px" }}>
+            <motion.div key="chat" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col flex-1 min-h-0">
               <div className="bg-card border border-border rounded-xl flex flex-col flex-1 overflow-hidden">
                 <div ref={messagesContainerRef} className="flex-1 overflow-y-auto p-4 space-y-3">
                   {messages.length > 0 ? (
