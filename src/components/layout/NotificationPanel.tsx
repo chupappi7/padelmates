@@ -58,8 +58,10 @@ function NotificationItem({
         <Icon className="w-4 h-4" />
       </div>
       <div className="flex-1 min-w-0 pr-4">
-        <p className={cn("text-sm", !n.read ? "font-semibold" : "font-medium text-muted-foreground")}>{n.title}</p>
-        <p className="text-xs text-muted-foreground truncate">{n.message}</p>
+        {n.type !== "game_join" && n.type !== "game_leave" && (
+          <p className={cn("text-sm", !n.read ? "font-semibold" : "font-medium text-muted-foreground")}>{n.title}</p>
+        )}
+        <p className={cn("text-xs", n.type === "game_join" || n.type === "game_leave" ? (!n.read ? "font-medium text-foreground" : "text-muted-foreground") : "text-muted-foreground truncate")}>{n.message}</p>
         <p className="text-[10px] text-muted-foreground/60 mt-0.5">
           {formatDistanceToNow(new Date(n.created_at), { addSuffix: true })}
         </p>
