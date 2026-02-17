@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -115,6 +115,16 @@ export default function GameDetailPage() {
   const [myRequest, setMyRequest] = useState<JoinRequest | null>(null);
   const [loading, setLoading] = useState(true);
   const [newMessage, setNewMessage] = useState("");
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
   const [showJoinModal, setShowJoinModal] = useState(false);
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
   const [showJoinConfirm, setShowJoinConfirm] = useState(false);
@@ -602,7 +612,7 @@ export default function GameDetailPage() {
           {activeTab === "chat" && canAccessChat && (
             <motion.div key="chat" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col" style={{ height: "calc(100vh - 280px)", minHeight: "300px" }}>
               <div className="bg-card border border-border rounded-xl flex flex-col flex-1 overflow-hidden">
-                <div className="flex-1 overflow-y-auto p-4 space-y-3">
+                <div ref={messagesContainerRef} className="flex-1 overflow-y-auto p-4 space-y-3">
                   {messages.length > 0 ? (
                     messages.map((msg) => (
                       <div key={msg.id} className={cn("flex gap-2.5", msg.user_id === user?.id && "flex-row-reverse")}>
@@ -635,6 +645,7 @@ export default function GameDetailPage() {
                       <p className="text-xs">Start the conversation!</p>
                     </div>
                   )}
+                  <div ref={messagesEndRef} />
                 </div>
                 <div className="flex gap-2 p-3 border-t border-border">
                   <Input
