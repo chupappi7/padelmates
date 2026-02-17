@@ -242,26 +242,43 @@ export default function GameDetailPage() {
     setActionLoading(null);
   };
 
+  const notifyHost = async (type: string, title: string, message: string) => {
+    if (!game || !user || game.host_id === user.id) return;
+    await supabase.from("notifications").insert({
+      user_id: game.host_id,
+      type,
+      title,
+      message,
+      link: `/games/${game.id}`,
+    });
+  };
+
   const handleDirectJoin = async () => {
     if (!user || !id) return;
     setJoinLoading(true);
     const { error } = await supabase.from("game_players").insert({ game_id: id, user_id: user.id });
     if (error) { toast.error("Failed to join game"); }
-    else { toast.success("You've joined the game!"); fetchPlayers(); }
+    else {
+      toast.success("You've joined the game!");
+      fetchPlayers();
+      const { data: profile } = await supabase.from("profiles").select("name").eq("user_id", user.id).single();
+      notifyHost("game_join", "Player Joined", `${profile?.name || "Someone"} joined "${game?.title}"`);
+    }
     setJoinLoading(false);
   };
 
   const handleLeaveGame = async () => {
     if (!user || !id) return;
     setJoinLoading(true);
+    const { data: profile } = await supabase.from("profiles").select("name").eq("user_id", user.id).single();
     const { error } = await supabase.from("game_players").delete().eq("game_id", id).eq("user_id", user.id);
     if (error) { toast.error("Failed to leave game"); }
     else {
       toast.success("You've left the game");
       fetchPlayers();
-      // Also clean up any join request
       await supabase.from("join_requests").delete().eq("game_id", id).eq("user_id", user.id);
       setMyRequest(null);
+      notifyHost("game_leave", "Player Left", `${profile?.name || "Someone"} left "${game?.title}"`);
     }
     setJoinLoading(false);
   };
@@ -710,6 +727,8 @@ export default function GameDetailPage() {
           onOpenChange={setShowJoinModal}
           gameId={game.id}
           userId={user.id}
+          hostId={game.host_id}
+          gameTitle={game.title}
           onSuccess={fetchMyRequest}
         />
       )}

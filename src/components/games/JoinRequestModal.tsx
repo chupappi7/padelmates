@@ -9,6 +9,8 @@ interface JoinRequestModalProps {
   onOpenChange: (open: boolean) => void;
   gameId: string;
   userId: string;
+  hostId?: string;
+  gameTitle?: string;
   onSuccess: () => void;
 }
 
@@ -17,6 +19,8 @@ export function JoinRequestModal({
   onOpenChange,
   gameId,
   userId,
+  hostId,
+  gameTitle,
   onSuccess,
 }: JoinRequestModalProps) {
   const [submitting, setSubmitting] = useState(false);
@@ -34,6 +38,18 @@ export function JoinRequestModal({
       toast.error("Failed to send join request");
       setSubmitting(false);
       return;
+    }
+
+    // Notify host
+    if (hostId && hostId !== userId) {
+      const { data: profile } = await supabase.from("profiles").select("name").eq("user_id", userId).single();
+      await supabase.from("notifications").insert({
+        user_id: hostId,
+        type: "game_request",
+        title: "Join Request",
+        message: `${profile?.name || "Someone"} wants to join "${gameTitle || "your game"}"`,
+        link: `/games/${gameId}`,
+      });
     }
 
     toast.success("Request sent – waiting for host approval");
