@@ -1,0 +1,89 @@
+import { useNavigate } from "react-router-dom";
+import { Navbar } from "@/components/layout/Navbar";
+import { useNotifications, AppNotification } from "@/hooks/useNotifications";
+import { useAuth } from "@/contexts/AuthContext";
+import { motion } from "framer-motion";
+import { ArrowLeft, Bell, UserPlus, CalendarCheck, Megaphone } from "lucide-react";
+import { cn } from "@/lib/utils";
+
+const iconMap: Record<AppNotification["type"], typeof Bell> = {
+  friend_request: UserPlus,
+  game_confirmed: CalendarCheck,
+  announcement: Megaphone,
+};
+
+const colorMap: Record<AppNotification["type"], string> = {
+  friend_request: "bg-primary/10 text-primary",
+  game_confirmed: "bg-secondary/10 text-secondary",
+  announcement: "bg-accent/50 text-accent-foreground",
+};
+
+export default function NotificationsPage() {
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const { notifications, loading } = useNotifications();
+
+  if (!user) {
+    navigate("/login");
+    return null;
+  }
+
+  return (
+    <div className="min-h-screen bg-background">
+      <Navbar />
+      <div className="container py-6 max-w-2xl px-4 pb-32 md:pb-8">
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+          <button
+            onClick={() => navigate(-1)}
+            className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors mb-6"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Back
+          </button>
+
+          <h1 className="font-display text-2xl font-bold mb-6">Notifications</h1>
+
+          {loading ? (
+            <div className="space-y-3">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="h-16 bg-muted rounded-xl animate-pulse" />
+              ))}
+            </div>
+          ) : notifications.length === 0 ? (
+            <div className="text-center py-16">
+              <Bell className="w-10 h-10 text-muted-foreground/40 mx-auto mb-3" />
+              <p className="text-sm text-muted-foreground">No notifications yet</p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {notifications.map((n) => {
+                const Icon = iconMap[n.type];
+                return (
+                  <button
+                    key={n.id}
+                    onClick={() => n.link && navigate(n.link)}
+                    className={cn(
+                      "w-full text-left flex items-start gap-3 p-4 rounded-xl border border-border bg-card hover:bg-muted/50 transition-colors",
+                      n.link && "cursor-pointer"
+                    )}
+                  >
+                    <div className={cn("w-9 h-9 rounded-lg flex items-center justify-center shrink-0", colorMap[n.type])}>
+                      <Icon className="w-4 h-4" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium">{n.title}</p>
+                      <p className="text-xs text-muted-foreground truncate">{n.message}</p>
+                      <p className="text-[10px] text-muted-foreground/60 mt-1">
+                        {new Date(n.created_at).toLocaleDateString()}
+                      </p>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </motion.div>
+      </div>
+    </div>
+  );
+}

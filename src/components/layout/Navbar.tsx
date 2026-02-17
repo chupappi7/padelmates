@@ -9,14 +9,14 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Home, Plus, Users, Calendar, LogOut, User, Menu, X } from "lucide-react";
+import { Home, Plus, Users, Calendar, LogOut, User, Bell, MessageCircle } from "lucide-react";
 import { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { useNotifications } from "@/hooks/useNotifications";
 
 export function Navbar() {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { unreadCount } = useNotifications();
 
   const handleSignOut = async () => {
     await signOut();
@@ -27,6 +27,17 @@ export function Navbar() {
     { href: "/games", label: "Find Games", icon: Calendar },
     { href: "/clubs", label: "Clubs", icon: Users },
   ];
+
+  const IconButton = ({ icon: Icon, badge, onClick }: { icon: any; badge?: number; onClick: () => void }) => (
+    <Button variant="ghost" size="icon" className="relative h-9 w-9 rounded-full" onClick={onClick}>
+      <Icon className="w-5 h-5 text-muted-foreground" />
+      {badge !== undefined && badge > 0 && (
+        <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold flex items-center justify-center px-1">
+          {badge > 9 ? "9+" : badge}
+        </span>
+      )}
+    </Button>
+  );
 
   return (
     <nav className="sticky top-0 z-50 glass-card border-b border-border/50">
@@ -53,31 +64,35 @@ export function Navbar() {
         </div>
 
         {/* Mobile right side */}
-        <div className="flex md:hidden items-center gap-2">
+        <div className="flex md:hidden items-center gap-1">
           {user ? (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="relative h-9 w-9 rounded-full p-0">
-                  <Avatar className="h-9 w-9">
-                    <AvatarImage src="" alt="Profile" />
-                    <AvatarFallback className="bg-primary/10 text-primary font-semibold text-sm">
-                      {user.email?.charAt(0).toUpperCase()}
-                    </AvatarFallback>
-                  </Avatar>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent className="w-48" align="end" forceMount>
-                <DropdownMenuItem onClick={() => navigate("/profile")}>
-                  <User className="mr-2 h-4 w-4" />
-                  Profile
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={handleSignOut}>
-                  <LogOut className="mr-2 h-4 w-4" />
-                  Sign Out
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <>
+              <IconButton icon={MessageCircle} onClick={() => navigate("/messages")} />
+              <IconButton icon={Bell} badge={unreadCount} onClick={() => navigate("/notifications")} />
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="relative h-9 w-9 rounded-full p-0">
+                    <Avatar className="h-9 w-9">
+                      <AvatarImage src="" alt="Profile" />
+                      <AvatarFallback className="bg-primary/10 text-primary font-semibold text-sm">
+                        {user.email?.charAt(0).toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-48" align="end" forceMount>
+                  <DropdownMenuItem onClick={() => navigate("/profile")}>
+                    <User className="mr-2 h-4 w-4" />
+                    Profile
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleSignOut}>
+                    <LogOut className="mr-2 h-4 w-4" />
+                    Sign Out
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </>
           ) : (
             <Button variant="hero" size="sm" onClick={() => navigate("/login")} className="text-xs h-8 px-3">
               Sign In
@@ -86,9 +101,11 @@ export function Navbar() {
         </div>
 
         {/* Desktop right side */}
-        <div className="hidden md:flex items-center gap-3">
+        <div className="hidden md:flex items-center gap-2">
           {user ? (
             <>
+              <IconButton icon={MessageCircle} onClick={() => navigate("/messages")} />
+              <IconButton icon={Bell} badge={unreadCount} onClick={() => navigate("/notifications")} />
               <Button variant="hero" size="sm" onClick={() => navigate("/games/create")}>
                 <Plus className="w-4 h-4" />
                 Host Game
