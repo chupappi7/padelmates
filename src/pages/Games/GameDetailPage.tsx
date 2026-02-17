@@ -600,9 +600,9 @@ export default function GameDetailPage() {
 
           {/* Chat Tab */}
           {activeTab === "chat" && canAccessChat && (
-            <motion.div key="chat" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-              <div className="bg-card border border-border rounded-xl p-4">
-                <div className="h-[calc(100vh-340px)] min-h-[200px] overflow-y-auto mb-4 space-y-3">
+            <motion.div key="chat" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col" style={{ height: "calc(100vh - 280px)", minHeight: "300px" }}>
+              <div className="bg-card border border-border rounded-xl flex flex-col flex-1 overflow-hidden">
+                <div className="flex-1 overflow-y-auto p-4 space-y-3">
                   {messages.length > 0 ? (
                     messages.map((msg) => (
                       <div key={msg.id} className={cn("flex gap-2.5", msg.user_id === user?.id && "flex-row-reverse")}>
@@ -636,7 +636,7 @@ export default function GameDetailPage() {
                     </div>
                   )}
                 </div>
-                <div className="flex gap-2">
+                <div className="flex gap-2 p-3 border-t border-border">
                   <Input
                     placeholder="Type a message..."
                     value={newMessage}
