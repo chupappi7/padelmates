@@ -433,6 +433,8 @@ export default function GameDetailPage() {
             {tabs.map((tab) => {
               // Hide chat for non-participants
               if (tab.key === "chat" && !canAccessChat) return null;
+              // For sell/giveaway court listings, only show Details and Chat
+              if (game?.payment_mode === "court_sharing" && tab.key !== "details" && tab.key !== "chat") return null;
 
               const isActive = activeTab === tab.key;
               const showBadge = tab.key === "participants" && isHost && pendingCount > 0;
