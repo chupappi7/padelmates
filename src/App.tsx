@@ -15,6 +15,7 @@ import GameDetailPage from "./pages/Games/GameDetailPage";
 import EditGamePage from "./pages/Games/EditGamePage";
 import ClubsListPage from "./pages/Clubs/ClubsListPage";
 import ProfilePage from "./pages/Profile/ProfilePage";
+import UserProfilePage from "./pages/Profile/UserProfilePage";
 import MyMatchesPage from "./pages/Games/MyMatchesPage";
 import FriendsPage from "./pages/Friends/FriendsPage";
 import NotificationsPage from "./pages/Notifications/NotificationsPage";
@@ -42,6 +43,7 @@ const App = () => (
             <Route path="/friends" element={<FriendsPage />} />
             <Route path="/notifications" element={<NotificationsPage />} />
             <Route path="/profile" element={<ProfilePage />} />
+            <Route path="/user/:userId" element={<UserProfilePage />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
