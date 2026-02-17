@@ -17,6 +17,7 @@ import ClubsListPage from "./pages/Clubs/ClubsListPage";
 import ProfilePage from "./pages/Profile/ProfilePage";
 import MyMatchesPage from "./pages/Games/MyMatchesPage";
 import FriendsPage from "./pages/Friends/FriendsPage";
+import NotificationsPage from "./pages/Notifications/NotificationsPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -39,6 +40,7 @@ const App = () => (
             <Route path="/clubs" element={<ClubsListPage />} />
             <Route path="/my-matches" element={<MyMatchesPage />} />
             <Route path="/friends" element={<FriendsPage />} />
+            <Route path="/notifications" element={<NotificationsPage />} />
             <Route path="/profile" element={<ProfilePage />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
