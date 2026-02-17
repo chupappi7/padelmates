@@ -24,6 +24,8 @@ interface GameCardProps {
   paymentMode?: string;
   priceMode?: string;
   userStatus?: "joined" | "hosting";
+  courtTakenBy?: string | null;
+  interestCount?: number;
 }
 
 const formatLabels = {
@@ -56,7 +58,11 @@ export function GameCard({
   paymentMode,
   priceMode,
   userStatus,
+  courtTakenBy,
+  interestCount = 0,
 }: GameCardProps) {
+  const isCourtSharing = paymentMode === "court_sharing";
+  const isCourtTaken = !!courtTakenBy;
   const totalPlayers = currentPlayers + prefilledCount;
   const spotsLeft = maxPlayers - totalPlayers;
   const date = new Date(dateTime);
@@ -87,13 +93,22 @@ export function GameCard({
               <Badge variant="outline" className="rounded-full text-[9px] sm:text-xs h-4 sm:h-6 px-1.5 sm:px-2 truncate">
                 {formatLabels[format]}
               </Badge>
-              {userStatus && (
+              {userStatus && !isCourtSharing && (
                 <Badge className={`rounded-full text-[9px] sm:text-xs h-4 sm:h-6 px-1.5 sm:px-2 border ${
                   userStatus === "hosting"
                     ? "bg-primary/15 text-primary border-primary/25"
                     : "bg-success/15 text-success border-success/25"
                 }`}>
                   {userStatus === "hosting" ? "Hosting" : "Joined"}
+                </Badge>
+              )}
+              {isCourtSharing && (
+                <Badge className={`rounded-full text-[9px] sm:text-xs h-4 sm:h-6 px-1.5 sm:px-2 border ${
+                  isCourtTaken
+                    ? "bg-destructive/15 text-destructive border-destructive/25"
+                    : "bg-success/15 text-success border-success/25"
+                }`}>
+                  {isCourtTaken ? "Taken" : "Available"}
                 </Badge>
               )}
             </div>
@@ -131,8 +146,12 @@ export function GameCard({
                     )}
                   </span>
                 </div>
+                {isCourtSharing && interestCount > 0 && (
+                  <span className="inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] sm:text-xs font-semibold bg-primary/10 text-primary border-primary/20">
+                    {interestCount} interested
+                  </span>
+                )}
                 {paymentMode !== 'court_sharing' && paymentMode !== 'spot_selling' && (() => {
-                  const ratio = totalPlayers / maxPlayers;
                   const isFull = spotsLeft <= 0;
                   const bubbleColor = isFull
                     ? "bg-destructive/15 text-destructive border-destructive/20"
