@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -10,6 +10,8 @@ export interface AppNotification {
   created_at: string;
   read: boolean;
   link?: string;
+  /** DB notification id (without prefix) for marking read */
+  _dbId?: string;
 }
 
 export function useNotifications() {
@@ -23,7 +25,7 @@ export function useNotifications() {
 
     const results: AppNotification[] = [];
 
-    // 1. DB-persisted notifications (game joins, leaves, requests)
+    // 1. DB-persisted notifications
     const { data: dbNotifs } = await supabase
       .from("notifications")
       .select("*")
@@ -40,6 +42,7 @@ export function useNotifications() {
         created_at: n.created_at,
         read: n.read,
         link: n.link,
+        _dbId: n.id,
       });
     });
 
@@ -103,7 +106,7 @@ export function useNotifications() {
       });
     }
 
-    // 4. Club announcements (from clubs user follows)
+    // 4. Club announcements
     const { data: follows } = await supabase
       .from("club_followers")
       .select("club_id")
@@ -130,7 +133,6 @@ export function useNotifications() {
       });
     }
 
-    // Sort by date descending
     results.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
     setNotifications(results);
     setLoading(false);
@@ -140,7 +142,33 @@ export function useNotifications() {
     fetchNotifications();
   }, [user]);
 
+  const markAsRead = useCallback(async (notification: AppNotification) => {
+    if (notification.read) return;
+    // Optimistic update
+    setNotifications((prev) =>
+      prev.map((n) => (n.id === notification.id ? { ...n, read: true } : n))
+    );
+    // Only DB notifications can be persisted
+    if (notification._dbId) {
+      await supabase
+        .from("notifications")
+        .update({ read: true })
+        .eq("id", notification._dbId);
+    }
+  }, []);
+
+  const markAllAsRead = useCallback(async () => {
+    if (!user) return;
+    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+    // Mark all DB notifications as read
+    await supabase
+      .from("notifications")
+      .update({ read: true })
+      .eq("user_id", user.id)
+      .eq("read", false);
+  }, [user]);
+
   const unreadCount = notifications.filter((n) => !n.read).length;
 
-  return { notifications, unreadCount, loading, refetch: fetchNotifications };
+  return { notifications, unreadCount, loading, refetch: fetchNotifications, markAsRead, markAllAsRead };
 }

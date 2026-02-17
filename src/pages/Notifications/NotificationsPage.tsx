@@ -3,7 +3,7 @@ import { Navbar } from "@/components/layout/Navbar";
 import { useNotifications, AppNotification } from "@/hooks/useNotifications";
 import { useAuth } from "@/contexts/AuthContext";
 import { motion } from "framer-motion";
-import { ArrowLeft, Bell, UserPlus, CalendarCheck, Megaphone, LogIn, LogOut, Inbox } from "lucide-react";
+import { ArrowLeft, Bell, UserPlus, CalendarCheck, Megaphone, LogIn, LogOut, Inbox, CheckCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const iconMap: Record<AppNotification["type"], typeof Bell> = {
@@ -27,7 +27,7 @@ const colorMap: Record<AppNotification["type"], string> = {
 export default function NotificationsPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { notifications, loading } = useNotifications();
+  const { notifications, loading, unreadCount, markAsRead, markAllAsRead } = useNotifications();
 
   if (!user) {
     navigate("/login");
@@ -47,7 +47,18 @@ export default function NotificationsPage() {
             Back
           </button>
 
-          <h1 className="font-display text-2xl font-bold mb-6">Notifications</h1>
+          <div className="flex items-center justify-between mb-6">
+            <h1 className="font-display text-2xl font-bold">Notifications</h1>
+            {unreadCount > 0 && (
+              <button
+                onClick={markAllAsRead}
+                className="inline-flex items-center gap-1.5 text-sm text-primary hover:underline font-medium"
+              >
+                <CheckCheck className="w-4 h-4" />
+                Mark all read
+              </button>
+            )}
+          </div>
 
           {loading ? (
             <div className="space-y-3">
@@ -67,17 +78,24 @@ export default function NotificationsPage() {
                 return (
                   <button
                     key={n.id}
-                    onClick={() => n.link && navigate(n.link)}
+                    onClick={() => {
+                      markAsRead(n);
+                      if (n.link) navigate(n.link);
+                    }}
                     className={cn(
-                      "w-full text-left flex items-start gap-3 p-4 rounded-xl border border-border bg-card hover:bg-muted/50 transition-colors",
-                      n.link && "cursor-pointer"
+                      "w-full text-left flex items-start gap-3 p-4 rounded-xl border border-border bg-card hover:bg-muted/50 transition-colors relative",
+                      n.link && "cursor-pointer",
+                      !n.read && "bg-primary/5 border-primary/20"
                     )}
                   >
+                    {!n.read && (
+                      <span className="absolute top-4 right-4 w-2.5 h-2.5 rounded-full bg-primary" />
+                    )}
                     <div className={cn("w-9 h-9 rounded-lg flex items-center justify-center shrink-0", colorMap[n.type])}>
                       <Icon className="w-4 h-4" />
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium">{n.title}</p>
+                    <div className="flex-1 min-w-0 pr-4">
+                      <p className={cn("text-sm", !n.read ? "font-semibold" : "font-medium text-muted-foreground")}>{n.title}</p>
                       <p className="text-xs text-muted-foreground truncate">{n.message}</p>
                       <p className="text-[10px] text-muted-foreground/60 mt-1">
                         {new Date(n.created_at).toLocaleDateString()}
