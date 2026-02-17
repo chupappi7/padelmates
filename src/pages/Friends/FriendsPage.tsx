@@ -23,8 +23,7 @@ export default function FriendsPage() {
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [searching, setSearching] = useState(false);
 
-  const isUuid = (s: string) =>
-    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(s);
+  const isFriendCode = (s: string) => /^[A-Z0-9]{6}$/i.test(s);
 
   const handleSearch = async () => {
     if (!searchQuery.trim() || !user) return;
@@ -36,8 +35,8 @@ export default function FriendsPage() {
       .select("user_id, name, avatar_url, skill_level")
       .neq("user_id", user.id);
 
-    if (isUuid(trimmed)) {
-      query = query.eq("user_id", trimmed);
+    if (isFriendCode(trimmed)) {
+      query = query.eq("friend_code", trimmed.toUpperCase());
     } else {
       query = query.ilike("name", `%${trimmed}%`).limit(20);
     }
@@ -193,7 +192,7 @@ export default function FriendsPage() {
                 <div className="relative flex-1">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                   <Input
-                    placeholder="Search by name or paste user ID..."
+                    placeholder="Search by name or friend code..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && handleSearch()}
