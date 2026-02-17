@@ -10,8 +10,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Home, Plus, Users, Calendar, LogOut, User, Bell, MessageCircle } from "lucide-react";
-import { useState } from "react";
 import { useNotifications } from "@/hooks/useNotifications";
+import { NotificationPanel } from "@/components/layout/NotificationPanel";
 
 export function Navbar() {
   const { user, signOut } = useAuth();
@@ -67,8 +67,9 @@ export function Navbar() {
         <div className="flex md:hidden items-center gap-1">
           {user ? (
             <>
-              <IconButton icon={MessageCircle} onClick={() => navigate("/messages")} />
-              <IconButton icon={Bell} badge={unreadCount} onClick={() => navigate("/notifications")} />
+              <NotificationPanel>
+                <IconButton icon={Bell} badge={unreadCount} onClick={() => {}} />
+              </NotificationPanel>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="relative h-9 w-9 rounded-full p-0">
@@ -104,8 +105,9 @@ export function Navbar() {
         <div className="hidden md:flex items-center gap-2">
           {user ? (
             <>
-              <IconButton icon={MessageCircle} onClick={() => navigate("/messages")} />
-              <IconButton icon={Bell} badge={unreadCount} onClick={() => navigate("/notifications")} />
+              <NotificationPanel>
+                <IconButton icon={Bell} badge={unreadCount} onClick={() => {}} />
+              </NotificationPanel>
               <Button variant="hero" size="sm" onClick={() => navigate("/games/create")}>
                 <Plus className="w-4 h-4" />
                 Host Game
