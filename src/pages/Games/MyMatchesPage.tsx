@@ -168,6 +168,7 @@ export default function MyMatchesPage() {
                             hostName={game.profiles?.name || "Unknown"}
                             hostAvatar={game.profiles?.avatar_url || undefined}
                             priceMode={(game as any).price_mode}
+                            userStatus={game.host_id === user?.id ? "hosting" : "joined"}
                           />
                         </motion.div>
                       ))}
@@ -209,6 +210,7 @@ export default function MyMatchesPage() {
                             hostName={game.profiles?.name || "Unknown"}
                             hostAvatar={game.profiles?.avatar_url || undefined}
                             priceMode={(game as any).price_mode}
+                            userStatus={game.host_id === user?.id ? "hosting" : "joined"}
                           />
                         </motion.div>
                       ))}
