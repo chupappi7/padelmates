@@ -650,7 +650,7 @@ export default function GameDetailPage() {
 
       {/* Sticky Leave CTA */}
       {user && !isHost && isPlayer && (
-        <div className="fixed left-0 right-0 p-3 bg-background/95 backdrop-blur-md border-t border-border md:hidden z-40" style={{ bottom: "calc(3.5rem + env(safe-area-inset-bottom))" }}>
+        <div className="fixed left-0 right-0 px-4 pb-2 pt-2 bg-background/95 backdrop-blur-md md:hidden z-40" style={{ bottom: "calc(3.5rem + env(safe-area-inset-bottom))" }}>
           <Button
             variant="destructive"
             size="lg"
