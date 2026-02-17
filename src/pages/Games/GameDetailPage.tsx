@@ -650,11 +650,11 @@ export default function GameDetailPage() {
 
       {/* Sticky Leave CTA */}
       {user && !isHost && isPlayer && (
-        <div className="fixed left-0 right-0 p-4 bg-background/95 backdrop-blur-md border-t border-border md:hidden z-40" style={{ bottom: "calc(3.5rem + env(safe-area-inset-bottom))" }}>
+        <div className="fixed left-0 right-0 p-3 bg-background/95 backdrop-blur-md border-t border-border md:hidden z-40" style={{ bottom: "calc(3.5rem + env(safe-area-inset-bottom))" }}>
           <Button
-            variant="outline"
-            size="xl"
-            className="w-full h-14 text-lg font-bold border-destructive text-destructive hover:bg-destructive/10"
+            variant="destructive"
+            size="lg"
+            className="w-full h-11 text-sm font-semibold"
             disabled={joinLoading}
             onClick={() => setShowLeaveConfirm(true)}
           >
@@ -688,9 +688,9 @@ export default function GameDetailPage() {
       {user && !isHost && isPlayer && (
         <div className="hidden md:block fixed bottom-8 right-8">
           <Button
-            variant="outline"
-            size="lg"
-            className="shadow-xl border-destructive text-destructive hover:bg-destructive/10"
+            variant="destructive"
+            size="default"
+            className="shadow-xl"
             disabled={joinLoading}
             onClick={() => setShowLeaveConfirm(true)}
           >
