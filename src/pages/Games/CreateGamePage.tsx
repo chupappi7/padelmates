@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { UserPlus, X as XIcon } from "lucide-react";
+import { FriendPickerSheet, type PrefilledPlayer } from "@/components/friends/FriendPickerSheet";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import {
@@ -71,7 +72,8 @@ export default function CreateGamePage() {
   const [showTimePicker, setShowTimePicker] = useState(false);
   const [showDatePicker, setShowDatePicker] = useState(false);
 
-  const [prefilledPlayers, setPrefilledPlayers] = useState<string[]>([]);
+  const [prefilledPlayers, setPrefilledPlayers] = useState<PrefilledPlayer[]>([]);
+  const [showPlayerPicker, setShowPlayerPicker] = useState(false);
 
   const [formData, setFormData] = useState({
     title: "",
@@ -88,6 +90,9 @@ export default function CreateGamePage() {
     totalPrice: "",
     priceMode: hostType === "find_players" ? "split_evenly" : "free" as "split_evenly" | "free" | "set_price",
   });
+
+  const getPlayerName = (p: PrefilledPlayer) => typeof p === "string" ? p : p.name;
+  const prefilledCount = prefilledPlayers.filter(p => getPlayerName(p).trim()).length;
 
   // Auto-calculate lookingFor when prefilled players change
   const effectiveLookingFor = hostType === "find_players"
@@ -152,7 +157,7 @@ export default function CreateGamePage() {
       host_id: user.id,
       host_is_playing: isSellCourt ? false : formData.hostIsPlaying,
       join_mode: isSellCourt ? "open" : formData.joinMode,
-      prefilled_players: prefilledPlayers.filter(n => n.trim() !== ""),
+      prefilled_players: prefilledPlayers.filter(p => getPlayerName(p).trim() !== ""),
     } as any).select().single();
 
     if (error) {
@@ -369,11 +374,11 @@ export default function CreateGamePage() {
                         </div>
                         <p className="text-xs text-muted-foreground">
                           {formData.hostIsPlaying ? "You" : ""}
-                          {formData.hostIsPlaying && prefilledPlayers.filter(n => n.trim()).length > 0 ? " + " : ""}
-                          {prefilledPlayers.filter(n => n.trim()).length > 0
-                            ? `${prefilledPlayers.filter(n => n.trim()).length} guest${prefilledPlayers.filter(n => n.trim()).length !== 1 ? "s" : ""}`
+                          {formData.hostIsPlaying && prefilledCount > 0 ? " + " : ""}
+                          {prefilledCount > 0
+                            ? `${prefilledCount} player${prefilledCount !== 1 ? "s" : ""}`
                             : ""}
-                          {(formData.hostIsPlaying || prefilledPlayers.filter(n => n.trim()).length > 0) ? " already in · " : ""}
+                          {(formData.hostIsPlaying || prefilledCount > 0) ? " already in · " : ""}
                           {effectiveLookingFor} spot{effectiveLookingFor !== 1 ? "s" : ""} open
                         </p>
                       </div>
@@ -384,31 +389,27 @@ export default function CreateGamePage() {
                           <UserPlus className="w-3.5 h-3.5 text-primary" />
                           Players already joining
                         </Label>
-                        {prefilledPlayers.map((name, index) => (
-                          <div key={index} className="flex items-center gap-2">
-                            <Input
-                              placeholder={`Player name`}
-                              value={name}
-                              onChange={(e) => {
-                                const updated = [...prefilledPlayers];
-                                updated[index] = e.target.value;
-                                setPrefilledPlayers(updated);
-                              }}
-                              className="h-10 flex-1"
-                            />
+                        {prefilledPlayers.map((player, index) => (
+                          <div key={index} className="flex items-center gap-2 p-2 bg-muted/30 border border-border rounded-lg">
+                            <span className="text-sm flex-1 truncate px-1">
+                              {typeof player === "object" ? player.name : player || "Guest"}
+                            </span>
+                            {typeof player === "object" && (
+                              <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded-full">Friend</span>
+                            )}
                             <button
                               type="button"
                               onClick={() => setPrefilledPlayers(prev => prev.filter((_, i) => i !== index))}
-                              className="w-8 h-8 rounded-lg bg-muted hover:bg-destructive/10 flex items-center justify-center transition-colors shrink-0"
+                              className="w-7 h-7 rounded-md bg-muted hover:bg-destructive/10 flex items-center justify-center transition-colors shrink-0"
                             >
-                              <XIcon className="w-3.5 h-3.5 text-muted-foreground" />
+                              <XIcon className="w-3 h-3 text-muted-foreground" />
                             </button>
                           </div>
                         ))}
                         {prefilledPlayers.length < maxPrefilledSlots && (
                           <button
                             type="button"
-                            onClick={() => setPrefilledPlayers(prev => [...prev, ""])}
+                            onClick={() => setShowPlayerPicker(true)}
                             className="w-full flex items-center justify-center gap-1.5 h-9 rounded-lg border border-dashed border-border text-sm text-muted-foreground hover:text-foreground hover:border-primary/50 transition-colors"
                           >
                             <UserPlus className="w-3.5 h-3.5" />
@@ -416,6 +417,14 @@ export default function CreateGamePage() {
                           </button>
                         )}
                       </div>
+
+                      <FriendPickerSheet
+                        open={showPlayerPicker}
+                        onOpenChange={setShowPlayerPicker}
+                        selected={prefilledPlayers}
+                        onSelect={setPrefilledPlayers}
+                        maxSlots={maxPrefilledSlots}
+                      />
                     </div>
                   ) : (
                     <div className="space-y-1.5">

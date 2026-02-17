@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { UserPlus, X as XIcon } from "lucide-react";
+import { FriendPickerSheet, type PrefilledPlayer } from "@/components/friends/FriendPickerSheet";
 import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -34,7 +35,8 @@ export default function EditGamePage() {
   const [selectedTime, setSelectedTime] = useState("18:00");
   const [duration, setDuration] = useState(90);
   const [showTimePicker, setShowTimePicker] = useState(false);
-  const [prefilledPlayers, setPrefilledPlayers] = useState<string[]>([]);
+  const [prefilledPlayers, setPrefilledPlayers] = useState<PrefilledPlayer[]>([]);
+  const [showPlayerPicker, setShowPlayerPicker] = useState(false);
   const [showDatePicker, setShowDatePicker] = useState(false);
 
   const [formData, setFormData] = useState({
@@ -121,7 +123,10 @@ export default function EditGamePage() {
       visibility: formData.visibility as "public" | "private" | "club_only",
       host_is_playing: formData.hostIsPlaying,
       join_mode: formData.joinMode,
-      prefilled_players: prefilledPlayers.filter(n => n.trim() !== ""),
+      prefilled_players: prefilledPlayers.filter(p => {
+        const name = typeof p === "string" ? p : p.name;
+        return name.trim() !== "";
+      }),
     } as any).eq("id", id);
 
     if (error) {
@@ -420,31 +425,27 @@ export default function EditGamePage() {
                   <UserPlus className="w-3.5 h-3.5 text-primary" />
                   Players already joining
                 </Label>
-                {prefilledPlayers.map((name, index) => (
-                  <div key={index} className="flex items-center gap-2">
-                    <Input
-                      placeholder="Player name"
-                      value={name}
-                      onChange={(e) => {
-                        const updated = [...prefilledPlayers];
-                        updated[index] = e.target.value;
-                        setPrefilledPlayers(updated);
-                      }}
-                      className="h-10 flex-1"
-                    />
+                {prefilledPlayers.map((player, index) => (
+                  <div key={index} className="flex items-center gap-2 p-2 bg-muted/30 border border-border rounded-lg">
+                    <span className="text-sm flex-1 truncate px-1">
+                      {typeof player === "object" ? player.name : player || "Guest"}
+                    </span>
+                    {typeof player === "object" && (
+                      <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded-full">Friend</span>
+                    )}
                     <button
                       type="button"
                       onClick={() => setPrefilledPlayers(prev => prev.filter((_, i) => i !== index))}
-                      className="w-8 h-8 rounded-lg bg-muted hover:bg-destructive/10 flex items-center justify-center transition-colors shrink-0"
+                      className="w-7 h-7 rounded-md bg-muted hover:bg-destructive/10 flex items-center justify-center transition-colors shrink-0"
                     >
-                      <XIcon className="w-3.5 h-3.5 text-muted-foreground" />
+                      <XIcon className="w-3 h-3 text-muted-foreground" />
                     </button>
                   </div>
                 ))}
                 {prefilledPlayers.length < Math.max(0, formData.maxPlayers - (formData.hostIsPlaying ? 1 : 0) - 1) && (
                   <button
                     type="button"
-                    onClick={() => setPrefilledPlayers(prev => [...prev, ""])}
+                    onClick={() => setShowPlayerPicker(true)}
                     className="w-full flex items-center justify-center gap-1.5 h-9 rounded-lg border border-dashed border-border text-sm text-muted-foreground hover:text-foreground hover:border-primary/50 transition-colors"
                   >
                     <UserPlus className="w-3.5 h-3.5" />
@@ -452,6 +453,14 @@ export default function EditGamePage() {
                   </button>
                 )}
               </div>
+
+              <FriendPickerSheet
+                open={showPlayerPicker}
+                onOpenChange={setShowPlayerPicker}
+                selected={prefilledPlayers}
+                onSelect={setPrefilledPlayers}
+                maxSlots={Math.max(0, formData.maxPlayers - (formData.hostIsPlaying ? 1 : 0) - 1)}
+              />
 
               {/* Host Role */}
               <div className="space-y-2">

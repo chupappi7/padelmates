@@ -40,7 +40,7 @@ interface ParticipantsTabProps {
   maxPlayers: number;
   currentUserId?: string;
   userRequest?: JoinRequest | null;
-  prefilledPlayers?: string[];
+  prefilledPlayers?: (string | { name: string; user_id: string })[];
   onAcceptRequest: (requestId: string) => void;
   onRejectRequest: (requestId: string) => void;
   onToggleRole: (playerId: string, currentRole: string) => void;
@@ -72,7 +72,10 @@ export function ParticipantsTab({
   const confirmedFromRequests = requests.filter((r) => r.status === "accepted");
   const pendingRequests = requests.filter((r) => r.status === "pending");
 
-  const prefilledCount = prefilledPlayers.filter(n => n.trim()).length;
+  const prefilledCount = prefilledPlayers.filter(p => {
+    const name = typeof p === "string" ? p : p.name;
+    return name.trim();
+  }).length;
   const hostCount = hostIsPlaying ? 1 : 0;
   const totalConfirmed = confirmedFromRequests.length + directPlayers.length + hostCount + prefilledCount;
   const emptySlots = Math.max(0, maxPlayers - totalConfirmed);
@@ -170,14 +173,21 @@ export function ParticipantsTab({
             ))}
 
             {/* Pre-filled guest players */}
-            {prefilledPlayers.filter(n => n.trim()).map((name, i) => (
-              <PlayerCard
-                key={`guest-${i}`}
-                name={name}
-                avatarUrl={null}
-                isGuest
-              />
-            ))}
+            {prefilledPlayers.filter(p => {
+              const name = typeof p === "string" ? p : p.name;
+              return name.trim();
+            }).map((player, i) => {
+              const name = typeof player === "string" ? player : player.name;
+              const isLinked = typeof player === "object" && player.user_id;
+              return (
+                <PlayerCard
+                  key={`guest-${i}`}
+                  name={name}
+                  avatarUrl={null}
+                  isGuest={!isLinked}
+                />
+              );
+            })}
 
             {/* Empty slots */}
             {Array.from({ length: emptySlots }).map((_, i) => (

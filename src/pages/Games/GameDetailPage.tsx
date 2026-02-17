@@ -258,8 +258,11 @@ export default function GameDetailPage() {
   const isAdmin = players.some((p) => p.user_id === user?.id && p.role === "admin");
   const isPlayer = players.some((p) => p.user_id === user?.id);
   const canManage = isHost || isAdmin;
-  const prefilledPlayers: string[] = Array.isArray((game as any)?.prefilled_players) ? (game as any).prefilled_players : [];
-  const prefilledCount = prefilledPlayers.filter((n: string) => n.trim()).length;
+  const prefilledPlayers: (string | { name: string; user_id: string })[] = Array.isArray((game as any)?.prefilled_players) ? (game as any).prefilled_players : [];
+  const prefilledCount = prefilledPlayers.filter(p => {
+    const name = typeof p === "string" ? p : p.name;
+    return name.trim();
+  }).length;
   const hostCount = game?.host_is_playing ? 1 : 0;
   const totalPlayers = players.length + hostCount + prefilledCount;
   const spotsLeft = game ? game.max_players - totalPlayers : 0;
