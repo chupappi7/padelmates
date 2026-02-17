@@ -40,7 +40,10 @@ import {
   Pencil,
   Euro,
   Share2,
+  Heart,
+  CheckCircle2,
 } from "lucide-react";
+import { CourtDMChat } from "@/components/games/CourtDMChat";
 
 interface Game {
   id: string;
@@ -60,6 +63,7 @@ interface Game {
   host_is_playing: boolean;
   join_mode: string;
   scoreboard: unknown;
+  court_taken_by: string | null;
   profiles: { name: string; avatar_url: string | null; skill_level?: number } | null;
 }
 
@@ -309,6 +313,8 @@ export default function GameDetailPage() {
   const isAdmin = players.some((p) => p.user_id === user?.id && p.role === "admin");
   const isPlayer = players.some((p) => p.user_id === user?.id);
   const canManage = isHost || isAdmin;
+  const isCourtSharing = game?.payment_mode === "court_sharing";
+  const isCourtTaken = !!game?.court_taken_by;
   const prefilledPlayers: (string | { name: string; user_id: string })[] = Array.isArray((game as any)?.prefilled_players) ? (game as any).prefilled_players : [];
   const prefilledCount = prefilledPlayers.filter(p => {
     const name = typeof p === "string" ? p : p.name;
@@ -320,12 +326,71 @@ export default function GameDetailPage() {
   const isOpenJoin = game?.join_mode === "open";
   const userJoinStatus = myRequest?.status || null;
   const canAccessChat = isHost || isPlayer;
+  const isInterested = !!myRequest; // for court_sharing: has expressed interest
+  const interestedRequests = requests.filter(r => r.status === "pending");
+  const canAccessDM = isCourtSharing && (isHost || isInterested);
 
   const handleToggleRole = async (playerId: string, currentRole: string) => {
     const newRole = currentRole === "admin" ? "player" : "admin";
     const { error } = await supabase.from("game_players").update({ role: newRole }).eq("id", playerId);
     if (error) { toast.error("Failed to update role"); }
     else { toast.success(newRole === "admin" ? "Promoted to admin" : "Demoted to player"); fetchPlayers(); }
+  };
+
+  const handleExpressInterest = async () => {
+    if (!user || !id) return;
+    setJoinLoading(true);
+    const { error } = await supabase.from("join_requests").insert({
+      game_id: id,
+      user_id: user.id,
+      payment_status: "not_required",
+    });
+    if (error) {
+      toast.error("Failed to express interest");
+    } else {
+      toast.success("Interest sent! You can now message the host.");
+      fetchMyRequest();
+      fetchRequests();
+      // Notify host
+      const { data: profile } = await supabase.from("profiles").select("name").eq("user_id", user.id).single();
+      const ctx = game ? ` | ${formatGameContext(game.location, game.date_time)}` : "";
+      notifyHost("game_request", "Court Interest", `${profile?.name || "Someone"} is interested in "${game?.title}"${ctx}`);
+    }
+    setJoinLoading(false);
+  };
+
+  const handleMarkAsTaken = async () => {
+    if (!id) return;
+    setJoinLoading(true);
+    const { error } = await supabase.from("games").update({ court_taken_by: user?.id }).eq("id", id);
+    if (error) {
+      toast.error("Failed to mark as taken");
+    } else {
+      toast.success("Court marked as taken!");
+      fetchGame();
+      // Notify all interested users
+      for (const req of interestedRequests) {
+        if (req.user_id !== user?.id) {
+          await supabase.from("notifications").insert({
+            user_id: req.user_id,
+            type: "announcement",
+            title: "Court Taken",
+            message: `The court "${game?.title}" has been taken.`,
+            link: `/games/${id}`,
+          });
+        }
+      }
+    }
+    setJoinLoading(false);
+  };
+
+  const handleUndoTaken = async () => {
+    if (!id) return;
+    setJoinLoading(true);
+    const { error } = await supabase.from("games").update({ court_taken_by: null }).eq("id", id);
+    if (error) { toast.error("Failed to undo"); }
+    else { toast.success("Court is available again"); fetchGame(); }
+    setJoinLoading(false);
   };
 
   if (loading) {
@@ -380,10 +445,16 @@ export default function GameDetailPage() {
                 {isHost && (
                   <Badge className="rounded-full bg-primary/10 text-primary border-0 text-[10px] h-5">Hosting</Badge>
                 )}
-                {isAdmin && !isHost && (
+                {isCourtSharing && isCourtTaken && (
+                  <Badge className="rounded-full bg-destructive/10 text-destructive border-destructive/20 text-[10px] h-5">Taken</Badge>
+                )}
+                {isCourtSharing && !isCourtTaken && (
+                  <Badge className="rounded-full bg-success/10 text-success border-success/20 text-[10px] h-5">Available</Badge>
+                )}
+                {!isCourtSharing && isAdmin && !isHost && (
                   <Badge className="rounded-full bg-accent/10 text-accent border-0 text-[10px] h-5">Admin</Badge>
                 )}
-                {isPlayer && !isHost && !isAdmin && (
+                {!isCourtSharing && isPlayer && !isHost && !isAdmin && (
                   <Badge className="rounded-full bg-success/10 text-success border-0 text-[10px] h-5">Playing</Badge>
                 )}
               </div>
@@ -408,8 +479,26 @@ export default function GameDetailPage() {
             )}
           </div>
 
-          {/* Join Status Banner */}
-          {myRequest && !isPlayer && userJoinStatus === "pending" && (
+          {/* Join Status Banner - court sharing shows "Interested" state */}
+          {isCourtSharing && isInterested && !isHost && !isCourtTaken && (
+            <div className="flex items-center gap-2.5 p-3 rounded-xl border bg-primary/10 text-primary border-primary/20 mb-3">
+              <Heart className="w-5 h-5 shrink-0" />
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-semibold">You're Interested</p>
+                <p className="text-xs opacity-80">Message the host to discuss details</p>
+              </div>
+            </div>
+          )}
+          {isCourtSharing && isCourtTaken && !isHost && (
+            <div className="flex items-center gap-2.5 p-3 rounded-xl border bg-muted text-muted-foreground border-border mb-3">
+              <CheckCircle2 className="w-5 h-5 shrink-0" />
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-semibold">Court Taken</p>
+                <p className="text-xs opacity-80">This court has already been claimed</p>
+              </div>
+            </div>
+          )}
+          {!isCourtSharing && myRequest && !isPlayer && userJoinStatus === "pending" && (
             <div className="flex items-center gap-2.5 p-3 rounded-xl border bg-warning/10 text-warning border-warning/20 mb-3">
               <Clock className="w-5 h-5 shrink-0" />
               <div className="min-w-0 flex-1">
@@ -418,7 +507,7 @@ export default function GameDetailPage() {
               </div>
             </div>
           )}
-          {myRequest && myRequest.status === "rejected" && (
+          {!isCourtSharing && myRequest && myRequest.status === "rejected" && (
             <div className="flex items-center gap-2.5 p-3 rounded-xl border bg-destructive/10 text-destructive border-destructive/20 mb-3">
               <Clock className="w-5 h-5 shrink-0" />
               <div className="min-w-0 flex-1">
@@ -431,10 +520,14 @@ export default function GameDetailPage() {
           {/* Tab Navigation Buttons */}
           <div className="flex gap-1 bg-muted/50 rounded-xl p-1 mb-4 overflow-x-auto scrollbar-hide">
             {tabs.map((tab) => {
-              // Hide chat for non-participants
-              if (tab.key === "chat" && !canAccessChat) return null;
-              // For sell/giveaway court listings, only show Details and Chat
-              if (game?.payment_mode === "court_sharing" && tab.key !== "details" && tab.key !== "chat") return null;
+              // Court sharing: show Details + Messages (DM) only
+              if (isCourtSharing) {
+                if (tab.key !== "details" && tab.key !== "chat") return null;
+                if (tab.key === "chat" && !canAccessDM) return null;
+              } else {
+                // Hide chat for non-participants in regular games
+                if (tab.key === "chat" && !canAccessChat) return null;
+              }
 
               const isActive = activeTab === tab.key;
               const showBadge = tab.key === "participants" && isHost && pendingCount > 0;
@@ -451,7 +544,7 @@ export default function GameDetailPage() {
                   )}
                 >
                   <tab.icon className="w-4 h-4" />
-                  <span className="text-xs">{tab.label}</span>
+                  <span className="text-xs">{isCourtSharing && tab.key === "chat" ? "Messages" : tab.label}</span>
                   {showBadge && (
                     <span className="w-5 h-5 rounded-full bg-secondary text-secondary-foreground text-[10px] font-bold flex items-center justify-center">
                       {pendingCount}
@@ -498,31 +591,47 @@ export default function GameDetailPage() {
                       </p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-                      <Users className="w-4 h-4 text-primary" />
+                  {isCourtSharing ? (
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                        <Heart className="w-4 h-4 text-primary" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-[11px] text-muted-foreground">Interest</p>
+                        <p className="text-sm font-medium">
+                          {interestedRequests.length} interested
+                        </p>
+                      </div>
                     </div>
-                    <div className="min-w-0">
-                      <p className="text-[11px] text-muted-foreground">Players</p>
-                      <p className="text-sm font-medium">
-                        {totalPlayers}/{game.max_players}
-                        {spotsLeft > 0 && (
-                          <span className="text-success text-xs ml-1">· {spotsLeft} left</span>
-                        )}
-                      </p>
+                  ) : (
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                        <Users className="w-4 h-4 text-primary" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-[11px] text-muted-foreground">Players</p>
+                        <p className="text-sm font-medium">
+                          {totalPlayers}/{game.max_players}
+                          {spotsLeft > 0 && (
+                            <span className="text-success text-xs ml-1">· {spotsLeft} left</span>
+                          )}
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-                      <Info className="w-4 h-4 text-primary" />
+                  )}
+                  {!isCourtSharing && (
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                        <Info className="w-4 h-4 text-primary" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-[11px] text-muted-foreground">Join Mode</p>
+                        <p className="text-sm font-medium">
+                          {isOpenJoin ? "Open" : "Request"}
+                        </p>
+                      </div>
                     </div>
-                    <div className="min-w-0">
-                      <p className="text-[11px] text-muted-foreground">Join Mode</p>
-                      <p className="text-sm font-medium">
-                        {isOpenJoin ? "Open" : "Request"}
-                      </p>
-                    </div>
-                  </div>
+                  )}
                   {((game as any).price_mode === 'split_evenly' || game.price_per_player > 0) && (
                     <div className="flex items-center gap-2.5">
                       <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
@@ -580,6 +689,33 @@ export default function GameDetailPage() {
                   </p>
                 </div>
               )}
+
+              {/* Court Sharing: Host "Mark as Taken" / "Undo" */}
+              {isCourtSharing && isHost && (
+                <div className="bg-card border border-border rounded-xl p-4">
+                  {isCourtTaken ? (
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-2">
+                        <CheckCircle2 className="w-5 h-5 text-destructive" />
+                        <span className="text-sm font-semibold">Court is marked as Taken</span>
+                      </div>
+                      <Button variant="outline" size="sm" onClick={handleUndoTaken} disabled={joinLoading}>
+                        Undo
+                      </Button>
+                    </div>
+                  ) : (
+                    <Button
+                      variant="hero"
+                      className="w-full"
+                      onClick={handleMarkAsTaken}
+                      disabled={joinLoading}
+                    >
+                      <CheckCircle2 className="w-4 h-4" />
+                      {joinLoading ? "Marking..." : "Mark Court as Taken"}
+                    </Button>
+                  )}
+                </div>
+              )}
             </motion.div>
           )}
 
@@ -626,8 +762,19 @@ export default function GameDetailPage() {
             </motion.div>
           )}
 
-          {/* Chat Tab */}
-          {activeTab === "chat" && canAccessChat && (
+          {/* Chat Tab - DM for court sharing, group chat for regular */}
+          {activeTab === "chat" && isCourtSharing && canAccessDM && user && (
+            <motion.div key="chat" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col flex-1 min-h-0">
+              <CourtDMChat
+                gameId={game.id}
+                currentUserId={user.id}
+                hostId={game.host_id}
+                isHost={isHost}
+                interestedUserIds={interestedRequests.map(r => r.user_id)}
+              />
+            </motion.div>
+          )}
+          {activeTab === "chat" && !isCourtSharing && canAccessChat && (
             <motion.div key="chat" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col flex-1 min-h-0">
               <div className="bg-card border border-border rounded-xl flex flex-col flex-1 overflow-hidden">
                 <div ref={messagesContainerRef} className="flex-1 overflow-y-auto p-4 space-y-3">
@@ -683,8 +830,8 @@ export default function GameDetailPage() {
         </motion.div>
       </div>
 
-      {/* Sticky Leave CTA */}
-      {user && !isHost && isPlayer && activeTab !== "chat" && (
+      {/* Sticky Leave CTA - not for court sharing */}
+      {user && !isHost && !isCourtSharing && isPlayer && activeTab !== "chat" && (
         <div className="fixed left-0 right-0 px-4 pb-2 pt-2 bg-background/95 backdrop-blur-md md:hidden z-50" style={{ bottom: "calc(4.5rem + env(safe-area-inset-bottom))" }}>
           <Button
             variant="destructive"
@@ -698,8 +845,24 @@ export default function GameDetailPage() {
         </div>
       )}
 
-      {/* Sticky Join CTA */}
-      {user && !isHost && !isPlayer && !myRequest && spotsLeft > 0 && activeTab !== "chat" && (
+      {/* Sticky "I'm Interested" CTA for court sharing */}
+      {user && !isHost && isCourtSharing && !isInterested && !isCourtTaken && activeTab !== "chat" && (
+        <div className="fixed left-0 right-0 px-4 pb-2 pt-2 bg-background/95 backdrop-blur-md md:hidden z-50" style={{ bottom: "calc(4.5rem + env(safe-area-inset-bottom))" }}>
+          <Button
+            variant="default"
+            size="lg"
+            className="w-full h-11 text-sm font-semibold"
+            disabled={joinLoading}
+            onClick={handleExpressInterest}
+          >
+            <Heart className="w-4 h-4" />
+            {joinLoading ? "Sending..." : "I'm Interested"}
+          </Button>
+        </div>
+      )}
+
+      {/* Sticky Join CTA - not for court sharing */}
+      {user && !isHost && !isCourtSharing && !isPlayer && !myRequest && spotsLeft > 0 && activeTab !== "chat" && (
         <div className="fixed left-0 right-0 px-4 pb-2 pt-2 bg-background/95 backdrop-blur-md md:hidden z-50" style={{ bottom: "calc(4.5rem + env(safe-area-inset-bottom))" }}>
           <Button
             variant="default"
@@ -710,17 +873,15 @@ export default function GameDetailPage() {
           >
             {joinLoading
               ? "Joining..."
-              : game?.payment_mode === "court_sharing"
-                ? "Secure This Court"
-                : game?.payment_mode === "spot_selling"
-                  ? "Take This Spot"
-                  : isOpenJoin ? "Join Now" : "Request to Join"}
+              : game?.payment_mode === "spot_selling"
+                ? "Take This Spot"
+                : isOpenJoin ? "Join Now" : "Request to Join"}
           </Button>
         </div>
       )}
 
-      {/* Desktop Leave Button */}
-      {user && !isHost && isPlayer && activeTab !== "chat" && (
+      {/* Desktop Leave Button - not for court sharing */}
+      {user && !isHost && !isCourtSharing && isPlayer && activeTab !== "chat" && (
         <div className="hidden md:block fixed bottom-8 right-8">
           <Button
             variant="destructive"
@@ -734,8 +895,24 @@ export default function GameDetailPage() {
         </div>
       )}
 
-      {/* Desktop Join Button */}
-      {user && !isHost && !isPlayer && !myRequest && spotsLeft > 0 && activeTab !== "chat" && (
+      {/* Desktop "I'm Interested" for court sharing */}
+      {user && !isHost && isCourtSharing && !isInterested && !isCourtTaken && activeTab !== "chat" && (
+        <div className="hidden md:block fixed bottom-8 right-8">
+          <Button
+            variant="default"
+            size="default"
+            className="shadow-xl"
+            disabled={joinLoading}
+            onClick={handleExpressInterest}
+          >
+            <Heart className="w-4 h-4" />
+            {joinLoading ? "Sending..." : "I'm Interested"}
+          </Button>
+        </div>
+      )}
+
+      {/* Desktop Join Button - not for court sharing */}
+      {user && !isHost && !isCourtSharing && !isPlayer && !myRequest && spotsLeft > 0 && activeTab !== "chat" && (
         <div className="hidden md:block fixed bottom-8 right-8">
           <Button
             variant="default"
@@ -746,11 +923,9 @@ export default function GameDetailPage() {
           >
             {joinLoading
               ? "Joining..."
-              : game?.payment_mode === "court_sharing"
-                ? "Secure This Court"
-                : game?.payment_mode === "spot_selling"
-                  ? "Take This Spot"
-                  : isOpenJoin ? "Join Now" : "Request to Join"}
+              : game?.payment_mode === "spot_selling"
+                ? "Take This Spot"
+                : isOpenJoin ? "Join Now" : "Request to Join"}
           </Button>
         </div>
       )}

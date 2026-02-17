@@ -37,12 +37,14 @@ interface Game {
   price_mode?: string;
   host_id: string;
   host_is_playing: boolean;
+  court_taken_by?: string | null;
   profiles: {
     name: string;
     avatar_url: string | null;
   } | null;
   game_players: { id: string }[];
   distance?: number;
+  interest_count?: number;
 }
 
 export default function GamesListPage() {
@@ -82,7 +84,19 @@ export default function GamesListPage() {
             .select("name, avatar_url")
             .eq("user_id", game.host_id)
             .single();
-          return { ...game, profiles: profile };
+
+          // For court_sharing games, get interest count
+          let interest_count = 0;
+          if (game.payment_mode === "court_sharing") {
+            const { count } = await supabase
+              .from("join_requests")
+              .select("id", { count: "exact", head: true })
+              .eq("game_id", game.id)
+              .eq("status", "pending");
+            interest_count = count || 0;
+          }
+
+          return { ...game, profiles: profile, interest_count };
         })
       );
       setGames(gamesWithProfiles as Game[]);
@@ -292,6 +306,8 @@ export default function GamesListPage() {
                       paymentMode={game.payment_mode}
                       priceMode={game.price_mode}
                       userStatus={getUserStatus(game)}
+                      courtTakenBy={game.court_taken_by}
+                      interestCount={game.interest_count}
                     />
                   </motion.div>
                 );

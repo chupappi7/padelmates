@@ -108,6 +108,41 @@ export type Database = {
         }
         Relationships: []
       }
+      court_messages: {
+        Row: {
+          created_at: string
+          game_id: string
+          id: string
+          message: string
+          recipient_id: string
+          sender_id: string
+        }
+        Insert: {
+          created_at?: string
+          game_id: string
+          id?: string
+          message: string
+          recipient_id: string
+          sender_id: string
+        }
+        Update: {
+          created_at?: string
+          game_id?: string
+          id?: string
+          message?: string
+          recipient_id?: string
+          sender_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "court_messages_game_id_fkey"
+            columns: ["game_id"]
+            isOneToOne: false
+            referencedRelation: "games"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       friendships: {
         Row: {
           addressee_id: string
@@ -203,6 +238,7 @@ export type Database = {
         Row: {
           club_id: string | null
           court_number: string | null
+          court_taken_by: string | null
           created_at: string
           date_time: string
           description: string | null
@@ -229,6 +265,7 @@ export type Database = {
         Insert: {
           club_id?: string | null
           court_number?: string | null
+          court_taken_by?: string | null
           created_at?: string
           date_time: string
           description?: string | null
@@ -255,6 +292,7 @@ export type Database = {
         Update: {
           club_id?: string | null
           court_number?: string | null
+          court_taken_by?: string | null
           created_at?: string
           date_time?: string
           description?: string | null
