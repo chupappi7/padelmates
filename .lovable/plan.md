@@ -1,111 +1,142 @@
 
 
-# Phase 1: Pre-fill Player Slots During Game Creation
+# Friend System + Smart Player Picker for Game Creation
 
-## What It Does
+## Overview
 
-When creating a "Find Players" game, hosts can type in the names of friends who are already joining. These appear as confirmed placeholder players on the game card and detail page, filling visual slots just like the WhatsApp emoji pattern ("1. Martin, 2. Petr, 3. Open, 4. Open").
+Add a social network layer (friend requests) and upgrade the "Players already joining" picker so hosts can search and select from their friends list -- or still type a name manually for non-app users.
 
-## User Flow
+---
 
-```text
-CREATE GAME (Find Players):
-  "Looking for [2] out of [4] total"
+## What Changes for the User
 
-  Pre-filled players (optional):
-  +---------------------------+
-  | Player 1: [Martin       ] |  <- text input
-  | Player 2: [Petr         ] |  <- text input
-  | + Add another             |
-  +---------------------------+
+### 1. Friends Tab (new section on Profile page)
+- A "Friends" section on your profile showing your friend count and list
+- Ability to search all app users by name and send them a friend request
+- Incoming requests with Accept / Decline buttons
+- Friends list with the ability to remove a friend
 
-  (Host is auto-counted as player if "playing")
-  -> Result: 3/4 filled (host + Martin + Petr), 1 open slot
-```
+### 2. Upgraded Player Picker (Create/Edit Game)
+The current plain text inputs for "Players already joining" become a smarter picker:
+- A search input that queries your friends list in real-time
+- Select friends from dropdown results (shows avatar, name, skill level)
+- Selected friends appear as chips with a remove button
+- A fallback "Or type a name" option for guests without an account
+- Friends added this way are stored the same as before (in `prefilled_players`) but with an optional `user_id` for future "claim slot" functionality
 
-## How It Displays
+### 3. Friends Page (new route `/friends`)
+- Accessible from Profile page or bottom tab bar (replaces "Clubs" or adds as sub-nav)
+- Three sections: My Friends, Incoming Requests, Search Users
 
-- **GameCard**: Shows filled/open ratio correctly (e.g., "3/4 - 1 left")
-- **GameDetailPage (Players tab)**: Pre-filled names appear as player cards with a generic avatar and a small "Guest" badge (no profile link). When a real user joins and fills the game, guest slots remain as-is.
+---
 
 ## Technical Details
 
-### Database
+### Database Changes (2 new tables)
 
-Add a `prefilled_players` column to the `games` table as a JSONB array storing name strings:
-
-```sql
-ALTER TABLE public.games
-ADD COLUMN prefilled_players jsonb NOT NULL DEFAULT '[]'::jsonb;
+**Table: `friendships`**
+```
+id           uuid  PK  default gen_random_uuid()
+requester_id uuid  NOT NULL  (references profiles.user_id)
+addressee_id uuid  NOT NULL  (references profiles.user_id)
+status       text  NOT NULL  default 'pending'  ('pending', 'accepted', 'rejected')
+created_at   timestamptz  default now()
+updated_at   timestamptz  default now()
+UNIQUE(requester_id, addressee_id)
 ```
 
-Example value: `["Martin", "Petr"]`
+**RLS Policies for `friendships`:**
+- SELECT: Users can see rows where they are requester or addressee
+- INSERT: Authenticated users can create where `requester_id = auth.uid()`
+- UPDATE: Addressee can update status (accept/reject); either party can update
+- DELETE: Either party can delete (unfriend)
 
-### File: `src/pages/Games/CreateGamePage.tsx`
+**Update `prefilled_players` format** (backward compatible):
+Currently stores `["Martin", "Petr"]`. Evolve to support both formats:
+```json
+["Martin", {"name": "Petr", "user_id": "uuid-here"}]
+```
+String entries = guest names (no account). Object entries = linked friends. The UI handles both.
 
-1. Add `prefilledPlayers: string[]` to formData state (default `[]`).
-2. Below the "Looking for X out of Y" selector, add a section titled "Players already joining" with:
-   - Text inputs for each pre-filled name
-   - An "+ Add player" button (max = `maxPlayers - lookingFor - (hostIsPlaying ? 1 : 0)`)
-   - Remove button (X) on each input
-3. Auto-calculate: `lookingFor = maxPlayers - prefilledPlayers.length - (hostIsPlaying ? 1 : 0)`
-   - When a host adds a pre-filled player, `lookingFor` decreases automatically
-   - The title updates: "Looking for 1 player" instead of "Looking for 2 players"
-4. On submit, include `prefilled_players` as JSON in the insert payload.
+### New Files
 
-### File: `src/pages/Games/EditGamePage.tsx`
+1. **`src/pages/Friends/FriendsPage.tsx`** -- Main friends management page with tabs for My Friends, Requests, Search
+2. **`src/components/friends/FriendCard.tsx`** -- Reusable card for displaying a friend (avatar, name, skill, action button)
+3. **`src/components/friends/FriendSearch.tsx`** -- Search input that queries profiles table with debounce
+4. **`src/components/friends/FriendPickerSheet.tsx`** -- Bottom sheet / modal used in Create/Edit Game to pick friends or type guest names
+5. **`src/hooks/useFriends.ts`** -- Hook for fetching friends list, pending requests, sending/accepting/removing
 
-1. Load `prefilled_players` from fetched game data, parse as `string[]`.
-2. Same UI as create page for editing the pre-filled names.
-3. On submit, include updated `prefilled_players`.
+### Modified Files
 
-### File: `src/components/games/ParticipantsTab.tsx`
+1. **`src/App.tsx`** -- Add `/friends` route
+2. **`src/components/layout/BottomTabBar.tsx`** -- Add Friends tab or make it accessible from Profile
+3. **`src/pages/Profile/ProfilePage.tsx`** -- Add friends count stat + "View Friends" link
+4. **`src/pages/Games/CreateGamePage.tsx`** -- Replace plain text inputs with FriendPickerSheet trigger
+5. **`src/pages/Games/EditGamePage.tsx`** -- Same picker upgrade
+6. **`src/components/games/ParticipantsTab.tsx`** -- Handle mixed format (string vs object) for prefilled players, show avatar for linked friends
 
-1. Accept new prop `prefilledPlayers: string[]`.
-2. Render pre-filled names as PlayerCards with:
-   - A generic avatar (first letter of name)
-   - A "Guest" badge instead of "Host" or "Admin"
-   - No role toggle or action buttons
-3. Include them in the `totalConfirmed` count for the slot display.
+### User Flow: Adding Friends
 
-### File: `src/components/games/GameCard.tsx`
+```text
+Profile Page
+  -> "4 Friends" stat card (clickable)
+  -> Friends Page
+     -> [Search bar: "Search users..."]
+     -> Results: [Avatar] Martin (Level 4)  [Add Friend]
+     -> Pending tab: [Avatar] Petr wants to be friends  [Accept] [Decline]
+     -> Friends tab: [Avatar] Jana (Level 3)  [Remove]
+```
 
-1. Accept new prop `prefilledCount: number`.
-2. Add `prefilledCount` to `currentPlayers` for the spots calculation.
+### User Flow: Picking Players for a Game
 
-### File: `src/pages/Games/GameDetailPage.tsx`
+```text
+Create Game -> "Players already joining"
+  -> [+ Add player] button
+  -> Opens FriendPickerSheet:
+     +----------------------------------+
+     |  Add Players                     |
+     |  [Search friends...          ]   |
+     |                                  |
+     |  YOUR FRIENDS                    |
+     |  [Avatar] Martin (Lvl 4) [+]    |
+     |  [Avatar] Jana (Lvl 3)   [+]    |
+     |                                  |
+     |  --- or ---                      |
+     |  [Type a guest name...     ] [+] |
+     +----------------------------------+
 
-1. Read `prefilled_players` from the game data.
-2. Pass it to `ParticipantsTab`.
-
-### File: `src/pages/Games/GamesListPage.tsx` and `MyMatchesPage.tsx`
-
-1. Read `prefilled_players` from the fetched games.
-2. Calculate `prefilledCount` and pass to `GameCard`.
+  -> Selected players appear as chips:
+     [Martin x] [Jana x] [Guest: Petr x]
+```
 
 ### Data Flow
 
 ```text
-Host creates game:
-  maxPlayers = 4
-  hostIsPlaying = true  (counts as 1)
-  prefilledPlayers = ["Martin", "Petr"]  (counts as 2)
-  lookingFor = 1  (auto-calculated: 4 - 1 - 2)
-  title = "Looking for 1 player"
+Host picks Martin (friend, has user_id) and types "Petr" (guest):
+  prefilled_players = [
+    {"name": "Martin", "user_id": "abc-123"},
+    "Petr"
+  ]
 
-GameCard shows:
-  3/4 - 1 left  (host + 2 prefilled + 0 joined)
-
-Players tab shows:
-  [Host avatar] Host  |  [M] Martin (Guest)  |  [P] Petr (Guest)  |  [empty slot]
+ParticipantsTab renders:
+  - Martin: fetches avatar from profiles, shows as linked player
+  - Petr: shows generic avatar with "Guest" badge
 ```
 
-### Files Modified
-1. Database migration (add `prefilled_players` column)
-2. `src/pages/Games/CreateGamePage.tsx` -- pre-fill inputs + auto-calc lookingFor
-3. `src/pages/Games/EditGamePage.tsx` -- same UI for editing
-4. `src/components/games/ParticipantsTab.tsx` -- render guest cards
-5. `src/components/games/GameCard.tsx` -- include in player count
-6. `src/pages/Games/GameDetailPage.tsx` -- pass data through
-7. `src/pages/Games/GamesListPage.tsx` -- fetch and pass prefilledCount
-8. `src/pages/Games/MyMatchesPage.tsx` -- fetch and pass prefilledCount
+### Files Summary
+
+| File | Action |
+|------|--------|
+| Database migration (friendships table) | Create |
+| `src/pages/Friends/FriendsPage.tsx` | Create |
+| `src/components/friends/FriendCard.tsx` | Create |
+| `src/components/friends/FriendSearch.tsx` | Create |
+| `src/components/friends/FriendPickerSheet.tsx` | Create |
+| `src/hooks/useFriends.ts` | Create |
+| `src/App.tsx` | Modify (add route) |
+| `src/components/layout/BottomTabBar.tsx` | Modify (add Friends nav) |
+| `src/pages/Profile/ProfilePage.tsx` | Modify (friends count) |
+| `src/pages/Games/CreateGamePage.tsx` | Modify (use picker) |
+| `src/pages/Games/EditGamePage.tsx` | Modify (use picker) |
+| `src/components/games/ParticipantsTab.tsx` | Modify (mixed format) |
+
