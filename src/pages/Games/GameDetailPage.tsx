@@ -11,6 +11,16 @@ import { SkillBadge } from "@/components/games/SkillBadge";
 import { JoinRequestModal } from "@/components/games/JoinRequestModal";
 import { ParticipantsTab } from "@/components/games/ParticipantsTab";
 import { MatchesTab } from "@/components/games/MatchesTab";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { format } from "date-fns";
@@ -106,6 +116,8 @@ export default function GameDetailPage() {
   const [loading, setLoading] = useState(true);
   const [newMessage, setNewMessage] = useState("");
   const [showJoinModal, setShowJoinModal] = useState(false);
+  const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
+  const [showJoinConfirm, setShowJoinConfirm] = useState(false);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [joinLoading, setJoinLoading] = useState(false);
 
@@ -627,7 +639,7 @@ export default function GameDetailPage() {
             size="xl"
             className="w-full h-14 text-lg font-bold border-destructive text-destructive hover:bg-destructive/10"
             disabled={joinLoading}
-            onClick={handleLeaveGame}
+            onClick={() => setShowLeaveConfirm(true)}
           >
             {joinLoading ? "Leaving..." : "Leave Game"}
           </Button>
@@ -642,7 +654,7 @@ export default function GameDetailPage() {
             size="xl"
             className="w-full h-14 text-lg font-bold tracking-wide shadow-lg"
             disabled={joinLoading}
-            onClick={() => isOpenJoin ? handleDirectJoin() : setShowJoinModal(true)}
+            onClick={() => isOpenJoin ? setShowJoinConfirm(true) : setShowJoinModal(true)}
           >
             {joinLoading
               ? "Joining..."
@@ -663,7 +675,7 @@ export default function GameDetailPage() {
             size="lg"
             className="shadow-xl border-destructive text-destructive hover:bg-destructive/10"
             disabled={joinLoading}
-            onClick={handleLeaveGame}
+            onClick={() => setShowLeaveConfirm(true)}
           >
             {joinLoading ? "Leaving..." : "Leave Game"}
           </Button>
@@ -678,7 +690,7 @@ export default function GameDetailPage() {
             size="xl"
             className="shadow-2xl text-lg"
             disabled={joinLoading}
-            onClick={() => isOpenJoin ? handleDirectJoin() : setShowJoinModal(true)}
+            onClick={() => isOpenJoin ? setShowJoinConfirm(true) : setShowJoinModal(true)}
           >
             {joinLoading
               ? "Joining..."
@@ -701,6 +713,45 @@ export default function GameDetailPage() {
           onSuccess={fetchMyRequest}
         />
       )}
+
+      {/* Leave Confirmation */}
+      <AlertDialog open={showLeaveConfirm} onOpenChange={setShowLeaveConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Leave this game?</AlertDialogTitle>
+            <AlertDialogDescription>
+              You'll be removed from the player list. You can rejoin later if spots are still available.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={handleLeaveGame}
+            >
+              Leave Game
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Join Confirmation */}
+      <AlertDialog open={showJoinConfirm} onOpenChange={setShowJoinConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Join this game?</AlertDialogTitle>
+            <AlertDialogDescription>
+              You'll be added as a confirmed player for "{game?.title}".
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={() => { setShowJoinConfirm(false); handleDirectJoin(); }}>
+              Join Game
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
