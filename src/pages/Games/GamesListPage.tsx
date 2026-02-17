@@ -52,6 +52,7 @@ export default function GamesListPage() {
   const [skillFilter, setSkillFilter] = useState<string>("all");
   const [formatFilter, setFormatFilter] = useState<string>("all");
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [joinedGameIds, setJoinedGameIds] = useState<Set<string>>(new Set());
   const navigate = useNavigate();
   const { user } = useAuth();
   const isMobile = useIsMobile();
@@ -59,7 +60,8 @@ export default function GamesListPage() {
 
   useEffect(() => {
     fetchGames();
-  }, []);
+    if (user) fetchUserGames();
+  }, [user]);
 
   const fetchGames = async () => {
     const { data, error } = await supabase
@@ -86,6 +88,24 @@ export default function GamesListPage() {
       setGames(gamesWithProfiles as Game[]);
     }
     setLoading(false);
+  };
+
+  const fetchUserGames = async () => {
+    if (!user) return;
+    const { data: playerEntries } = await supabase
+      .from("game_players")
+      .select("game_id")
+      .eq("user_id", user.id);
+    const ids = new Set<string>();
+    playerEntries?.forEach((p) => ids.add(p.game_id));
+    setJoinedGameIds(ids);
+  };
+
+  const getUserStatus = (game: Game): "joined" | "hosting" | undefined => {
+    if (!user) return undefined;
+    if (game.host_id === user.id) return "hosting";
+    if (joinedGameIds.has(game.id)) return "joined";
+    return undefined;
   };
 
   const filteredGames = useMemo(() => {
@@ -271,6 +291,7 @@ export default function GamesListPage() {
                       distance={game.distance}
                       paymentMode={game.payment_mode}
                       priceMode={game.price_mode}
+                      userStatus={getUserStatus(game)}
                     />
                   </motion.div>
                 );

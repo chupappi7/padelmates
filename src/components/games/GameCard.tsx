@@ -23,6 +23,7 @@ interface GameCardProps {
   distance?: number;
   paymentMode?: string;
   priceMode?: string;
+  userStatus?: "joined" | "hosting";
 }
 
 const formatLabels = {
@@ -54,6 +55,7 @@ export function GameCard({
   distance,
   paymentMode,
   priceMode,
+  userStatus,
 }: GameCardProps) {
   const totalPlayers = currentPlayers + prefilledCount;
   const spotsLeft = maxPlayers - totalPlayers;
@@ -85,6 +87,15 @@ export function GameCard({
               <Badge variant="outline" className="rounded-full text-[9px] sm:text-xs h-4 sm:h-6 px-1.5 sm:px-2 truncate">
                 {formatLabels[format]}
               </Badge>
+              {userStatus && (
+                <Badge className={`rounded-full text-[9px] sm:text-xs h-4 sm:h-6 px-1.5 sm:px-2 border ${
+                  userStatus === "hosting"
+                    ? "bg-primary/15 text-primary border-primary/25"
+                    : "bg-success/15 text-success border-success/25"
+                }`}>
+                  {userStatus === "hosting" ? "Hosting" : "Joined"}
+                </Badge>
+              )}
             </div>
             {pricePerPlayer > 0 && priceMode !== 'free' ? (
               <span className="text-primary font-bold text-xs sm:text-sm whitespace-nowrap">
