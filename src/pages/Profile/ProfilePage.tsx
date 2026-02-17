@@ -18,8 +18,27 @@ import { Navbar } from "@/components/layout/Navbar";
 import { SkillBadge } from "@/components/games/SkillBadge";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
-import { Camera, Calendar, Trophy, Users, UserPlus } from "lucide-react";
+import { Camera, Calendar, Trophy, Users, UserPlus, Copy, Check } from "lucide-react";
 import { useFriends } from "@/hooks/useFriends";
+
+function UserIdCopyBox({ userId }: { userId: string }) {
+  const [copied, setCopied] = useState(false);
+  const handleCopy = () => {
+    navigator.clipboard.writeText(userId);
+    setCopied(true);
+    toast.success("User ID copied!");
+    setTimeout(() => setCopied(false), 2000);
+  };
+  return (
+    <div className="mt-4 flex items-center justify-center gap-2 bg-muted/50 rounded-lg px-4 py-2 max-w-xs mx-auto">
+      <span className="text-xs text-muted-foreground font-medium">Your ID</span>
+      <code className="text-xs font-mono truncate max-w-[180px]">{userId}</code>
+      <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" onClick={handleCopy}>
+        {copied ? <Check className="w-3.5 h-3.5 text-green-500" /> : <Copy className="w-3.5 h-3.5" />}
+      </Button>
+    </div>
+  );
+}
 
 interface Profile {
   id: string;
@@ -279,6 +298,9 @@ export default function ProfilePage() {
                 <Button variant="outline" onClick={() => setEditing(true)}>
                   Edit Profile
                 </Button>
+
+                {/* User ID display */}
+                <UserIdCopyBox userId={user.id} />
               </>
             )}
           </div>
