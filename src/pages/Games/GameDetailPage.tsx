@@ -135,11 +135,16 @@ export default function GameDetailPage() {
   useEffect(() => {
     if (!id) return;
     const channel = supabase
-      .channel(`game-players-${id}`)
+      .channel(`game-realtime-${id}`)
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'game_players', filter: `game_id=eq.${id}` },
         () => { fetchPlayers(); }
+      )
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'game_messages', filter: `game_id=eq.${id}` },
+        () => { fetchMessages(); }
       )
       .subscribe();
     return () => { supabase.removeChannel(channel); };
@@ -650,7 +655,7 @@ export default function GameDetailPage() {
       </div>
 
       {/* Sticky Leave CTA */}
-      {user && !isHost && isPlayer && (
+      {user && !isHost && isPlayer && activeTab !== "chat" && (
         <div className="fixed left-0 right-0 px-4 pb-2 pt-2 bg-background/95 backdrop-blur-md md:hidden z-50" style={{ bottom: "calc(4.5rem + env(safe-area-inset-bottom))" }}>
           <Button
             variant="destructive"
@@ -665,7 +670,7 @@ export default function GameDetailPage() {
       )}
 
       {/* Sticky Join CTA */}
-      {user && !isHost && !isPlayer && !myRequest && spotsLeft > 0 && (
+      {user && !isHost && !isPlayer && !myRequest && spotsLeft > 0 && activeTab !== "chat" && (
         <div className="fixed left-0 right-0 px-4 pb-2 pt-2 bg-background/95 backdrop-blur-md md:hidden z-50" style={{ bottom: "calc(4.5rem + env(safe-area-inset-bottom))" }}>
           <Button
             variant="default"
@@ -686,7 +691,7 @@ export default function GameDetailPage() {
       )}
 
       {/* Desktop Leave Button */}
-      {user && !isHost && isPlayer && (
+      {user && !isHost && isPlayer && activeTab !== "chat" && (
         <div className="hidden md:block fixed bottom-8 right-8">
           <Button
             variant="destructive"
@@ -701,7 +706,7 @@ export default function GameDetailPage() {
       )}
 
       {/* Desktop Join Button */}
-      {user && !isHost && !isPlayer && !myRequest && spotsLeft > 0 && (
+      {user && !isHost && !isPlayer && !myRequest && spotsLeft > 0 && activeTab !== "chat" && (
         <div className="hidden md:block fixed bottom-8 right-8">
           <Button
             variant="default"
