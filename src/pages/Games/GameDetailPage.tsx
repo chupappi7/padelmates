@@ -666,21 +666,21 @@ export default function GameDetailPage() {
 
       {/* Sticky Join CTA */}
       {user && !isHost && !isPlayer && !myRequest && spotsLeft > 0 && (
-        <div className="fixed left-0 right-0 p-4 bg-background/95 backdrop-blur-md border-t border-border md:hidden z-40" style={{ bottom: "calc(3.5rem + env(safe-area-inset-bottom))" }}>
+        <div className="fixed left-0 right-0 px-4 pb-2 pt-2 bg-background/95 backdrop-blur-md md:hidden z-50" style={{ bottom: "calc(4.5rem + env(safe-area-inset-bottom))" }}>
           <Button
-            variant="hero"
-            size="xl"
-            className="w-full h-14 text-lg font-bold tracking-wide shadow-lg"
+            variant="default"
+            size="lg"
+            className="w-full h-11 text-sm font-semibold"
             disabled={joinLoading}
             onClick={() => isOpenJoin ? setShowJoinConfirm(true) : setShowJoinModal(true)}
           >
             {joinLoading
               ? "Joining..."
               : game?.payment_mode === "court_sharing"
-                ? "🏟️ Secure This Court"
+                ? "Secure This Court"
                 : game?.payment_mode === "spot_selling"
-                  ? "🔄 Take This Spot"
-                  : isOpenJoin ? "⚡ Join Now" : "📩 Request to Join"}
+                  ? "Take This Spot"
+                  : isOpenJoin ? "Join Now" : "Request to Join"}
           </Button>
         </div>
       )}
@@ -704,19 +704,19 @@ export default function GameDetailPage() {
       {user && !isHost && !isPlayer && !myRequest && spotsLeft > 0 && (
         <div className="hidden md:block fixed bottom-8 right-8">
           <Button
-            variant="hero"
-            size="xl"
-            className="shadow-2xl text-lg"
+            variant="default"
+            size="default"
+            className="shadow-xl"
             disabled={joinLoading}
             onClick={() => isOpenJoin ? setShowJoinConfirm(true) : setShowJoinModal(true)}
           >
             {joinLoading
               ? "Joining..."
               : game?.payment_mode === "court_sharing"
-                ? "🏟️ Secure This Court"
+                ? "Secure This Court"
                 : game?.payment_mode === "spot_selling"
-                  ? "🔄 Take This Spot"
-                  : isOpenJoin ? "⚡ Join Now" : "📩 Request to Join"}
+                  ? "Take This Spot"
+                  : isOpenJoin ? "Join Now" : "Request to Join"}
           </Button>
         </div>
       )}
