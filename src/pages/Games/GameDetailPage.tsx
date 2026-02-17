@@ -795,15 +795,19 @@ export default function GameDetailPage() {
       <AlertDialog open={showJoinConfirm} onOpenChange={setShowJoinConfirm}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Join this game?</AlertDialogTitle>
+            <AlertDialogTitle>
+              {game?.payment_mode === "court_sharing" ? "Secure this court?" : "Join this game?"}
+            </AlertDialogTitle>
             <AlertDialogDescription>
-              You'll be added as a confirmed player for "{game?.title}".
+              {game?.payment_mode === "court_sharing"
+                ? `You'll secure the court for "${game?.title}".`
+                : `You'll be added as a confirmed player for "${game?.title}".`}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={() => { setShowJoinConfirm(false); handleDirectJoin(); }}>
-              Join Game
+              {game?.payment_mode === "court_sharing" ? "Secure Court" : "Join Game"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
