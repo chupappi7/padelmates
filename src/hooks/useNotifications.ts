@@ -14,6 +14,7 @@ export interface AppNotification {
   _dbId?: string;
 }
 
+/** Aggregates notifications from multiple sources with read/unread state */
 export function useNotifications() {
   const { user } = useAuth();
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
