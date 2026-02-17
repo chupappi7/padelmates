@@ -7,6 +7,7 @@ import { GameCard } from "@/components/games/GameCard";
 import { motion } from "framer-motion";
 import { Calendar, Trophy } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { format, isToday, isTomorrow, isYesterday, startOfDay } from "date-fns";
 
 interface Game {
   id: string;
@@ -92,7 +93,30 @@ export default function MyMatchesPage() {
 
   const now = new Date();
   const upcoming = games.filter((g) => new Date(g.date_time) >= now);
-  const past = games.filter((g) => new Date(g.date_time) < now);
+  const past = games.filter((g) => new Date(g.date_time) < now).reverse();
+
+  const getDateLabel = (dateStr: string) => {
+    const d = new Date(dateStr);
+    if (isToday(d)) return "Today";
+    if (isTomorrow(d)) return "Tomorrow";
+    if (isYesterday(d)) return "Yesterday";
+    return format(d, "EEE, MMM d, yyyy");
+  };
+
+  const groupByDate = (list: Game[]) => {
+    const groups: { label: string; games: Game[] }[] = [];
+    let currentLabel = "";
+    for (const game of list) {
+      const label = getDateLabel(game.date_time);
+      if (label !== currentLabel) {
+        currentLabel = label;
+        groups.push({ label, games: [game] });
+      } else {
+        groups[groups.length - 1].games.push(game);
+      }
+    }
+    return groups;
+  };
 
   return (
     <div className="min-h-screen bg-background pb-24 md:pb-0">
@@ -117,31 +141,38 @@ export default function MyMatchesPage() {
                 ))}
               </div>
             ) : upcoming.length > 0 ? (
-              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                {upcoming.map((game, index) => (
-                  <motion.div
-                    key={game.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: Math.min(index * 0.03, 0.15) }}
-                  >
-                    <GameCard
-                      id={game.id}
-                      title={game.title}
-                      location={game.location}
-                      dateTime={game.date_time}
-                      endDateTime={game.end_date_time}
-                      skillLevel={game.skill_level}
-                      format={game.format}
-                      maxPlayers={game.max_players}
-                      currentPlayers={(game.game_players?.length || 0) + (game.host_is_playing ? 1 : 0)}
-                      prefilledCount={Array.isArray((game as any).prefilled_players) ? (game as any).prefilled_players.filter((p: any) => (typeof p === "string" ? p.trim() : p?.name?.trim())).length : 0}
-                      pricePerPlayer={Number(game.price_per_player)}
-                      hostName={game.profiles?.name || "Unknown"}
-                      hostAvatar={game.profiles?.avatar_url || undefined}
-                      priceMode={(game as any).price_mode}
-                    />
-                  </motion.div>
+              <div className="space-y-4">
+                {groupByDate(upcoming).map((group) => (
+                  <div key={group.label}>
+                    <h3 className="text-sm font-semibold text-muted-foreground mb-2 px-1">{group.label}</h3>
+                    <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                      {group.games.map((game, index) => (
+                        <motion.div
+                          key={game.id}
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: Math.min(index * 0.03, 0.15) }}
+                        >
+                          <GameCard
+                            id={game.id}
+                            title={game.title}
+                            location={game.location}
+                            dateTime={game.date_time}
+                            endDateTime={game.end_date_time}
+                            skillLevel={game.skill_level}
+                            format={game.format}
+                            maxPlayers={game.max_players}
+                            currentPlayers={(game.game_players?.length || 0) + (game.host_is_playing ? 1 : 0)}
+                            prefilledCount={Array.isArray((game as any).prefilled_players) ? (game as any).prefilled_players.filter((p: any) => (typeof p === "string" ? p.trim() : p?.name?.trim())).length : 0}
+                            pricePerPlayer={Number(game.price_per_player)}
+                            hostName={game.profiles?.name || "Unknown"}
+                            hostAvatar={game.profiles?.avatar_url || undefined}
+                            priceMode={(game as any).price_mode}
+                          />
+                        </motion.div>
+                      ))}
+                    </div>
+                  </div>
                 ))}
               </div>
             ) : (
@@ -151,31 +182,38 @@ export default function MyMatchesPage() {
 
           <TabsContent value="past" className="mt-4">
             {past.length > 0 ? (
-              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                {past.map((game, index) => (
-                  <motion.div
-                    key={game.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: Math.min(index * 0.03, 0.15) }}
-                  >
-                    <GameCard
-                      id={game.id}
-                      title={game.title}
-                      location={game.location}
-                      dateTime={game.date_time}
-                      endDateTime={game.end_date_time}
-                      skillLevel={game.skill_level}
-                      format={game.format}
-                      maxPlayers={game.max_players}
-                      currentPlayers={(game.game_players?.length || 0) + (game.host_is_playing ? 1 : 0)}
-                      prefilledCount={Array.isArray((game as any).prefilled_players) ? (game as any).prefilled_players.filter((p: any) => (typeof p === "string" ? p.trim() : p?.name?.trim())).length : 0}
-                      pricePerPlayer={Number(game.price_per_player)}
-                      hostName={game.profiles?.name || "Unknown"}
-                      hostAvatar={game.profiles?.avatar_url || undefined}
-                      priceMode={(game as any).price_mode}
-                    />
-                  </motion.div>
+              <div className="space-y-4">
+                {groupByDate(past).map((group) => (
+                  <div key={group.label}>
+                    <h3 className="text-sm font-semibold text-muted-foreground mb-2 px-1">{group.label}</h3>
+                    <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                      {group.games.map((game, index) => (
+                        <motion.div
+                          key={game.id}
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: Math.min(index * 0.03, 0.15) }}
+                        >
+                          <GameCard
+                            id={game.id}
+                            title={game.title}
+                            location={game.location}
+                            dateTime={game.date_time}
+                            endDateTime={game.end_date_time}
+                            skillLevel={game.skill_level}
+                            format={game.format}
+                            maxPlayers={game.max_players}
+                            currentPlayers={(game.game_players?.length || 0) + (game.host_is_playing ? 1 : 0)}
+                            prefilledCount={Array.isArray((game as any).prefilled_players) ? (game as any).prefilled_players.filter((p: any) => (typeof p === "string" ? p.trim() : p?.name?.trim())).length : 0}
+                            pricePerPlayer={Number(game.price_per_player)}
+                            hostName={game.profiles?.name || "Unknown"}
+                            hostAvatar={game.profiles?.avatar_url || undefined}
+                            priceMode={(game as any).price_mode}
+                          />
+                        </motion.div>
+                      ))}
+                    </div>
+                  </div>
                 ))}
               </div>
             ) : (
