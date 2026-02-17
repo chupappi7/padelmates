@@ -4,6 +4,7 @@ import { useNotifications, AppNotification } from "@/hooks/useNotifications";
 import { useAuth } from "@/contexts/AuthContext";
 import { motion } from "framer-motion";
 import { ArrowLeft, Bell, UserPlus, CalendarCheck, Megaphone, LogIn, LogOut, Inbox, CheckCheck } from "lucide-react";
+import { formatDistanceToNow } from "date-fns";
 import { cn } from "@/lib/utils";
 
 const iconMap: Record<AppNotification["type"], typeof Bell> = {
@@ -98,7 +99,7 @@ export default function NotificationsPage() {
                       <p className={cn("text-sm", !n.read ? "font-semibold" : "font-medium text-muted-foreground")}>{n.title}</p>
                       <p className="text-xs text-muted-foreground truncate">{n.message}</p>
                       <p className="text-[10px] text-muted-foreground/60 mt-1">
-                        {new Date(n.created_at).toLocaleDateString()}
+                        {formatDistanceToNow(new Date(n.created_at), { addSuffix: true })}
                       </p>
                     </div>
                   </button>
