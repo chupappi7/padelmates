@@ -134,6 +134,7 @@ export default function FriendsPage() {
                 friends.map((f) => (
                   <FriendCard
                     key={f.id}
+                    userId={f.profile.user_id}
                     name={f.profile.name}
                     avatarUrl={f.profile.avatar_url}
                     skillLevel={f.profile.skill_level}
@@ -154,6 +155,7 @@ export default function FriendsPage() {
                   {incomingRequests.map((f) => (
                     <FriendCard
                       key={f.id}
+                      userId={f.profile.user_id}
                       name={f.profile.name}
                       avatarUrl={f.profile.avatar_url}
                       skillLevel={f.profile.skill_level}
@@ -170,6 +172,7 @@ export default function FriendsPage() {
                   {outgoingRequests.map((f) => (
                     <FriendCard
                       key={f.id}
+                      userId={f.profile.user_id}
                       name={f.profile.name}
                       avatarUrl={f.profile.avatar_url}
                       skillLevel={f.profile.skill_level}
@@ -211,6 +214,7 @@ export default function FriendsPage() {
                 {searchResults.map((p) => (
                   <FriendCard
                     key={p.user_id}
+                    userId={p.user_id}
                     name={p.name}
                     avatarUrl={p.avatar_url}
                     skillLevel={p.skill_level}
