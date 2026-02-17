@@ -335,7 +335,7 @@ export default function GameDetailPage() {
   const pendingCount = requests.filter((r) => r.status === "pending").length;
 
   return (
-    <div className="min-h-screen bg-background pb-24 md:pb-8">
+    <div className="min-h-screen bg-background pb-32 md:pb-8">
       <Navbar />
 
       <div className="container py-4 md:py-8 max-w-4xl px-3 md:px-6">
@@ -650,7 +650,7 @@ export default function GameDetailPage() {
 
       {/* Sticky Leave CTA */}
       {user && !isHost && isPlayer && (
-        <div className="fixed left-0 right-0 px-4 pb-2 pt-2 bg-background/95 backdrop-blur-md md:hidden z-40" style={{ bottom: "calc(3.5rem + env(safe-area-inset-bottom))" }}>
+        <div className="fixed left-0 right-0 px-4 pb-2 pt-2 bg-background/95 backdrop-blur-md md:hidden z-50" style={{ bottom: "calc(4.5rem + env(safe-area-inset-bottom))" }}>
           <Button
             variant="destructive"
             size="lg"
