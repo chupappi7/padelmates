@@ -90,7 +90,7 @@ export function useNotifications() {
       const gameIds = acceptedJoins.map((j) => j.game_id);
       const { data: games } = await supabase
         .from("games")
-        .select("id, title, location, date_time, max_players")
+        .select("id, title, location, date_time, max_players, host_is_playing")
         .in("id", gameIds);
 
       const gameMap = new Map(games?.map((g) => [g.id, g]) || []);
@@ -110,7 +110,7 @@ export function useNotifications() {
         let ctx = "";
         if (g) {
           const dateStr = format(new Date(g.date_time), "MMM d, h:mm a");
-          const count = countMap.get(j.game_id) || 0;
+          const count = (countMap.get(j.game_id) || 0) + (g.host_is_playing ? 1 : 0);
           ctx = ` | ${g.location} · ${dateStr} · ${count}/${g.max_players}`;
         }
         results.push({
