@@ -23,15 +23,26 @@ export default function FriendsPage() {
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [searching, setSearching] = useState(false);
 
+  const isUuid = (s: string) =>
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(s);
+
   const handleSearch = async () => {
     if (!searchQuery.trim() || !user) return;
     setSearching(true);
-    const { data } = await supabase
+    const trimmed = searchQuery.trim();
+
+    let query = supabase
       .from("profiles")
       .select("user_id, name, avatar_url, skill_level")
-      .ilike("name", `%${searchQuery.trim()}%`)
-      .neq("user_id", user.id)
-      .limit(20);
+      .neq("user_id", user.id);
+
+    if (isUuid(trimmed)) {
+      query = query.eq("user_id", trimmed);
+    } else {
+      query = query.ilike("name", `%${trimmed}%`).limit(20);
+    }
+
+    const { data } = await query;
 
     // Filter out existing friends and pending requests
     const existingIds = new Set([
@@ -182,7 +193,7 @@ export default function FriendsPage() {
                 <div className="relative flex-1">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                   <Input
-                    placeholder="Search by name..."
+                    placeholder="Search by name or paste user ID..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && handleSearch()}
