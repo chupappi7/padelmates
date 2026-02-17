@@ -1,53 +1,73 @@
 
 
-# Search Friends by Name or User ID
+# Notification Popover (Desktop) + Bottom Drawer (Mobile)
 
 ## Overview
-Instead of generating a separate friend code, use the existing user ID as the shareable identifier. The search on the Friends page will accept both a name (partial match) and a user ID (exact match) in a single input field.
+Replace the current full-page-only notification experience with a quick-access popover on desktop and a bottom drawer on mobile. The full notifications page remains as a "See all" destination for history.
 
 ## What Changes for the User
 
-1. **Profile page** -- display your User ID with a copy-to-clipboard button
-2. **Friends page (Search tab)** -- the existing search input accepts both names and user IDs; it auto-detects which one you typed
-3. No new database columns or migrations needed
+1. **Desktop** -- clicking the bell icon opens a small dropdown popover showing the latest 5 notifications, with a "See all" link
+2. **Mobile** -- clicking the bell icon slides up a bottom drawer (~60% height) with scrollable notifications and a "See all" link
+3. The existing `/notifications` page stays as the full history view
+4. Each notification is tappable and navigates to the relevant item (friend request, game, etc.)
 
 ## User Flow
 
 ```text
-Profile Page:
-  Your ID
-  a1b2c3d4-...  [Copy]
+Desktop:
+  [Bell icon] -> Click
+  -> Popover drops down (max-h ~350px, scrollable)
+  -> Shows latest 5 notifications
+  -> [See all notifications] link at bottom -> /notifications page
+  -> Click a notification -> navigates to relevant page, popover closes
 
-Friends Page -> Search tab:
-  [Search by name or paste user ID...]  [Search]
-  -> Paste full UUID -> instant exact match
-  -> Type a name -> partial name search (existing behavior)
+Mobile:
+  [Bell icon] -> Click
+  -> Bottom drawer slides up (~60% screen)
+  -> Scrollable list of latest notifications
+  -> [See all] link at bottom -> /notifications page
+  -> Tap a notification -> navigates, drawer closes
 ```
 
 ## Technical Details
 
-### No Database Changes
-The `profiles` table already has `user_id` (unique, not null). No migration needed.
+### New Component: `NotificationPanel.tsx`
+
+A single component that renders either a Popover (desktop) or a Drawer (mobile) based on the `useIsMobile()` hook -- following the same responsive pattern already used in `MobileFilterSheet` and `FriendPickerSheet`.
+
+Contains:
+- Header with "Notifications" title
+- ScrollArea with notification items (reuses the same icon/color maps from NotificationsPage)
+- "See all" footer link to `/notifications`
+- Clicking a notification calls `navigate(n.link)` and closes the panel
 
 ### Files Modified
 
 | File | Change |
 |------|--------|
-| `src/pages/Profile/ProfilePage.tsx` | Add User ID display with copy-to-clipboard button below the avatar/name area |
-| `src/pages/Friends/FriendsPage.tsx` | Update search logic: if input looks like a UUID, query by `user_id`; otherwise query by `name` (existing behavior). Update placeholder text. |
+| `src/components/layout/NotificationPanel.tsx` | New component: responsive popover/drawer with notification list |
+| `src/components/layout/Navbar.tsx` | Replace `navigate("/notifications")` on bell click with opening the NotificationPanel inline |
+| `src/pages/Notifications/NotificationsPage.tsx` | No changes -- stays as the full "See all" history page |
 
-### Search Logic (in FriendsPage)
+### Component Structure
 
 ```text
-if input matches UUID pattern (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx):
-  -> query profiles WHERE user_id = input
-else:
-  -> query profiles WHERE name ILIKE '%input%' (existing behavior)
+NotificationPanel
+  if mobile:
+    Drawer (vaul) with DrawerContent
+      -> ScrollArea with notification items
+      -> "See all" footer
+  if desktop:
+    Popover (radix) with PopoverContent
+      -> ScrollArea with notification items (max-h-[350px])
+      -> "See all" footer
 ```
 
 ### Implementation Steps
 
-1. Update `FriendsPage.tsx` search handler to detect UUID input and branch query accordingly
-2. Update search input placeholder to "Search by name or paste user ID..."
-3. Add User ID display + copy button to `ProfilePage.tsx` below the profile card
+1. Create `NotificationPanel.tsx` with responsive popover/drawer pattern using `useIsMobile()`
+2. Extract notification item rendering into a shared `NotificationItem` sub-component (used by both the panel and the full page)
+3. Update `Navbar.tsx` to render `NotificationPanel` around the bell icon instead of navigating on click
+4. Keep the badge count on the bell icon as-is
 
