@@ -275,6 +275,7 @@ export default function GameDetailPage() {
     if (error) { toast.error("Failed to leave game"); }
     else {
       toast.success("You've left the game");
+      setShowLeaveConfirm(false);
       fetchPlayers();
       await supabase.from("join_requests").delete().eq("game_id", id).eq("user_id", user.id);
       setMyRequest(null);
