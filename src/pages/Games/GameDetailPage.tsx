@@ -119,6 +119,8 @@ export default function GameDetailPage() {
   const [requests, setRequests] = useState<JoinRequest[]>([]);
   const [messages, setMessages] = useState<Message[]>([]);
   const [myRequest, setMyRequest] = useState<JoinRequest | null>(null);
+  const [myInterest, setMyInterest] = useState<{ id: string; status: string } | null>(null);
+  const [interestCount, setInterestCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [newMessage, setNewMessage] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -144,6 +146,8 @@ export default function GameDetailPage() {
       fetchMessages();
       if (user) {
         fetchMyRequest();
+        fetchMyInterest();
+        fetchInterestCount();
       }
     }
   }, [id, user]);
@@ -326,9 +330,29 @@ export default function GameDetailPage() {
   const isOpenJoin = game?.join_mode === "open";
   const userJoinStatus = myRequest?.status || null;
   const canAccessChat = isHost || isPlayer;
-  const isInterested = !!myRequest; // for court_sharing: has expressed interest
+  const isInterested = !!myInterest;
   const interestedRequests = requests.filter(r => r.status === "pending");
   const canAccessDM = isCourtSharing && (isHost || isInterested);
+
+  const fetchMyInterest = async () => {
+    if (!user || !id) return;
+    const { data } = await supabase
+      .from("interests")
+      .select("id, status")
+      .eq("listing_id", id)
+      .eq("user_id", user.id)
+      .maybeSingle();
+    setMyInterest(data ? { id: data.id, status: data.status } : null);
+  };
+
+  const fetchInterestCount = async () => {
+    if (!id) return;
+    const { count } = await supabase
+      .from("interests")
+      .select("id", { count: "exact", head: true })
+      .eq("listing_id", id);
+    setInterestCount(count || 0);
+  };
 
   const handleToggleRole = async (playerId: string, currentRole: string) => {
     const newRole = currentRole === "admin" ? "player" : "admin";
@@ -340,21 +364,63 @@ export default function GameDetailPage() {
   const handleExpressInterest = async () => {
     if (!user || !id) return;
     setJoinLoading(true);
-    const { error } = await supabase.from("join_requests").insert({
-      game_id: id,
+    // Insert into interests table
+    const { error } = await supabase.from("interests").insert({
+      listing_id: id,
       user_id: user.id,
-      payment_status: "not_required",
     });
     if (error) {
       toast.error("Failed to express interest");
     } else {
       toast.success("Interest sent! You can now message the host.");
-      fetchMyRequest();
-      fetchRequests();
+      fetchMyInterest();
+      fetchInterestCount();
       // Notify host
       const { data: profile } = await supabase.from("profiles").select("name").eq("user_id", user.id).single();
       const ctx = game ? ` | ${formatGameContext(game.location, game.date_time)}` : "";
       notifyHost("game_request", "Court Interest", `${profile?.name || "Someone"} is interested in "${game?.title}"${ctx}`);
+      // Auto-switch to messages tab
+      setActiveTab("chat");
+    }
+    setJoinLoading(false);
+  };
+
+  const handleConfirmBooking = async (interestId: string, bookedUserId: string) => {
+    if (!id) return;
+    setJoinLoading(true);
+    // Mark interest as confirmed
+    await supabase.from("interests").update({ status: "confirmed" }).eq("id", interestId);
+    // Mark court as taken
+    const { error } = await supabase.from("games").update({ court_taken_by: bookedUserId }).eq("id", id);
+    if (error) {
+      toast.error("Failed to confirm booking");
+    } else {
+      toast.success("Booking confirmed! Court is now marked as taken.");
+      fetchGame();
+      fetchInterestCount();
+      // Notify the confirmed user
+      await supabase.from("notifications").insert({
+        user_id: bookedUserId,
+        type: "game_confirmed",
+        title: "Court Booking Confirmed",
+        message: `Your booking for "${game?.title}" has been confirmed by the host!`,
+        link: `/games/${id}`,
+      });
+      // Notify all other interested users the court is taken
+      const { data: otherInterests } = await supabase
+        .from("interests")
+        .select("user_id")
+        .eq("listing_id", id)
+        .neq("user_id", bookedUserId);
+      for (const interest of otherInterests || []) {
+        await supabase.from("notifications").insert({
+          user_id: interest.user_id,
+          type: "announcement",
+          title: "Court Taken",
+          message: `The court "${game?.title}" has been taken by someone else.`,
+          link: `/games/${id}`,
+        });
+      }
     }
     setJoinLoading(false);
   };
@@ -368,18 +434,6 @@ export default function GameDetailPage() {
     } else {
       toast.success("Court marked as taken!");
       fetchGame();
-      // Notify all interested users
-      for (const req of interestedRequests) {
-        if (req.user_id !== user?.id) {
-          await supabase.from("notifications").insert({
-            user_id: req.user_id,
-            type: "announcement",
-            title: "Court Taken",
-            message: `The court "${game?.title}" has been taken.`,
-            link: `/games/${id}`,
-          });
-        }
-      }
     }
     setJoinLoading(false);
   };
@@ -480,7 +534,7 @@ export default function GameDetailPage() {
           </div>
 
           {/* Join Status Banner - court sharing shows "Interested" state */}
-          {isCourtSharing && isInterested && !isHost && !isCourtTaken && (
+          {isCourtSharing && isInterested && !isHost && !isCourtTaken && myInterest?.status !== "confirmed" && (
             <div className="flex items-center gap-2.5 p-3 rounded-xl border bg-primary/10 text-primary border-primary/20 mb-3">
               <Heart className="w-5 h-5 shrink-0" />
               <div className="min-w-0 flex-1">
@@ -489,7 +543,16 @@ export default function GameDetailPage() {
               </div>
             </div>
           )}
-          {isCourtSharing && isCourtTaken && !isHost && (
+          {isCourtSharing && isInterested && myInterest?.status === "confirmed" && !isHost && (
+            <div className="flex items-center gap-2.5 p-3 rounded-xl border bg-success/10 text-success border-success/20 mb-3">
+              <CheckCircle2 className="w-5 h-5 shrink-0" />
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-semibold">Booking Confirmed 🎉</p>
+                <p className="text-xs opacity-80">The host confirmed your booking for this court</p>
+              </div>
+            </div>
+          )}
+          {isCourtSharing && isCourtTaken && !isHost && myInterest?.status !== "confirmed" && (
             <div className="flex items-center gap-2.5 p-3 rounded-xl border bg-muted text-muted-foreground border-border mb-3">
               <CheckCircle2 className="w-5 h-5 shrink-0" />
               <div className="min-w-0 flex-1">
@@ -599,7 +662,7 @@ export default function GameDetailPage() {
                       <div className="min-w-0">
                         <p className="text-[11px] text-muted-foreground">Interest</p>
                         <p className="text-sm font-medium">
-                          {interestedRequests.length} interested
+                          {interestCount} interested
                         </p>
                       </div>
                     </div>
@@ -770,7 +833,11 @@ export default function GameDetailPage() {
                 currentUserId={user.id}
                 hostId={game.host_id}
                 isHost={isHost}
-                interestedUserIds={interestedRequests.map(r => r.user_id)}
+                isCourtTaken={isCourtTaken}
+                gameLocation={game.location}
+                gameDateTime={game.date_time}
+                myInterestStatus={myInterest?.status ?? null}
+                onConfirmBooking={handleConfirmBooking}
               />
             </motion.div>
           )}
