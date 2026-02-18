@@ -121,6 +121,7 @@ export default function GameDetailPage() {
   const [myRequest, setMyRequest] = useState<JoinRequest | null>(null);
   const [myInterest, setMyInterest] = useState<{ id: string; status: string } | null>(null);
   const [interestCount, setInterestCount] = useState(0);
+  const [unreadMessageCount, setUnreadMessageCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [newMessage, setNewMessage] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -148,6 +149,7 @@ export default function GameDetailPage() {
         fetchMyRequest();
         fetchMyInterest();
         fetchInterestCount();
+        fetchUnreadMessageCount();
       }
     }
   }, [id, user]);
@@ -166,9 +168,19 @@ export default function GameDetailPage() {
         { event: 'INSERT', schema: 'public', table: 'game_messages', filter: `game_id=eq.${id}` },
         () => { fetchMessages(); }
       )
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'chat_messages' },
+        (payload: any) => {
+          // Only bump count if not currently on the chat tab and message is not from us
+          if (activeTab !== "chat" && payload.new?.sender_id !== user?.id) {
+            fetchUnreadMessageCount();
+          }
+        }
+      )
       .subscribe();
     return () => { supabase.removeChannel(channel); };
-  }, [id]);
+  }, [id, activeTab, user?.id]);
 
   useEffect(() => {
     if (game) fetchRequests();
@@ -352,6 +364,23 @@ export default function GameDetailPage() {
       .select("id", { count: "exact", head: true })
       .eq("listing_id", id);
     setInterestCount(count || 0);
+  };
+
+  const fetchUnreadMessageCount = async () => {
+    if (!id || !user) return;
+    const { data: chats } = await supabase
+      .from("chats")
+      .select("id")
+      .eq("listing_id", id)
+      .or(`user_1_id.eq.${user.id},user_2_id.eq.${user.id}`);
+    if (!chats || chats.length === 0) { setUnreadMessageCount(0); return; }
+    const chatIds = chats.map((c) => c.id);
+    const { count } = await supabase
+      .from("chat_messages")
+      .select("id", { count: "exact", head: true })
+      .in("chat_id", chatIds)
+      .neq("sender_id", user.id);
+    setUnreadMessageCount(count || 0);
   };
 
   const handleToggleRole = async (playerId: string, currentRole: string) => {
@@ -594,13 +623,14 @@ export default function GameDetailPage() {
 
               const isActive = activeTab === tab.key;
               const showBadge = tab.key === "participants" && isHost && pendingCount > 0;
+              const showMsgBadge = tab.key === "chat" && isCourtSharing && activeTab !== "chat" && unreadMessageCount > 0;
 
               return (
                 <button
                   key={tab.key}
-                  onClick={() => setActiveTab(tab.key)}
+                  onClick={() => { setActiveTab(tab.key); if (tab.key === "chat") setUnreadMessageCount(0); }}
                   className={cn(
-                    "flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap flex-1 justify-center",
+                    "flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap flex-1 justify-center relative",
                     isActive
                       ? "bg-background text-foreground shadow-sm"
                       : "text-muted-foreground hover:text-foreground"
@@ -611,6 +641,11 @@ export default function GameDetailPage() {
                   {showBadge && (
                     <span className="w-5 h-5 rounded-full bg-secondary text-secondary-foreground text-[10px] font-bold flex items-center justify-center">
                       {pendingCount}
+                    </span>
+                  )}
+                  {showMsgBadge && (
+                    <span className="min-w-[18px] h-[18px] px-1 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold flex items-center justify-center leading-none">
+                      {unreadMessageCount > 99 ? "99+" : unreadMessageCount}
                     </span>
                   )}
                 </button>
