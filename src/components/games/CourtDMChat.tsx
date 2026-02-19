@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { ArrowLeft, Send, MessageCircle, MapPin, Calendar, CheckCircle2, Clock, AlertCircle, CreditCard, Copy, Check, ImagePlus } from "lucide-react";
+
 import { toast } from "sonner";
 
 interface Profile {
@@ -706,27 +707,18 @@ export function CourtDMChat({
             {isTaken && !isConfirmed && <span className="ml-1 text-destructive font-medium">· Taken</span>}
           </p>
         </div>
-        {isHost && selectedUser && selectedInterestStatus !== "confirmed" && !isCourtTaken && stage === "payment_sent" && (
-          <Button
-            size="sm"
-            variant="success"
-            className="h-6 text-[11px] px-2 shrink-0"
+        {isHost && selectedUser && selectedInterestStatus !== "confirmed" && !isCourtTaken && (
+          <button
             onClick={() => onConfirmBooking?.(selectedUser.interest_id, selectedUser.user_id)}
+            className={cn(
+              "shrink-0 text-[10px] font-semibold px-2 py-0.5 rounded-md border transition-colors",
+              stage === "payment_sent"
+                ? "border-success/40 bg-success/10 text-success hover:bg-success/20"
+                : "border-border text-muted-foreground hover:text-foreground hover:border-foreground/30"
+            )}
           >
-            <CheckCircle2 className="w-2.5 h-2.5" />
-            Confirm
-          </Button>
-        )}
-        {isHost && selectedUser && selectedInterestStatus !== "confirmed" && !isCourtTaken && stage !== "payment_sent" && (
-          <Button
-            size="sm"
-            variant="outline"
-            className="h-6 text-[11px] px-2 shrink-0"
-            onClick={() => onConfirmBooking?.(selectedUser.interest_id, selectedUser.user_id)}
-          >
-            <CheckCircle2 className="w-2.5 h-2.5" />
-            Confirm
-          </Button>
+            Confirm →
+          </button>
         )}
       </div>
 

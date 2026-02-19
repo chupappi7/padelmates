@@ -547,6 +547,11 @@ export default function GameDetailPage() {
                   )}
                 </div>
               )}
+              {isCourtSharing && (
+                <p className="text-[11px] text-muted-foreground mt-0.5">
+                  {game.location}{game.court_number ? ` · Court ${game.court_number}` : ""}
+                </p>
+              )}
             </div>
             <button
               onClick={() => {
