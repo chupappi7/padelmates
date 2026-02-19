@@ -139,9 +139,11 @@ export function GameCard({
                 </span>
               )}
             </div>
-            <span className={`badge-skill text-[9px] sm:text-[10px] px-1.5 sm:px-2 py-0.5 shrink-0 ${getSkillColor(skillLevel)}`}>
-              Lvl {skillLevel}
-            </span>
+            {!isCourtSharing && (
+              <span className={`badge-skill text-[9px] sm:text-[10px] px-1.5 sm:px-2 py-0.5 shrink-0 ${getSkillColor(skillLevel)}`}>
+                Lvl {skillLevel}
+              </span>
+            )}
           </div>
 
           {/* Row 2: Location + distance */}
