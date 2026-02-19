@@ -1,87 +1,76 @@
 
-## Game Card Redesign — Cleaner, Clearer Layout
+## Fix: Court Selling Price — Full Price, Not Split
 
-### What's wrong with the current card
+### Problem Summary
 
-Looking at the screenshot and the current code, the issues are:
+The "Sell / Give Away Court" flow has three bugs that prevent the price from working correctly:
 
-1. **Duration** shows as just "1.5h" with a colored dot — this is unclear, users don't know what it means without context (is it time left? duration?)
-2. **Badges row** (Available/Hosting/Joined) sits next to the title making it cramped on mobile
-3. **Row 3 is sometimes empty** (if no duration), creating inconsistent card heights
-4. **Urgency signaling** only uses the left border — subtle and easy to miss
+**Bug 1 — Wrong price calculation on save**
+The form saves `price_per_player = Math.ceil(totalPrice / maxPlayers)` — this is the "split evenly" formula used for regular matches. For a court sale, the buyer pays the **full listed price**, not a fraction of it.
+
+**Bug 2 — Wrong price_mode default**
+`formData.priceMode` is initialised to `"free"` for `sell_court`. The `GameCard` checks `priceMode !== "free"` before showing the price, so even if a price is entered it never appears on the card.
+
+**Bug 3 — Misleading helper text**
+The price field shows "X Kč per player (split across Y)" — confusing for a court sale. It should show the total asking price clearly.
 
 ---
 
-### Proposed Layout (fixed 3-zone structure)
+### What the fix looks like
 
 ```text
-┌────────────────────────────────────────────────┐
-│  Title                               [LVL 3]  │  ← Row 1: Title + skill chip top-right
-│  📍 Location · 1.2km                           │  ← Row 2: Location + distance
-├────────────────────────────────────────────────┤
-│  ⏱ 1h 30m          [Available] [Hosting]       │  ← Row 3: Duration pill + status chips
-├────────────────────────────────────────────────┤
-│  [T] Host Name          👥 1/4 · 3 left  200Kč │  ← Row 4: Host + spots + price
-└────────────────────────────────────────────────┘
+BEFORE (find_players):
+  Input: 400 Kč total  →  saved as 100 Kč/player (÷ 4)  →  card shows 100 Kč  ✓
+
+BEFORE (sell_court — broken):
+  Input: 400 Kč total  →  saved as 100 Kč/player (÷ 4)  →  card hides price (priceMode=free)  ✗
+
+AFTER (sell_court — fixed):
+  Input: 400 Kč        →  saved as 400 Kč (full price)  →  card shows 400 Kč  ✓
+  Input: 0 Kč          →  saved as 0 Kč                  →  card shows "Free"  ✓
 ```
-
----
-
-### Key Changes
-
-**Row 3 — Duration shown as a pill with clock icon**
-- Replace bare "1.5h" + dot with a proper pill: `⏱ 1h 30m` or `⏱ 90 min`
-- This makes it instantly clear it's a duration, not a countdown
-- The pill itself gets urgency color (red/orange/teal) when close to start time
-- Status badges (Available/Taken/Hosting/Joined) move here — they belong next to duration context, not crowding the title
-
-**Row 1 — Title only (cleaner)**
-- Title gets full width, no badge crowding
-- Skill level chip stays top-right (as in the reference image — looks good)
-
-**Urgency coloring**
-- Keep the left border stripe for urgent games
-- Additionally color the duration pill background (e.g. red pill for < 3h) — much more visible than a colored dot
-
-**Duration format**
-- `1h 30m` instead of `1.5h` — more natural to read
-- `2h` if exact hour (no "2h 0m")
-- Shown as a subtle chip: `[⏱ 1h 30m]` in muted color, turns red/orange when urgent
-
-**Spot count**
-- Keep the color-coded rounded bubble (green/orange/red) in bottom-right — this is working well per the reference image
 
 ---
 
 ### Technical Changes
 
-**File: `src/components/games/GameCard.tsx`**
+**File: `src/pages/Games/CreateGamePage.tsx`**
 
-1. Remove badges from Row 1 (title row) — title gets full width
-2. Add new Row 3 with:
-   - Duration as `⏱ Xh Ym` pill (color = urgency)
-   - Status badges (Available/Taken/Hosting/Joined) inline after duration
-3. Duration formatting helper: convert decimal hours → `Xh Ym` or `Xh`
-4. Urgency pill background styling for < 3h (red), < 12h (orange), < 24h (teal)
-5. Keep Row 4 (host + spots + price) unchanged — it's clean as-is
+1. **`formData.priceMode` initial value** — change `sell_court` default from `"free"` to `"set_price"`:
+   ```typescript
+   // Line 93 — before:
+   priceMode: hostType === "find_players" ? "split_evenly" : "free"
+   
+   // After:
+   priceMode: hostType === "find_players" ? "split_evenly"
+            : hostType === "sell_court"  ? "set_price"
+            : "free"
+   ```
 
-```typescript
-// Duration formatting helper
-const formatDuration = (hrs: number) => {
-  const h = Math.floor(hrs);
-  const m = Math.round((hrs - h) * 60);
-  if (m === 0) return `${h}h`;
-  if (h === 0) return `${m}m`;
-  return `${h}h ${m}m`;
-};
+2. **`price_per_player` calculation on submit** — for `sell_court`, store the raw input price instead of dividing:
+   ```typescript
+   // Before (line 167-169):
+   price_per_player: formData.totalPrice && Number(formData.totalPrice) > 0
+     ? Math.ceil(Number(formData.totalPrice) / formData.maxPlayers)
+     : 0,
+   
+   // After:
+   price_per_player: formData.totalPrice && Number(formData.totalPrice) > 0
+     ? isSellCourt
+       ? Number(formData.totalPrice)                              // full price for court sale
+       : Math.ceil(Number(formData.totalPrice) / formData.maxPlayers) // split for matches
+     : 0,
+   ```
 
-// Urgency pill classes
-const getUrgencyPill = (hoursUntil: number) => {
-  if (hoursUntil < 3) return "bg-destructive/15 text-destructive border-destructive/25";
-  if (hoursUntil < 12) return "bg-warning/15 text-warning border-warning/25";
-  if (hoursUntil < 24) return "bg-primary/10 text-primary border-primary/20";
-  return "bg-muted text-muted-foreground border-border";
-};
-```
+3. **Helper text below the price input** — update the hint to be accurate for court sales:
+   ```tsx
+   // Before:
+   <p>…{Math.ceil(…/ formData.maxPlayers)} Kč per player (split across {formData.maxPlayers})</p>
+   
+   // After:
+   <p>Asking price: {Number(formData.totalPrice)} Kč — shown on listing card</p>
+   ```
 
-No database changes needed — this is purely a UI component change.
+No database schema changes needed. No new migrations required.
+
+**File: `src/components/games/GameCard.tsx`** — No changes needed. The card already shows the price correctly when `pricePerPlayer > 0 && priceMode !== "free"`. Once `price_mode` is saved as `"set_price"` and `price_per_player` is the full amount, the card will display it automatically.
