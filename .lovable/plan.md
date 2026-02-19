@@ -1,187 +1,104 @@
 
-## Smart Quick-Reply UX for Court Sharing Chat
+## Booking Proof Page for Court Sharing
 
-### The Problem with the Current Flow
+### What We're Building
 
-Right now both sides have to type custom messages back and forth. The conversation has predictable, repetitive steps — availability check, price negotiation, payment confirmation — but the UI treats it like a generic chat. The result: friction for both parties, potential for missed steps, and no clear "done" state.
+A new **"Booking Proof"** tab (suggested name: **"Proof"** or **"Verification"**) on the court sharing listing page. When a host creates a "Sell / Give Away Court" listing, they can upload a screenshot of their booking confirmation (e.g. from the club's app or a booking email). This screenshot is then visible to buyers directly on the listing, building trust that the booking is real.
 
-### The Solution: A Guided Transaction Flow
+The final structure for court-sharing listings becomes: **Details · Proof · Messages**
 
-Replace the blank chat with a **stage-based conversation** where both sides get context-aware quick-reply chips at each step. Neither party needs to type if they don't want to. The flow progresses through clear stages:
+---
+
+### The Full Flow
 
 ```text
-BUYER taps "I'm Interested"
-  → Auto-opens chat with pre-filled availability question
-  
-HOST sees message → replies with quick-reply chips:
-  [✅ Yes, still available!]  [❌ Sorry, it's taken]
-
-BUYER sees "Yes" → quick replies appear:
-  [Great! What's the price?]  [Is it negotiable?]  [I'll take it!]
-
-HOST replies with price → quick-reply chip:
-  [💳 Send Payment Details]  (one tap, done)
-
-BUYER sees bank details → quick reply:
-  [✅ Payment sent!]  [📸 Upload proof]
-
-HOST confirms → Confirm Booking button
+HOST (Create Listing)                    BUYER (View Listing)
+──────────────────────                   ──────────────────────
+1. Fills out court listing form
+2. NEW: Uploads booking screenshot       1. Opens court listing
+3. Screenshot saved to storage           2. Sees "Details" tab
+4. Listing created                       3. Clicks "Proof" tab → sees host's
+                                            booking screenshot + verified badge
+                                         4. Clicks "Messages" to DM the host
 ```
 
 ---
 
-### Implementation: 5 Distinct Stages
+### Changes Required
 
-The system tracks which conversational stage the thread is in. Each stage renders different quick-reply chips for the correct party.
+#### 1. Database: Add `booking_screenshot_url` column to `games` table
 
-**Stage 1 — Availability**
-- Buyer's first message auto-filled (already done ✓)
-- Host gets chips: `Yes, still available! ✅` / `Sorry, it's taken ❌`
+A new nullable `text` column to store the file path of the uploaded booking screenshot.
 
-**Stage 2 — Price / Terms** (only after host confirms availability)
-- Buyer gets chips: `What's the price?` / `Is price negotiable?` / `I'll take it at the listed price!`
-
-**Stage 3 — Payment Request** (after price discussed)
-- Host gets chip: `💳 Send Payment Details` (single tap, sends their bank info)
-- Host gets chip: `✅ Confirm Booking` if listing is free/giveaway
-
-**Stage 4 — Payment Confirmation** (after bank details sent)
-- Buyer gets chip: `Payment sent! ✅` / `Can I send a screenshot?`
-
-**Stage 5 — Booking Confirmed**
-- Host sees the "Confirm Booking" button become prominent
-- Confirmed state locks further transaction chips, shows success banner
-
----
-
-### How Stage Detection Works
-
-Rather than a complex DB column, stage is inferred from the last few messages in the thread:
-- Stage 1 (default): No messages yet or first message is from buyer
-- Stage 2: Last host message contains "available" keyword
-- Stage 3: Last buyer message contains "price" or "take it"
-- Stage 4: Last host message contains "💳 Payment Details" (bank details sent)
-- Stage 5: Interest status = confirmed
-
-This is lightweight — no new DB columns. The stage is computed client-side from messages array on every render.
-
----
-
-### Visual Design
-
-**Quick-reply chips** appear as a horizontally-scrollable row of rounded pill buttons ABOVE the text input, styled differently from the send button to avoid confusion:
-
-```
-┌─────────────────────────────────────────────────┐
-│ Messages area (scrollable)                       │
-├─────────────────────────────────────────────────┤
-│ Quick replies (your turn):                       │
-│ [✅ Yes, available!] [❌ Sorry, taken]           │
-├─────────────────────────────────────────────────┤
-│ [💳 Send Bank Details btn]  (host only)          │
-│ [______ Type a message... ________________] [→]  │
-└─────────────────────────────────────────────────┘
+```sql
+ALTER TABLE public.games 
+ADD COLUMN booking_screenshot_url TEXT DEFAULT NULL;
 ```
 
-Tapping a quick reply:
-1. Instantly sends that message (no edit step, direct send)
-2. Clears the chips (stage advances on next render)
-3. The buyer/host sees the sent message appear in the chat bubble
+A storage policy needs to be added so hosts can upload to a `booking-proofs/` subfolder in the existing `payment-screenshots` bucket (or a new dedicated bucket):
 
-**Special bubble styling** for key messages:
-- Bank details message → amber/gold card-style bubble with copy icon
-- "Payment sent" → green bubble with checkmark
-- "Sorry, it's taken" → muted/destructive tint
+```sql
+-- New bucket for booking proofs (public for easier viewing)
+INSERT INTO storage.buckets (id, name, public) 
+VALUES ('booking-proofs', 'booking-proofs', false);
 
----
-
-### Buyer-Side Quick Replies Summary
-
-| After | Buyer sees chips |
-|---|---|
-| Chat opens (no messages) | Pre-filled input (existing ✓) |
-| Host says "Yes, available" | "What's the price?" · "I'll take it!" · "Is it negotiable?" |
-| Host sends bank details | "Payment sent! ✅" · "I'll send a screenshot" |
-| Host confirms booking | *(no chips, show confirmed banner)* |
-
-### Host-Side Quick Replies Summary
-
-| After | Host sees chips |
-|---|---|
-| Buyer sends interest message | "✅ Yes, still available!" · "❌ Sorry, it's taken" |
-| Buyer asks about price/terms | *(free text + Send Bank Details button)* |
-| Buyer says "Payment sent" | "✅ Confirm Booking" becomes primary CTA |
-
----
-
-### Files to Change
-
-| File | Change |
-|---|---|
-| `src/components/games/CourtDMChat.tsx` | Add stage detection, quick-reply chip row, special bubble styling for bank/payment messages |
-
-No database changes needed — stages are derived from existing message content + interest status.
-
----
-
-### Technical Details
-
-**Stage detection function (pure, runs on every render):**
-```typescript
-type ChatStage = "availability" | "price" | "payment_request" | "payment_sent" | "confirmed";
-
-function detectStage(messages: ChatMessage[], interestStatus: string): ChatStage {
-  if (interestStatus === "confirmed") return "confirmed";
-  if (messages.length === 0) return "availability";
-  const lastMessages = messages.slice(-5); // only look at recent
-  const hasPaymentDetails = lastMessages.some(m => m.message.includes("💳 Payment Details"));
-  const hasPaymentSent = lastMessages.some(m => m.message.toLowerCase().includes("payment sent"));
-  const hasAvailable = lastMessages.some(m => m.message.toLowerCase().includes("available"));
-  const hasPriceQuery = lastMessages.some(m => m.message.toLowerCase().includes("price"));
-  if (hasPaymentDetails) return "payment_sent";
-  if (hasPriceQuery || hasAvailable) return "payment_request";
-  if (messages.length > 0) return "price";
-  return "availability";
-}
-```
-
-**Quick reply chip component (inline):**
-```typescript
-const QuickReplies = ({ chips }: { chips: { label: string; message: string }[] }) => (
-  <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
-    {chips.map((chip) => (
-      <button
-        key={chip.label}
-        onClick={() => sendQuickReply(chip.message)}
-        className="shrink-0 px-3 py-1.5 rounded-full border border-primary/30 bg-primary/5 
-                   text-primary text-xs font-medium hover:bg-primary/10 transition-colors"
-      >
-        {chip.label}
-      </button>
-    ))}
-  </div>
+-- Upload policy
+CREATE POLICY "Hosts can upload booking proofs" ON storage.objects
+FOR INSERT WITH CHECK (
+  bucket_id = 'booking-proofs' AND auth.uid() IS NOT NULL
 );
+
+-- View policy (authenticated users can view)
+CREATE POLICY "Users can view booking proofs" ON storage.objects
+FOR SELECT USING (bucket_id = 'booking-proofs' AND auth.uid() IS NOT NULL);
 ```
 
-**`sendQuickReply` function** — sends directly without going through the text input, then clears:
-```typescript
-const sendQuickReply = async (message: string) => {
-  if (!activeChatId || sendLoading) return;
-  setSendLoading(true);
-  await supabase.from("chat_messages").insert({
-    chat_id: activeChatId,
-    sender_id: currentUserId,
-    message,
-  });
-  fetchMessages(activeChatId);
-  if (isHost) loadInterestedUsers();
-  setSendLoading(false);
-};
-```
+#### 2. Create Court: Add Screenshot Upload to `CreateGamePage.tsx`
 
-**Special message bubble detection:**
-```typescript
-const isBankDetailsMsg = msg.message.startsWith("💳 Payment Details");
-const isPaymentSentMsg = msg.message.toLowerCase().includes("payment sent");
-```
-Bank details messages render as a distinct amber card bubble; payment-sent messages render in green.
+Inside the `sell_court` section of the form, add an optional image upload field:
+
+- A dashed upload box labeled **"Upload Booking Confirmation (optional)"** with a sub-label "Email, app screenshot, etc."
+- On file select: upload to `booking-proofs/{userId}/{timestamp}-{filename}` storage bucket
+- Store the returned file path in local state `bookingScreenshotPath`
+- Pass the path into the `games` INSERT as `booking_screenshot_url`
+
+#### 3. New Tab: `BookingProofTab.tsx` component
+
+A new component at `src/components/games/BookingProofTab.tsx` that:
+
+- Fetches a signed URL for the `booking_screenshot_url` path stored in the game
+- Displays a verification badge ("Verified Booking" with shield icon)
+- Shows the screenshot image in a card with a "View Full Size" link
+- If no screenshot uploaded: shows a friendly empty state ("No booking proof uploaded by host yet")
+- If user is the host and no screenshot: shows an edit prompt to add one
+
+#### 4. Add "Proof" Tab to `GameDetailPage.tsx`
+
+For court-sharing listings, the tab bar changes from `Details | Messages` to `Details | Proof | Messages`:
+
+- New tab key `"proof"` added to the court-sharing tab list
+- Conditionally rendered `<BookingProofTab />` component when `activeTab === "proof"`
+- Tab only appears when `isCourtSharing === true`
+
+#### 5. Allow Hosts to Update Screenshot from Game Detail Page
+
+On the Proof tab, when the host is viewing with no or existing screenshot:
+- Show an "Upload / Replace Screenshot" button
+- On upload, update the `games` table `booking_screenshot_url` with the new path via `supabase.from("games").update()`
+
+---
+
+### Technical Summary
+
+| Area | File | Change |
+|---|---|---|
+| Database | migration SQL | Add `booking_screenshot_url` column to `games`, create `booking-proofs` bucket + policies |
+| Create flow | `CreateGamePage.tsx` | Add optional screenshot uploader for `sell_court` host type |
+| New component | `BookingProofTab.tsx` | Displays signed-URL screenshot with verified badge |
+| Detail page tabs | `GameDetailPage.tsx` | Add "Proof" tab for court-sharing mode; render `BookingProofTab` |
+
+---
+
+### Tab Naming
+
+The new tab will be called **"Proof"** (short, clear, fits mobile). The page section heading will read **"Booking Verification"**.
