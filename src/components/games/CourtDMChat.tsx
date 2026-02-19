@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
-import { ArrowLeft, Send, MessageCircle, MapPin, Calendar, CheckCircle2, Clock, AlertCircle, CreditCard } from "lucide-react";
+import { ArrowLeft, Send, MessageCircle, MapPin, Calendar, CheckCircle2, Clock, AlertCircle, CreditCard, Copy, Check } from "lucide-react";
 import { toast } from "sonner";
 
 interface Profile {
@@ -54,6 +54,34 @@ interface CourtDMChatProps {
   onConfirmBooking?: (interestId: string, userId: string) => void;
 }
 
+// ── STAGE DETECTION ──────────────────────────────────────────────────────────
+type ChatStage = "availability" | "price" | "payment_request" | "payment_sent" | "confirmed";
+type QuickChip = { label: string; message: string; variant?: "destructive" | "default" };
+
+function detectStage(
+  messages: ChatMessage[],
+  interestStatus: string | undefined | null,
+  hostId: string
+): ChatStage {
+  if (interestStatus === "confirmed") return "confirmed";
+  if (messages.length === 0) return "availability";
+
+  const lastMsgs = messages.slice(-6);
+  const hasPaymentDetails = lastMsgs.some((m) => m.message.includes("💳 Payment Details"));
+  const hasPaymentSent = lastMsgs.some((m) => m.message.toLowerCase().includes("payment sent"));
+  const hasAvailable = lastMsgs.some(
+    (m) => m.sender_id === hostId && m.message.toLowerCase().includes("available")
+  );
+  const hasPriceQuery = lastMsgs.some(
+    (m) => m.sender_id !== hostId && (m.message.toLowerCase().includes("price") || m.message.toLowerCase().includes("take it") || m.message.toLowerCase().includes("negotiable"))
+  );
+
+  if (hasPaymentDetails) return "payment_sent";
+  if (hasPriceQuery || hasAvailable) return "payment_request";
+  // messages exist but none of the above — buyer sent intro, host hasn't replied with "available"
+  return "price";
+}
+
 export function CourtDMChat({
   gameId,
   currentUserId,
@@ -73,7 +101,13 @@ export function CourtDMChat({
   const [loading, setLoading] = useState(true);
   const [sendLoading, setSendLoading] = useState(false);
   const [hostBankDetails, setHostBankDetails] = useState<string | null>(null);
+  const [copiedMsgId, setCopiedMsgId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Current chat's interest status (for stage detection)
+  const selectedUser = interestedUsers.find((u) => u.user_id === selectedUserId);
+  const currentInterestStatus = isHost ? selectedUser?.interest_status : myInterestStatus;
+  const stage = detectStage(messages, currentInterestStatus, hostId);
 
   // ── FETCH HOST BANK DETAILS ──────────────────────────────────────────────
   useEffect(() => {
@@ -272,6 +306,20 @@ export function CourtDMChat({
     setSendLoading(false);
   };
 
+  // ── SEND QUICK REPLY ─────────────────────────────────────────────────────
+  const sendQuickReply = async (message: string) => {
+    if (!activeChatId || sendLoading) return;
+    setSendLoading(true);
+    await supabase.from("chat_messages").insert({
+      chat_id: activeChatId,
+      sender_id: currentUserId,
+      message,
+    });
+    fetchMessages(activeChatId);
+    if (isHost) loadInterestedUsers();
+    setSendLoading(false);
+  };
+
   // ── SEND BANK DETAILS (host) ─────────────────────────────────────────────
   const handleSendBankDetails = async () => {
     if (!activeChatId) return;
@@ -279,6 +327,7 @@ export function CourtDMChat({
       toast.error("Add your bank details in Profile → Payment Info first");
       return;
     }
+    setSendLoading(true);
     await supabase.from("chat_messages").insert({
       chat_id: activeChatId,
       sender_id: currentUserId,
@@ -286,7 +335,82 @@ export function CourtDMChat({
     });
     fetchMessages(activeChatId);
     if (isHost) loadInterestedUsers();
+    setSendLoading(false);
   };
+
+  // ── COPY TEXT ────────────────────────────────────────────────────────────
+  const handleCopy = (text: string, msgId: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedMsgId(msgId);
+    setTimeout(() => setCopiedMsgId(null), 2000);
+  };
+
+  // ── QUICK REPLY CHIPS ────────────────────────────────────────────────────
+  const getQuickReplies = (): QuickChip[] => {
+    if (stage === "confirmed" || isCourtTaken) return [];
+
+    if (isHost) {
+      if (stage === "availability" || stage === "price") {
+        // Host sees buyer's interest message — offer availability chips
+        const lastMsg = messages[messages.length - 1];
+        if (!lastMsg || lastMsg.sender_id === currentUserId) return [];
+        return [
+          { label: "✅ Yes, still available!", message: "Yes, it's still available! 🎾" },
+          { label: "❌ Sorry, it's taken", message: "Sorry, the court has been taken 😔", variant: "destructive" },
+        ];
+      }
+      if (stage === "payment_sent") {
+        // Buyer has confirmed payment — prompt host to confirm booking
+        const lastMsg = messages[messages.length - 1];
+        if (!lastMsg || lastMsg.sender_id === currentUserId) return [];
+        return [
+          { label: "✅ Payment received! Booking confirmed", message: "Payment received! ✅ Your booking is confirmed. See you on the court! 🎾" },
+        ];
+      }
+      return [];
+    }
+
+    // Buyer side
+    if (stage === "price") {
+      // Host confirmed availability — buyer asks about price
+      const lastMsg = messages[messages.length - 1];
+      if (!lastMsg || lastMsg.sender_id === currentUserId) return [];
+      return [
+        { label: "💰 What's the price?", message: "Great! What's the price per person?" },
+        { label: "🤝 Is it negotiable?", message: "Awesome! Is the price negotiable?" },
+        { label: "🎾 I'll take it!", message: "Great, I'll take it at the listed price! How do I pay?" },
+      ];
+    }
+    if (stage === "payment_request") {
+      // Host discussed price — suggest asking for payment details
+      const lastMsg = messages[messages.length - 1];
+      if (!lastMsg || lastMsg.sender_id === currentUserId) return [];
+      return [
+        { label: "💳 Send me payment details", message: "Sounds good! Please send me the payment details." },
+      ];
+    }
+    if (stage === "payment_sent") {
+      return [];
+    }
+    // payment_request stage where bank details were sent
+    return [];
+  };
+
+  // After bank details are sent, buyer gets payment confirmation chips
+  const getBuyerPaymentChips = (): QuickChip[] => {
+    if (isHost || stage !== "payment_sent") return [];
+    const lastMsg = messages[messages.length - 1];
+    // Only show if last message is from host (bank details)
+    if (!lastMsg || lastMsg.sender_id === currentUserId) return [];
+    return [
+      { label: "✅ Payment sent!", message: "I've sent the payment! ✅ Please check and confirm." },
+      { label: "📸 I'll send a screenshot", message: "I'll send a screenshot of my transfer as proof." },
+    ];
+  };
+
+  const quickReplies = getQuickReplies();
+  const buyerPaymentChips = getBuyerPaymentChips();
+  const allChips = [...quickReplies, ...buyerPaymentChips];
 
   // ── CONTEXT HEADER ───────────────────────────────────────────────────────
   const ContextHeader = () => (
@@ -393,7 +517,6 @@ export function CourtDMChat({
   }
 
   // ── CONVERSATION VIEW ────────────────────────────────────────────────────
-  const selectedUser = interestedUsers.find((u) => u.user_id === selectedUserId);
   const otherUserName = isHost
     ? selectedUser?.name || "User"
     : "Host";
@@ -401,6 +524,90 @@ export function CourtDMChat({
   const isTaken = isCourtTaken;
   const isConfirmed = selectedInterestStatus === "confirmed" || myInterestStatus === "confirmed";
   const inputDisabled = isTaken && !isConfirmed;
+
+  // ── MESSAGE BUBBLE RENDERER ──────────────────────────────────────────────
+  const renderBubble = (msg: ChatMessage) => {
+    const isMine = msg.sender_id === currentUserId;
+    const isBankDetails = msg.message.startsWith("💳 Payment Details");
+    const isPaymentSent = msg.message.toLowerCase().includes("payment sent") || msg.message.toLowerCase().includes("i've sent the payment");
+    const isTaken = msg.message.toLowerCase().includes("court has been taken") || msg.message.toLowerCase().includes("sorry, the court");
+
+    if (isBankDetails) {
+      // Special amber card bubble
+      const details = msg.message.replace("💳 Payment Details:\n", "");
+      return (
+        <div className="max-w-[85%]">
+          <p className="text-[11px] text-muted-foreground mb-1">
+            <span className="font-medium">{msg.profile?.name}</span>
+            <span className="ml-1.5">{format(new Date(msg.created_at), "h:mm a")}</span>
+          </p>
+          <div className="rounded-2xl rounded-tl-sm border border-warning/40 bg-warning/5 p-3 space-y-2">
+            <div className="flex items-center gap-1.5 text-warning">
+              <CreditCard className="w-3.5 h-3.5" />
+              <span className="text-xs font-semibold">Payment Details</span>
+            </div>
+            <p className="text-sm text-foreground whitespace-pre-line font-mono leading-relaxed">{details}</p>
+            <button
+              onClick={() => handleCopy(details, msg.id)}
+              className="flex items-center gap-1 text-[11px] text-warning hover:text-warning/70 transition-colors"
+            >
+              {copiedMsgId === msg.id ? (
+                <><Check className="w-3 h-3" /> Copied!</>
+              ) : (
+                <><Copy className="w-3 h-3" /> Copy details</>
+              )}
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    if (isPaymentSent) {
+      return (
+        <div className={cn("max-w-[75%]", isMine && "text-right")}>
+          <p className="text-[11px] text-muted-foreground mb-0.5">
+            <span className="font-medium">{msg.profile?.name}</span>
+            <span className="ml-1.5">{format(new Date(msg.created_at), "h:mm a")}</span>
+          </p>
+          <div className="inline-flex items-center gap-2 px-3 py-2 rounded-2xl text-sm bg-success/15 border border-success/30 text-success dark:text-success">
+            <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
+            <span className="font-medium">{msg.message}</span>
+          </div>
+        </div>
+      );
+    }
+
+    if (isTaken) {
+      return (
+        <div className={cn("max-w-[75%]", isMine && "text-right")}>
+          <p className="text-[11px] text-muted-foreground mb-0.5">
+            <span className="font-medium">{msg.profile?.name}</span>
+            <span className="ml-1.5">{format(new Date(msg.created_at), "h:mm a")}</span>
+          </p>
+          <div className="inline-block px-3 py-2 rounded-2xl text-sm bg-destructive/10 border border-destructive/20 text-destructive rounded-tl-sm">
+            {msg.message}
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div className={cn("max-w-[75%]", isMine && "text-right")}>
+        <p className="text-[11px] text-muted-foreground mb-0.5">
+          <span className="font-medium">{msg.profile?.name}</span>
+          <span className="ml-1.5">{format(new Date(msg.created_at), "h:mm a")}</span>
+        </p>
+        <div className={cn(
+          "inline-block px-3 py-2 rounded-2xl text-sm whitespace-pre-line",
+          isMine
+            ? "bg-primary text-primary-foreground rounded-tr-sm"
+            : "bg-muted rounded-tl-sm"
+        )}>
+          {msg.message}
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div className="bg-card border border-border rounded-xl flex flex-col overflow-hidden flex-1">
@@ -416,15 +623,35 @@ export function CourtDMChat({
         )}
         <div className="flex-1 min-w-0">
           <p className="text-sm font-semibold">{otherUserName}</p>
+          {stage !== "confirmed" && !isCourtTaken && activeChatId && (
+            <p className="text-[10px] text-muted-foreground">
+              {stage === "availability" && (isHost ? "Waiting for your availability reply" : "Sent availability check")}
+              {stage === "price" && (isHost ? "Buyer interested — share price" : "Host confirmed! Discuss price")}
+              {stage === "payment_request" && (isHost ? "Send your payment details" : "Ask for payment details")}
+              {stage === "payment_sent" && (isHost ? "Buyer paid — confirm booking!" : "Payment sent — awaiting confirmation")}
+            </p>
+          )}
         </div>
-        {isHost && selectedUser && selectedInterestStatus !== "confirmed" && !isCourtTaken && (
+        {isHost && selectedUser && selectedInterestStatus !== "confirmed" && !isCourtTaken && stage === "payment_sent" && (
           <Button
             size="sm"
-            className="h-8 text-xs shrink-0"
+            variant="success"
+            className="h-8 text-xs shrink-0 animate-pulse"
             onClick={() => onConfirmBooking?.(selectedUser.interest_id, selectedUser.user_id)}
           >
             <CheckCircle2 className="w-3.5 h-3.5" />
             Confirm Booking
+          </Button>
+        )}
+        {isHost && selectedUser && selectedInterestStatus !== "confirmed" && !isCourtTaken && stage !== "payment_sent" && (
+          <Button
+            size="sm"
+            variant="outline"
+            className="h-8 text-xs shrink-0"
+            onClick={() => onConfirmBooking?.(selectedUser.interest_id, selectedUser.user_id)}
+          >
+            <CheckCircle2 className="w-3.5 h-3.5" />
+            Confirm
           </Button>
         )}
         {isHost && selectedInterestStatus === "confirmed" && (
@@ -437,6 +664,16 @@ export function CourtDMChat({
 
       {/* Listing context pill */}
       <ContextHeader />
+
+      {/* Confirmed banner */}
+      {isConfirmed && (
+        <div className="mx-4 mt-3 px-3 py-2.5 rounded-xl bg-success/10 border border-success/30 flex items-center gap-2">
+          <CheckCircle2 className="w-4 h-4 text-success shrink-0" />
+          <p className="text-xs font-semibold text-success">
+            {isHost ? "You confirmed this booking! 🎾" : "Your booking is confirmed! See you on the court 🎾"}
+          </p>
+        </div>
+      )}
 
       {/* Taken banner for non-confirmed users */}
       {isTaken && !isConfirmed && (
@@ -470,39 +707,53 @@ export function CourtDMChat({
                   {msg.profile?.name?.charAt(0)}
                 </AvatarFallback>
               </Avatar>
-              <div className={cn("max-w-[75%]", msg.sender_id === currentUserId && "text-right")}>
-                <p className="text-[11px] text-muted-foreground mb-0.5">
-                  <span className="font-medium">{msg.profile?.name}</span>
-                  <span className="ml-1.5">{format(new Date(msg.created_at), "h:mm a")}</span>
-                </p>
-                <div className={cn(
-                  "inline-block px-3 py-2 rounded-2xl text-sm",
-                  msg.sender_id === currentUserId
-                    ? "bg-primary text-primary-foreground rounded-tr-sm"
-                    : "bg-muted rounded-tl-sm"
-                )}>
-                  {msg.message}
-                </div>
-              </div>
+              {renderBubble(msg)}
             </div>
           ))
         )}
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Input */}
+      {/* Input area */}
       <div className="p-3 border-t border-border space-y-2">
-        {isHost && activeChatId && !inputDisabled && (
+        {/* Quick reply chips */}
+        {allChips.length > 0 && !inputDisabled && (
+          <div>
+            <p className="text-[10px] text-muted-foreground mb-1.5 font-medium">Quick replies:</p>
+            <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
+              {allChips.map((chip) => (
+                <button
+                  key={chip.label}
+                  onClick={() => sendQuickReply(chip.message)}
+                  disabled={sendLoading}
+                  className={cn(
+                    "shrink-0 px-3 py-1.5 rounded-full border text-xs font-medium transition-colors disabled:opacity-50",
+                    chip.variant === "destructive"
+                      ? "border-destructive/40 bg-destructive/5 text-destructive hover:bg-destructive/10"
+                      : "border-primary/30 bg-primary/5 text-primary hover:bg-primary/10"
+                  )}
+                >
+                  {chip.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Host Send Bank Details button */}
+        {isHost && activeChatId && !inputDisabled && stage === "payment_request" && (
           <Button
             variant="outline"
             size="sm"
-            className="w-full h-8 text-xs gap-1.5 border-dashed"
+            className="w-full h-8 text-xs gap-1.5 border-warning/50 text-warning hover:bg-warning/10"
             onClick={handleSendBankDetails}
+            disabled={sendLoading}
           >
             <CreditCard className="w-3.5 h-3.5" />
             💳 Send Bank Details
           </Button>
         )}
+
         <div className="flex gap-2">
           <Input
             placeholder={inputDisabled ? "Court has been taken" : "Type a message..."}
