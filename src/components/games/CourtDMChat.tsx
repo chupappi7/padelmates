@@ -719,7 +719,7 @@ export function CourtDMChat({
           <Button
             size="sm"
             variant="success"
-            className="h-8 text-xs shrink-0 animate-pulse"
+            className="h-8 text-xs shrink-0"
             onClick={() => onConfirmBooking?.(selectedUser.interest_id, selectedUser.user_id)}
           >
             <CheckCircle2 className="w-3.5 h-3.5" />

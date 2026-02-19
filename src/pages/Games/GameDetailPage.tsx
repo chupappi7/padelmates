@@ -378,13 +378,19 @@ export default function GameDetailPage() {
       .eq("listing_id", id)
       .or(`user_1_id.eq.${user.id},user_2_id.eq.${user.id}`);
     if (!chats || chats.length === 0) { setUnreadMessageCount(0); return; }
+    // Count threads (chats) that have at least one unread message from others
     const chatIds = chats.map((c) => c.id);
-    const { count } = await supabase
-      .from("chat_messages")
-      .select("id", { count: "exact", head: true })
-      .in("chat_id", chatIds)
-      .neq("sender_id", user.id);
-    setUnreadMessageCount(count || 0);
+    const threadUnreadChecks = await Promise.all(
+      chatIds.map((chatId) =>
+        supabase
+          .from("chat_messages")
+          .select("id", { count: "exact", head: true })
+          .eq("chat_id", chatId)
+          .neq("sender_id", user.id)
+          .then(({ count }) => (count && count > 0 ? 1 : 0))
+      )
+    );
+    setUnreadMessageCount(threadUnreadChecks.reduce((a, b) => a + b, 0));
   };
 
   const handleToggleRole = async (playerId: string, currentRole: string) => {
@@ -628,7 +634,7 @@ export default function GameDetailPage() {
 
               const isActive = activeTab === tab.key;
               const showBadge = tab.key === "participants" && isHost && pendingCount > 0;
-              const showMsgBadge = tab.key === "chat" && isCourtSharing && activeTab !== "chat" && unreadMessageCount > 0;
+              const showMsgBadge = tab.key === "chat" && isCourtSharing && activeTab !== "chat" && unreadMessageCount > 0 && !loading;
 
               return (
                 <button
