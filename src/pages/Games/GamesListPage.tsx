@@ -251,24 +251,26 @@ export default function GamesListPage() {
                 const gameDate = new Date(game.date_time);
                 const elements: React.ReactNode[] = [];
 
-                // In "All" mode, show date group headers
+                // In "All" mode, group by date+time together
                 if (isAllMode) {
-                  const dateKey = format(gameDate, "yyyy-MM-dd");
-                  if (dateKey !== lastGroupKey) {
-                    lastGroupKey = dateKey;
+                  const groupKey = format(gameDate, "yyyy-MM-dd HH:mm");
+                  if (groupKey !== lastGroupKey) {
+                    lastGroupKey = groupKey;
                     let dayLabel: string;
                     if (isToday(gameDate)) dayLabel = "Today";
                     else if (isTomorrow(gameDate)) dayLabel = "Tomorrow";
-                    else dayLabel = format(gameDate, "EEE, MMM d, yyyy");
+                    else dayLabel = format(gameDate, "MMM d, yyyy");
+                    const timeLabel = format(gameDate, "h:mm a");
                     elements.push(
-                      <div key={`date-${dateKey}`} className="flex items-center gap-3 pt-4 first:pt-0">
+                      <div key={`datetime-${groupKey}`} className="flex items-center gap-3 pt-4 first:pt-0">
                         <span className="text-sm font-semibold text-foreground whitespace-nowrap">{dayLabel}</span>
+                        <span className="text-sm font-medium text-primary whitespace-nowrap">{timeLabel}</span>
                         <div className="flex-1 h-px bg-border" />
                       </div>
                     );
                   }
                 } else {
-                  // Single day mode: group by time
+                  // Single day mode: group by time only
                   const timeKey = format(gameDate, "h:mm a");
                   if (timeKey !== lastGroupKey) {
                     lastGroupKey = timeKey;
