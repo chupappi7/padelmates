@@ -6,7 +6,8 @@ import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
-import { ArrowLeft, Send, MessageCircle, MapPin, Calendar, CheckCircle2, Clock, AlertCircle } from "lucide-react";
+import { ArrowLeft, Send, MessageCircle, MapPin, Calendar, CheckCircle2, Clock, AlertCircle, CreditCard } from "lucide-react";
+import { toast } from "sonner";
 
 interface Profile {
   name: string;
@@ -71,7 +72,21 @@ export function CourtDMChat({
   const [newMessage, setNewMessage] = useState("");
   const [loading, setLoading] = useState(true);
   const [sendLoading, setSendLoading] = useState(false);
+  const [hostBankDetails, setHostBankDetails] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // ── FETCH HOST BANK DETAILS ──────────────────────────────────────────────
+  useEffect(() => {
+    if (!hostId) return;
+    supabase
+      .from("profiles")
+      .select("bank_details")
+      .eq("user_id", hostId)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (data) setHostBankDetails((data as any).bank_details || null);
+      });
+  }, [hostId]);
 
   // ── HOST: load all interested users with chat previews ──────────────────
   useEffect(() => {
@@ -194,6 +209,14 @@ export function CourtDMChat({
     }
   }, [isHost, hostId]);
 
+  // ── PRE-FILL INTEREST TEMPLATE (non-host, first open) ───────────────────
+  useEffect(() => {
+    if (!isHost && activeChatId && messages.length === 0) {
+      const template = `Hi! I'm interested in your court at ${gameLocation} on ${format(new Date(gameDateTime), "EEE, MMM d · h:mm a")}. Is it still available?`;
+      setNewMessage((prev) => prev || template);
+    }
+  }, [activeChatId, messages.length, isHost]);
+
   // ── LOAD MESSAGES ────────────────────────────────────────────────────────
   useEffect(() => {
     if (!activeChatId) return;
@@ -247,6 +270,22 @@ export function CourtDMChat({
     fetchMessages(activeChatId);
     if (isHost) loadInterestedUsers();
     setSendLoading(false);
+  };
+
+  // ── SEND BANK DETAILS (host) ─────────────────────────────────────────────
+  const handleSendBankDetails = async () => {
+    if (!activeChatId) return;
+    if (!hostBankDetails) {
+      toast.error("Add your bank details in Profile → Payment Info first");
+      return;
+    }
+    await supabase.from("chat_messages").insert({
+      chat_id: activeChatId,
+      sender_id: currentUserId,
+      message: `💳 Payment Details:\n${hostBankDetails}`,
+    });
+    fetchMessages(activeChatId);
+    if (isHost) loadInterestedUsers();
   };
 
   // ── CONTEXT HEADER ───────────────────────────────────────────────────────
@@ -452,18 +491,31 @@ export function CourtDMChat({
       </div>
 
       {/* Input */}
-      <div className="flex gap-2 p-3 border-t border-border">
-        <Input
-          placeholder={inputDisabled ? "Court has been taken" : "Type a message..."}
-          value={newMessage}
-          onChange={(e) => setNewMessage(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && handleSend()}
-          className="text-sm h-10"
-          disabled={inputDisabled}
-        />
-        <Button onClick={handleSend} size="icon" className="h-10 w-10 shrink-0" disabled={inputDisabled || sendLoading}>
-          <Send className="w-4 h-4" />
-        </Button>
+      <div className="p-3 border-t border-border space-y-2">
+        {isHost && activeChatId && !inputDisabled && (
+          <Button
+            variant="outline"
+            size="sm"
+            className="w-full h-8 text-xs gap-1.5 border-dashed"
+            onClick={handleSendBankDetails}
+          >
+            <CreditCard className="w-3.5 h-3.5" />
+            💳 Send Bank Details
+          </Button>
+        )}
+        <div className="flex gap-2">
+          <Input
+            placeholder={inputDisabled ? "Court has been taken" : "Type a message..."}
+            value={newMessage}
+            onChange={(e) => setNewMessage(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && handleSend()}
+            className="text-sm h-10"
+            disabled={inputDisabled}
+          />
+          <Button onClick={handleSend} size="icon" className="h-10 w-10 shrink-0" disabled={inputDisabled || sendLoading}>
+            <Send className="w-4 h-4" />
+          </Button>
+        </div>
       </div>
     </div>
   );

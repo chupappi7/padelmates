@@ -18,7 +18,7 @@ import { Navbar } from "@/components/layout/Navbar";
 import { SkillBadge } from "@/components/games/SkillBadge";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
-import { Camera, Calendar, Trophy, Users, UserPlus, Copy, Check } from "lucide-react";
+import { Camera, Calendar, Trophy, Users, UserPlus, Copy, Check, CreditCard, Pencil } from "lucide-react";
 import { useFriends } from "@/hooks/useFriends";
 
 function FriendCodeBox({ code }: { code: string | null }) {
@@ -48,6 +48,7 @@ interface Profile {
   skill_level: number;
   bio: string | null;
   games_played: number;
+  bank_details: string | null;
 }
 
 export default function ProfilePage() {
@@ -57,6 +58,10 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [editing, setEditing] = useState(false);
+  const [editingPayment, setEditingPayment] = useState(false);
+  const [savingPayment, setSavingPayment] = useState(false);
+  const [bankDetailsForm, setBankDetailsForm] = useState("");
+  const [copiedBank, setCopiedBank] = useState(false);
   const [matchStats, setMatchStats] = useState({ played: 0, wins: 0 });
   const { friends } = useFriends();
 
@@ -81,14 +86,32 @@ export default function ProfilePage() {
       .single();
 
     if (data) {
-      setProfile(data);
+      setProfile(data as Profile);
       setFormData({
         name: data.name,
         bio: data.bio || "",
         skill_level: data.skill_level,
       });
+      setBankDetailsForm((data as any).bank_details || "");
     }
     setLoading(false);
+  };
+
+  const handleSavePayment = async () => {
+    if (!user) return;
+    setSavingPayment(true);
+    const { error } = await supabase
+      .from("profiles")
+      .update({ bank_details: bankDetailsForm } as any)
+      .eq("user_id", user.id);
+    if (error) {
+      toast.error("Failed to save payment info");
+    } else {
+      toast.success("Payment info saved!");
+      setEditingPayment(false);
+      fetchProfile();
+    }
+    setSavingPayment(false);
   };
 
   const fetchMatchStats = async () => {
