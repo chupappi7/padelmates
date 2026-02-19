@@ -735,11 +735,13 @@ export default function GameDetailPage() {
                       <div className="min-w-0">
                         <p className="text-[11px] text-muted-foreground">Price</p>
                         <p className="text-sm font-medium">
-                          {(game as any).price_mode === 'split_evenly'
-                            ? game.price_per_player > 0
-                              ? `≈ ${Number(game.price_per_player)} Kč per player (split evenly)`
-                              : "Split evenly among players"
-                            : `${Number(game.price_per_player)} Kč per player`
+                          {(game as any).payment_mode === 'court_sharing'
+                            ? `${Number(game.price_per_player)} Kč`
+                            : (game as any).price_mode === 'split_evenly'
+                              ? game.price_per_player > 0
+                                ? `≈ ${Number(game.price_per_player)} Kč per player (split evenly)`
+                                : "Split evenly among players"
+                              : `${Number(game.price_per_player)} Kč per player`
                           }
                         </p>
                       </div>
