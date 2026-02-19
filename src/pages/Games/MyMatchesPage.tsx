@@ -21,6 +21,9 @@ interface Game {
   price_per_player: number;
   host_id: string;
   host_is_playing: boolean;
+  payment_mode: string;
+  price_mode: string;
+  court_taken_by: string | null;
   profiles: { name: string; avatar_url: string | null } | null;
   game_players: { id: string }[];
 }
@@ -61,10 +64,18 @@ export default function MyMatchesPage() {
       .select("id")
       .eq("host_id", user.id);
 
+    // Get court_sharing games where user secured the court
+    const { data: courtSecuredGames } = await supabase
+      .from("games")
+      .select("id")
+      .eq("payment_mode", "court_sharing")
+      .eq("court_taken_by", user.id);
+
     const gameIds = new Set<string>();
     playerEntries?.forEach((p) => gameIds.add(p.game_id));
     acceptedRequests?.forEach((r) => gameIds.add(r.game_id));
     hostedGames?.forEach((g) => gameIds.add(g.id));
+    courtSecuredGames?.forEach((g) => gameIds.add(g.id));
 
     if (gameIds.size === 0) {
       setGames([]);
@@ -94,6 +105,12 @@ export default function MyMatchesPage() {
   const now = new Date();
   const upcoming = games.filter((g) => new Date(g.date_time) >= now);
   const past = games.filter((g) => new Date(g.date_time) < now).reverse();
+
+  const getUserStatus = (game: Game): "joined" | "hosting" | "court_secured" => {
+    if (game.host_id === user?.id) return "hosting";
+    if (game.payment_mode === "court_sharing" && game.court_taken_by === user?.id) return "court_secured";
+    return "joined";
+  };
 
   const getDateLabel = (dateStr: string) => {
     const d = new Date(dateStr);
@@ -167,8 +184,10 @@ export default function MyMatchesPage() {
                             pricePerPlayer={Number(game.price_per_player)}
                             hostName={game.profiles?.name || "Unknown"}
                             hostAvatar={game.profiles?.avatar_url || undefined}
-                            priceMode={(game as any).price_mode}
-                            userStatus={game.host_id === user?.id ? "hosting" : "joined"}
+                            paymentMode={game.payment_mode}
+                            priceMode={game.price_mode}
+                            courtTakenBy={game.court_taken_by}
+                            userStatus={getUserStatus(game)}
                           />
                         </motion.div>
                       ))}
@@ -209,8 +228,10 @@ export default function MyMatchesPage() {
                             pricePerPlayer={Number(game.price_per_player)}
                             hostName={game.profiles?.name || "Unknown"}
                             hostAvatar={game.profiles?.avatar_url || undefined}
-                            priceMode={(game as any).price_mode}
-                            userStatus={game.host_id === user?.id ? "hosting" : "joined"}
+                            paymentMode={game.payment_mode}
+                            priceMode={game.price_mode}
+                            courtTakenBy={game.court_taken_by}
+                            userStatus={getUserStatus(game)}
                           />
                         </motion.div>
                       ))}

@@ -125,9 +125,10 @@ export default function GamesListPage() {
     setRequestedGameIds(reqIds);
   };
 
-  const getUserStatus = (game: Game): "joined" | "hosting" | "requested" | undefined => {
+  const getUserStatus = (game: Game): "joined" | "hosting" | "requested" | "court_secured" | undefined => {
     if (!user) return undefined;
     if (game.host_id === user.id) return "hosting";
+    if (game.payment_mode === "court_sharing" && game.court_taken_by === user.id) return "court_secured";
     if (joinedGameIds.has(game.id)) return "joined";
     if (requestedGameIds.has(game.id)) return "requested";
     return undefined;
