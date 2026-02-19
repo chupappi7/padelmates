@@ -2,7 +2,7 @@ import { useState, useMemo } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { UserPlus, X as XIcon } from "lucide-react";
+import { UserPlus, X as XIcon, Upload, ShieldCheck } from "lucide-react";
 import { FriendPickerSheet, type PrefilledPlayer } from "@/components/friends/FriendPickerSheet";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
@@ -22,7 +22,7 @@ import { Navbar } from "@/components/layout/Navbar";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { format } from "date-fns";
-import { ArrowLeft, Calendar, MapPin, Users, Trophy, Clock, DoorOpen, ShieldCheck, CreditCard, Building2 } from "lucide-react";
+import { ArrowLeft, Calendar, MapPin, Users, Trophy, Clock, DoorOpen, CreditCard, Building2 } from "lucide-react";
 // UserPlus and XIcon imported at top
 import { DurationChips } from "@/components/games/DurationChips";
 import type { HostType } from "@/components/games/HostTypeModal";
@@ -66,6 +66,8 @@ export default function CreateGamePage() {
 
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
+  const [bookingScreenshotPath, setBookingScreenshotPath] = useState<string | null>(null);
+  const [bookingScreenshotUploading, setBookingScreenshotUploading] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
   const [selectedTime, setSelectedTime] = useState("18:00");
   const [duration, setDuration] = useState(90);
@@ -104,6 +106,21 @@ export default function CreateGamePage() {
     : 0;
 
   const isSellCourt = hostType === "sell_court";
+
+  const handleBookingScreenshotUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+    setBookingScreenshotUploading(true);
+    const filePath = `${user.id}/${Date.now()}-${file.name}`;
+    const { error } = await supabase.storage.from("booking-proofs").upload(filePath, file);
+    if (error) {
+      toast.error("Failed to upload screenshot");
+    } else {
+      setBookingScreenshotPath(filePath);
+      toast.success("Screenshot uploaded!");
+    }
+    setBookingScreenshotUploading(false);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -158,6 +175,7 @@ export default function CreateGamePage() {
       host_is_playing: isSellCourt ? false : formData.hostIsPlaying,
       join_mode: isSellCourt ? "open" : formData.joinMode,
       prefilled_players: prefilledPlayers.filter(p => getPlayerName(p).trim() !== ""),
+      ...(isSellCourt && bookingScreenshotPath ? { booking_screenshot_url: bookingScreenshotPath } : {}),
     } as any).select().single();
 
     if (error) {
@@ -327,6 +345,44 @@ export default function CreateGamePage() {
                     rows={2}
                     className="text-sm resize-none"
                   />
+                </div>
+
+                {/* Booking Proof Upload */}
+                <div className="space-y-1.5">
+                  <Label className="text-sm flex items-center gap-1.5">
+                    <ShieldCheck className="w-3.5 h-3.5 text-primary" />
+                    Booking Confirmation Screenshot (optional)
+                  </Label>
+                  <p className="text-xs text-muted-foreground -mt-1">Email, app screenshot, etc. Helps buyers trust your listing.</p>
+                  <div className="border-2 border-dashed border-border rounded-xl p-4 text-center hover:border-primary/50 transition-colors">
+                    <Input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleBookingScreenshotUpload}
+                      className="hidden"
+                      id="booking-screenshot"
+                      disabled={bookingScreenshotUploading}
+                    />
+                    <label htmlFor="booking-screenshot" className="cursor-pointer flex flex-col items-center gap-2">
+                      {bookingScreenshotUploading ? (
+                        <>
+                          <div className="w-5 h-5 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+                          <span className="text-sm text-muted-foreground">Uploading…</span>
+                        </>
+                      ) : bookingScreenshotPath ? (
+                        <>
+                          <ShieldCheck className="w-5 h-5 text-success" />
+                          <span className="text-sm text-success font-medium">Screenshot uploaded ✓</span>
+                          <span className="text-xs text-muted-foreground">Tap to replace</span>
+                        </>
+                      ) : (
+                        <>
+                          <Upload className="w-5 h-5 text-muted-foreground" />
+                          <span className="text-sm text-muted-foreground">Upload screenshot</span>
+                        </>
+                      )}
+                    </label>
+                  </div>
                 </div>
               </div>
             ) : (
