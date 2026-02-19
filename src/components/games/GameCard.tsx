@@ -148,11 +148,11 @@ export function GameCard({
             )}
           </div>
 
-          {/* Row 3: Date + time (urgency colored) + duration */}
+          {/* Row 3: Time only (date is in the group header) + duration */}
           <div className="flex items-center gap-1 mb-2.5">
             <div className={`flex items-center gap-1 text-[11px] sm:text-xs ${urgency.time}`}>
               <span className={`inline-block w-1.5 h-1.5 rounded-full shrink-0 ${urgency.dot}`} />
-              <span className="font-medium">{formatTimeLabel(dateTime)}</span>
+              <span className="font-medium">{formatDate(new Date(dateTime), "h:mm a")}</span>
               {durationHrs && durationHrs > 0 && (
                 <span className="text-primary/70 font-medium ml-0.5">
                   · {durationHrs % 1 === 0 ? durationHrs : durationHrs.toFixed(1)}h
