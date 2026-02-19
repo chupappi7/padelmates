@@ -21,7 +21,7 @@ interface GameCardProps {
   distance?: number;
   paymentMode?: string;
   priceMode?: string;
-  userStatus?: "joined" | "hosting";
+  userStatus?: "joined" | "hosting" | "requested";
   courtTakenBy?: string | null;
   interestCount?: number;
 }
@@ -32,14 +32,24 @@ const getSkillColor = (level: number) => {
   return "badge-advanced";
 };
 
-const getUrgencyStyle = (dateTime: string) => {
+const getUrgencyPill = (dateTime: string) => {
   const now = new Date();
   const hoursUntil = differenceInHours(new Date(dateTime), now);
-  if (hoursUntil < 0) return { card: "", pill: "bg-muted text-muted-foreground border-border" };
-  if (hoursUntil < 3) return { card: "border-l-4 border-l-destructive", pill: "bg-destructive/15 text-destructive border-destructive/25" };
-  if (hoursUntil < 12) return { card: "border-l-4 border-l-warning", pill: "bg-warning/15 text-warning border-warning/25" };
-  if (hoursUntil < 24) return { card: "border-l-4 border-l-primary/60", pill: "bg-primary/10 text-primary border-primary/20" };
-  return { card: "", pill: "bg-muted text-muted-foreground border-border" };
+  if (hoursUntil < 0) return "bg-muted text-muted-foreground border-border";
+  if (hoursUntil < 3) return "bg-destructive/15 text-destructive border-destructive/25";
+  if (hoursUntil < 12) return "bg-warning/15 text-warning border-warning/25";
+  if (hoursUntil < 24) return "bg-primary/10 text-primary border-primary/20";
+  return "bg-muted text-muted-foreground border-border";
+};
+
+// Role-based left border accent
+const getRoleAccent = (userStatus?: "joined" | "hosting" | "requested") => {
+  switch (userStatus) {
+    case "hosting":   return "border-l-4 border-l-orange-400";
+    case "joined":    return "border-l-4 border-l-emerald-500";
+    case "requested": return "border-l-4 border-l-yellow-400";
+    default:          return "border-l-4 border-l-border/30";
+  }
 };
 
 const formatDistance = (km: number) =>
@@ -77,7 +87,8 @@ export function GameCard({
   const totalPlayers = currentPlayers + prefilledCount;
   const spotsLeft = maxPlayers - totalPlayers;
 
-  const urgency = getUrgencyStyle(dateTime);
+  const urgencyPill = getUrgencyPill(dateTime);
+  const roleAccent = getRoleAccent(userStatus);
   const showPrice = pricePerPlayer > 0 && (priceMode !== "free" || isCourtSharing);
 
   const spotsColor = spotsLeft <= 0
@@ -86,6 +97,22 @@ export function GameCard({
       ? "bg-warning/15 text-warning border-warning/20"
       : "bg-success/15 text-success border-success/20";
 
+  // Role pill styles
+  const rolePillStyle = {
+    hosting:   "bg-orange-500/15 text-orange-600 border-orange-400/30",
+    joined:    "bg-emerald-600/15 text-emerald-700 border-emerald-500/30",
+    requested: "bg-yellow-400/15 text-yellow-700 border-yellow-400/30",
+  };
+
+  const rolePillLabel = {
+    hosting:   "Host",
+    joined:    "Joined",
+    requested: "Requested",
+  };
+
+  // Joined / Requested pill shown top-right (above price)
+  const showTopRightPill = userStatus === "joined" || userStatus === "requested";
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
@@ -93,10 +120,10 @@ export function GameCard({
       whileHover={{ y: -2 }}
       transition={{ duration: 0.15 }}
     >
-      <Link to={`/games/${id}`} className={`block card-game group overflow-hidden ${urgency.card}`}>
+      <Link to={`/games/${id}`} className={`block card-game group overflow-hidden ${roleAccent}`}>
         <div className="p-3 sm:p-4 space-y-2">
 
-          {/* Row 1: Title + Available/Taken badge (court) + Skill chip */}
+          {/* Row 1: Title + Available/Taken badge + Skill chip */}
           <div className="flex items-start justify-between gap-2">
             <div className="flex items-center gap-1.5 min-w-0 flex-1">
               <h3 className="font-display font-bold text-sm sm:text-base group-hover:text-primary transition-colors line-clamp-1">
@@ -126,25 +153,18 @@ export function GameCard({
             )}
           </div>
 
-          {/* Row 3: Time range pill + status badges */}
+          {/* Row 3: Time range pill */}
           <div className="flex items-center gap-1.5 flex-wrap">
-            <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] sm:text-xs font-semibold ${urgency.pill}`}>
+            <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] sm:text-xs font-semibold ${urgencyPill}`}>
               <Clock className="w-3 h-3" />
               {formatTimeRange(dateTime, endDateTime)}
             </span>
-            {userStatus && !isCourtSharing && (
-              <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] sm:text-xs font-semibold ${
-                userStatus === "hosting"
-                  ? "bg-primary/10 text-primary border-primary/25"
-                  : "bg-success/10 text-success border-success/25"
-              }`}>
-                {userStatus === "hosting" ? "Hosting" : "Joined"}
-              </span>
-            )}
           </div>
 
-          {/* Row 4: Host + spots + price */}
+          {/* Row 4: Host + spots/interest + price (+ joined/requested pill stacked above price) */}
           <div className="flex items-center justify-between gap-2 pt-1.5 border-t border-border/60">
+
+            {/* Left: avatar + host name + host pill (if hosting) */}
             <div className="flex items-center gap-1.5 min-w-0">
               <Avatar className="h-5 w-5 sm:h-6 sm:w-6 shrink-0">
                 <AvatarImage src={hostAvatar} />
@@ -153,30 +173,49 @@ export function GameCard({
                 </AvatarFallback>
               </Avatar>
               <span className="text-[10px] sm:text-xs text-muted-foreground truncate">{hostName}</span>
+              {userStatus === "hosting" && (
+                <span className={`inline-flex items-center rounded-full border px-1.5 py-0.5 text-[9px] sm:text-[10px] font-semibold shrink-0 ${rolePillStyle.hosting}`}>
+                  {rolePillLabel.hosting}
+                </span>
+              )}
             </div>
 
-            <div className="flex items-center gap-1.5 shrink-0">
-              {isCourtSharing && interestCount > 0 && (
-                <span className="text-[9px] sm:text-[10px] text-primary/70 font-medium">
-                  {interestCount} interested
-                </span>
-              )}
-              {!isCourtSharing && paymentMode !== "spot_selling" && (() => {
-                const isFull = spotsLeft <= 0;
-                return (
-                  <span className={`inline-flex items-center gap-0.5 rounded-full border px-1.5 py-0.5 text-[9px] sm:text-[10px] font-semibold ${spotsColor}`}>
-                    <Users className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
-                    {totalPlayers}/{maxPlayers}
-                    {isFull ? " Full" : ` · ${spotsLeft} left`}
+            {/* Right: spots/interest + stacked pill+price */}
+            <div className="flex items-end gap-2 shrink-0">
+              {/* Spots / interest count */}
+              <div className="flex items-center">
+                {isCourtSharing && interestCount > 0 && (
+                  <span className="text-[9px] sm:text-[10px] text-primary/70 font-medium">
+                    {interestCount} interested
                   </span>
-                );
-              })()}
-              {showPrice && (
-                <span className="text-primary font-bold text-xs sm:text-sm">
-                  {pricePerPlayer} Kč
-                </span>
-              )}
+                )}
+                {!isCourtSharing && paymentMode !== "spot_selling" && (() => {
+                  const isFull = spotsLeft <= 0;
+                  return (
+                    <span className={`inline-flex items-center gap-0.5 rounded-full border px-1.5 py-0.5 text-[9px] sm:text-[10px] font-semibold ${spotsColor}`}>
+                      <Users className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
+                      {totalPlayers}/{maxPlayers}
+                      {isFull ? " Full" : ` · ${spotsLeft} left`}
+                    </span>
+                  );
+                })()}
+              </div>
+
+              {/* Stacked: [Joined/Requested pill] + price */}
+              <div className="flex flex-col items-end gap-1">
+                {showTopRightPill && (
+                  <span className={`inline-flex items-center rounded-full border px-1.5 py-0.5 text-[9px] sm:text-[10px] font-semibold ${rolePillStyle[userStatus as "joined" | "requested"]}`}>
+                    {rolePillLabel[userStatus as "joined" | "requested"]}
+                  </span>
+                )}
+                {showPrice && (
+                  <span className="text-primary font-bold text-xs sm:text-sm">
+                    {pricePerPlayer} Kč
+                  </span>
+                )}
+              </div>
             </div>
+
           </div>
 
         </div>

@@ -55,6 +55,7 @@ export default function GamesListPage() {
   const [formatFilter, setFormatFilter] = useState<string>("all");
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [joinedGameIds, setJoinedGameIds] = useState<Set<string>>(new Set());
+  const [requestedGameIds, setRequestedGameIds] = useState<Set<string>>(new Set());
   const navigate = useNavigate();
   const { user } = useAuth();
   const isMobile = useIsMobile();
@@ -113,12 +114,22 @@ export default function GamesListPage() {
     const ids = new Set<string>();
     playerEntries?.forEach((p) => ids.add(p.game_id));
     setJoinedGameIds(ids);
+
+    const { data: requestEntries } = await supabase
+      .from("join_requests")
+      .select("game_id")
+      .eq("user_id", user.id)
+      .eq("status", "pending");
+    const reqIds = new Set<string>();
+    requestEntries?.forEach((r) => reqIds.add(r.game_id));
+    setRequestedGameIds(reqIds);
   };
 
-  const getUserStatus = (game: Game): "joined" | "hosting" | undefined => {
+  const getUserStatus = (game: Game): "joined" | "hosting" | "requested" | undefined => {
     if (!user) return undefined;
     if (game.host_id === user.id) return "hosting";
     if (joinedGameIds.has(game.id)) return "joined";
+    if (requestedGameIds.has(game.id)) return "requested";
     return undefined;
   };
 
