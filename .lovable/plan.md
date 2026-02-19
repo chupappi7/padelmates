@@ -1,75 +1,87 @@
 
-## My Listings — Implementation Plan
+## Find Players — Player Count UX Redesign
 
-### The Question: Where Does "My Listings" Live?
+### The Problem
 
-"My Listings" (court-sharing posts you've created) and "My Matches" (games you play in) are conceptually different:
+The current UI asks the user to configure two separate numbers:
+- "Looking for **X**" (derived, read-only)
+- "out of **Y** total" (the only input, via a Select dropdown)
 
-- **My Matches** = games where you participate as a player, whether joined, hosted, or secured a court
-- **My Listings** = court-sharing posts you created as the host (selling or giving away a court slot)
+This is backwards and confusing because:
+1. The user has to think in terms of **total capacity** (4 players) rather than what they actually care about — **how many more people they need**
+2. The "Looking for X" number is just shown as a static badge — it looks clickable but isn't
+3. When the user is NOT playing, it's even more confusing ("Looking for 4 out of 4 total?")
+4. The math isn't obvious: total minus host minus prefilled = spots open. Users shouldn't need to compute this.
 
-The current My Matches page already pulls in hosted games including court-sharing ones via `host_id = user.id`, which means court listings you posted are currently mixed into your match list — but they don't quite belong there since they aren't "matches" you're playing in.
+### The Fix: Lead with "Spots Needed"
 
-**Recommendation: Add a 3rd tab "Listings" inside the existing My Matches page.**
+Flip the mental model. The primary control is **how many more players do you need?** Everything else is derived and shown as supporting info.
 
-Rationale:
-- Keeps navigation simple (no new route or bottom tab needed)
-- The page already has the tab structure ready (Upcoming / Past)
-- Listings and Matches are related enough to live on the same page (both are your hosted activity)
-- Avoids cluttering the bottom nav bar which is already at 5 items
-- The tab label count badges make it instantly scannable
+**New layout:**
 
----
-
-### Data Separation Logic
-
-Currently the fetch mixes everything together. The new approach will split into two separate data sets:
-
-**Matches** (Upcoming + Past tabs) = games where user participates but is NOT a court-sharing host:
-- Is a player via `game_players`
-- Has an accepted `join_requests` entry
-- Is the host of a **non-court-sharing** game
-- Has `court_taken_by = user.id` (secured someone else's court)
-
-**Listings** tab = court-sharing games where `host_id = user.id` AND `payment_mode = 'court_sharing'`
-
-This means a court listing you post shows up in **Listings**, not in **Matches**, which keeps both tabs clean and relevant.
-
----
-
-### Technical Implementation
-
-**`src/pages/Games/MyMatchesPage.tsx`**
-
-1. Add a `listings` state array alongside `games`.
-2. Split `fetchMyGames` into two fetches:
-   - `fetchMyGames`: same as now but **exclude** games where `host_id = user.id AND payment_mode = court_sharing`
-   - `fetchMyListings`: fetch games where `host_id = user.id AND payment_mode = court_sharing`
-3. Update `getUserStatus` to handle the listings context (always returns `"hosting"` for listings tab)
-4. Add a 3rd tab — `"listings"` — to the `TabsList`, changing the grid from `grid-cols-2` to `grid-cols-3`
-5. Add `TabsContent value="listings"` with:
-   - Active listings (date_time >= now) sorted ascending — shown first, since an "Available" listing is actionable
-   - Expired/past listings (date_time < now) shown below with a subtle "Expired" section header
-   - Each listing rendered with `GameCard` with `userStatus="hosting"` (orange accent, no role pill clutter)
-   - Empty state: `Tag` icon + "No court listings" message with sub "Post a court to sell or give it away"
-6. Rename page subtitle from "Games you've joined or hosted" to "Your matches and court listings"
-
-**Tab layout (3-column)**:
 ```text
-[ Upcoming (N) ]  [ Past (N) ]  [ Listings (N) ]
+┌─────────────────────────────────────────────────────┐
+│  How many players do you need?                      │
+│                                                     │
+│   [ – ]      3      [ + ]                           │
+│                                                     │
+│   🟢 You · 2 confirmed · 3 spots open               │
+│   Court total: 6 players                            │
+└─────────────────────────────────────────────────────┘
 ```
 
-**Listings tab layout within the tab**:
-- Active listings grouped under a subtle "Active" header (or no header if all active)
-- Expired grouped under "Expired" in muted style
-- Uses same `GameCard` component — court-sharing cards already show Available/Taken badge, price, no Lvl badge
+- **Primary control**: `–` / `+` stepper directly setting `spotsNeeded` (1–7)
+- **Supporting line**: "You · X confirmed · Y spots open" in muted text — makes the composition immediately readable
+- **Court total**: shown as a derived output, not an input
+- The "Are you playing?" toggle stays below as a secondary setting
 
----
+### Detailed Behaviour
+
+| Scenario | Stepper range | Derived total |
+|----------|--------------|---------------|
+| Host playing, 0 prefilled | 1–7 | spotsNeeded + 1 |
+| Host playing, 2 prefilled | 1–5 | spotsNeeded + 1 + 2 |
+| Host NOT playing, 0 prefilled | 2–8 | spotsNeeded |
+| Host NOT playing, 2 prefilled | 1–6 | spotsNeeded + 2 |
+
+Min spots needed is always 1. Max is capped so total court size doesn't exceed 8.
+
+### "Are you playing?" Toggle
+
+Currently this is buried. Move it **above** the player stepper so the answer to "am I in?" determines the stepper range before the user touches it.
+
+**New section layout:**
+1. "Are you playing?" — YES / NO pill toggle (or a checkbox-style row)
+2. "How many players do you need?" — stepper
+3. "Players already joining" — prefilled player list (unchanged)
+4. Helper text with composition summary
 
 ### What Changes
 
-| File | Change |
-|------|--------|
-| `src/pages/MyMatchesPage.tsx` | Add `listings` state, split fetch logic, add 3rd tab with listings content |
+**File: `src/pages/Games/CreateGamePage.tsx`**
 
-No new routes, no new components, no DB changes needed — everything is already in the data model.
+1. Replace the `lookingFor` / `maxPlayers` state approach:
+   - Introduce `spotsNeeded` state (default: 2), initialized from `effectiveLookingFor`
+   - Derive `maxPlayers` = `spotsNeeded + prefilledCount + (hostIsPlaying ? 1 : 0)` — computed, never directly stored
+   - Remove the `Select` dropdown for `maxPlayers` in find_players mode
+
+2. Replace the current "Looking for X out of Y total" row with:
+   - A clear label: **"How many more players do you need?"**
+   - A `–` / `+` stepper button pair with the current count displayed prominently in the center
+   - Min: 1, Max: `8 - prefilledCount - (hostIsPlaying ? 1 : 0)`
+   - On stepper change, also trim prefilled players if they now exceed available slots
+
+3. Move "Are you playing?" toggle **above** the stepper, styled as a labelled row with two pill buttons (Yes / No) for clarity
+
+4. Add a compact summary line below the stepper:
+   - `"You · 2 confirmed · 3 spots open · 6 total on court"` (only show segments that apply)
+
+5. Keep `prefilled players` section unchanged below the stepper
+
+6. On submit, `maxPlayers` is computed from the derived formula above
+
+### What Does NOT Change
+- The prefilled players section (Add player / FriendPickerSheet)
+- All other sections (location, date, time, skill, price, join mode)
+- The `effectiveLookingFor` value passed to game title on submit
+- Any other host types (Americano, Find Backup, Sell Court)
