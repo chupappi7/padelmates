@@ -243,13 +243,11 @@ export function CourtDMChat({
     }
   }, [isHost, hostId]);
 
-  // ── PRE-FILL INTEREST TEMPLATE (non-host, first open) ───────────────────
-  useEffect(() => {
-    if (!isHost && activeChatId && messages.length === 0) {
-      const template = `Hi! I'm interested in your court at ${gameLocation} on ${format(new Date(gameDateTime), "EEE, MMM d · h:mm a")}. Is it still available?`;
-      setNewMessage((prev) => prev || template);
-    }
-  }, [activeChatId, messages.length, isHost]);
+  // ── PRE-FILL INTEREST TEMPLATE (non-host, on button click) ─────────────
+  const handlePrefillInterest = () => {
+    const template = `Hi! I'm interested in your court at ${gameLocation} on ${format(new Date(gameDateTime), "EEE, MMM d · h:mm a")}. Is it still available?`;
+    setNewMessage(template);
+  };
 
   // ── LOAD MESSAGES ────────────────────────────────────────────────────────
   useEffect(() => {
@@ -693,10 +691,23 @@ export function CourtDMChat({
             <p className="text-sm">Opening chat...</p>
           </div>
         ) : messages.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
-            <MessageCircle className="w-8 h-8 mb-2 opacity-40" />
-            <p className="text-sm">No messages yet</p>
-            <p className="text-xs opacity-70 mt-1">Start the conversation about this court</p>
+          <div className="flex flex-col items-center justify-center py-12 text-center gap-3">
+            <MessageCircle className="w-10 h-10 text-muted-foreground opacity-40" />
+            <div>
+              <p className="text-sm font-medium text-foreground">No messages yet</p>
+              <p className="text-xs text-muted-foreground mt-0.5">Let the host know you're interested</p>
+            </div>
+            {!isHost && !inputDisabled && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-2 rounded-full"
+                onClick={handlePrefillInterest}
+              >
+                <MessageCircle className="w-3.5 h-3.5" />
+                I'm Interested in This Court
+              </Button>
+            )}
           </div>
         ) : (
           messages.map((msg) => (
