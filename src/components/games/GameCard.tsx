@@ -101,11 +101,22 @@ export function GameCard({
       <Link to={`/games/${id}`} className={`block card-game group overflow-hidden ${urgency.card}`}>
         <div className="p-3 sm:p-4 space-y-2">
 
-          {/* Row 1: Title + Skill chip */}
+          {/* Row 1: Title + Available/Taken badge (court) + Skill chip */}
           <div className="flex items-start justify-between gap-2">
-            <h3 className="font-display font-bold text-sm sm:text-base group-hover:text-primary transition-colors line-clamp-1 flex-1">
-              {title}
-            </h3>
+            <div className="flex items-center gap-1.5 min-w-0 flex-1">
+              <h3 className="font-display font-bold text-sm sm:text-base group-hover:text-primary transition-colors line-clamp-1">
+                {title}
+              </h3>
+              {isCourtSharing && (
+                <span className={`inline-flex items-center rounded-full border px-1.5 py-0.5 text-[9px] sm:text-[10px] font-semibold shrink-0 ${
+                  isCourtTaken
+                    ? "bg-destructive/10 text-destructive border-destructive/25"
+                    : "bg-success/10 text-success border-success/25"
+                }`}>
+                  {isCourtTaken ? "Taken" : "Available"}
+                </span>
+              )}
+            </div>
             <span className={`badge-skill text-[9px] sm:text-[10px] px-1.5 sm:px-2 py-0.5 shrink-0 ${getSkillColor(skillLevel)}`}>
               Lvl {skillLevel}
             </span>
@@ -120,7 +131,7 @@ export function GameCard({
             )}
           </div>
 
-          {/* Row 3: Duration pill + status badges */}
+          {/* Row 3: Duration pill + status badges (excluding court sharing) */}
           <div className="flex items-center gap-1.5 flex-wrap">
             {durationHrs && durationHrs > 0 && (
               <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] sm:text-xs font-semibold ${urgency.pill}`}>
@@ -128,16 +139,7 @@ export function GameCard({
                 {formatDuration(durationHrs)}
               </span>
             )}
-            {isCourtSharing && (
-              <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] sm:text-xs font-semibold ${
-                isCourtTaken
-                  ? "bg-destructive/10 text-destructive border-destructive/25"
-                  : "bg-success/10 text-success border-success/25"
-              }`}>
-                {isCourtTaken ? "Taken" : "Available"}
-              </span>
-            )}
-            {userStatus && (
+            {userStatus && !isCourtSharing && (
               <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] sm:text-xs font-semibold ${
                 userStatus === "hosting"
                   ? "bg-primary/10 text-primary border-primary/25"
