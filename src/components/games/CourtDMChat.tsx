@@ -481,49 +481,35 @@ export function CourtDMChat({
   const buyerPaymentChips = getBuyerPaymentChips();
   const allChips = [...quickReplies, ...buyerPaymentChips];
 
-  // ── CONTEXT HEADER ───────────────────────────────────────────────────────
-  const ContextHeader = () => (
-    <div className="px-4 py-3 border-b border-border bg-muted/30">
-      <div className="flex items-center gap-2 flex-wrap">
-        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-          <MapPin className="w-3 h-3 shrink-0" />
-          <span className="font-medium text-foreground">{gameLocation}</span>
-        </div>
-        <span className="text-muted-foreground/40">·</span>
-        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-          <Calendar className="w-3 h-3 shrink-0" />
-          <span>{format(new Date(gameDateTime), "EEE, MMM d · h:mm a")}</span>
-        </div>
-      </div>
-      {!isHost && (
-        <div className="mt-1.5">
-          {isCourtTaken ? (
-            <Badge variant="outline" className="text-[10px] h-5 border-destructive/30 text-destructive bg-destructive/5">
-              <AlertCircle className="w-2.5 h-2.5 mr-1" />
-              Court Taken
-            </Badge>
-          ) : myInterestStatus === "confirmed" ? (
-            <Badge variant="outline" className="text-[10px] h-5 border-success/30 text-success bg-success/5">
-              <CheckCircle2 className="w-2.5 h-2.5 mr-1" />
-              Booking Confirmed
-            </Badge>
-          ) : (
-            <Badge variant="outline" className="text-[10px] h-5 border-warning/30 text-warning bg-warning/5">
-              <Clock className="w-2.5 h-2.5 mr-1" />
-              Waiting for host confirmation
-            </Badge>
-          )}
-        </div>
-      )}
-    </div>
-  );
+  // ── STATUS BADGE (compact, inline) ──────────────────────────────────────
+  const statusBadge = !isHost ? (
+    isCourtTaken ? (
+      <Badge variant="outline" className="text-[10px] h-4 px-1.5 border-destructive/30 text-destructive bg-destructive/5 shrink-0">
+        <AlertCircle className="w-2.5 h-2.5 mr-0.5" />Taken
+      </Badge>
+    ) : myInterestStatus === "confirmed" ? (
+      <Badge variant="outline" className="text-[10px] h-4 px-1.5 border-success/30 text-success bg-success/5 shrink-0">
+        <CheckCircle2 className="w-2.5 h-2.5 mr-0.5" />Confirmed
+      </Badge>
+    ) : (
+      <Badge variant="outline" className="text-[10px] h-4 px-1.5 border-warning/30 text-warning bg-warning/5 shrink-0">
+        <Clock className="w-2.5 h-2.5 mr-0.5" />Pending
+      </Badge>
+    )
+  ) : null;
 
   // ── HOST INBOX ───────────────────────────────────────────────────────────
   if (isHost && !selectedUserId) {
     return (
       <div className="bg-card border border-border rounded-xl overflow-hidden flex flex-col flex-1">
-        {/* Listing context */}
-        <ContextHeader />
+        {/* Compact context bar */}
+        <div className="flex items-center gap-2 px-3 py-2 border-b border-border bg-muted/20 text-[11px] text-muted-foreground overflow-x-auto no-scrollbar">
+          <MapPin className="w-3 h-3 shrink-0" />
+          <span className="font-medium text-foreground truncate">{gameLocation}</span>
+          <span className="opacity-40">·</span>
+          <Calendar className="w-3 h-3 shrink-0" />
+          <span className="whitespace-nowrap">{format(new Date(gameDateTime), "MMM d · h:mm a")}</span>
+        </div>
 
         {loading ? (
           <div className="p-8 text-center text-muted-foreground text-sm">Loading...</div>
@@ -694,79 +680,69 @@ export function CourtDMChat({
 
   return (
     <div className="bg-card border border-border rounded-xl flex flex-col overflow-hidden flex-1">
-      {/* Conversation header */}
-      <div className="flex items-center gap-2 px-3 py-2.5 border-b border-border">
+      {/* Conversation header — name + status + action */}
+      <div className="flex items-center gap-2 px-3 py-2 border-b border-border">
         {isHost && (
           <button
             onClick={() => { setSelectedUserId(null); setActiveChatId(null); setMessages([]); loadInterestedUsers(); }}
-            className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center hover:bg-muted/80 transition-colors shrink-0"
+            className="w-7 h-7 rounded-lg bg-muted flex items-center justify-center hover:bg-muted/80 transition-colors shrink-0"
           >
-            <ArrowLeft className="w-4 h-4" />
+            <ArrowLeft className="w-3.5 h-3.5" />
           </button>
         )}
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold">{otherUserName}</p>
-          {stage !== "confirmed" && !isCourtTaken && activeChatId && (
-            <p className="text-[10px] text-muted-foreground">
-              {stage === "availability" && (isHost ? "Waiting for your availability reply" : "Sent availability check")}
-              {stage === "price" && (isHost ? "Buyer interested — share price" : "Host confirmed! Discuss price")}
-              {stage === "payment_request" && (isHost ? "Send your payment details" : "Ask for payment details")}
-              {stage === "payment_sent" && (isHost ? "Buyer paid — confirm booking!" : "Payment sent — awaiting confirmation")}
-            </p>
+        <div className="flex-1 min-w-0 flex items-center gap-1.5 overflow-hidden">
+          <p className="text-sm font-semibold truncate">{otherUserName}</p>
+          {statusBadge}
+          {isHost && selectedInterestStatus === "confirmed" && (
+            <Badge className="text-[10px] h-4 px-1.5 bg-success/10 text-success border-success/20 border shrink-0">
+              <CheckCircle2 className="w-2.5 h-2.5 mr-0.5" />Confirmed
+            </Badge>
           )}
         </div>
         {isHost && selectedUser && selectedInterestStatus !== "confirmed" && !isCourtTaken && stage === "payment_sent" && (
           <Button
             size="sm"
             variant="success"
-            className="h-8 text-xs shrink-0"
+            className="h-7 text-xs px-2.5 shrink-0"
             onClick={() => onConfirmBooking?.(selectedUser.interest_id, selectedUser.user_id)}
           >
-            <CheckCircle2 className="w-3.5 h-3.5" />
-            Confirm Booking
+            <CheckCircle2 className="w-3 h-3" />
+            Confirm
           </Button>
         )}
         {isHost && selectedUser && selectedInterestStatus !== "confirmed" && !isCourtTaken && stage !== "payment_sent" && (
           <Button
             size="sm"
             variant="outline"
-            className="h-8 text-xs shrink-0"
+            className="h-7 text-xs px-2.5 shrink-0"
             onClick={() => onConfirmBooking?.(selectedUser.interest_id, selectedUser.user_id)}
           >
-            <CheckCircle2 className="w-3.5 h-3.5" />
+            <CheckCircle2 className="w-3 h-3" />
             Confirm
           </Button>
         )}
-        {isHost && selectedInterestStatus === "confirmed" && (
-          <Badge className="text-[10px] bg-success/10 text-success border-success/20 border">
-            <CheckCircle2 className="w-2.5 h-2.5 mr-1" />
-            Confirmed
-          </Badge>
-        )}
       </div>
 
-      {/* Listing context pill */}
-      <ContextHeader />
-
-      {/* Confirmed banner */}
-      {isConfirmed && (
-        <div className="mx-4 mt-3 px-3 py-2.5 rounded-xl bg-success/10 border border-success/30 flex items-center gap-2">
-          <CheckCircle2 className="w-4 h-4 text-success shrink-0" />
-          <p className="text-xs font-semibold text-success">
-            {isHost ? "You confirmed this booking! 🎾" : "Your booking is confirmed! See you on the court 🎾"}
-          </p>
-        </div>
-      )}
-
-      {/* Taken banner for non-confirmed users */}
-      {isTaken && !isConfirmed && (
-        <div className="mx-4 mt-3 px-3 py-2 rounded-lg bg-muted/60 border border-border text-center">
-          <p className="text-xs text-muted-foreground font-medium">
-            <AlertCircle className="inline w-3 h-3 mr-1 text-destructive" />
-            This court has been taken. Further messaging is disabled.
-          </p>
-        </div>
-      )}
+      {/* Compact context bar */}
+      <div className="flex items-center gap-1.5 px-3 py-1.5 border-b border-border/60 bg-muted/20 text-[11px] text-muted-foreground overflow-x-auto no-scrollbar">
+        <MapPin className="w-2.5 h-2.5 shrink-0" />
+        <span className="font-medium text-foreground truncate">{gameLocation}</span>
+        <span className="opacity-40">·</span>
+        <Calendar className="w-2.5 h-2.5 shrink-0" />
+        <span className="whitespace-nowrap">{format(new Date(gameDateTime), "MMM d · h:mm a")}</span>
+        {isConfirmed && (
+          <>
+            <span className="opacity-40">·</span>
+            <span className="text-success font-medium whitespace-nowrap">{isHost ? "Booking confirmed ✓" : "Booking confirmed ✓"}</span>
+          </>
+        )}
+        {isTaken && !isConfirmed && (
+          <>
+            <span className="opacity-40">·</span>
+            <span className="text-destructive font-medium whitespace-nowrap">Court taken</span>
+          </>
+        )}
+      </div>
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto p-4 space-y-3">
