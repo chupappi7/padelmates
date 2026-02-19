@@ -90,7 +90,9 @@ export default function CreateGamePage() {
     hostIsPlaying: hostType !== "sell_court",
     joinMode: config.defaultJoinMode,
     totalPrice: "",
-    priceMode: hostType === "find_players" ? "split_evenly" : "free" as "split_evenly" | "free" | "set_price",
+    priceMode: hostType === "find_players" ? "split_evenly"
+             : hostType === "sell_court"  ? "set_price"
+             : "free" as "split_evenly" | "free" | "set_price",
   });
 
   const getPlayerName = (p: PrefilledPlayer) => typeof p === "string" ? p : p.name;
@@ -165,7 +167,9 @@ export default function CreateGamePage() {
       skill_level: formData.skillLevel,
       max_players: formData.maxPlayers,
       price_per_player: formData.totalPrice && Number(formData.totalPrice) > 0
-        ? Math.ceil(Number(formData.totalPrice) / formData.maxPlayers)
+        ? isSellCourt
+          ? Number(formData.totalPrice)
+          : Math.ceil(Number(formData.totalPrice) / formData.maxPlayers)
         : 0,
       price_mode: formData.priceMode,
       payment_mode: paymentMode,
@@ -327,7 +331,7 @@ export default function CreateGamePage() {
                   </div>
                   {formData.totalPrice && Number(formData.totalPrice) > 0 ? (
                     <p className="text-xs text-muted-foreground">
-                      {Math.ceil(Number(formData.totalPrice) / formData.maxPlayers)} Kč per player (split across {formData.maxPlayers})
+                      Asking price: {Number(formData.totalPrice)} Kč — shown on listing card
                     </p>
                   ) : (
                     <p className="text-xs text-muted-foreground">Leave empty or 0 if giving away for free</p>
