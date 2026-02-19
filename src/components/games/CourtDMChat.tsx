@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
-import { ArrowLeft, Send, MessageCircle, MapPin, Calendar, CheckCircle2, Clock, AlertCircle, CreditCard, Copy, Check } from "lucide-react";
+import { ArrowLeft, Send, MessageCircle, MapPin, Calendar, CheckCircle2, Clock, AlertCircle, CreditCard, Copy, Check, ImagePlus } from "lucide-react";
 import { toast } from "sonner";
 
 interface Profile {
@@ -82,6 +82,45 @@ function detectStage(
   return "price";
 }
 
+// ── IMAGE BUBBLE ─────────────────────────────────────────────────────────────
+function ImageBubble({ filePath, isMine, senderName, createdAt }: {
+  filePath: string;
+  isMine: boolean;
+  senderName?: string;
+  createdAt: string;
+}) {
+  const [imgUrl, setImgUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    supabase.storage.from("payment-screenshots").createSignedUrl(filePath, 3600).then(({ data }) => {
+      if (data) setImgUrl(data.signedUrl);
+    });
+  }, [filePath]);
+
+  return (
+    <div className={cn("max-w-[75%]", isMine && "text-right")}>
+      <p className="text-[11px] text-muted-foreground mb-0.5">
+        <span className="font-medium">{senderName}</span>
+        <span className="ml-1.5">{format(new Date(createdAt), "h:mm a")}</span>
+      </p>
+      <div className={cn(
+        "rounded-2xl overflow-hidden border",
+        isMine ? "rounded-tr-sm border-primary/20" : "rounded-tl-sm border-border"
+      )}>
+        {imgUrl ? (
+          <a href={imgUrl} target="_blank" rel="noopener noreferrer">
+            <img src={imgUrl} alt="Screenshot" className="max-w-[220px] max-h-[280px] object-cover" />
+          </a>
+        ) : (
+          <div className="w-40 h-24 bg-muted flex items-center justify-center">
+            <ImagePlus className="w-5 h-5 text-muted-foreground opacity-40" />
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export function CourtDMChat({
   gameId,
   currentUserId,
@@ -100,9 +139,11 @@ export function CourtDMChat({
   const [newMessage, setNewMessage] = useState("");
   const [loading, setLoading] = useState(true);
   const [sendLoading, setSendLoading] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
   const [hostBankDetails, setHostBankDetails] = useState<string | null>(null);
   const [copiedMsgId, setCopiedMsgId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const imageInputRef = useRef<HTMLInputElement>(null);
 
   // Current chat's interest status (for stage detection)
   const selectedUser = interestedUsers.find((u) => u.user_id === selectedUserId);
@@ -343,6 +384,36 @@ export function CourtDMChat({
     setTimeout(() => setCopiedMsgId(null), 2000);
   };
 
+  // ── UPLOAD IMAGE ─────────────────────────────────────────────────────────
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !activeChatId) return;
+
+    setUploadingImage(true);
+    const fileName = `chat/${activeChatId}/${Date.now()}-${file.name}`;
+    const { error: uploadError } = await supabase.storage
+      .from("payment-screenshots")
+      .upload(fileName, file);
+
+    if (uploadError) {
+      toast.error("Failed to upload image");
+      setUploadingImage(false);
+      return;
+    }
+
+    // Send a special image message with the file path
+    await supabase.from("chat_messages").insert({
+      chat_id: activeChatId,
+      sender_id: currentUserId,
+      message: `📸 image:${fileName}`,
+    });
+    fetchMessages(activeChatId);
+    if (isHost) loadInterestedUsers();
+    setUploadingImage(false);
+    // Reset input
+    if (imageInputRef.current) imageInputRef.current.value = "";
+  };
+
   // ── QUICK REPLY CHIPS ────────────────────────────────────────────────────
   const getQuickReplies = (): QuickChip[] => {
     if (stage === "confirmed" || isCourtTaken) return [];
@@ -527,8 +598,9 @@ export function CourtDMChat({
   const renderBubble = (msg: ChatMessage) => {
     const isMine = msg.sender_id === currentUserId;
     const isBankDetails = msg.message.startsWith("💳 Payment Details");
+    const isImageMsg = msg.message.startsWith("📸 image:");
     const isPaymentSent = msg.message.toLowerCase().includes("payment sent") || msg.message.toLowerCase().includes("i've sent the payment");
-    const isTaken = msg.message.toLowerCase().includes("court has been taken") || msg.message.toLowerCase().includes("sorry, the court");
+    const isTakenMsg = msg.message.toLowerCase().includes("court has been taken") || msg.message.toLowerCase().includes("sorry, the court");
 
     if (isBankDetails) {
       // Special amber card bubble
@@ -560,6 +632,19 @@ export function CourtDMChat({
       );
     }
 
+    if (isImageMsg) {
+      const filePath = msg.message.replace("📸 image:", "");
+      return (
+        <ImageBubble
+          key={msg.id}
+          filePath={filePath}
+          isMine={isMine}
+          senderName={msg.profile?.name}
+          createdAt={msg.created_at}
+        />
+      );
+    }
+
     if (isPaymentSent) {
       return (
         <div className={cn("max-w-[75%]", isMine && "text-right")}>
@@ -575,7 +660,7 @@ export function CourtDMChat({
       );
     }
 
-    if (isTaken) {
+    if (isTakenMsg) {
       return (
         <div className={cn("max-w-[75%]", isMine && "text-right")}>
           <p className="text-[11px] text-muted-foreground mb-0.5">
@@ -766,6 +851,30 @@ export function CourtDMChat({
         )}
 
         <div className="flex gap-2">
+          {/* Hidden image input */}
+          <input
+            ref={imageInputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={handleImageUpload}
+            disabled={inputDisabled || uploadingImage}
+          />
+          {/* Image upload button */}
+          {!inputDisabled && (
+            <button
+              onClick={() => imageInputRef.current?.click()}
+              disabled={uploadingImage || sendLoading}
+              className="h-10 w-10 shrink-0 rounded-xl border border-input bg-background flex items-center justify-center hover:bg-accent transition-colors disabled:opacity-50"
+              title="Send image"
+            >
+              {uploadingImage ? (
+                <div className="w-4 h-4 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
+              ) : (
+                <ImagePlus className="w-4 h-4 text-muted-foreground" />
+              )}
+            </button>
+          )}
           <Input
             placeholder={inputDisabled ? "Court has been taken" : "Type a message..."}
             value={newMessage}
