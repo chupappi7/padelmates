@@ -1,76 +1,75 @@
 
-## Fix: Court Selling Price — Full Price, Not Split
+## My Listings — Implementation Plan
 
-### Problem Summary
+### The Question: Where Does "My Listings" Live?
 
-The "Sell / Give Away Court" flow has three bugs that prevent the price from working correctly:
+"My Listings" (court-sharing posts you've created) and "My Matches" (games you play in) are conceptually different:
 
-**Bug 1 — Wrong price calculation on save**
-The form saves `price_per_player = Math.ceil(totalPrice / maxPlayers)` — this is the "split evenly" formula used for regular matches. For a court sale, the buyer pays the **full listed price**, not a fraction of it.
+- **My Matches** = games where you participate as a player, whether joined, hosted, or secured a court
+- **My Listings** = court-sharing posts you created as the host (selling or giving away a court slot)
 
-**Bug 2 — Wrong price_mode default**
-`formData.priceMode` is initialised to `"free"` for `sell_court`. The `GameCard` checks `priceMode !== "free"` before showing the price, so even if a price is entered it never appears on the card.
+The current My Matches page already pulls in hosted games including court-sharing ones via `host_id = user.id`, which means court listings you posted are currently mixed into your match list — but they don't quite belong there since they aren't "matches" you're playing in.
 
-**Bug 3 — Misleading helper text**
-The price field shows "X Kč per player (split across Y)" — confusing for a court sale. It should show the total asking price clearly.
+**Recommendation: Add a 3rd tab "Listings" inside the existing My Matches page.**
+
+Rationale:
+- Keeps navigation simple (no new route or bottom tab needed)
+- The page already has the tab structure ready (Upcoming / Past)
+- Listings and Matches are related enough to live on the same page (both are your hosted activity)
+- Avoids cluttering the bottom nav bar which is already at 5 items
+- The tab label count badges make it instantly scannable
 
 ---
 
-### What the fix looks like
+### Data Separation Logic
 
+Currently the fetch mixes everything together. The new approach will split into two separate data sets:
+
+**Matches** (Upcoming + Past tabs) = games where user participates but is NOT a court-sharing host:
+- Is a player via `game_players`
+- Has an accepted `join_requests` entry
+- Is the host of a **non-court-sharing** game
+- Has `court_taken_by = user.id` (secured someone else's court)
+
+**Listings** tab = court-sharing games where `host_id = user.id` AND `payment_mode = 'court_sharing'`
+
+This means a court listing you post shows up in **Listings**, not in **Matches**, which keeps both tabs clean and relevant.
+
+---
+
+### Technical Implementation
+
+**`src/pages/Games/MyMatchesPage.tsx`**
+
+1. Add a `listings` state array alongside `games`.
+2. Split `fetchMyGames` into two fetches:
+   - `fetchMyGames`: same as now but **exclude** games where `host_id = user.id AND payment_mode = court_sharing`
+   - `fetchMyListings`: fetch games where `host_id = user.id AND payment_mode = court_sharing`
+3. Update `getUserStatus` to handle the listings context (always returns `"hosting"` for listings tab)
+4. Add a 3rd tab — `"listings"` — to the `TabsList`, changing the grid from `grid-cols-2` to `grid-cols-3`
+5. Add `TabsContent value="listings"` with:
+   - Active listings (date_time >= now) sorted ascending — shown first, since an "Available" listing is actionable
+   - Expired/past listings (date_time < now) shown below with a subtle "Expired" section header
+   - Each listing rendered with `GameCard` with `userStatus="hosting"` (orange accent, no role pill clutter)
+   - Empty state: `Tag` icon + "No court listings" message with sub "Post a court to sell or give it away"
+6. Rename page subtitle from "Games you've joined or hosted" to "Your matches and court listings"
+
+**Tab layout (3-column)**:
 ```text
-BEFORE (find_players):
-  Input: 400 Kč total  →  saved as 100 Kč/player (÷ 4)  →  card shows 100 Kč  ✓
-
-BEFORE (sell_court — broken):
-  Input: 400 Kč total  →  saved as 100 Kč/player (÷ 4)  →  card hides price (priceMode=free)  ✗
-
-AFTER (sell_court — fixed):
-  Input: 400 Kč        →  saved as 400 Kč (full price)  →  card shows 400 Kč  ✓
-  Input: 0 Kč          →  saved as 0 Kč                  →  card shows "Free"  ✓
+[ Upcoming (N) ]  [ Past (N) ]  [ Listings (N) ]
 ```
 
+**Listings tab layout within the tab**:
+- Active listings grouped under a subtle "Active" header (or no header if all active)
+- Expired grouped under "Expired" in muted style
+- Uses same `GameCard` component — court-sharing cards already show Available/Taken badge, price, no Lvl badge
+
 ---
 
-### Technical Changes
+### What Changes
 
-**File: `src/pages/Games/CreateGamePage.tsx`**
+| File | Change |
+|------|--------|
+| `src/pages/MyMatchesPage.tsx` | Add `listings` state, split fetch logic, add 3rd tab with listings content |
 
-1. **`formData.priceMode` initial value** — change `sell_court` default from `"free"` to `"set_price"`:
-   ```typescript
-   // Line 93 — before:
-   priceMode: hostType === "find_players" ? "split_evenly" : "free"
-   
-   // After:
-   priceMode: hostType === "find_players" ? "split_evenly"
-            : hostType === "sell_court"  ? "set_price"
-            : "free"
-   ```
-
-2. **`price_per_player` calculation on submit** — for `sell_court`, store the raw input price instead of dividing:
-   ```typescript
-   // Before (line 167-169):
-   price_per_player: formData.totalPrice && Number(formData.totalPrice) > 0
-     ? Math.ceil(Number(formData.totalPrice) / formData.maxPlayers)
-     : 0,
-   
-   // After:
-   price_per_player: formData.totalPrice && Number(formData.totalPrice) > 0
-     ? isSellCourt
-       ? Number(formData.totalPrice)                              // full price for court sale
-       : Math.ceil(Number(formData.totalPrice) / formData.maxPlayers) // split for matches
-     : 0,
-   ```
-
-3. **Helper text below the price input** — update the hint to be accurate for court sales:
-   ```tsx
-   // Before:
-   <p>…{Math.ceil(…/ formData.maxPlayers)} Kč per player (split across {formData.maxPlayers})</p>
-   
-   // After:
-   <p>Asking price: {Number(formData.totalPrice)} Kč — shown on listing card</p>
-   ```
-
-No database schema changes needed. No new migrations required.
-
-**File: `src/components/games/GameCard.tsx`** — No changes needed. The card already shows the price correctly when `pricePerPlayer > 0 && priceMode !== "free"`. Once `price_mode` is saved as `"set_price"` and `price_per_player` is the full amount, the card will display it automatically.
+No new routes, no new components, no DB changes needed — everything is already in the data model.
