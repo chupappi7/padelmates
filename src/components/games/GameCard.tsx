@@ -21,7 +21,7 @@ interface GameCardProps {
   distance?: number;
   paymentMode?: string;
   priceMode?: string;
-  userStatus?: "joined" | "hosting" | "requested";
+  userStatus?: "joined" | "hosting" | "requested" | "court_secured";
   courtTakenBy?: string | null;
   interestCount?: number;
 }
@@ -43,12 +43,13 @@ const getUrgencyPill = (dateTime: string) => {
 };
 
 // Role-based left border accent
-const getRoleAccent = (userStatus?: "joined" | "hosting" | "requested") => {
+const getRoleAccent = (userStatus?: "joined" | "hosting" | "requested" | "court_secured") => {
   switch (userStatus) {
-    case "hosting":   return "border-l-4 border-l-orange-400";
-    case "joined":    return "border-l-4 border-l-emerald-500";
-    case "requested": return "border-l-4 border-l-yellow-400";
-    default:          return "border-l-4 border-l-border/30";
+    case "hosting":        return "border-l-4 border-l-orange-400";
+    case "joined":         return "border-l-4 border-l-emerald-500";
+    case "requested":      return "border-l-4 border-l-yellow-400";
+    case "court_secured":  return "border-l-4 border-l-emerald-500";
+    default:               return "border-l-4 border-l-muted-foreground/40";
   }
 };
 
@@ -99,19 +100,21 @@ export function GameCard({
 
   // Role pill styles
   const rolePillStyle = {
-    hosting:   "bg-orange-500/15 text-orange-600 border-orange-400/30",
-    joined:    "bg-emerald-600/15 text-emerald-700 border-emerald-500/30",
-    requested: "bg-yellow-400/15 text-yellow-700 border-yellow-400/30",
+    hosting:        "bg-orange-500/15 text-orange-600 border-orange-400/30",
+    joined:         "bg-emerald-600/15 text-emerald-700 border-emerald-500/30",
+    requested:      "bg-yellow-400/15 text-yellow-700 border-yellow-400/30",
+    court_secured:  "bg-emerald-600/15 text-emerald-700 border-emerald-500/30",
   };
 
   const rolePillLabel = {
-    hosting:   "Host",
-    joined:    "Joined",
-    requested: "Requested",
+    hosting:        "Host",
+    joined:         "Joined",
+    requested:      "Requested",
+    court_secured:  "Court Secured",
   };
 
-  // Joined / Requested pill shown top-right (above price)
-  const showTopRightPill = userStatus === "joined" || userStatus === "requested";
+  // Joined / Requested / Court Secured pill shown top-right (above price)
+  const showTopRightPill = userStatus === "joined" || userStatus === "requested" || userStatus === "court_secured";
 
   return (
     <motion.div
@@ -139,7 +142,7 @@ export function GameCard({
                 </span>
               )}
             </div>
-            {!isCourtSharing && (
+            {!isCourtSharing && userStatus !== "hosting" && (
               <span className={`badge-skill text-[9px] sm:text-[10px] px-1.5 sm:px-2 py-0.5 shrink-0 ${getSkillColor(skillLevel)}`}>
                 Lvl {skillLevel}
               </span>
@@ -205,9 +208,9 @@ export function GameCard({
 
               {/* Stacked: [Joined/Requested pill] + price */}
               <div className="flex flex-col items-end gap-1">
-                {showTopRightPill && (
-                  <span className={`inline-flex items-center rounded-full border px-1.5 py-0.5 text-[9px] sm:text-[10px] font-semibold ${rolePillStyle[userStatus as "joined" | "requested"]}`}>
-                    {rolePillLabel[userStatus as "joined" | "requested"]}
+                {showTopRightPill && userStatus && (
+                  <span className={`inline-flex items-center rounded-full border px-1.5 py-0.5 text-[9px] sm:text-[10px] font-semibold ${rolePillStyle[userStatus as keyof typeof rolePillStyle]}`}>
+                    {rolePillLabel[userStatus as keyof typeof rolePillLabel]}
                   </span>
                 )}
                 {showPrice && (
