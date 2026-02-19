@@ -44,6 +44,8 @@ import {
   CheckCircle2,
 } from "lucide-react";
 import { CourtDMChat } from "@/components/games/CourtDMChat";
+import { BookingProofTab } from "@/components/games/BookingProofTab";
+import { ShieldCheck } from "lucide-react";
 
 interface Game {
   id: string;
@@ -64,6 +66,7 @@ interface Game {
   join_mode: string;
   scoreboard: unknown;
   court_taken_by: string | null;
+  booking_screenshot_url: string | null;
   profiles: { name: string; avatar_url: string | null; skill_level?: number } | null;
 }
 
@@ -99,10 +102,11 @@ const formatLabels = {
   team_americano: "Team Americano",
 };
 
-type TabKey = "details" | "participants" | "matches" | "chat";
+type TabKey = "details" | "proof" | "participants" | "matches" | "chat";
 
 const tabs: { key: TabKey; label: string; icon: typeof Info }[] = [
   { key: "details", label: "Details", icon: Info },
+  { key: "proof", label: "Proof", icon: ShieldCheck },
   { key: "participants", label: "Players", icon: Users },
   { key: "matches", label: "Matches", icon: Swords },
   { key: "chat", label: "Chat", icon: MessageCircle },
@@ -612,12 +616,13 @@ export default function GameDetailPage() {
           {/* Tab Navigation Buttons */}
           <div className="flex gap-1 bg-muted/50 rounded-xl p-1 mb-4 overflow-x-auto scrollbar-hide">
             {tabs.map((tab) => {
-              // Court sharing: show Details + Messages (DM) only
+              // Court sharing: show Details + Proof + Messages (DM) only
               if (isCourtSharing) {
-                if (tab.key !== "details" && tab.key !== "chat") return null;
+                if (tab.key !== "details" && tab.key !== "proof" && tab.key !== "chat") return null;
                 if (tab.key === "chat" && !canAccessDM) return null;
               } else {
-                // Hide chat for non-participants in regular games
+                // Hide proof and chat for non-participants in regular games
+                if (tab.key === "proof") return null;
                 if (tab.key === "chat" && !canAccessChat) return null;
               }
 
@@ -814,6 +819,22 @@ export default function GameDetailPage() {
                   )}
                 </div>
               )}
+            </motion.div>
+          )}
+
+
+          {/* Proof Tab */}
+          {activeTab === "proof" && isCourtSharing && (
+            <motion.div key="proof" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+              <BookingProofTab
+                gameId={game.id}
+                bookingScreenshotUrl={(game as any).booking_screenshot_url ?? null}
+                isHost={isHost}
+                userId={user?.id}
+                onScreenshotUpdated={(newPath) => {
+                  setGame((prev) => prev ? { ...prev, booking_screenshot_url: newPath } as any : prev);
+                }}
+              />
             </motion.div>
           )}
 
