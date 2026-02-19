@@ -1,71 +1,106 @@
 
-## Enrich Game Notifications with Context
+## Bank Details in Profile + Smart Chat Templates for Court Sharing
 
-### Problem
-Game notifications like "Player Joined", "Join Request", and "Confirmed to Play" only show the game title. When multiple games have similar titles (e.g., "Looking for 2 players"), notifications become indistinguishable.
+### What's being built
 
-### Solution
-Add date, location, time, and player count to all game-related notification messages so each one is uniquely identifiable at a glance.
+Three interconnected improvements:
 
-**Before:**
+1. **Bank details saved in profile** — users add their payment info once, reuse it everywhere
+2. **User interest template** — when a user opens a court-sharing chat, the input is pre-filled with a ready-to-send message referencing the listing's location and date/time
+3. **Host "Send Bank Details" quick button** — host taps one button to instantly send their saved bank details into the chat
+
+---
+
+### Part 1 — Database: Add `bank_details` column to `profiles`
+
+A migration will add a single `bank_details` text column (nullable) to the `profiles` table. This stores a freeform string like:
+
 ```
-Player Joined
-Ahmed joined "Looking for 2 players"
+Bank: BCA
+Account: 1234567890
+Name: Ahmad Reza
 ```
 
-**After:**
+No new table needed — it lives on the user's existing profile, protected by the existing RLS (only the user can update their own profile).
+
+---
+
+### Part 2 — Profile Page changes (`src/pages/Profile/ProfilePage.tsx`)
+
+A new **"Payment Info"** section card below the stats grid, always visible. It shows:
+
+- **View mode**: Displays saved bank details in a styled box with a copy button, or a prompt to add details if empty
+- **Edit mode**: Opens an inline form with a `Textarea` for bank details (account name, bank name, account number, etc.) with a save button
+
+The edit flow integrates into the existing `editing` state — a second dedicated edit section for bank details only (separate from the profile name/skill edit) to keep UX clean.
+
+---
+
+### Part 3 — CourtDMChat changes (`src/components/games/CourtDMChat.tsx`)
+
+**User side — pre-filled interest template:**
+
+When a non-host user opens the chat for the first time (0 messages in the thread), the message input is pre-populated with:
+
 ```
-Player Joined
-Ahmed joined "Looking for 2 players" | Club XYZ · Feb 18, 6:00 PM · 3/4
+Hi! I'm interested in your court at [Location] on [Day, Date · Time]. Is it still available?
 ```
 
-### Changes
+- The user can edit it freely before sending
+- Once sent, it clears like a normal message
+- If messages already exist, the input starts empty (normal behavior)
 
-#### 1. GameDetailPage.tsx -- Enrich outgoing notifications (lines ~260-300)
+**Host side — "Send Bank Details" quick action button:**
 
-Update `notifyHost` calls in `handleDirectJoin` and `handleLeaveGame` to include game location, date, and current player count in the message string. The `game` object already has `location`, `date_time`, and `max_players` available in scope, and `players.length` gives the current count.
+- A `💳 Send Bank Details` button appears in the chat input area (next to the send button)
+- On tap, it instantly inserts a message with the host's saved bank details into the chat, formatted as:
 
-- `handleDirectJoin` message becomes:
-  `Ahmed joined "Looking for 2" | Club XYZ · Feb 18, 6:00 PM · 3/4`
-- `handleLeaveGame` message becomes:
-  `Ahmed left "Looking for 2" | Club XYZ · Feb 18, 6:00 PM · 2/4`
+```
+💳 Payment Details:
+[bank_details from profile]
+```
 
-#### 2. JoinRequestModal.tsx -- Add location/date props
+- If the host hasn't saved bank details yet, the button shows a tooltip/toast: "Add your bank details in Profile → Payment Info first"
+- The host's `bank_details` are fetched once when the chat component mounts (via a profile query on `hostId`)
 
-- Add `gameLocation` and `gameDateTime` props to `JoinRequestModalProps`
-- Update the notification insert message to include context:
-  `Ahmed wants to join "Looking for 2" | Club XYZ · Feb 18, 6:00 PM`
-- Pass these new props from `GameDetailPage.tsx` where the modal is used
+---
 
-#### 3. useNotifications.ts -- Enrich "Confirmed to Play" notifications (lines ~79-108)
+### Technical Implementation Details
 
-- When fetching accepted join requests, also select `location`, `date_time`, and `max_players` from the games table (alongside `title`)
-- Also query `game_players` count for those game IDs
-- Update the message to include context:
-  `You're confirmed for "Looking for 2" | Club XYZ · Feb 18, 6:00 PM · 3/4`
+**Files to change:**
 
-#### 4. NotificationPanel.tsx and NotificationsPage.tsx -- Display improvements
+| File | Change |
+|---|---|
+| `supabase/migrations/...sql` | `ALTER TABLE profiles ADD COLUMN bank_details text` |
+| `src/integrations/supabase/types.ts` | Auto-updated |
+| `src/pages/Profile/ProfilePage.tsx` | Add Payment Info card + edit form for bank details |
+| `src/components/games/CourtDMChat.tsx` | Pre-fill template for user; Send Bank Details button for host |
 
-- Use `formatDistanceToNow` from date-fns for relative timestamps (e.g., "2h ago" instead of just a date)
-- The enriched message text will naturally display the extra context since it's embedded in the message string -- no UI layout changes needed
+**CourtDMChat prop addition:**
+The component already receives `hostId`. It will fetch the host's `bank_details` from `profiles` on mount — no new props needed.
 
-### Technical Details
-
-A helper function `formatGameContext` will be created to consistently format the context suffix:
-
+**Template pre-fill logic:**
 ```typescript
-// Shared helper (inline in each file or extracted)
-const formatGameContext = (location: string, dateTime: string, current?: number, max?: number) => {
-  const d = new Date(dateTime);
-  const dateStr = format(d, "MMM d, h:mm a");
-  const countStr = current !== undefined && max !== undefined ? ` · ${current}/${max}` : "";
-  return `${location} · ${dateStr}${countStr}`;
+useEffect(() => {
+  // Only pre-fill if: not host, no messages yet, chat just opened
+  if (!isHost && messages.length === 0 && activeChatId) {
+    const template = `Hi! I'm interested in your court at ${gameLocation} on ${format(new Date(gameDateTime), "EEE, MMM d · h:mm a")}. Is it still available?`;
+    setNewMessage(template);
+  }
+}, [activeChatId, messages.length]);
+```
+
+**Send Bank Details logic (host):**
+```typescript
+const handleSendBankDetails = async () => {
+  if (!hostBankDetails) {
+    toast.error("Add your bank details in Profile → Payment Info first");
+    return;
+  }
+  await supabase.from("chat_messages").insert({
+    chat_id: activeChatId,
+    sender_id: currentUserId,
+    message: `💳 Payment Details:\n${hostBankDetails}`,
+  });
 };
 ```
-
-Files to modify:
-- `src/pages/Games/GameDetailPage.tsx` -- enrich notifyHost messages
-- `src/components/games/JoinRequestModal.tsx` -- add props, enrich message
-- `src/hooks/useNotifications.ts` -- enrich "Confirmed to Play" fetch
-- `src/components/layout/NotificationPanel.tsx` -- relative time
-- `src/pages/Notifications/NotificationsPage.tsx` -- relative time
