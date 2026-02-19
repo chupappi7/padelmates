@@ -243,13 +243,19 @@ export function CourtDMChat({
     }
   }, [isHost, hostId]);
 
-  // ── PRE-FILL INTEREST TEMPLATE (non-host, first open) ───────────────────
-  useEffect(() => {
-    if (!isHost && activeChatId && messages.length === 0) {
-      const template = `Hi! I'm interested in your court at ${gameLocation} on ${format(new Date(gameDateTime), "EEE, MMM d · h:mm a")}. Is it still available?`;
-      setNewMessage((prev) => prev || template);
-    }
-  }, [activeChatId, messages.length, isHost]);
+  // ── SEND INTEREST MESSAGE (non-host, first open) ────────────────────────
+  const handleSendInterest = async () => {
+    if (!activeChatId || sendLoading) return;
+    const template = `Hi! I'm interested in your court at ${gameLocation} on ${format(new Date(gameDateTime), "EEE, MMM d · h:mm a")}. Is it still available?`;
+    setSendLoading(true);
+    await supabase.from("chat_messages").insert({
+      chat_id: activeChatId,
+      sender_id: currentUserId,
+      message: template,
+    });
+    fetchMessages(activeChatId);
+    setSendLoading(false);
+  };
 
   // ── LOAD MESSAGES ────────────────────────────────────────────────────────
   useEffect(() => {
@@ -693,10 +699,21 @@ export function CourtDMChat({
             <p className="text-sm">Opening chat...</p>
           </div>
         ) : messages.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
-            <MessageCircle className="w-8 h-8 mb-2 opacity-40" />
-            <p className="text-sm">No messages yet</p>
-            <p className="text-xs opacity-70 mt-1">Start the conversation about this court</p>
+          <div className="flex flex-col items-center justify-center py-12 text-center">
+            <MessageCircle className="w-10 h-10 mb-3 text-muted-foreground opacity-40" />
+            <p className="text-sm font-medium text-foreground mb-1">Start the conversation</p>
+            <p className="text-xs text-muted-foreground mb-5">Let the host know you're interested in this court</p>
+            {!isHost && !inputDisabled && (
+              <Button
+                onClick={handleSendInterest}
+                disabled={sendLoading || !activeChatId}
+                size="lg"
+                className="gap-2 rounded-full px-6"
+              >
+                <MessageCircle className="w-4 h-4" />
+                I'm Interested in This Court
+              </Button>
+            )}
           </div>
         ) : (
           messages.map((msg) => (
