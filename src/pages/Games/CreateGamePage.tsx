@@ -95,14 +95,21 @@ export default function CreateGamePage() {
   });
 
   // Find Players: spotsNeeded is the primary control (how many more players do you need?)
-  const [spotsNeeded, setSpotsNeeded] = useState(2);
+  // Min court size is 4, so minimum spots = max(1, 4 - prefilled - (hostIsPlaying ? 1 : 0))
+  const minSpotsNeeded = (hIsPlaying: boolean, pCount: number) =>
+    Math.max(1, 4 - pCount - (hIsPlaying ? 1 : 0));
+
+  const [spotsNeeded, setSpotsNeeded] = useState(() =>
+    Math.max(minSpotsNeeded(hostType !== "sell_court", 0), 2)
+  );
 
   const getPlayerName = (p: PrefilledPlayer) => typeof p === "string" ? p : p.name;
   const prefilledCount = prefilledPlayers.filter(p => getPlayerName(p).trim()).length;
 
   // Derived values for find_players mode
-  const maxSpotsNeeded = Math.max(1, 8 - prefilledCount - (formData.hostIsPlaying ? 1 : 0));
-  const clampedSpotsNeeded = Math.min(spotsNeeded, maxSpotsNeeded);
+  const currentMin = minSpotsNeeded(formData.hostIsPlaying, prefilledCount);
+  const maxSpotsNeeded = Math.max(currentMin, 8 - prefilledCount - (formData.hostIsPlaying ? 1 : 0));
+  const clampedSpotsNeeded = Math.min(Math.max(spotsNeeded, currentMin), maxSpotsNeeded);
 
   // effectiveLookingFor = spotsNeeded in find_players, else legacy lookingFor
   const effectiveLookingFor = hostType === "find_players"
@@ -120,7 +127,7 @@ export default function CreateGamePage() {
 
   const handleSpotsNeededChange = (delta: number) => {
     setSpotsNeeded(prev => {
-      const next = Math.min(Math.max(1, prev + delta), maxSpotsNeeded);
+      const next = Math.min(Math.max(currentMin, prev + delta), maxSpotsNeeded);
       // Trim prefilled if they'd exceed the new available prefilled slots
       const newMaxPrefilled = Math.max(0, next - 1);
       if (prefilledPlayers.length > newMaxPrefilled) {
@@ -430,7 +437,10 @@ export default function CreateGamePage() {
                         <div className="flex gap-2">
                           <button
                             type="button"
-                            onClick={() => handleChange("hostIsPlaying", true)}
+                            onClick={() => {
+                              handleChange("hostIsPlaying", true);
+                              setSpotsNeeded(prev => Math.max(minSpotsNeeded(true, prefilledCount), prev));
+                            }}
                             className={`flex-1 h-10 rounded-xl border-2 text-sm font-medium transition-all ${
                               formData.hostIsPlaying
                                 ? "border-primary bg-primary/10 text-foreground"
@@ -441,7 +451,10 @@ export default function CreateGamePage() {
                           </button>
                           <button
                             type="button"
-                            onClick={() => handleChange("hostIsPlaying", false)}
+                            onClick={() => {
+                              handleChange("hostIsPlaying", false);
+                              setSpotsNeeded(prev => Math.max(minSpotsNeeded(false, prefilledCount), prev));
+                            }}
                             className={`flex-1 h-10 rounded-xl border-2 text-sm font-medium transition-all ${
                               !formData.hostIsPlaying
                                 ? "border-primary bg-primary/10 text-foreground"
@@ -460,7 +473,7 @@ export default function CreateGamePage() {
                           <button
                             type="button"
                             onClick={() => handleSpotsNeededChange(-1)}
-                            disabled={clampedSpotsNeeded <= 1}
+                            disabled={clampedSpotsNeeded <= currentMin}
                             className="w-12 h-12 rounded-xl border-2 border-border bg-background text-xl font-bold flex items-center justify-center transition-all hover:border-primary/60 disabled:opacity-30 disabled:cursor-not-allowed select-none"
                           >
                             –
