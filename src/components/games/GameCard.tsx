@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { MapPin, Clock, Users } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { differenceInHours } from "date-fns";
+import { differenceInHours, format } from "date-fns";
 import { motion } from "framer-motion";
 
 interface GameCardProps {
@@ -45,12 +45,11 @@ const getUrgencyStyle = (dateTime: string) => {
 const formatDistance = (km: number) =>
   km < 1 ? `${Math.round(km * 1000)}m` : `${km.toFixed(1)}km`;
 
-const formatDuration = (hrs: number) => {
-  const h = Math.floor(hrs);
-  const m = Math.round((hrs - h) * 60);
-  if (m === 0) return `${h}h`;
-  if (h === 0) return `${m}m`;
-  return `${h}h ${m}m`;
+const formatTimeRange = (start: string, end?: string | null) => {
+  const s = format(new Date(start), "h:mm a");
+  if (!end) return s;
+  const e = format(new Date(end), "h:mm a");
+  return `${s} – ${e}`;
 };
 
 export function GameCard({
@@ -77,10 +76,6 @@ export function GameCard({
   const isCourtTaken = !!courtTakenBy;
   const totalPlayers = currentPlayers + prefilledCount;
   const spotsLeft = maxPlayers - totalPlayers;
-
-  const durationHrs = endDateTime
-    ? (new Date(endDateTime).getTime() - new Date(dateTime).getTime()) / 3600000
-    : null;
 
   const urgency = getUrgencyStyle(dateTime);
   const showPrice = pricePerPlayer > 0 && (priceMode !== "free" || isCourtSharing);
@@ -131,14 +126,12 @@ export function GameCard({
             )}
           </div>
 
-          {/* Row 3: Duration pill + status badges (excluding court sharing) */}
+          {/* Row 3: Time range pill + status badges */}
           <div className="flex items-center gap-1.5 flex-wrap">
-            {durationHrs && durationHrs > 0 && (
-              <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] sm:text-xs font-semibold ${urgency.pill}`}>
-                <Clock className="w-3 h-3" />
-                {formatDuration(durationHrs)}
-              </span>
-            )}
+            <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] sm:text-xs font-semibold ${urgency.pill}`}>
+              <Clock className="w-3 h-3" />
+              {formatTimeRange(dateTime, endDateTime)}
+            </span>
             {userStatus && !isCourtSharing && (
               <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] sm:text-xs font-semibold ${
                 userStatus === "hosting"
