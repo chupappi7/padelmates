@@ -1,8 +1,7 @@
 import { Link } from "react-router-dom";
-import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { MapPin, Clock, Users } from "lucide-react";
-import { format as formatDate, differenceInHours, isToday, isTomorrow } from "date-fns";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { differenceInHours } from "date-fns";
 import { motion } from "framer-motion";
 
 interface GameCardProps {
@@ -33,29 +32,25 @@ const getSkillColor = (level: number) => {
   return "badge-advanced";
 };
 
-/** Returns urgency color classes based on hours until event */
 const getUrgencyStyle = (dateTime: string) => {
   const now = new Date();
-  const date = new Date(dateTime);
-  const hoursUntil = differenceInHours(date, now);
-
-  if (hoursUntil < 0) return { card: "", time: "text-muted-foreground", dot: "bg-muted-foreground" };
-  if (hoursUntil < 3) return { card: "border-l-4 border-l-destructive", time: "text-destructive font-bold", dot: "bg-destructive" };
-  if (hoursUntil < 12) return { card: "border-l-4 border-l-warning", time: "text-warning font-semibold", dot: "bg-warning" };
-  if (hoursUntil < 24) return { card: "border-l-4 border-l-primary/60", time: "text-primary font-medium", dot: "bg-primary/60" };
-  return { card: "", time: "text-muted-foreground", dot: "bg-muted-foreground/40" };
+  const hoursUntil = differenceInHours(new Date(dateTime), now);
+  if (hoursUntil < 0) return { card: "", pill: "bg-muted text-muted-foreground border-border" };
+  if (hoursUntil < 3) return { card: "border-l-4 border-l-destructive", pill: "bg-destructive/15 text-destructive border-destructive/25" };
+  if (hoursUntil < 12) return { card: "border-l-4 border-l-warning", pill: "bg-warning/15 text-warning border-warning/25" };
+  if (hoursUntil < 24) return { card: "border-l-4 border-l-primary/60", pill: "bg-primary/10 text-primary border-primary/20" };
+  return { card: "", pill: "bg-muted text-muted-foreground border-border" };
 };
 
-const formatDistance = (km: number) => {
-  if (km < 1) return `${Math.round(km * 1000)}m`;
-  return `${km.toFixed(1)}km`;
-};
+const formatDistance = (km: number) =>
+  km < 1 ? `${Math.round(km * 1000)}m` : `${km.toFixed(1)}km`;
 
-const formatTimeLabel = (dateTime: string) => {
-  const date = new Date(dateTime);
-  if (isToday(date)) return `Today · ${formatDate(date, "h:mm a")}`;
-  if (isTomorrow(date)) return `Tomorrow · ${formatDate(date, "h:mm a")}`;
-  return formatDate(date, "EEE, MMM d · h:mm a");
+const formatDuration = (hrs: number) => {
+  const h = Math.floor(hrs);
+  const m = Math.round((hrs - h) * 60);
+  if (m === 0) return `${h}h`;
+  if (h === 0) return `${m}m`;
+  return `${h}h ${m}m`;
 };
 
 export function GameCard({
@@ -65,7 +60,6 @@ export function GameCard({
   dateTime,
   endDateTime,
   skillLevel,
-  format,
   maxPlayers,
   currentPlayers,
   prefilledCount = 0,
@@ -83,13 +77,12 @@ export function GameCard({
   const isCourtTaken = !!courtTakenBy;
   const totalPlayers = currentPlayers + prefilledCount;
   const spotsLeft = maxPlayers - totalPlayers;
-  const date = new Date(dateTime);
+
   const durationHrs = endDateTime
-    ? (new Date(endDateTime).getTime() - date.getTime()) / 3600000
+    ? (new Date(endDateTime).getTime() - new Date(dateTime).getTime()) / 3600000
     : null;
 
   const urgency = getUrgencyStyle(dateTime);
-
   const showPrice = pricePerPlayer > 0 && priceMode !== "free";
 
   const spotsColor = spotsLeft <= 0
@@ -106,41 +99,20 @@ export function GameCard({
       transition={{ duration: 0.15 }}
     >
       <Link to={`/games/${id}`} className={`block card-game group overflow-hidden ${urgency.card}`}>
-        <div className="p-3 sm:p-4">
+        <div className="p-3 sm:p-4 space-y-2">
 
-          {/* Row 1: Title + status badge | Skill level */}
-          <div className="flex items-start justify-between gap-2 mb-1.5">
-            <div className="flex items-center gap-1.5 min-w-0 flex-1">
-              <h3 className="font-display font-bold text-sm sm:text-base group-hover:text-primary transition-colors line-clamp-1">
-                {title}
-              </h3>
-              {isCourtSharing && (
-                <span className={`shrink-0 rounded-full text-[9px] sm:text-[10px] px-1.5 py-0.5 font-semibold border ${
-                  isCourtTaken
-                    ? "bg-destructive/10 text-destructive border-destructive/25"
-                    : "bg-success/10 text-success border-success/25"
-                }`}>
-                  {isCourtTaken ? "Taken" : "Available"}
-                </span>
-              )}
-              {userStatus && (
-                <span className={`shrink-0 rounded-full text-[9px] sm:text-[10px] px-1.5 py-0.5 font-semibold border ${
-                  userStatus === "hosting"
-                    ? "bg-primary/10 text-primary border-primary/25"
-                    : "bg-success/10 text-success border-success/25"
-                }`}>
-                  {userStatus === "hosting" ? "Hosting" : "Joined"}
-                </span>
-              )}
-            </div>
-            {/* Skill level top-right */}
+          {/* Row 1: Title + Skill chip */}
+          <div className="flex items-start justify-between gap-2">
+            <h3 className="font-display font-bold text-sm sm:text-base group-hover:text-primary transition-colors line-clamp-1 flex-1">
+              {title}
+            </h3>
             <span className={`badge-skill text-[9px] sm:text-[10px] px-1.5 sm:px-2 py-0.5 shrink-0 ${getSkillColor(skillLevel)}`}>
               Lvl {skillLevel}
             </span>
           </div>
 
-          {/* Row 2: Location */}
-          <div className="flex items-center gap-1 text-[11px] sm:text-xs text-muted-foreground mb-1">
+          {/* Row 2: Location + distance */}
+          <div className="flex items-center gap-1 text-[11px] sm:text-xs text-muted-foreground">
             <MapPin className="w-3 h-3 shrink-0 text-primary/70" />
             <span className="truncate">{location}</span>
             {distance !== undefined && (
@@ -148,18 +120,36 @@ export function GameCard({
             )}
           </div>
 
-          {/* Row 3: Duration only (time is in the group header) */}
-          {durationHrs && durationHrs > 0 && (
-            <div className="flex items-center gap-1 mb-2.5">
-              <span className={`inline-block w-1.5 h-1.5 rounded-full shrink-0 ${urgency.dot}`} />
-              <span className={`text-[11px] sm:text-xs font-medium ${urgency.time}`}>
-                {durationHrs % 1 === 0 ? durationHrs : durationHrs.toFixed(1)}h
+          {/* Row 3: Duration pill + status badges */}
+          <div className="flex items-center gap-1.5 flex-wrap">
+            {durationHrs && durationHrs > 0 && (
+              <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] sm:text-xs font-semibold ${urgency.pill}`}>
+                <Clock className="w-3 h-3" />
+                {formatDuration(durationHrs)}
               </span>
-            </div>
-          )}
+            )}
+            {isCourtSharing && (
+              <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] sm:text-xs font-semibold ${
+                isCourtTaken
+                  ? "bg-destructive/10 text-destructive border-destructive/25"
+                  : "bg-success/10 text-success border-success/25"
+              }`}>
+                {isCourtTaken ? "Taken" : "Available"}
+              </span>
+            )}
+            {userStatus && (
+              <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] sm:text-xs font-semibold ${
+                userStatus === "hosting"
+                  ? "bg-primary/10 text-primary border-primary/25"
+                  : "bg-success/10 text-success border-success/25"
+              }`}>
+                {userStatus === "hosting" ? "Hosting" : "Joined"}
+              </span>
+            )}
+          </div>
 
-          {/* Row 4: Host + spots/price at bottom */}
-          <div className="flex items-center justify-between gap-2 pt-2 border-t border-border/60">
+          {/* Row 4: Host + spots + price */}
+          <div className="flex items-center justify-between gap-2 pt-1.5 border-t border-border/60">
             <div className="flex items-center gap-1.5 min-w-0">
               <Avatar className="h-5 w-5 sm:h-6 sm:w-6 shrink-0">
                 <AvatarImage src={hostAvatar} />
@@ -167,12 +157,9 @@ export function GameCard({
                   {hostName.charAt(0).toUpperCase()}
                 </AvatarFallback>
               </Avatar>
-              <span className="text-[10px] sm:text-xs text-muted-foreground truncate">
-                {hostName}
-              </span>
+              <span className="text-[10px] sm:text-xs text-muted-foreground truncate">{hostName}</span>
             </div>
 
-            {/* Bottom right: price or spots */}
             <div className="flex items-center gap-1.5 shrink-0">
               {isCourtSharing && interestCount > 0 && (
                 <span className="text-[9px] sm:text-[10px] text-primary/70 font-medium">
