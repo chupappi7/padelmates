@@ -329,6 +329,73 @@ export default function ProfilePage() {
             )}
           </div>
 
+          {/* Payment Info Section */}
+          <div className="bg-card border border-border rounded-2xl p-6 mb-4">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <CreditCard className="w-4 h-4 text-primary" />
+                <h2 className="font-semibold text-sm">Payment Info</h2>
+              </div>
+              {!editingPayment && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 text-xs gap-1"
+                  onClick={() => setEditingPayment(true)}
+                >
+                  <Pencil className="w-3 h-3" />
+                  {profile?.bank_details ? "Edit" : "Add"}
+                </Button>
+              )}
+            </div>
+
+            {editingPayment ? (
+              <div className="space-y-3">
+                <p className="text-xs text-muted-foreground">
+                  Add your account number, Revolut tag, or any payment link. This is shared with buyers during court listing chats.
+                </p>
+                <textarea
+                  className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm resize-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring min-h-[80px]"
+                  placeholder={"Revolut: @yourname\nBank: 1234 5678 9012\nPayPal: you@email.com"}
+                  value={bankDetailsForm}
+                  onChange={(e) => setBankDetailsForm(e.target.value)}
+                />
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex-1 text-xs"
+                    onClick={() => {
+                      setBankDetailsForm(profile?.bank_details || "");
+                      setEditingPayment(false);
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    variant="hero"
+                    size="sm"
+                    className="flex-1 text-xs"
+                    onClick={handleSavePayment}
+                    disabled={savingPayment}
+                  >
+                    {savingPayment ? "Saving..." : "Save"}
+                  </Button>
+                </div>
+              </div>
+            ) : profile?.bank_details ? (
+              <div className="bg-muted/50 rounded-lg px-3 py-2.5">
+                <pre className="text-xs text-foreground whitespace-pre-wrap font-sans leading-relaxed">
+                  {profile.bank_details}
+                </pre>
+              </div>
+            ) : (
+              <p className="text-xs text-muted-foreground text-center py-3">
+                No payment info added yet. Tap <strong>Add</strong> to set it up.
+              </p>
+            )}
+          </div>
+
           <div className="grid grid-cols-3 gap-4">
             <div className="bg-card border border-border rounded-xl p-4 text-center">
               <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center mx-auto mb-2">
