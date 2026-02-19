@@ -1,106 +1,187 @@
 
-## Bank Details in Profile + Smart Chat Templates for Court Sharing
+## Smart Quick-Reply UX for Court Sharing Chat
 
-### What's being built
+### The Problem with the Current Flow
 
-Three interconnected improvements:
+Right now both sides have to type custom messages back and forth. The conversation has predictable, repetitive steps — availability check, price negotiation, payment confirmation — but the UI treats it like a generic chat. The result: friction for both parties, potential for missed steps, and no clear "done" state.
 
-1. **Bank details saved in profile** — users add their payment info once, reuse it everywhere
-2. **User interest template** — when a user opens a court-sharing chat, the input is pre-filled with a ready-to-send message referencing the listing's location and date/time
-3. **Host "Send Bank Details" quick button** — host taps one button to instantly send their saved bank details into the chat
+### The Solution: A Guided Transaction Flow
+
+Replace the blank chat with a **stage-based conversation** where both sides get context-aware quick-reply chips at each step. Neither party needs to type if they don't want to. The flow progresses through clear stages:
+
+```text
+BUYER taps "I'm Interested"
+  → Auto-opens chat with pre-filled availability question
+  
+HOST sees message → replies with quick-reply chips:
+  [✅ Yes, still available!]  [❌ Sorry, it's taken]
+
+BUYER sees "Yes" → quick replies appear:
+  [Great! What's the price?]  [Is it negotiable?]  [I'll take it!]
+
+HOST replies with price → quick-reply chip:
+  [💳 Send Payment Details]  (one tap, done)
+
+BUYER sees bank details → quick reply:
+  [✅ Payment sent!]  [📸 Upload proof]
+
+HOST confirms → Confirm Booking button
+```
 
 ---
 
-### Part 1 — Database: Add `bank_details` column to `profiles`
+### Implementation: 5 Distinct Stages
 
-A migration will add a single `bank_details` text column (nullable) to the `profiles` table. This stores a freeform string like:
+The system tracks which conversational stage the thread is in. Each stage renders different quick-reply chips for the correct party.
 
-```
-Bank: BCA
-Account: 1234567890
-Name: Ahmad Reza
-```
+**Stage 1 — Availability**
+- Buyer's first message auto-filled (already done ✓)
+- Host gets chips: `Yes, still available! ✅` / `Sorry, it's taken ❌`
 
-No new table needed — it lives on the user's existing profile, protected by the existing RLS (only the user can update their own profile).
+**Stage 2 — Price / Terms** (only after host confirms availability)
+- Buyer gets chips: `What's the price?` / `Is price negotiable?` / `I'll take it at the listed price!`
 
----
+**Stage 3 — Payment Request** (after price discussed)
+- Host gets chip: `💳 Send Payment Details` (single tap, sends their bank info)
+- Host gets chip: `✅ Confirm Booking` if listing is free/giveaway
 
-### Part 2 — Profile Page changes (`src/pages/Profile/ProfilePage.tsx`)
+**Stage 4 — Payment Confirmation** (after bank details sent)
+- Buyer gets chip: `Payment sent! ✅` / `Can I send a screenshot?`
 
-A new **"Payment Info"** section card below the stats grid, always visible. It shows:
-
-- **View mode**: Displays saved bank details in a styled box with a copy button, or a prompt to add details if empty
-- **Edit mode**: Opens an inline form with a `Textarea` for bank details (account name, bank name, account number, etc.) with a save button
-
-The edit flow integrates into the existing `editing` state — a second dedicated edit section for bank details only (separate from the profile name/skill edit) to keep UX clean.
-
----
-
-### Part 3 — CourtDMChat changes (`src/components/games/CourtDMChat.tsx`)
-
-**User side — pre-filled interest template:**
-
-When a non-host user opens the chat for the first time (0 messages in the thread), the message input is pre-populated with:
-
-```
-Hi! I'm interested in your court at [Location] on [Day, Date · Time]. Is it still available?
-```
-
-- The user can edit it freely before sending
-- Once sent, it clears like a normal message
-- If messages already exist, the input starts empty (normal behavior)
-
-**Host side — "Send Bank Details" quick action button:**
-
-- A `💳 Send Bank Details` button appears in the chat input area (next to the send button)
-- On tap, it instantly inserts a message with the host's saved bank details into the chat, formatted as:
-
-```
-💳 Payment Details:
-[bank_details from profile]
-```
-
-- If the host hasn't saved bank details yet, the button shows a tooltip/toast: "Add your bank details in Profile → Payment Info first"
-- The host's `bank_details` are fetched once when the chat component mounts (via a profile query on `hostId`)
+**Stage 5 — Booking Confirmed**
+- Host sees the "Confirm Booking" button become prominent
+- Confirmed state locks further transaction chips, shows success banner
 
 ---
 
-### Technical Implementation Details
+### How Stage Detection Works
 
-**Files to change:**
+Rather than a complex DB column, stage is inferred from the last few messages in the thread:
+- Stage 1 (default): No messages yet or first message is from buyer
+- Stage 2: Last host message contains "available" keyword
+- Stage 3: Last buyer message contains "price" or "take it"
+- Stage 4: Last host message contains "💳 Payment Details" (bank details sent)
+- Stage 5: Interest status = confirmed
+
+This is lightweight — no new DB columns. The stage is computed client-side from messages array on every render.
+
+---
+
+### Visual Design
+
+**Quick-reply chips** appear as a horizontally-scrollable row of rounded pill buttons ABOVE the text input, styled differently from the send button to avoid confusion:
+
+```
+┌─────────────────────────────────────────────────┐
+│ Messages area (scrollable)                       │
+├─────────────────────────────────────────────────┤
+│ Quick replies (your turn):                       │
+│ [✅ Yes, available!] [❌ Sorry, taken]           │
+├─────────────────────────────────────────────────┤
+│ [💳 Send Bank Details btn]  (host only)          │
+│ [______ Type a message... ________________] [→]  │
+└─────────────────────────────────────────────────┘
+```
+
+Tapping a quick reply:
+1. Instantly sends that message (no edit step, direct send)
+2. Clears the chips (stage advances on next render)
+3. The buyer/host sees the sent message appear in the chat bubble
+
+**Special bubble styling** for key messages:
+- Bank details message → amber/gold card-style bubble with copy icon
+- "Payment sent" → green bubble with checkmark
+- "Sorry, it's taken" → muted/destructive tint
+
+---
+
+### Buyer-Side Quick Replies Summary
+
+| After | Buyer sees chips |
+|---|---|
+| Chat opens (no messages) | Pre-filled input (existing ✓) |
+| Host says "Yes, available" | "What's the price?" · "I'll take it!" · "Is it negotiable?" |
+| Host sends bank details | "Payment sent! ✅" · "I'll send a screenshot" |
+| Host confirms booking | *(no chips, show confirmed banner)* |
+
+### Host-Side Quick Replies Summary
+
+| After | Host sees chips |
+|---|---|
+| Buyer sends interest message | "✅ Yes, still available!" · "❌ Sorry, it's taken" |
+| Buyer asks about price/terms | *(free text + Send Bank Details button)* |
+| Buyer says "Payment sent" | "✅ Confirm Booking" becomes primary CTA |
+
+---
+
+### Files to Change
 
 | File | Change |
 |---|---|
-| `supabase/migrations/...sql` | `ALTER TABLE profiles ADD COLUMN bank_details text` |
-| `src/integrations/supabase/types.ts` | Auto-updated |
-| `src/pages/Profile/ProfilePage.tsx` | Add Payment Info card + edit form for bank details |
-| `src/components/games/CourtDMChat.tsx` | Pre-fill template for user; Send Bank Details button for host |
+| `src/components/games/CourtDMChat.tsx` | Add stage detection, quick-reply chip row, special bubble styling for bank/payment messages |
 
-**CourtDMChat prop addition:**
-The component already receives `hostId`. It will fetch the host's `bank_details` from `profiles` on mount — no new props needed.
+No database changes needed — stages are derived from existing message content + interest status.
 
-**Template pre-fill logic:**
+---
+
+### Technical Details
+
+**Stage detection function (pure, runs on every render):**
 ```typescript
-useEffect(() => {
-  // Only pre-fill if: not host, no messages yet, chat just opened
-  if (!isHost && messages.length === 0 && activeChatId) {
-    const template = `Hi! I'm interested in your court at ${gameLocation} on ${format(new Date(gameDateTime), "EEE, MMM d · h:mm a")}. Is it still available?`;
-    setNewMessage(template);
-  }
-}, [activeChatId, messages.length]);
+type ChatStage = "availability" | "price" | "payment_request" | "payment_sent" | "confirmed";
+
+function detectStage(messages: ChatMessage[], interestStatus: string): ChatStage {
+  if (interestStatus === "confirmed") return "confirmed";
+  if (messages.length === 0) return "availability";
+  const lastMessages = messages.slice(-5); // only look at recent
+  const hasPaymentDetails = lastMessages.some(m => m.message.includes("💳 Payment Details"));
+  const hasPaymentSent = lastMessages.some(m => m.message.toLowerCase().includes("payment sent"));
+  const hasAvailable = lastMessages.some(m => m.message.toLowerCase().includes("available"));
+  const hasPriceQuery = lastMessages.some(m => m.message.toLowerCase().includes("price"));
+  if (hasPaymentDetails) return "payment_sent";
+  if (hasPriceQuery || hasAvailable) return "payment_request";
+  if (messages.length > 0) return "price";
+  return "availability";
+}
 ```
 
-**Send Bank Details logic (host):**
+**Quick reply chip component (inline):**
 ```typescript
-const handleSendBankDetails = async () => {
-  if (!hostBankDetails) {
-    toast.error("Add your bank details in Profile → Payment Info first");
-    return;
-  }
+const QuickReplies = ({ chips }: { chips: { label: string; message: string }[] }) => (
+  <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
+    {chips.map((chip) => (
+      <button
+        key={chip.label}
+        onClick={() => sendQuickReply(chip.message)}
+        className="shrink-0 px-3 py-1.5 rounded-full border border-primary/30 bg-primary/5 
+                   text-primary text-xs font-medium hover:bg-primary/10 transition-colors"
+      >
+        {chip.label}
+      </button>
+    ))}
+  </div>
+);
+```
+
+**`sendQuickReply` function** — sends directly without going through the text input, then clears:
+```typescript
+const sendQuickReply = async (message: string) => {
+  if (!activeChatId || sendLoading) return;
+  setSendLoading(true);
   await supabase.from("chat_messages").insert({
     chat_id: activeChatId,
     sender_id: currentUserId,
-    message: `💳 Payment Details:\n${hostBankDetails}`,
+    message,
   });
+  fetchMessages(activeChatId);
+  if (isHost) loadInterestedUsers();
+  setSendLoading(false);
 };
 ```
+
+**Special message bubble detection:**
+```typescript
+const isBankDetailsMsg = msg.message.startsWith("💳 Payment Details");
+const isPaymentSentMsg = msg.message.toLowerCase().includes("payment sent");
+```
+Bank details messages render as a distinct amber card bubble; payment-sent messages render in green.
