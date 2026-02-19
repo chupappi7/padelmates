@@ -83,7 +83,7 @@ export function GameCard({
     : null;
 
   const urgency = getUrgencyStyle(dateTime);
-  const showPrice = pricePerPlayer > 0 && priceMode !== "free";
+  const showPrice = pricePerPlayer > 0 && (priceMode !== "free" || isCourtSharing);
 
   const spotsColor = spotsLeft <= 0
     ? "bg-destructive/15 text-destructive border-destructive/20"
