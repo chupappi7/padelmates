@@ -84,7 +84,6 @@ export default function CreateGamePage() {
     courtNumber: "",
     skillLevel: 3,
     maxPlayers: config.defaultMaxPlayers,
-    lookingFor: 2,
     format: config.format,
     visibility: "public",
     hostIsPlaying: hostType !== "sell_court",
@@ -95,17 +94,41 @@ export default function CreateGamePage() {
              : "free" as "split_evenly" | "free" | "set_price",
   });
 
+  // Find Players: spotsNeeded is the primary control (how many more players do you need?)
+  const [spotsNeeded, setSpotsNeeded] = useState(2);
+
   const getPlayerName = (p: PrefilledPlayer) => typeof p === "string" ? p : p.name;
   const prefilledCount = prefilledPlayers.filter(p => getPlayerName(p).trim()).length;
 
-  // Auto-calculate lookingFor when prefilled players change
+  // Derived values for find_players mode
+  const maxSpotsNeeded = Math.max(1, 8 - prefilledCount - (formData.hostIsPlaying ? 1 : 0));
+  const clampedSpotsNeeded = Math.min(spotsNeeded, maxSpotsNeeded);
+
+  // effectiveLookingFor = spotsNeeded in find_players, else legacy lookingFor
   const effectiveLookingFor = hostType === "find_players"
-    ? Math.max(0, formData.maxPlayers - prefilledPlayers.length - (formData.hostIsPlaying ? 1 : 0))
-    : formData.lookingFor;
+    ? clampedSpotsNeeded
+    : Math.max(0, formData.maxPlayers - prefilledPlayers.length - (formData.hostIsPlaying ? 1 : 0));
+
+  // Derived maxPlayers for find_players: spotsNeeded + prefilled + (host if playing)
+  const derivedMaxPlayers = hostType === "find_players"
+    ? clampedSpotsNeeded + prefilledCount + (formData.hostIsPlaying ? 1 : 0)
+    : formData.maxPlayers;
 
   const maxPrefilledSlots = hostType === "find_players"
-    ? Math.max(0, formData.maxPlayers - (formData.hostIsPlaying ? 1 : 0) - 1) // at least 1 open slot
+    ? Math.max(0, clampedSpotsNeeded - 1) // leave at least 1 open spot
     : 0;
+
+  const handleSpotsNeededChange = (delta: number) => {
+    setSpotsNeeded(prev => {
+      const next = Math.min(Math.max(1, prev + delta), maxSpotsNeeded);
+      // Trim prefilled if they'd exceed the new available prefilled slots
+      const newMaxPrefilled = Math.max(0, next - 1);
+      if (prefilledPlayers.length > newMaxPrefilled) {
+        setPrefilledPlayers(p => p.slice(0, newMaxPrefilled));
+      }
+      return next;
+    });
+  };
 
   const isSellCourt = hostType === "sell_court";
 
@@ -165,7 +188,7 @@ export default function CreateGamePage() {
       date_time: dateTime.toISOString(),
       end_date_time: endDateTime.toISOString(),
       skill_level: formData.skillLevel,
-      max_players: formData.maxPlayers,
+      max_players: derivedMaxPlayers,
       price_per_player: formData.totalPrice && Number(formData.totalPrice) > 0
         ? isSellCourt
           ? Number(formData.totalPrice)
@@ -400,50 +423,87 @@ export default function CreateGamePage() {
                   </h2>
 
                   {hostType === "find_players" ? (
-                    <div className="space-y-4">
-                      <div className="space-y-1.5">
-                        <Label className="text-sm">Total players <span className="text-destructive">*</span></Label>
-                        <div className="flex items-center gap-3">
-                          <span className="text-sm text-muted-foreground whitespace-nowrap">Looking for</span>
-                          <span className="h-11 w-24 flex items-center justify-center bg-muted/50 border border-input rounded-md text-sm font-semibold">
-                            {effectiveLookingFor}
-                          </span>
-                          <span className="text-sm text-muted-foreground whitespace-nowrap">out of</span>
-                          <Select
-                            value={String(formData.maxPlayers)}
-                            onValueChange={(v) => {
-                              handleChange("maxPlayers", parseInt(v));
-                              // Trim prefilled players if they exceed new max
-                              const newMax = parseInt(v);
-                              const maxPrefilled = Math.max(0, newMax - (formData.hostIsPlaying ? 1 : 0) - 1);
-                              if (prefilledPlayers.length > maxPrefilled) {
-                                setPrefilledPlayers(prev => prev.slice(0, maxPrefilled));
-                              }
-                            }}
+                    <div className="space-y-5">
+                      {/* Step 1: Are you playing? */}
+                      <div className="space-y-2">
+                        <Label className="text-sm font-medium">Are you playing?</Label>
+                        <div className="flex gap-2">
+                          <button
+                            type="button"
+                            onClick={() => handleChange("hostIsPlaying", true)}
+                            className={`flex-1 h-10 rounded-xl border-2 text-sm font-medium transition-all ${
+                              formData.hostIsPlaying
+                                ? "border-primary bg-primary/10 text-foreground"
+                                : "border-border text-muted-foreground hover:border-primary/40"
+                            }`}
                           >
-                            <SelectTrigger className="h-11 w-24">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {[2, 3, 4, 5, 6, 7, 8].map((n) => (
-                                <SelectItem key={n} value={String(n)}>{n}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <span className="text-sm text-muted-foreground">total</span>
+                            🎾 Yes, I'm playing
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleChange("hostIsPlaying", false)}
+                            className={`flex-1 h-10 rounded-xl border-2 text-sm font-medium transition-all ${
+                              !formData.hostIsPlaying
+                                ? "border-primary bg-primary/10 text-foreground"
+                                : "border-border text-muted-foreground hover:border-primary/40"
+                            }`}
+                          >
+                            📋 No, just organizing
+                          </button>
                         </div>
-                        <p className="text-xs text-muted-foreground">
-                          {formData.hostIsPlaying ? "You" : ""}
-                          {formData.hostIsPlaying && prefilledCount > 0 ? " + " : ""}
-                          {prefilledCount > 0
-                            ? `${prefilledCount} player${prefilledCount !== 1 ? "s" : ""}`
-                            : ""}
-                          {(formData.hostIsPlaying || prefilledCount > 0) ? " already in · " : ""}
-                          {effectiveLookingFor} spot{effectiveLookingFor !== 1 ? "s" : ""} open
-                        </p>
                       </div>
 
-                      {/* Pre-filled players */}
+                      {/* Step 2: How many players do you need? */}
+                      <div className="space-y-3">
+                        <Label className="text-sm font-medium">How many players do you need? <span className="text-destructive">*</span></Label>
+                        <div className="flex items-center gap-4">
+                          <button
+                            type="button"
+                            onClick={() => handleSpotsNeededChange(-1)}
+                            disabled={clampedSpotsNeeded <= 1}
+                            className="w-12 h-12 rounded-xl border-2 border-border bg-background text-xl font-bold flex items-center justify-center transition-all hover:border-primary/60 disabled:opacity-30 disabled:cursor-not-allowed select-none"
+                          >
+                            –
+                          </button>
+                          <div className="flex-1 flex flex-col items-center">
+                            <span className="text-4xl font-bold text-foreground leading-none">{clampedSpotsNeeded}</span>
+                            <span className="text-xs text-muted-foreground mt-1">
+                              {clampedSpotsNeeded === 1 ? "player" : "players"}
+                            </span>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => handleSpotsNeededChange(1)}
+                            disabled={clampedSpotsNeeded >= maxSpotsNeeded}
+                            className="w-12 h-12 rounded-xl border-2 border-border bg-background text-xl font-bold flex items-center justify-center transition-all hover:border-primary/60 disabled:opacity-30 disabled:cursor-not-allowed select-none"
+                          >
+                            +
+                          </button>
+                        </div>
+
+                        {/* Composition summary */}
+                        <div className="bg-muted/40 rounded-xl px-4 py-3 space-y-1">
+                          <div className="flex items-center gap-1.5 text-sm text-muted-foreground flex-wrap">
+                            {formData.hostIsPlaying && (
+                              <span className="flex items-center gap-1">
+                                <span className="w-2 h-2 rounded-full bg-primary inline-block" />
+                                You
+                              </span>
+                            )}
+                            {formData.hostIsPlaying && prefilledCount > 0 && <span>·</span>}
+                            {prefilledCount > 0 && (
+                              <span>{prefilledCount} confirmed</span>
+                            )}
+                            {(formData.hostIsPlaying || prefilledCount > 0) && <span>·</span>}
+                            <span className="font-medium text-foreground">{clampedSpotsNeeded} spot{clampedSpotsNeeded !== 1 ? "s" : ""} open</span>
+                          </div>
+                          <p className="text-xs text-muted-foreground">
+                            Court total: <strong>{derivedMaxPlayers}</strong> player{derivedMaxPlayers !== 1 ? "s" : ""}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Step 3: Pre-filled players */}
                       <div className="space-y-2">
                         <Label className="text-sm flex items-center gap-1.5">
                           <UserPlus className="w-3.5 h-3.5 text-primary" />
@@ -699,7 +759,7 @@ export default function CreateGamePage() {
                           </div>
                           {formData.totalPrice && Number(formData.totalPrice) > 0 && (
                             <p className="text-xs text-muted-foreground">
-                              ≈ {Math.ceil(Number(formData.totalPrice) / formData.maxPlayers)} Kč per player
+                              ≈ {Math.ceil(Number(formData.totalPrice) / derivedMaxPlayers)} Kč per player
                             </p>
                           )}
                         </div>
@@ -726,12 +786,12 @@ export default function CreateGamePage() {
                         <div className="space-y-1.5">
                           <Label className="text-xs text-muted-foreground">Per Player</Label>
                           <div className="h-11 px-3 flex items-center bg-muted/50 border border-input rounded-md text-sm font-semibold">
-                            {formData.totalPrice && Number(formData.totalPrice) > 0
-                              ? `${Math.ceil(Number(formData.totalPrice) / formData.maxPlayers)} Kč`
-                              : "Free"}
-                          </div>
-                        </div>
-                        <p className="col-span-2 text-xs text-muted-foreground">Enter the total court cost — it'll be split across {formData.maxPlayers} players</p>
+                             {formData.totalPrice && Number(formData.totalPrice) > 0
+                               ? `${Math.ceil(Number(formData.totalPrice) / derivedMaxPlayers)} Kč`
+                               : "Free"}
+                           </div>
+                         </div>
+                         <p className="col-span-2 text-xs text-muted-foreground">Enter the total court cost — it'll be split across {derivedMaxPlayers} players</p>
                       </div>
                     )}
                   </div>
@@ -765,7 +825,8 @@ export default function CreateGamePage() {
                     </div>
                   )}
 
-                  {/* Host Role Selection */}
+                  {/* Host Role Selection — only shown for non-find_players types */}
+                  {hostType !== "find_players" && (
                   <div className="space-y-2">
                     <Label className="text-sm">Your Role</Label>
                     <div className="grid grid-cols-2 gap-2">
@@ -806,6 +867,7 @@ export default function CreateGamePage() {
                       </button>
                     </div>
                   </div>
+                  )}
 
                   {/* Join Mode Selection */}
                   <div className="space-y-2">
