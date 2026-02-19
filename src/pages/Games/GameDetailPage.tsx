@@ -518,7 +518,7 @@ export default function GameDetailPage() {
     <div className={cn("min-h-screen bg-background md:pb-8", activeTab === "chat" ? "h-screen overflow-hidden pb-0" : "pb-32")}>
       <Navbar />
 
-      <div className={cn("container max-w-4xl px-3 md:px-6", activeTab === "chat" ? "py-2 md:py-4 flex flex-col overflow-hidden" : "py-4 md:py-8")} style={activeTab === "chat" ? { height: "calc(100vh - 64px - 4.5rem)" } : undefined}>
+      <div className={cn("container max-w-4xl px-3 md:px-6", activeTab === "chat" ? "py-1 md:py-3 flex flex-col overflow-hidden" : "py-3 md:py-8")} style={activeTab === "chat" ? { height: "calc(100vh - 56px - 4.5rem)" } : undefined}>
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className={activeTab === "chat" ? "flex flex-col flex-1 min-h-0 overflow-hidden" : ""}>
           {/* Back + Title */}
           <div className="flex items-center gap-3 mb-3">
@@ -529,26 +529,26 @@ export default function GameDetailPage() {
               <ArrowLeft className="w-4 h-4" />
             </button>
             <div className="min-w-0 flex-1">
-              <h1 className="font-display text-lg md:text-2xl font-bold truncate">{game.title}</h1>
-              <div className="flex items-center gap-1.5 flex-wrap">
-                <SkillBadge level={game.skill_level as number} size="sm" />
-                <Badge variant="outline" className="rounded-full text-[10px] h-5">
+              <h1 className="font-display text-base md:text-2xl font-bold truncate">{game.title}</h1>
+              <div className="flex items-center gap-1 flex-wrap">
+                {!isCourtSharing && <SkillBadge level={game.skill_level as number} size="sm" />}
+                <Badge variant="outline" className="rounded-full text-[10px] h-4 px-1.5">
                   {formatLabels[game.format]}
                 </Badge>
                 {isHost && (
-                  <Badge className="rounded-full bg-primary/10 text-primary border-0 text-[10px] h-5">Hosting</Badge>
+                  <Badge className="rounded-full bg-primary/10 text-primary border-0 text-[10px] h-4 px-1.5">Hosting</Badge>
                 )}
                 {isCourtSharing && isCourtTaken && (
-                  <Badge className="rounded-full bg-destructive/10 text-destructive border-destructive/20 text-[10px] h-5">Taken</Badge>
+                  <Badge className="rounded-full bg-destructive/10 text-destructive border-destructive/20 text-[10px] h-4 px-1.5">Taken</Badge>
                 )}
                 {isCourtSharing && !isCourtTaken && (
-                  <Badge className="rounded-full bg-success/10 text-success border-success/20 text-[10px] h-5">Available</Badge>
+                  <Badge className="rounded-full bg-success/10 text-success border-success/20 text-[10px] h-4 px-1.5">Available</Badge>
                 )}
                 {!isCourtSharing && isAdmin && !isHost && (
-                  <Badge className="rounded-full bg-accent/10 text-accent border-0 text-[10px] h-5">Admin</Badge>
+                  <Badge className="rounded-full bg-accent/10 text-accent border-0 text-[10px] h-4 px-1.5">Admin</Badge>
                 )}
                 {!isCourtSharing && isPlayer && !isHost && !isAdmin && (
-                  <Badge className="rounded-full bg-success/10 text-success border-0 text-[10px] h-5">Playing</Badge>
+                  <Badge className="rounded-full bg-success/10 text-success border-0 text-[10px] h-4 px-1.5">Playing</Badge>
                 )}
               </div>
             </div>
@@ -572,55 +572,40 @@ export default function GameDetailPage() {
             )}
           </div>
 
-          {/* Join Status Banner - court sharing shows "Interested" state */}
+          {/* Join Status Banner - compact strip */}
           {isCourtSharing && isInterested && !isHost && !isCourtTaken && myInterest?.status !== "confirmed" && (
-            <div className="flex items-center gap-2.5 p-3 rounded-xl border bg-primary/10 text-primary border-primary/20 mb-3">
-              <Heart className="w-5 h-5 shrink-0" />
-              <div className="min-w-0 flex-1">
-                <p className="text-sm font-semibold">You're Interested</p>
-                <p className="text-xs opacity-80">Message the host to discuss details</p>
-              </div>
+            <div className="flex items-center gap-2 px-3 py-2 rounded-lg border bg-primary/10 text-primary border-primary/20 mb-2">
+              <Heart className="w-3.5 h-3.5 shrink-0" />
+              <p className="text-xs font-semibold">You're interested · Message host to discuss</p>
             </div>
           )}
           {isCourtSharing && isInterested && myInterest?.status === "confirmed" && !isHost && (
-            <div className="flex items-center gap-2.5 p-3 rounded-xl border bg-success/10 text-success border-success/20 mb-3">
-              <CheckCircle2 className="w-5 h-5 shrink-0" />
-              <div className="min-w-0 flex-1">
-                <p className="text-sm font-semibold">Booking Confirmed 🎉</p>
-                <p className="text-xs opacity-80">The host confirmed your booking for this court</p>
-              </div>
+            <div className="flex items-center gap-2 px-3 py-2 rounded-lg border bg-success/10 text-success border-success/20 mb-2">
+              <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
+              <p className="text-xs font-semibold">Booking Confirmed 🎉</p>
             </div>
           )}
           {isCourtSharing && isCourtTaken && !isHost && myInterest?.status !== "confirmed" && (
-            <div className="flex items-center gap-2.5 p-3 rounded-xl border bg-muted text-muted-foreground border-border mb-3">
-              <CheckCircle2 className="w-5 h-5 shrink-0" />
-              <div className="min-w-0 flex-1">
-                <p className="text-sm font-semibold">Court Taken</p>
-                <p className="text-xs opacity-80">This court has already been claimed</p>
-              </div>
+            <div className="flex items-center gap-2 px-3 py-2 rounded-lg border bg-muted text-muted-foreground border-border mb-2">
+              <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
+              <p className="text-xs font-semibold">Court already claimed</p>
             </div>
           )}
           {!isCourtSharing && myRequest && !isPlayer && userJoinStatus === "pending" && (
-            <div className="flex items-center gap-2.5 p-3 rounded-xl border bg-warning/10 text-warning border-warning/20 mb-3">
-              <Clock className="w-5 h-5 shrink-0" />
-              <div className="min-w-0 flex-1">
-                <p className="text-sm font-semibold">Pending</p>
-                <p className="text-xs opacity-80">Request sent – waiting for host</p>
-              </div>
+            <div className="flex items-center gap-2 px-3 py-2 rounded-lg border bg-warning/10 text-warning border-warning/20 mb-2">
+              <Clock className="w-3.5 h-3.5 shrink-0" />
+              <p className="text-xs font-semibold">Pending · Waiting for host</p>
             </div>
           )}
           {!isCourtSharing && myRequest && myRequest.status === "rejected" && (
-            <div className="flex items-center gap-2.5 p-3 rounded-xl border bg-destructive/10 text-destructive border-destructive/20 mb-3">
-              <Clock className="w-5 h-5 shrink-0" />
-              <div className="min-w-0 flex-1">
-                <p className="text-sm font-semibold">Rejected</p>
-                <p className="text-xs opacity-80">Your request was not accepted</p>
-              </div>
+            <div className="flex items-center gap-2 px-3 py-2 rounded-lg border bg-destructive/10 text-destructive border-destructive/20 mb-2">
+              <Clock className="w-3.5 h-3.5 shrink-0" />
+              <p className="text-xs font-semibold">Request rejected</p>
             </div>
           )}
 
           {/* Tab Navigation Buttons */}
-          <div className="flex gap-1 bg-muted/50 rounded-xl p-1 mb-4 overflow-x-auto scrollbar-hide">
+          <div className="flex gap-0.5 bg-muted/50 rounded-lg p-0.5 mb-2 overflow-x-auto scrollbar-hide">
             {tabs.map((tab) => {
               // Court sharing: show Details + Proof + Messages (DM) only
               if (isCourtSharing) {
@@ -641,21 +626,21 @@ export default function GameDetailPage() {
                   key={tab.key}
                   onClick={() => { setActiveTab(tab.key); if (tab.key === "chat") setUnreadMessageCount(0); }}
                   className={cn(
-                    "flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap flex-1 justify-center relative",
+                    "flex items-center gap-1 px-2.5 py-1.5 rounded-md text-xs font-medium transition-all whitespace-nowrap flex-1 justify-center relative",
                     isActive
                       ? "bg-background text-foreground shadow-sm"
                       : "text-muted-foreground hover:text-foreground"
                   )}
                 >
-                  <tab.icon className="w-4 h-4" />
-                  <span className="text-xs">{isCourtSharing && tab.key === "chat" ? "Messages" : tab.label}</span>
+                  <tab.icon className="w-3.5 h-3.5" />
+                  <span>{isCourtSharing && tab.key === "chat" ? "Messages" : tab.label}</span>
                   {showBadge && (
-                    <span className="w-5 h-5 rounded-full bg-secondary text-secondary-foreground text-[10px] font-bold flex items-center justify-center">
+                    <span className="w-4 h-4 rounded-full bg-secondary text-secondary-foreground text-[9px] font-bold flex items-center justify-center">
                       {pendingCount}
                     </span>
                   )}
                   {showMsgBadge && (
-                    <span className="min-w-[18px] h-[18px] px-1 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold flex items-center justify-center leading-none">
+                    <span className="min-w-[16px] h-4 px-1 rounded-full bg-destructive text-destructive-foreground text-[9px] font-bold flex items-center justify-center leading-none">
                       {unreadMessageCount > 99 ? "99+" : unreadMessageCount}
                     </span>
                   )}
