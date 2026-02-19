@@ -521,36 +521,32 @@ export default function GameDetailPage() {
       <div className={cn("container max-w-4xl px-3 md:px-6", activeTab === "chat" ? "py-1 md:py-3 flex flex-col overflow-hidden" : "py-3 md:py-8")} style={activeTab === "chat" ? { height: "calc(100vh - 56px - 4.5rem)" } : undefined}>
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className={activeTab === "chat" ? "flex flex-col flex-1 min-h-0 overflow-hidden" : ""}>
           {/* Back + Title */}
-          <div className="flex items-center gap-3 mb-3">
+          <div className="flex items-center gap-2 mb-2">
             <button
               onClick={() => navigate("/")}
-              className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-muted hover:bg-muted/80 transition-colors shrink-0"
+              className="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-muted hover:bg-muted/80 transition-colors shrink-0"
             >
-              <ArrowLeft className="w-4 h-4" />
+              <ArrowLeft className="w-3.5 h-3.5" />
             </button>
             <div className="min-w-0 flex-1">
-              <h1 className="font-display text-base md:text-2xl font-bold truncate">{game.title}</h1>
-              <div className="flex items-center gap-1 flex-wrap">
-                {!isCourtSharing && <SkillBadge level={game.skill_level as number} size="sm" />}
-                <Badge variant="outline" className="rounded-full text-[10px] h-4 px-1.5">
-                  {formatLabels[game.format]}
-                </Badge>
-                {isHost && (
-                  <Badge className="rounded-full bg-primary/10 text-primary border-0 text-[10px] h-4 px-1.5">Hosting</Badge>
-                )}
-                {isCourtSharing && isCourtTaken && (
-                  <Badge className="rounded-full bg-destructive/10 text-destructive border-destructive/20 text-[10px] h-4 px-1.5">Taken</Badge>
-                )}
-                {isCourtSharing && !isCourtTaken && (
-                  <Badge className="rounded-full bg-success/10 text-success border-success/20 text-[10px] h-4 px-1.5">Available</Badge>
-                )}
-                {!isCourtSharing && isAdmin && !isHost && (
-                  <Badge className="rounded-full bg-accent/10 text-accent border-0 text-[10px] h-4 px-1.5">Admin</Badge>
-                )}
-                {!isCourtSharing && isPlayer && !isHost && !isAdmin && (
-                  <Badge className="rounded-full bg-success/10 text-success border-0 text-[10px] h-4 px-1.5">Playing</Badge>
-                )}
-              </div>
+              <h1 className="font-display text-sm md:text-xl font-bold truncate">{game.title}</h1>
+              {!isCourtSharing && (
+                <div className="flex items-center gap-1 flex-wrap mt-0.5">
+                  <SkillBadge level={game.skill_level as number} size="sm" />
+                  <Badge variant="outline" className="rounded-full text-[10px] h-4 px-1.5">
+                    {formatLabels[game.format]}
+                  </Badge>
+                  {isHost && (
+                    <Badge className="rounded-full bg-primary/10 text-primary border-0 text-[10px] h-4 px-1.5">Hosting</Badge>
+                  )}
+                  {isAdmin && !isHost && (
+                    <Badge className="rounded-full bg-accent/10 text-accent border-0 text-[10px] h-4 px-1.5">Admin</Badge>
+                  )}
+                  {isPlayer && !isHost && !isAdmin && (
+                    <Badge className="rounded-full bg-success/10 text-success border-0 text-[10px] h-4 px-1.5">Playing</Badge>
+                  )}
+                </div>
+              )}
             </div>
             <button
               onClick={() => {
@@ -558,16 +554,16 @@ export default function GameDetailPage() {
                 navigator.clipboard.writeText(url);
                 toast.success("Invite link copied!");
               }}
-              className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center hover:bg-muted/80 transition-colors shrink-0"
+              className="w-7 h-7 rounded-lg bg-muted flex items-center justify-center hover:bg-muted/80 transition-colors shrink-0"
             >
-              <Share2 className="w-4 h-4 text-muted-foreground" />
+              <Share2 className="w-3.5 h-3.5 text-muted-foreground" />
             </button>
             {canManage && (
               <button
                 onClick={() => navigate(`/games/${id}/edit`)}
-                className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center hover:bg-muted/80 transition-colors shrink-0"
+                className="w-7 h-7 rounded-lg bg-muted flex items-center justify-center hover:bg-muted/80 transition-colors shrink-0"
               >
-                <Pencil className="w-4 h-4 text-muted-foreground" />
+                <Pencil className="w-3.5 h-3.5 text-muted-foreground" />
               </button>
             )}
           </div>

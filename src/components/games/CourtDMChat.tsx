@@ -678,33 +678,42 @@ export function CourtDMChat({
 
   return (
     <div className="bg-card border border-border rounded-xl flex flex-col overflow-hidden flex-1">
-      {/* Conversation header — name + status + action */}
-      <div className="flex items-center gap-2 px-3 py-2 border-b border-border">
+      {/* Conversation header — single compact row */}
+      <div className="flex items-center gap-2 px-2.5 py-1.5 border-b border-border">
         {isHost && (
           <button
             onClick={() => { setSelectedUserId(null); setActiveChatId(null); setMessages([]); loadInterestedUsers(); }}
-            className="w-7 h-7 rounded-lg bg-muted flex items-center justify-center hover:bg-muted/80 transition-colors shrink-0"
+            className="w-6 h-6 rounded-md bg-muted flex items-center justify-center hover:bg-muted/80 transition-colors shrink-0"
           >
-            <ArrowLeft className="w-3.5 h-3.5" />
+            <ArrowLeft className="w-3 h-3" />
           </button>
         )}
-        <div className="flex-1 min-w-0 flex items-center gap-1.5 overflow-hidden">
-          <p className="text-sm font-semibold truncate">{otherUserName}</p>
-          {statusBadge}
-          {isHost && selectedInterestStatus === "confirmed" && (
-            <Badge className="text-[10px] h-4 px-1.5 bg-success/10 text-success border-success/20 border shrink-0">
-              <CheckCircle2 className="w-2.5 h-2.5 mr-0.5" />Confirmed
-            </Badge>
-          )}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-1.5 overflow-hidden">
+            <p className="text-xs font-semibold truncate">{otherUserName}</p>
+            {statusBadge}
+            {isHost && selectedInterestStatus === "confirmed" && (
+              <Badge className="text-[9px] h-4 px-1 bg-success/10 text-success border-success/20 border shrink-0">
+                <CheckCircle2 className="w-2 h-2 mr-0.5" />Confirmed
+              </Badge>
+            )}
+          </div>
+          <p className="text-[10px] text-muted-foreground truncate">
+            <span className="font-medium">{gameLocation}</span>
+            <span className="mx-1 opacity-40">·</span>
+            <span>{format(new Date(gameDateTime), "MMM d · h:mm a")}</span>
+            {isConfirmed && <span className="ml-1 text-success font-medium">· ✓ Confirmed</span>}
+            {isTaken && !isConfirmed && <span className="ml-1 text-destructive font-medium">· Taken</span>}
+          </p>
         </div>
         {isHost && selectedUser && selectedInterestStatus !== "confirmed" && !isCourtTaken && stage === "payment_sent" && (
           <Button
             size="sm"
             variant="success"
-            className="h-7 text-xs px-2.5 shrink-0"
+            className="h-6 text-[11px] px-2 shrink-0"
             onClick={() => onConfirmBooking?.(selectedUser.interest_id, selectedUser.user_id)}
           >
-            <CheckCircle2 className="w-3 h-3" />
+            <CheckCircle2 className="w-2.5 h-2.5" />
             Confirm
           </Button>
         )}
@@ -712,33 +721,12 @@ export function CourtDMChat({
           <Button
             size="sm"
             variant="outline"
-            className="h-7 text-xs px-2.5 shrink-0"
+            className="h-6 text-[11px] px-2 shrink-0"
             onClick={() => onConfirmBooking?.(selectedUser.interest_id, selectedUser.user_id)}
           >
-            <CheckCircle2 className="w-3 h-3" />
+            <CheckCircle2 className="w-2.5 h-2.5" />
             Confirm
           </Button>
-        )}
-      </div>
-
-      {/* Compact context bar */}
-      <div className="flex items-center gap-1.5 px-3 py-1.5 border-b border-border/60 bg-muted/20 text-[11px] text-muted-foreground overflow-x-auto no-scrollbar">
-        <MapPin className="w-2.5 h-2.5 shrink-0" />
-        <span className="font-medium text-foreground truncate">{gameLocation}</span>
-        <span className="opacity-40">·</span>
-        <Calendar className="w-2.5 h-2.5 shrink-0" />
-        <span className="whitespace-nowrap">{format(new Date(gameDateTime), "MMM d · h:mm a")}</span>
-        {isConfirmed && (
-          <>
-            <span className="opacity-40">·</span>
-            <span className="text-success font-medium whitespace-nowrap">{isHost ? "Booking confirmed ✓" : "Booking confirmed ✓"}</span>
-          </>
-        )}
-        {isTaken && !isConfirmed && (
-          <>
-            <span className="opacity-40">·</span>
-            <span className="text-destructive font-medium whitespace-nowrap">Court taken</span>
-          </>
         )}
       </div>
 
