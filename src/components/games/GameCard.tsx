@@ -28,7 +28,7 @@ interface GameCardProps {
 
 const getSkillColor = (level: number) => {
   if (level <= 2) return "badge-beginner";
-  if (level <= 3) return "badge-intermediate";
+  if (level <= 5) return "badge-intermediate";
   return "badge-advanced";
 };
 
