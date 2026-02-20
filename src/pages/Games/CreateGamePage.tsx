@@ -598,7 +598,13 @@ export default function CreateGamePage() {
                         open={showPlayerPicker}
                         onOpenChange={setShowPlayerPicker}
                         selected={prefilledPlayers}
-                        onSelect={setPrefilledPlayers}
+                        onSelect={(newPlayers) => {
+                          const added = newPlayers.length - prefilledPlayers.length;
+                          if (added > 0) {
+                            setSpotsNeeded(prev => Math.max(currentMin, prev - added));
+                          }
+                          setPrefilledPlayers(newPlayers);
+                        }}
                         maxSlots={maxPrefilledSlots}
                       />
 
