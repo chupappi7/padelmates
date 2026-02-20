@@ -533,18 +533,6 @@ export default function GameDetailPage() {
               {!isCourtSharing && (
                 <div className="flex items-center gap-1 flex-wrap mt-0.5">
                   <SkillBadge level={game.skill_level as number} size="sm" />
-                  <Badge variant="outline" className="rounded-full text-[10px] h-4 px-1.5">
-                    {formatLabels[game.format]}
-                  </Badge>
-                  {isHost && (
-                    <Badge className="rounded-full bg-primary/10 text-primary border-0 text-[10px] h-4 px-1.5">Hosting</Badge>
-                  )}
-                  {isAdmin && !isHost && (
-                    <Badge className="rounded-full bg-accent/10 text-accent border-0 text-[10px] h-4 px-1.5">Admin</Badge>
-                  )}
-                  {isPlayer && !isHost && !isAdmin && (
-                    <Badge className="rounded-full bg-success/10 text-success border-0 text-[10px] h-4 px-1.5">Playing</Badge>
-                  )}
                 </div>
               )}
               {isCourtSharing && (
@@ -763,9 +751,6 @@ export default function GameDetailPage() {
                     <p className="text-xs text-muted-foreground">Hosted by</p>
                     <div className="flex items-center gap-2">
                       <p className="text-sm font-semibold break-words">{game.profiles?.name}</p>
-                      <Badge variant="outline" className="rounded-full text-xs shrink-0">
-                        {game.host_is_playing ? "🎾 Playing" : "📋 Organizing"}
-                      </Badge>
                     </div>
                   </div>
                   {game.profiles?.skill_level && (
