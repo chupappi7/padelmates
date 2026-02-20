@@ -13,37 +13,40 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Filter, X } from "lucide-react";
+import { Filter } from "lucide-react";
 import { useState } from "react";
+import { SkillRangePicker } from "@/components/games/SkillRangePicker";
 
 interface MobileFilterSheetProps {
-  skillFilter: string;
-  setSkillFilter: (value: string) => void;
+  skillMin: number | null;
+  skillMax: number | null;
+  setSkillRange: (min: number | null, max: number | null) => void;
   formatFilter: string;
   setFormatFilter: (value: string) => void;
 }
 
 export function MobileFilterSheet({
-  skillFilter,
-  setSkillFilter,
+  skillMin,
+  skillMax,
+  setSkillRange,
   formatFilter,
   setFormatFilter,
 }: MobileFilterSheetProps) {
   const [open, setOpen] = useState(false);
 
-  const hasActiveFilters = skillFilter !== "all" || formatFilter !== "all";
-  
+  const hasActiveFilters = skillMin !== null || formatFilter !== "all";
+
   const clearFilters = () => {
-    setSkillFilter("all");
+    setSkillRange(null, null);
     setFormatFilter("all");
   };
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>
-        <Button 
-          variant="outline" 
-          size="icon" 
+        <Button
+          variant="outline"
+          size="icon"
           className="h-11 w-11 shrink-0 relative"
         >
           <Filter className="w-4 h-4" />
@@ -57,9 +60,9 @@ export function MobileFilterSheet({
           <div className="flex items-center justify-between">
             <SheetTitle className="font-display">Filter Games</SheetTitle>
             {hasActiveFilters && (
-              <Button 
-                variant="ghost" 
-                size="sm" 
+              <Button
+                variant="ghost"
+                size="sm"
                 onClick={clearFilters}
                 className="text-muted-foreground"
               >
@@ -68,27 +71,24 @@ export function MobileFilterSheet({
             )}
           </div>
         </SheetHeader>
-        
+
         <div className="space-y-5 pb-6">
-          <div className="space-y-2">
+          <div className="space-y-3">
             <label className="text-sm font-medium text-muted-foreground">
               Skill Level
+              {skillMin !== null && (
+                <span className="ml-2 text-primary">
+                  {skillMin === skillMax
+                    ? `(${skillMin})`
+                    : `(${skillMin}–${skillMax})`}
+                </span>
+              )}
             </label>
-            <Select value={skillFilter} onValueChange={setSkillFilter}>
-              <SelectTrigger className="h-12">
-                <SelectValue placeholder="All Levels" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Levels</SelectItem>
-                <SelectItem value="1">D – Absolute Beginner</SelectItem>
-                <SelectItem value="2">C− – Beginner</SelectItem>
-                <SelectItem value="3">C+ – Casual</SelectItem>
-                <SelectItem value="4">B− – Intermediate</SelectItem>
-                <SelectItem value="5">B+ – Upper-Int</SelectItem>
-                <SelectItem value="6">A− – Advanced</SelectItem>
-                <SelectItem value="7">A+ – Pro</SelectItem>
-              </SelectContent>
-            </Select>
+            <SkillRangePicker
+              min={skillMin}
+              max={skillMax}
+              onChange={setSkillRange}
+            />
           </div>
 
           <div className="space-y-2">
@@ -108,9 +108,9 @@ export function MobileFilterSheet({
             </Select>
           </div>
 
-          <Button 
-            variant="hero" 
-            className="w-full h-12 mt-4" 
+          <Button
+            variant="hero"
+            className="w-full h-12 mt-4"
             onClick={() => setOpen(false)}
           >
             Show Results

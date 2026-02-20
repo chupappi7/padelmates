@@ -14,12 +14,13 @@ import { DayPicker } from "@/components/games/DayPicker";
 import { supabase } from "@/integrations/supabase/client";
 import { Navbar } from "@/components/layout/Navbar";
 import { MobileFilterSheet } from "@/components/games/MobileFilterSheet";
+import { SkillRangePicker } from "@/components/games/SkillRangePicker";
 import { motion } from "framer-motion";
 import { Plus, Search, Calendar } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useUserLocation, calculateDistance } from "@/hooks/useUserLocation";
-import { isSameDay, format, startOfDay, endOfDay, isToday, isTomorrow } from "date-fns";
+import { isSameDay, format, startOfDay, isToday, isTomorrow } from "date-fns";
 
 interface Game {
   id: string;
@@ -51,7 +52,8 @@ export default function GamesListPage() {
   const [games, setGames] = useState<Game[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
-  const [skillFilter, setSkillFilter] = useState<string>("all");
+  const [skillMin, setSkillMin] = useState<number | null>(null);
+  const [skillMax, setSkillMax] = useState<number | null>(null);
   const [formatFilter, setFormatFilter] = useState<string>("all");
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [joinedGameIds, setJoinedGameIds] = useState<Set<string>>(new Set());
@@ -86,7 +88,6 @@ export default function GamesListPage() {
             .eq("user_id", game.host_id)
             .single();
 
-          // For court_sharing games, get interest count
           let interest_count = 0;
           if (game.payment_mode === "court_sharing") {
             const { count } = await supabase
@@ -139,17 +140,18 @@ export default function GamesListPage() {
     const todayStart = startOfDay(now);
     let result = games.filter((game) => {
       const gameDate = new Date(game.date_time);
-      if (gameDate < todayStart) return false; // exclude past games
+      if (gameDate < todayStart) return false;
       const matchesDay = selectedDate === null || isSameDay(gameDate, selectedDate);
       const matchesSearch =
         game.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
         game.location.toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesSkill = skillFilter === "all" || game.skill_level === Number(skillFilter);
+      const matchesSkill =
+        skillMin === null ||
+        (game.skill_level >= skillMin && game.skill_level <= (skillMax ?? skillMin));
       const matchesFormat = formatFilter === "all" || game.format === formatFilter;
       return matchesDay && matchesSearch && matchesSkill && matchesFormat;
     });
 
-    // Add distance if available
     if (userLocation) {
       result = result.map((game) => {
         const distance = game.location_lat && game.location_lng
@@ -164,13 +166,17 @@ export default function GamesListPage() {
       });
     }
 
-    // Sort by time within the day
     result.sort((a, b) => new Date(a.date_time).getTime() - new Date(b.date_time).getTime());
 
     return result;
-  }, [games, selectedDate, searchQuery, skillFilter, formatFilter, userLocation]);
+  }, [games, selectedDate, searchQuery, skillMin, skillMax, formatFilter, userLocation]);
 
   const isAllMode = selectedDate === null;
+
+  const setSkillRange = (min: number | null, max: number | null) => {
+    setSkillMin(min);
+    setSkillMax(max);
+  };
 
   return (
     <div className="min-h-screen bg-background pb-24 md:pb-0">
@@ -211,31 +217,25 @@ export default function GamesListPage() {
                 className="pl-10 h-11"
               />
             </div>
-            
+
             {isMobile ? (
               <MobileFilterSheet
-                skillFilter={skillFilter}
-                setSkillFilter={setSkillFilter}
+                skillMin={skillMin}
+                skillMax={skillMax}
+                setSkillRange={setSkillRange}
                 formatFilter={formatFilter}
                 setFormatFilter={setFormatFilter}
               />
             ) : (
               <>
-                <Select value={skillFilter} onValueChange={setSkillFilter}>
-                  <SelectTrigger className="w-40 h-11">
-                     <SelectValue placeholder="Skill level" />
-                   </SelectTrigger>
-                   <SelectContent>
-                     <SelectItem value="all">All Levels</SelectItem>
-                     <SelectItem value="1">D – Absolute Beginner</SelectItem>
-                     <SelectItem value="2">C− – Beginner</SelectItem>
-                     <SelectItem value="3">C+ – Casual</SelectItem>
-                     <SelectItem value="4">B− – Intermediate</SelectItem>
-                     <SelectItem value="5">B+ – Upper-Int</SelectItem>
-                     <SelectItem value="6">A− – Advanced</SelectItem>
-                     <SelectItem value="7">A+ – Pro</SelectItem>
-                  </SelectContent>
-                </Select>
+                {/* Desktop skill range picker inline */}
+                <div className="flex items-center gap-1.5 border border-input rounded-md px-3 h-11 bg-background">
+                  <SkillRangePicker
+                    min={skillMin}
+                    max={skillMax}
+                    onChange={setSkillRange}
+                  />
+                </div>
                 <Select value={formatFilter} onValueChange={setFormatFilter}>
                   <SelectTrigger className="w-44 h-11">
                     <SelectValue placeholder="Game format" />
@@ -266,7 +266,6 @@ export default function GamesListPage() {
                 const gameDate = new Date(game.date_time);
                 const elements: React.ReactNode[] = [];
 
-                // In "All" mode, group by date+time together
                 if (isAllMode) {
                   const groupKey = format(gameDate, "yyyy-MM-dd HH:mm");
                   if (groupKey !== lastGroupKey) {
@@ -285,7 +284,6 @@ export default function GamesListPage() {
                     );
                   }
                 } else {
-                  // Single day mode: group by time only
                   const timeKey = format(gameDate, "h:mm a");
                   if (timeKey !== lastGroupKey) {
                     lastGroupKey = timeKey;
@@ -346,7 +344,7 @@ export default function GamesListPage() {
               {isAllMode ? "No upcoming matches" : "No matches on this day"}
             </h3>
             <p className="text-sm sm:text-base text-muted-foreground mb-6">
-              {searchQuery || skillFilter !== "all" || formatFilter !== "all"
+              {searchQuery || skillMin !== null || formatFilter !== "all"
                 ? "Try adjusting your filters"
                 : "Be the first to host a game!"}
             </p>
@@ -359,7 +357,6 @@ export default function GamesListPage() {
           </motion.div>
         )}
       </div>
-
     </div>
   );
 }
