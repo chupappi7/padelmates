@@ -20,7 +20,7 @@ export default function SignupPage() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [skillLevel, setSkillLevel] = useState<string>("3");
+  const [skillLevel, setSkillLevel] = useState<string>("2");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const { signUp } = useAuth();
@@ -135,13 +135,10 @@ export default function SignupPage() {
                   <SelectValue placeholder="Select your skill level" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="1">D  – Absolute Beginner</SelectItem>
-                  <SelectItem value="2">C− – Beginner</SelectItem>
-                  <SelectItem value="3">C+ – Casual</SelectItem>
-                  <SelectItem value="4">B− – Intermediate</SelectItem>
-                  <SelectItem value="5">B+ – Upper-Int</SelectItem>
-                  <SelectItem value="6">A− – Advanced</SelectItem>
-                  <SelectItem value="7">A+ – Pro</SelectItem>
+                  <SelectItem value="1">D – Beginner</SelectItem>
+                  <SelectItem value="2">C – Casual</SelectItem>
+                  <SelectItem value="3">B – Intermediate</SelectItem>
+                  <SelectItem value="4">A – Advanced</SelectItem>
                 </SelectContent>
               </Select>
             </div>

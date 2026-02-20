@@ -27,8 +27,8 @@ interface GameCardProps {
 }
 
 const getSkillColor = (level: number) => {
-  if (level <= 2) return "badge-beginner";
-  if (level <= 5) return "badge-intermediate";
+  if (level <= 1) return "badge-beginner";
+  if (level <= 3) return "badge-intermediate";
   return "badge-advanced";
 };
 
@@ -144,7 +144,7 @@ export function GameCard({
             </div>
             {!isCourtSharing && userStatus !== "hosting" && (
               <span className={`badge-skill text-[9px] sm:text-[10px] px-1.5 sm:px-2 py-0.5 shrink-0 ${getSkillColor(skillLevel)}`}>
-                Lvl {skillLevel}
+                {["D","C","B","A"][skillLevel - 1] ?? skillLevel}
               </span>
             )}
           </div>

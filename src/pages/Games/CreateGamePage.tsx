@@ -82,7 +82,7 @@ export default function CreateGamePage() {
     description: "",
     location: "",
     courtNumber: "",
-    skillLevel: 3,
+    skillLevel: 2,
     maxPlayers: config.defaultMaxPlayers,
     format: config.format,
     visibility: "public",
@@ -682,13 +682,10 @@ export default function CreateGamePage() {
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="1">D  – Absolute Beginner</SelectItem>
-                            <SelectItem value="2">C− – Beginner</SelectItem>
-                            <SelectItem value="3">C+ – Casual</SelectItem>
-                            <SelectItem value="4">B− – Intermediate</SelectItem>
-                            <SelectItem value="5">B+ – Upper-Int</SelectItem>
-                            <SelectItem value="6">A− – Advanced</SelectItem>
-                            <SelectItem value="7">A+ – Pro</SelectItem>
+                            <SelectItem value="1">D – Beginner</SelectItem>
+                            <SelectItem value="2">C – Casual</SelectItem>
+                            <SelectItem value="3">B – Intermediate</SelectItem>
+                            <SelectItem value="4">A – Advanced</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>

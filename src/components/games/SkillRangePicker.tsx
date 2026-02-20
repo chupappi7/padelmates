@@ -1,7 +1,7 @@
 import { cn } from "@/lib/utils";
 import { SKILL_LEVELS } from "./SkillBadge";
 
-const LEVELS = [1, 2, 3, 4, 5, 6, 7] as const;
+const LEVELS = [1, 2, 3, 4] as const;
 
 interface SkillRangePickerProps {
   min: number | null; // null = no filter
