@@ -421,17 +421,100 @@ export default function CreateGamePage() {
               </div>
             ) : (
               <>
-                {/* ========== OTHER HOST TYPES — Full form ========== */}
-                {/* Game Details */}
-                <div className="bg-card border border-border rounded-xl md:rounded-2xl p-4 md:p-6 space-y-4 md:space-y-5">
-                  <h2 className="font-display font-bold text-base md:text-lg flex items-center gap-2">
-                    <Trophy className="w-4 h-4 md:w-5 md:h-5 text-primary" />
-                    Game Details
-                  </h2>
+                {hostType === "find_players" ? (
+                  /* ========== FIND PLAYERS — Restructured 5-card flow ========== */
+                  <>
+                    {/* Card 1: Location & Schedule */}
+                    <div className="bg-card border border-border rounded-xl md:rounded-2xl p-4 md:p-6 space-y-4 md:space-y-5">
+                      <h2 className="font-display font-bold text-base md:text-lg flex items-center gap-2">
+                        <MapPin className="w-4 h-4 md:w-5 md:h-5 text-primary" />
+                        Location & Schedule
+                      </h2>
 
-                  {hostType === "find_players" ? (
-                    <div className="space-y-5">
-                      {/* Step 1: Are you playing? */}
+                      <div className="grid grid-cols-3 gap-3">
+                        <div className="col-span-2 space-y-1.5">
+                          <Label htmlFor="location" className="text-sm">Court / Location <span className="text-destructive">*</span></Label>
+                          <div className="relative">
+                            <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                            <Input
+                              id="location"
+                              placeholder="e.g., Padel Club Barcelona"
+                              value={formData.location}
+                              onChange={(e) => handleChange("location", e.target.value)}
+                              required
+                              className="h-11 pl-10"
+                            />
+                          </div>
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label htmlFor="courtNumber" className="text-sm">Court #</Label>
+                          <Input
+                            id="courtNumber"
+                            placeholder="e.g., 3"
+                            value={formData.courtNumber}
+                            onChange={(e) => handleChange("courtNumber", e.target.value)}
+                            className="h-11"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <Label className="text-sm">Date <span className="text-destructive">*</span></Label>
+                        <Popover open={showDatePicker} onOpenChange={setShowDatePicker}>
+                          <PopoverTrigger asChild>
+                            <button
+                              type="button"
+                              className="w-full h-11 px-3 flex items-center justify-between bg-background border border-input rounded-md text-sm hover:bg-accent transition-colors"
+                            >
+                              <span className={selectedDate ? "text-foreground" : "text-muted-foreground"}>
+                                {selectedDate ? format(selectedDate, "EEE, MMM d") : "Select date"}
+                              </span>
+                              <Calendar className="w-4 h-4 text-muted-foreground" />
+                            </button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0" align="start">
+                            <CalendarComponent
+                              mode="single"
+                              selected={selectedDate}
+                              onSelect={(date) => {
+                                setSelectedDate(date);
+                                setShowDatePicker(false);
+                              }}
+                              disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
+                              initialFocus
+                            />
+                          </PopoverContent>
+                        </Popover>
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <Label className="text-sm">Start Time <span className="text-destructive">*</span></Label>
+                        <button
+                          type="button"
+                          onClick={() => setShowTimePicker(true)}
+                          className="w-full h-11 px-3 flex items-center justify-between bg-background border border-input rounded-md text-sm hover:bg-accent transition-colors"
+                        >
+                          <span className="text-foreground">{selectedTime}</span>
+                          <Clock className="w-4 h-4 text-muted-foreground" />
+                        </button>
+                      </div>
+
+                      <TimeScrollPicker open={showTimePicker} onOpenChange={setShowTimePicker} value={selectedTime} onChange={setSelectedTime} />
+
+                      <div className="space-y-1.5">
+                        <Label className="text-sm">Duration</Label>
+                        <DurationChips duration={duration} onDurationChange={setDuration} selectedTime={selectedTime} />
+                      </div>
+                    </div>
+
+                    {/* Card 2: Players Setup */}
+                    <div className="bg-card border border-border rounded-xl md:rounded-2xl p-4 md:p-6 space-y-5">
+                      <h2 className="font-display font-bold text-base md:text-lg flex items-center gap-2">
+                        <Users className="w-4 h-4 md:w-5 md:h-5 text-primary" />
+                        Players
+                      </h2>
+
+                      {/* Section A: Are you playing? */}
                       <div className="space-y-2">
                         <Label className="text-sm font-medium">Are you playing?</Label>
                         <div className="flex gap-2">
@@ -466,62 +549,22 @@ export default function CreateGamePage() {
                         </div>
                       </div>
 
-                      {/* Step 2: How many players do you need? */}
-                      <div className="space-y-3">
-                        <Label className="text-sm font-medium">How many players do you need? <span className="text-destructive">*</span></Label>
-                        <div className="flex items-center gap-4">
-                          <button
-                            type="button"
-                            onClick={() => handleSpotsNeededChange(-1)}
-                            disabled={clampedSpotsNeeded <= currentMin}
-                            className="w-12 h-12 rounded-xl border-2 border-border bg-background text-xl font-bold flex items-center justify-center transition-all hover:border-primary/60 disabled:opacity-30 disabled:cursor-not-allowed select-none"
-                          >
-                            –
-                          </button>
-                          <div className="flex-1 flex flex-col items-center">
-                            <span className="text-4xl font-bold text-foreground leading-none">{clampedSpotsNeeded}</span>
-                            <span className="text-xs text-muted-foreground mt-1">
-                              {clampedSpotsNeeded === 1 ? "player" : "players"}
-                            </span>
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => handleSpotsNeededChange(1)}
-                            disabled={clampedSpotsNeeded >= maxSpotsNeeded}
-                            className="w-12 h-12 rounded-xl border-2 border-border bg-background text-xl font-bold flex items-center justify-center transition-all hover:border-primary/60 disabled:opacity-30 disabled:cursor-not-allowed select-none"
-                          >
-                            +
-                          </button>
-                        </div>
+                      {/* Divider */}
+                      <div className="h-px bg-border" />
 
-                        {/* Composition summary */}
-                        <div className="bg-muted/40 rounded-xl px-4 py-3 space-y-1">
-                          <div className="flex items-center gap-1.5 text-sm text-muted-foreground flex-wrap">
-                            {formData.hostIsPlaying && (
-                              <span className="flex items-center gap-1">
-                                <span className="w-2 h-2 rounded-full bg-primary inline-block" />
-                                You
-                              </span>
-                            )}
-                            {formData.hostIsPlaying && prefilledCount > 0 && <span>·</span>}
-                            {prefilledCount > 0 && (
-                              <span>{prefilledCount} confirmed</span>
-                            )}
-                            {(formData.hostIsPlaying || prefilledCount > 0) && <span>·</span>}
-                            <span className="font-medium text-foreground">{clampedSpotsNeeded} spot{clampedSpotsNeeded !== 1 ? "s" : ""} open</span>
-                          </div>
-                          <p className="text-xs text-muted-foreground">
-                            Court total: <strong>{derivedMaxPlayers}</strong> player{derivedMaxPlayers !== 1 ? "s" : ""}
-                          </p>
-                        </div>
-                      </div>
-
-                      {/* Step 3: Pre-filled players */}
+                      {/* Section B: Confirmed players */}
                       <div className="space-y-2">
-                        <Label className="text-sm flex items-center gap-1.5">
+                        <Label className="text-sm font-medium flex items-center gap-1.5">
                           <UserPlus className="w-3.5 h-3.5 text-primary" />
-                          Players already joining
+                          Players already confirmed
                         </Label>
+                        {formData.hostIsPlaying && (
+                          <div className="flex items-center gap-2 p-2 bg-primary/5 border border-primary/20 rounded-lg">
+                            <span className="w-2 h-2 rounded-full bg-primary shrink-0" />
+                            <span className="text-sm flex-1 truncate px-1 font-medium">You (host)</span>
+                            <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded-full">Playing</span>
+                          </div>
+                        )}
                         {prefilledPlayers.map((player, index) => (
                           <div key={index} className="flex items-center gap-2 p-2 bg-muted/30 border border-border rounded-lg">
                             <span className="text-sm flex-1 truncate px-1">
@@ -558,51 +601,69 @@ export default function CreateGamePage() {
                         onSelect={setPrefilledPlayers}
                         maxSlots={maxPrefilledSlots}
                       />
-                    </div>
-                  ) : (
-                    <div className="space-y-1.5">
-                      <Label htmlFor="title" className="text-sm">Game Title <span className="text-destructive">*</span></Label>
-                      <Input
-                        id="title"
-                        placeholder="e.g., Friday Night Americano"
-                        value={formData.title}
-                        onChange={(e) => handleChange("title", e.target.value)}
-                        required
-                        className="h-11"
-                      />
-                    </div>
-                  )}
 
-                  <div className="space-y-1.5">
-                    <Label htmlFor="description" className="text-sm">Description (optional)</Label>
-                    <Textarea
-                      id="description"
-                      placeholder="Tell players what to expect..."
-                      value={formData.description}
-                      onChange={(e) => handleChange("description", e.target.value)}
-                      rows={3}
-                      className="text-sm resize-none"
-                    />
-                  </div>
+                      {/* Divider */}
+                      <div className="h-px bg-border" />
 
-                  {hostType === "americano" && (
-                    <div className="grid grid-cols-2 gap-3 md:gap-4">
-                      <div className="space-y-1.5">
-                        <Label htmlFor="format" className="text-sm">Americano Type</Label>
-                        <Select
-                          value={formData.format}
-                          onValueChange={(v) => handleChange("format", v)}
-                        >
-                          <SelectTrigger className="h-11">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="americano">Americano</SelectItem>
-                            <SelectItem value="team_americano">Team Americano</SelectItem>
-                          </SelectContent>
-                        </Select>
+                      {/* Section C: Spots needed stepper */}
+                      <div className="space-y-3">
+                        <Label className="text-sm font-medium">How many more players do you need? <span className="text-destructive">*</span></Label>
+                        <div className="flex items-center gap-4">
+                          <button
+                            type="button"
+                            onClick={() => handleSpotsNeededChange(-1)}
+                            disabled={clampedSpotsNeeded <= currentMin}
+                            className="w-12 h-12 rounded-xl border-2 border-border bg-background text-xl font-bold flex items-center justify-center transition-all hover:border-primary/60 disabled:opacity-30 disabled:cursor-not-allowed select-none"
+                          >
+                            –
+                          </button>
+                          <div className="flex-1 flex flex-col items-center">
+                            <span className="text-4xl font-bold text-foreground leading-none">{clampedSpotsNeeded}</span>
+                            <span className="text-xs text-muted-foreground mt-1">
+                              {clampedSpotsNeeded === 1 ? "player" : "players"}
+                            </span>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => handleSpotsNeededChange(1)}
+                            disabled={clampedSpotsNeeded >= maxSpotsNeeded}
+                            className="w-12 h-12 rounded-xl border-2 border-border bg-background text-xl font-bold flex items-center justify-center transition-all hover:border-primary/60 disabled:opacity-30 disabled:cursor-not-allowed select-none"
+                          >
+                            +
+                          </button>
+                        </div>
+
+                        {/* Section D: Composition summary */}
+                        <div className="bg-muted/40 rounded-xl px-4 py-3 space-y-1">
+                          <div className="flex items-center gap-1.5 text-sm text-muted-foreground flex-wrap">
+                            {formData.hostIsPlaying && (
+                              <span className="flex items-center gap-1">
+                                <span className="w-2 h-2 rounded-full bg-primary inline-block" />
+                                You
+                              </span>
+                            )}
+                            {formData.hostIsPlaying && prefilledCount > 0 && <span>·</span>}
+                            {prefilledCount > 0 && (
+                              <span>{prefilledCount} confirmed</span>
+                            )}
+                            {(formData.hostIsPlaying || prefilledCount > 0) && <span>·</span>}
+                            <span className="font-medium text-foreground">{clampedSpotsNeeded} spot{clampedSpotsNeeded !== 1 ? "s" : ""} open</span>
+                            <span>·</span>
+                            <span className="font-medium text-foreground">{derivedMaxPlayers} total</span>
+                          </div>
+                          <p className="text-xs text-muted-foreground">
+                            Court total: <strong>{derivedMaxPlayers}</strong> player{derivedMaxPlayers !== 1 ? "s" : ""}
+                          </p>
+                        </div>
                       </div>
+                    </div>
 
+                    {/* Card 3: Skill Level */}
+                    <div className="bg-card border border-border rounded-xl md:rounded-2xl p-4 md:p-6 space-y-4 md:space-y-5">
+                      <h2 className="font-display font-bold text-base md:text-lg flex items-center gap-2">
+                        <Trophy className="w-4 h-4 md:w-5 md:h-5 text-primary" />
+                        Skill Level
+                      </h2>
                       <div className="space-y-1.5">
                         <Label htmlFor="skill" className="text-sm">Min Skill Level</Label>
                         <Select
@@ -621,344 +682,594 @@ export default function CreateGamePage() {
                         </Select>
                       </div>
                     </div>
-                  )}
 
-                  {hostType !== "americano" && (
-                    <div className="space-y-1.5">
-                      <Label htmlFor="skill" className="text-sm">Min Skill Level</Label>
-                      <Select
-                        value={String(formData.skillLevel)}
-                        onValueChange={(v) => handleChange("skillLevel", parseInt(v))}
-                      >
-                        <SelectTrigger className="h-11">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="2">Level 2 – Beginner</SelectItem>
-                          <SelectItem value="3">Level 3 – Intermediate</SelectItem>
-                          <SelectItem value="4">Level 4 – Upper-Int</SelectItem>
-                          <SelectItem value="5">Level 5 – Pro</SelectItem>
-                        </SelectContent>
-                      </Select>
+                    {/* Card 4: How to Join */}
+                    <div className="bg-card border border-border rounded-xl md:rounded-2xl p-4 md:p-6 space-y-4 md:space-y-5">
+                      <h2 className="font-display font-bold text-base md:text-lg flex items-center gap-2">
+                        <DoorOpen className="w-4 h-4 md:w-5 md:h-5 text-primary" />
+                        How to Join
+                      </h2>
+
+                      {/* Join Mode */}
+                      <div className="space-y-2">
+                        <div className="space-y-2">
+                          <button
+                            type="button"
+                            onClick={() => handleChange("joinMode", "open")}
+                            className={`w-full flex items-center gap-3 p-3 rounded-xl border-2 transition-all text-left ${
+                              formData.joinMode === "open"
+                                ? "border-primary bg-primary/5"
+                                : "border-border hover:border-primary/50"
+                            }`}
+                          >
+                            <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                              <DoorOpen className="w-4 h-4 text-primary" />
+                            </div>
+                            <div>
+                              <p className="font-medium text-sm">Open</p>
+                              <p className="text-xs text-muted-foreground">Anyone can join directly</p>
+                            </div>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => handleChange("joinMode", "request")}
+                            className={`w-full flex items-center gap-3 p-3 rounded-xl border-2 transition-all text-left ${
+                              formData.joinMode === "request"
+                                ? "border-primary bg-primary/5"
+                                : "border-border hover:border-primary/50"
+                            }`}
+                          >
+                            <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                              <ShieldCheck className="w-4 h-4 text-primary" />
+                            </div>
+                            <div>
+                              <p className="font-medium text-sm">Request to Join</p>
+                              <p className="text-xs text-muted-foreground">You approve each player</p>
+                            </div>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => handleChange("joinMode", "request_and_pay")}
+                            className={`w-full flex items-center gap-3 p-3 rounded-xl border-2 transition-all text-left ${
+                              formData.joinMode === "request_and_pay"
+                                ? "border-primary bg-primary/5"
+                                : "border-border hover:border-primary/50"
+                            }`}
+                          >
+                            <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                              <CreditCard className="w-4 h-4 text-primary" />
+                            </div>
+                            <div>
+                              <p className="font-medium text-sm">Request & Pay</p>
+                              <p className="text-xs text-muted-foreground">Players request and pay to confirm</p>
+                            </div>
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Price — directly under join mode */}
+                      <div className="space-y-3">
+                        <Label className="text-sm">Price</Label>
+                        <div className="flex gap-2">
+                          {([
+                            { value: "split_evenly", label: "Split evenly", emoji: "🤝" },
+                            { value: "free", label: "Free", emoji: "🆓" },
+                            { value: "set_price", label: "Set price", emoji: "💰" },
+                          ] as const).map((mode) => (
+                            <button
+                              key={mode.value}
+                              type="button"
+                              onClick={() => handleChange("priceMode", mode.value)}
+                              className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl border-2 text-sm font-medium transition-all ${
+                                formData.priceMode === mode.value
+                                  ? "border-primary bg-primary/5 text-foreground"
+                                  : "border-border hover:border-primary/50 text-muted-foreground"
+                              }`}
+                            >
+                              <span>{mode.emoji}</span>
+                              <span>{mode.label}</span>
+                            </button>
+                          ))}
+                        </div>
+
+                        {formData.priceMode === "split_evenly" && (
+                          <div className="space-y-2">
+                            <p className="text-xs text-muted-foreground">Players will split the court cost evenly</p>
+                            <div className="space-y-1.5">
+                              <Label className="text-xs text-muted-foreground">Total Court Price (optional)</Label>
+                              <div className="relative">
+                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-semibold text-sm">Kč</span>
+                                <Input
+                                  type="number"
+                                  min="0"
+                                  step="1"
+                                  placeholder="0"
+                                  value={formData.totalPrice}
+                                  onChange={(e) => handleChange("totalPrice", e.target.value)}
+                                  className="h-11 pl-10"
+                                />
+                              </div>
+                              {formData.totalPrice && Number(formData.totalPrice) > 0 && (
+                                <p className="text-xs text-muted-foreground">
+                                  ≈ {Math.ceil(Number(formData.totalPrice) / derivedMaxPlayers)} Kč per player
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        )}
+
+                        {formData.priceMode === "set_price" && (
+                          <div className="grid grid-cols-2 gap-3">
+                            <div className="space-y-1.5">
+                              <Label className="text-xs text-muted-foreground">Total Amount</Label>
+                              <div className="relative">
+                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-semibold text-sm">Kč</span>
+                                <Input
+                                  type="number"
+                                  min="0"
+                                  step="1"
+                                  placeholder="0"
+                                  value={formData.totalPrice}
+                                  onChange={(e) => handleChange("totalPrice", e.target.value)}
+                                  className="h-11 pl-10"
+                                />
+                              </div>
+                            </div>
+                            <div className="space-y-1.5">
+                              <Label className="text-xs text-muted-foreground">Per Player</Label>
+                              <div className="h-11 px-3 flex items-center bg-muted/50 border border-input rounded-md text-sm font-semibold">
+                                {formData.totalPrice && Number(formData.totalPrice) > 0
+                                  ? `${Math.ceil(Number(formData.totalPrice) / derivedMaxPlayers)} Kč`
+                                  : "Free"}
+                              </div>
+                            </div>
+                            <p className="col-span-2 text-xs text-muted-foreground">Enter the total court cost — it'll be split across {derivedMaxPlayers} players</p>
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <Label htmlFor="visibility" className="text-sm">Visibility</Label>
+                        <Select
+                          value={formData.visibility}
+                          onValueChange={(v) => handleChange("visibility", v)}
+                        >
+                          <SelectTrigger className="h-11">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="public">🌍 Public - Anyone can find</SelectItem>
+                            <SelectItem value="private">🔗 Private - Link only</SelectItem>
+                            <SelectItem value="club_only">🏠 Club Only</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
                     </div>
-                  )}
-                </div>
 
-                {/* When & Where */}
-                <div className="bg-card border border-border rounded-xl md:rounded-2xl p-4 md:p-6 space-y-4 md:space-y-5">
-                  <h2 className="font-display font-bold text-base md:text-lg flex items-center gap-2">
-                    <Calendar className="w-4 h-4 md:w-5 md:h-5 text-primary" />
-                    When & Where
-                  </h2>
-
-                  <div className="grid grid-cols-3 gap-3">
-                    <div className="col-span-2 space-y-1.5">
-                      <Label htmlFor="location" className="text-sm">Court / Location <span className="text-destructive">*</span></Label>
-                      <div className="relative">
-                        <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                        <Input
-                          id="location"
-                          placeholder="e.g., Padel Club Barcelona"
-                          value={formData.location}
-                          onChange={(e) => handleChange("location", e.target.value)}
-                          required
-                          className="h-11 pl-10"
+                    {/* Card 5: About This Game (optional) */}
+                    <div className="bg-card border border-border rounded-xl md:rounded-2xl p-4 md:p-6 space-y-4 md:space-y-5">
+                      <h2 className="font-display font-bold text-base md:text-lg flex items-center gap-2">
+                        <Users className="w-4 h-4 md:w-5 md:h-5 text-muted-foreground" />
+                        About This Game
+                        <span className="text-xs font-normal text-muted-foreground ml-1">(optional)</span>
+                      </h2>
+                      <div className="space-y-1.5">
+                        <Textarea
+                          id="description"
+                          placeholder="Tell players what to expect, any house rules, parking info..."
+                          value={formData.description}
+                          onChange={(e) => handleChange("description", e.target.value)}
+                          rows={3}
+                          className="text-sm resize-none"
                         />
                       </div>
                     </div>
-                    <div className="space-y-1.5">
-                      <Label htmlFor="courtNumber" className="text-sm">Court #</Label>
-                      <Input
-                        id="courtNumber"
-                        placeholder="e.g., 3"
-                        value={formData.courtNumber}
-                        onChange={(e) => handleChange("courtNumber", e.target.value)}
-                        className="h-11"
-                      />
-                    </div>
-                  </div>
+                  </>
+                ) : (
+                  /* ========== OTHER HOST TYPES — Original full form ========== */
+                  <>
+                    {/* Game Details */}
+                    <div className="bg-card border border-border rounded-xl md:rounded-2xl p-4 md:p-6 space-y-4 md:space-y-5">
+                      <h2 className="font-display font-bold text-base md:text-lg flex items-center gap-2">
+                        <Trophy className="w-4 h-4 md:w-5 md:h-5 text-primary" />
+                        Game Details
+                      </h2>
 
-                  {/* Date */}
-                  <div className="space-y-1.5">
-                    <Label className="text-sm">Date <span className="text-destructive">*</span></Label>
-                    <Popover open={showDatePicker} onOpenChange={setShowDatePicker}>
-                      <PopoverTrigger asChild>
+                      <div className="space-y-1.5">
+                        <Label htmlFor="title" className="text-sm">Game Title <span className="text-destructive">*</span></Label>
+                        <Input
+                          id="title"
+                          placeholder="e.g., Friday Night Americano"
+                          value={formData.title}
+                          onChange={(e) => handleChange("title", e.target.value)}
+                          required
+                          className="h-11"
+                        />
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <Label htmlFor="description" className="text-sm">Description (optional)</Label>
+                        <Textarea
+                          id="description"
+                          placeholder="Tell players what to expect..."
+                          value={formData.description}
+                          onChange={(e) => handleChange("description", e.target.value)}
+                          rows={3}
+                          className="text-sm resize-none"
+                        />
+                      </div>
+
+                      {hostType === "americano" && (
+                        <div className="grid grid-cols-2 gap-3 md:gap-4">
+                          <div className="space-y-1.5">
+                            <Label htmlFor="format" className="text-sm">Americano Type</Label>
+                            <Select
+                              value={formData.format}
+                              onValueChange={(v) => handleChange("format", v)}
+                            >
+                              <SelectTrigger className="h-11">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="americano">Americano</SelectItem>
+                                <SelectItem value="team_americano">Team Americano</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+
+                          <div className="space-y-1.5">
+                            <Label htmlFor="skill" className="text-sm">Min Skill Level</Label>
+                            <Select
+                              value={String(formData.skillLevel)}
+                              onValueChange={(v) => handleChange("skillLevel", parseInt(v))}
+                            >
+                              <SelectTrigger className="h-11">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="2">Level 2 – Beginner</SelectItem>
+                                <SelectItem value="3">Level 3 – Intermediate</SelectItem>
+                                <SelectItem value="4">Level 4 – Upper-Int</SelectItem>
+                                <SelectItem value="5">Level 5 – Pro</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+                      )}
+
+                      {hostType !== "americano" && (
+                        <div className="space-y-1.5">
+                          <Label htmlFor="skill" className="text-sm">Min Skill Level</Label>
+                          <Select
+                            value={String(formData.skillLevel)}
+                            onValueChange={(v) => handleChange("skillLevel", parseInt(v))}
+                          >
+                            <SelectTrigger className="h-11">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="2">Level 2 – Beginner</SelectItem>
+                              <SelectItem value="3">Level 3 – Intermediate</SelectItem>
+                              <SelectItem value="4">Level 4 – Upper-Int</SelectItem>
+                              <SelectItem value="5">Level 5 – Pro</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* When & Where */}
+                    <div className="bg-card border border-border rounded-xl md:rounded-2xl p-4 md:p-6 space-y-4 md:space-y-5">
+                      <h2 className="font-display font-bold text-base md:text-lg flex items-center gap-2">
+                        <Calendar className="w-4 h-4 md:w-5 md:h-5 text-primary" />
+                        When & Where
+                      </h2>
+
+                      <div className="grid grid-cols-3 gap-3">
+                        <div className="col-span-2 space-y-1.5">
+                          <Label htmlFor="location" className="text-sm">Court / Location <span className="text-destructive">*</span></Label>
+                          <div className="relative">
+                            <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                            <Input
+                              id="location"
+                              placeholder="e.g., Padel Club Barcelona"
+                              value={formData.location}
+                              onChange={(e) => handleChange("location", e.target.value)}
+                              required
+                              className="h-11 pl-10"
+                            />
+                          </div>
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label htmlFor="courtNumber" className="text-sm">Court #</Label>
+                          <Input
+                            id="courtNumber"
+                            placeholder="e.g., 3"
+                            value={formData.courtNumber}
+                            onChange={(e) => handleChange("courtNumber", e.target.value)}
+                            className="h-11"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <Label className="text-sm">Date <span className="text-destructive">*</span></Label>
+                        <Popover open={showDatePicker} onOpenChange={setShowDatePicker}>
+                          <PopoverTrigger asChild>
+                            <button
+                              type="button"
+                              className="w-full h-11 px-3 flex items-center justify-between bg-background border border-input rounded-md text-sm hover:bg-accent transition-colors"
+                            >
+                              <span className={selectedDate ? "text-foreground" : "text-muted-foreground"}>
+                                {selectedDate ? format(selectedDate, "EEE, MMM d") : "Select date"}
+                              </span>
+                              <Calendar className="w-4 h-4 text-muted-foreground" />
+                            </button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0" align="start">
+                            <CalendarComponent
+                              mode="single"
+                              selected={selectedDate}
+                              onSelect={(date) => {
+                                setSelectedDate(date);
+                                setShowDatePicker(false);
+                              }}
+                              disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
+                              initialFocus
+                            />
+                          </PopoverContent>
+                        </Popover>
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <Label className="text-sm">Start Time <span className="text-destructive">*</span></Label>
                         <button
                           type="button"
+                          onClick={() => setShowTimePicker(true)}
                           className="w-full h-11 px-3 flex items-center justify-between bg-background border border-input rounded-md text-sm hover:bg-accent transition-colors"
                         >
-                          <span className={selectedDate ? "text-foreground" : "text-muted-foreground"}>
-                            {selectedDate ? format(selectedDate, "EEE, MMM d") : "Select date"}
-                          </span>
-                          <Calendar className="w-4 h-4 text-muted-foreground" />
+                          <span className="text-foreground">{selectedTime}</span>
+                          <Clock className="w-4 h-4 text-muted-foreground" />
                         </button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <CalendarComponent
-                          mode="single"
-                          selected={selectedDate}
-                          onSelect={(date) => {
-                            setSelectedDate(date);
-                            setShowDatePicker(false);
-                          }}
-                          disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
-                          initialFocus
-                        />
-                      </PopoverContent>
-                    </Popover>
-                  </div>
+                      </div>
 
-                  {/* Start Time & Duration */}
-                  <div className="space-y-1.5">
-                    <Label className="text-sm">Start Time <span className="text-destructive">*</span></Label>
-                    <button
-                      type="button"
-                      onClick={() => setShowTimePicker(true)}
-                      className="w-full h-11 px-3 flex items-center justify-between bg-background border border-input rounded-md text-sm hover:bg-accent transition-colors"
-                    >
-                      <span className="text-foreground">{selectedTime}</span>
-                      <Clock className="w-4 h-4 text-muted-foreground" />
-                    </button>
-                  </div>
+                      <TimeScrollPicker open={showTimePicker} onOpenChange={setShowTimePicker} value={selectedTime} onChange={setSelectedTime} />
 
-                  <TimeScrollPicker open={showTimePicker} onOpenChange={setShowTimePicker} value={selectedTime} onChange={setSelectedTime} />
+                      <div className="space-y-1.5">
+                        <Label className="text-sm">Duration</Label>
+                        <DurationChips duration={duration} onDurationChange={setDuration} selectedTime={selectedTime} />
+                      </div>
 
-                  <div className="space-y-1.5">
-                    <Label className="text-sm">Duration</Label>
-                    <DurationChips duration={duration} onDurationChange={setDuration} selectedTime={selectedTime} />
-                  </div>
+                      {/* Price Mode */}
+                      <div className="space-y-3">
+                        <Label className="text-sm">Price</Label>
+                        <div className="flex gap-2">
+                          {([
+                            { value: "split_evenly", label: "Split evenly", emoji: "🤝" },
+                            { value: "free", label: "Free", emoji: "🆓" },
+                            { value: "set_price", label: "Set price", emoji: "💰" },
+                          ] as const).map((mode) => (
+                            <button
+                              key={mode.value}
+                              type="button"
+                              onClick={() => handleChange("priceMode", mode.value)}
+                              className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl border-2 text-sm font-medium transition-all ${
+                                formData.priceMode === mode.value
+                                  ? "border-primary bg-primary/5 text-foreground"
+                                  : "border-border hover:border-primary/50 text-muted-foreground"
+                              }`}
+                            >
+                              <span>{mode.emoji}</span>
+                              <span>{mode.label}</span>
+                            </button>
+                          ))}
+                        </div>
 
-                  {/* Price Mode */}
-                  <div className="space-y-3">
-                    <Label className="text-sm">Price</Label>
-                    <div className="flex gap-2">
-                      {([
-                        { value: "split_evenly", label: "Split evenly", emoji: "🤝" },
-                        { value: "free", label: "Free", emoji: "🆓" },
-                        { value: "set_price", label: "Set price", emoji: "💰" },
-                      ] as const).map((mode) => (
-                        <button
-                          key={mode.value}
-                          type="button"
-                          onClick={() => handleChange("priceMode", mode.value)}
-                          className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl border-2 text-sm font-medium transition-all ${
-                            formData.priceMode === mode.value
-                              ? "border-primary bg-primary/5 text-foreground"
-                              : "border-border hover:border-primary/50 text-muted-foreground"
-                          }`}
+                        {formData.priceMode === "split_evenly" && (
+                          <div className="space-y-2">
+                            <p className="text-xs text-muted-foreground">Players will split the court cost evenly</p>
+                            <div className="space-y-1.5">
+                              <Label className="text-xs text-muted-foreground">Total Court Price (optional)</Label>
+                              <div className="relative">
+                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-semibold text-sm">Kč</span>
+                                <Input
+                                  type="number"
+                                  min="0"
+                                  step="1"
+                                  placeholder="0"
+                                  value={formData.totalPrice}
+                                  onChange={(e) => handleChange("totalPrice", e.target.value)}
+                                  className="h-11 pl-10"
+                                />
+                              </div>
+                              {formData.totalPrice && Number(formData.totalPrice) > 0 && (
+                                <p className="text-xs text-muted-foreground">
+                                  ≈ {Math.ceil(Number(formData.totalPrice) / derivedMaxPlayers)} Kč per player
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        )}
+
+                        {formData.priceMode === "set_price" && (
+                          <div className="grid grid-cols-2 gap-3">
+                            <div className="space-y-1.5">
+                              <Label className="text-xs text-muted-foreground">Total Amount</Label>
+                              <div className="relative">
+                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-semibold text-sm">Kč</span>
+                                <Input
+                                  type="number"
+                                  min="0"
+                                  step="1"
+                                  placeholder="0"
+                                  value={formData.totalPrice}
+                                  onChange={(e) => handleChange("totalPrice", e.target.value)}
+                                  className="h-11 pl-10"
+                                />
+                              </div>
+                            </div>
+                            <div className="space-y-1.5">
+                              <Label className="text-xs text-muted-foreground">Per Player</Label>
+                              <div className="h-11 px-3 flex items-center bg-muted/50 border border-input rounded-md text-sm font-semibold">
+                                {formData.totalPrice && Number(formData.totalPrice) > 0
+                                  ? `${Math.ceil(Number(formData.totalPrice) / derivedMaxPlayers)} Kč`
+                                  : "Free"}
+                              </div>
+                            </div>
+                            <p className="col-span-2 text-xs text-muted-foreground">Enter the total court cost — it'll be split across {derivedMaxPlayers} players</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Players & Settings */}
+                    <div className="bg-card border border-border rounded-xl md:rounded-2xl p-4 md:p-6 space-y-4 md:space-y-5">
+                      <h2 className="font-display font-bold text-base md:text-lg flex items-center gap-2">
+                        <Users className="w-4 h-4 md:w-5 md:h-5 text-primary" />
+                        Players & Settings
+                      </h2>
+
+                      <div className="space-y-1.5">
+                        <Label htmlFor="maxPlayers" className="text-sm">Max Players</Label>
+                        <Select
+                          value={String(formData.maxPlayers)}
+                          onValueChange={(v) => handleChange("maxPlayers", parseInt(v))}
                         >
-                          <span>{mode.emoji}</span>
-                          <span>{mode.label}</span>
-                        </button>
-                      ))}
-                    </div>
+                          <SelectTrigger className="h-11">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="4">4 players</SelectItem>
+                            <SelectItem value="8">8 players</SelectItem>
+                            <SelectItem value="12">12 players</SelectItem>
+                            <SelectItem value="16">16 players</SelectItem>
+                            <SelectItem value="20">20 players</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
 
-                    {formData.priceMode === "split_evenly" && (
                       <div className="space-y-2">
-                        <p className="text-xs text-muted-foreground">Players will split the court cost evenly</p>
-                        <div className="space-y-1.5">
-                          <Label className="text-xs text-muted-foreground">Total Court Price (optional)</Label>
-                          <div className="relative">
-                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-semibold text-sm">Kč</span>
-                            <Input
-                              type="number"
-                              min="0"
-                              step="1"
-                              placeholder="0"
-                              value={formData.totalPrice}
-                              onChange={(e) => handleChange("totalPrice", e.target.value)}
-                              className="h-11 pl-10"
-                            />
-                          </div>
-                          {formData.totalPrice && Number(formData.totalPrice) > 0 && (
-                            <p className="text-xs text-muted-foreground">
-                              ≈ {Math.ceil(Number(formData.totalPrice) / derivedMaxPlayers)} Kč per player
-                            </p>
-                          )}
+                        <Label className="text-sm">Your Role</Label>
+                        <div className="grid grid-cols-2 gap-2">
+                          <button
+                            type="button"
+                            onClick={() => handleChange("hostIsPlaying", true)}
+                            className={`flex items-center gap-2 p-3 rounded-xl border-2 transition-all text-left ${
+                              formData.hostIsPlaying
+                                ? "border-primary bg-primary/5"
+                                : "border-border hover:border-primary/50"
+                            }`}
+                          >
+                            <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                              <Trophy className="w-4 h-4 text-primary" />
+                            </div>
+                            <div>
+                              <p className="font-medium text-sm">🎾 Playing</p>
+                              <p className="text-xs text-muted-foreground">I'm joining the game</p>
+                            </div>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => handleChange("hostIsPlaying", false)}
+                            className={`flex items-center gap-2 p-3 rounded-xl border-2 transition-all text-left ${
+                              !formData.hostIsPlaying
+                                ? "border-primary bg-primary/5"
+                                : "border-border hover:border-primary/50"
+                            }`}
+                          >
+                            <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                              <Users className="w-4 h-4 text-primary" />
+                            </div>
+                            <div>
+                              <p className="font-medium text-sm">📋 Organizer</p>
+                              <p className="text-xs text-muted-foreground">Just organizing</p>
+                            </div>
+                          </button>
                         </div>
                       </div>
-                    )}
 
-                    {formData.priceMode === "set_price" && (
-                      <div className="grid grid-cols-2 gap-3">
-                        <div className="space-y-1.5">
-                          <Label className="text-xs text-muted-foreground">Total Amount</Label>
-                          <div className="relative">
-                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-semibold text-sm">Kč</span>
-                            <Input
-                              type="number"
-                              min="0"
-                              step="1"
-                              placeholder="0"
-                              value={formData.totalPrice}
-                              onChange={(e) => handleChange("totalPrice", e.target.value)}
-                              className="h-11 pl-10"
-                            />
-                          </div>
+                      {/* Join Mode Selection */}
+                      <div className="space-y-2">
+                        <Label className="text-sm">Join Mode</Label>
+                        <div className="space-y-2">
+                          <button
+                            type="button"
+                            onClick={() => handleChange("joinMode", "open")}
+                            className={`w-full flex items-center gap-3 p-3 rounded-xl border-2 transition-all text-left ${
+                              formData.joinMode === "open"
+                                ? "border-primary bg-primary/5"
+                                : "border-border hover:border-primary/50"
+                            }`}
+                          >
+                            <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                              <DoorOpen className="w-4 h-4 text-primary" />
+                            </div>
+                            <div>
+                              <p className="font-medium text-sm">Open</p>
+                              <p className="text-xs text-muted-foreground">Anyone can join directly</p>
+                            </div>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => handleChange("joinMode", "request")}
+                            className={`w-full flex items-center gap-3 p-3 rounded-xl border-2 transition-all text-left ${
+                              formData.joinMode === "request"
+                                ? "border-primary bg-primary/5"
+                                : "border-border hover:border-primary/50"
+                            }`}
+                          >
+                            <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                              <ShieldCheck className="w-4 h-4 text-primary" />
+                            </div>
+                            <div>
+                              <p className="font-medium text-sm">Request to Join</p>
+                              <p className="text-xs text-muted-foreground">You approve each player</p>
+                            </div>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => handleChange("joinMode", "request_and_pay")}
+                            className={`w-full flex items-center gap-3 p-3 rounded-xl border-2 transition-all text-left ${
+                              formData.joinMode === "request_and_pay"
+                                ? "border-primary bg-primary/5"
+                                : "border-border hover:border-primary/50"
+                            }`}
+                          >
+                            <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                              <CreditCard className="w-4 h-4 text-primary" />
+                            </div>
+                            <div>
+                              <p className="font-medium text-sm">Request & Pay</p>
+                              <p className="text-xs text-muted-foreground">Players request and pay to confirm</p>
+                            </div>
+                          </button>
                         </div>
-                        <div className="space-y-1.5">
-                          <Label className="text-xs text-muted-foreground">Per Player</Label>
-                          <div className="h-11 px-3 flex items-center bg-muted/50 border border-input rounded-md text-sm font-semibold">
-                             {formData.totalPrice && Number(formData.totalPrice) > 0
-                               ? `${Math.ceil(Number(formData.totalPrice) / derivedMaxPlayers)} Kč`
-                               : "Free"}
-                           </div>
-                         </div>
-                         <p className="col-span-2 text-xs text-muted-foreground">Enter the total court cost — it'll be split across {derivedMaxPlayers} players</p>
                       </div>
-                    )}
-                  </div>
-                </div>
 
-                {/* Players & Settings */}
-                <div className="bg-card border border-border rounded-xl md:rounded-2xl p-4 md:p-6 space-y-4 md:space-y-5">
-                  <h2 className="font-display font-bold text-base md:text-lg flex items-center gap-2">
-                    <Users className="w-4 h-4 md:w-5 md:h-5 text-primary" />
-                    Players & Settings
-                  </h2>
-
-                  {hostType !== "find_players" && (
-                    <div className="space-y-1.5">
-                      <Label htmlFor="maxPlayers" className="text-sm">Max Players</Label>
-                      <Select
-                        value={String(formData.maxPlayers)}
-                        onValueChange={(v) => handleChange("maxPlayers", parseInt(v))}
-                      >
-                        <SelectTrigger className="h-11">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="4">4 players</SelectItem>
-                          <SelectItem value="8">8 players</SelectItem>
-                          <SelectItem value="12">12 players</SelectItem>
-                          <SelectItem value="16">16 players</SelectItem>
-                          <SelectItem value="20">20 players</SelectItem>
-                        </SelectContent>
-                      </Select>
+                      <div className="space-y-1.5">
+                        <Label htmlFor="visibility" className="text-sm">Visibility</Label>
+                        <Select
+                          value={formData.visibility}
+                          onValueChange={(v) => handleChange("visibility", v)}
+                        >
+                          <SelectTrigger className="h-11">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="public">🌍 Public - Anyone can find</SelectItem>
+                            <SelectItem value="private">🔗 Private - Link only</SelectItem>
+                            <SelectItem value="club_only">🏠 Club Only</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
                     </div>
-                  )}
-
-                  {/* Host Role Selection — only shown for non-find_players types */}
-                  {hostType !== "find_players" && (
-                  <div className="space-y-2">
-                    <Label className="text-sm">Your Role</Label>
-                    <div className="grid grid-cols-2 gap-2">
-                      <button
-                        type="button"
-                        onClick={() => handleChange("hostIsPlaying", true)}
-                        className={`flex items-center gap-2 p-3 rounded-xl border-2 transition-all text-left ${
-                          formData.hostIsPlaying
-                            ? "border-primary bg-primary/5"
-                            : "border-border hover:border-primary/50"
-                        }`}
-                      >
-                        <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                          <Trophy className="w-4 h-4 text-primary" />
-                        </div>
-                        <div>
-                          <p className="font-medium text-sm">🎾 Playing</p>
-                          <p className="text-xs text-muted-foreground">I'm joining the game</p>
-                        </div>
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => handleChange("hostIsPlaying", false)}
-                        className={`flex items-center gap-2 p-3 rounded-xl border-2 transition-all text-left ${
-                          !formData.hostIsPlaying
-                            ? "border-primary bg-primary/5"
-                            : "border-border hover:border-primary/50"
-                        }`}
-                      >
-                        <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                          <Users className="w-4 h-4 text-primary" />
-                        </div>
-                        <div>
-                          <p className="font-medium text-sm">📋 Organizer</p>
-                          <p className="text-xs text-muted-foreground">Just organizing</p>
-                        </div>
-                      </button>
-                    </div>
-                  </div>
-                  )}
-
-                  {/* Join Mode Selection */}
-                  <div className="space-y-2">
-                    <Label className="text-sm">Join Mode</Label>
-                    <div className="space-y-2">
-                      <button
-                        type="button"
-                        onClick={() => handleChange("joinMode", "open")}
-                        className={`w-full flex items-center gap-3 p-3 rounded-xl border-2 transition-all text-left ${
-                          formData.joinMode === "open"
-                            ? "border-primary bg-primary/5"
-                            : "border-border hover:border-primary/50"
-                        }`}
-                      >
-                        <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                          <DoorOpen className="w-4 h-4 text-primary" />
-                        </div>
-                        <div>
-                          <p className="font-medium text-sm">Open</p>
-                          <p className="text-xs text-muted-foreground">Anyone can join directly</p>
-                        </div>
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => handleChange("joinMode", "request")}
-                        className={`w-full flex items-center gap-3 p-3 rounded-xl border-2 transition-all text-left ${
-                          formData.joinMode === "request"
-                            ? "border-primary bg-primary/5"
-                            : "border-border hover:border-primary/50"
-                        }`}
-                      >
-                        <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                          <ShieldCheck className="w-4 h-4 text-primary" />
-                        </div>
-                        <div>
-                          <p className="font-medium text-sm">Request to Join</p>
-                          <p className="text-xs text-muted-foreground">You approve each player</p>
-                        </div>
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => handleChange("joinMode", "request_and_pay")}
-                        className={`w-full flex items-center gap-3 p-3 rounded-xl border-2 transition-all text-left ${
-                          formData.joinMode === "request_and_pay"
-                            ? "border-primary bg-primary/5"
-                            : "border-border hover:border-primary/50"
-                        }`}
-                      >
-                        <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                          <CreditCard className="w-4 h-4 text-primary" />
-                        </div>
-                        <div>
-                          <p className="font-medium text-sm">Request & Pay</p>
-                          <p className="text-xs text-muted-foreground">Players request and pay to confirm</p>
-                        </div>
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <Label htmlFor="visibility" className="text-sm">Visibility</Label>
-                    <Select
-                      value={formData.visibility}
-                      onValueChange={(v) => handleChange("visibility", v)}
-                    >
-                      <SelectTrigger className="h-11">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="public">🌍 Public - Anyone can find</SelectItem>
-                        <SelectItem value="private">🔗 Private - Link only</SelectItem>
-                        <SelectItem value="club_only">🏠 Club Only</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
+                  </>
+                )}
               </>
             )}
 
