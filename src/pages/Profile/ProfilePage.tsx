@@ -300,6 +300,15 @@ export default function ProfilePage() {
                       <h1 className="font-display text-xl font-bold leading-tight">
                         {profile?.name}
                       </h1>
+                      {profile?.friend_code && (
+                        <div className="flex items-center gap-1.5 mt-0.5">
+                          <span className="text-[10px] text-muted-foreground">ID:</span>
+                          <code className="text-[10px] font-mono text-muted-foreground tracking-wider">{profile.friend_code}</code>
+                          <button onClick={handleCopyCode} className="text-muted-foreground hover:text-foreground transition-colors">
+                            {copied ? <Check className="w-2.5 h-2.5 text-green-500" /> : <Copy className="w-2.5 h-2.5" />}
+                          </button>
+                        </div>
+                      )}
                       <div className="flex items-center gap-1.5 mt-1 flex-wrap">
                         <SkillBadge level={profile?.skill_level || 3} size="sm" />
                       </div>
@@ -407,41 +416,6 @@ export default function ProfilePage() {
             />
           </div>
 
-          {/* ── Friend Code ── */}
-          {profile?.friend_code && (
-            <div className="bg-card border border-border rounded-xl px-4 py-3 flex items-center justify-between gap-3">
-              <div className="min-w-0">
-                <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wide mb-0.5">
-                  ID:
-                </p>
-                <code className="text-base font-mono font-bold tracking-widest">
-                  {profile.friend_code}
-                </code>
-              </div>
-              <div className="flex items-center gap-1 shrink-0">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8"
-                  onClick={handleCopyCode}
-                >
-                  {copied ? (
-                    <Check className="w-3.5 h-3.5 text-green-500" />
-                  ) : (
-                    <Copy className="w-3.5 h-3.5" />
-                  )}
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8"
-                  onClick={handleShareCode}
-                >
-                  <Share2 className="w-3.5 h-3.5" />
-                </Button>
-              </div>
-            </div>
-          )}
 
           {/* ── Payment Info (Collapsible) ── */}
           <Collapsible open={paymentOpen} onOpenChange={setPaymentOpen}>
