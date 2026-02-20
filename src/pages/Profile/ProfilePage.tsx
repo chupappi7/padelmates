@@ -297,9 +297,12 @@ export default function ProfilePage() {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-start justify-between gap-2">
                     <div>
-                      <h1 className="font-display text-xl font-bold leading-tight">
-                        {profile?.name}
-                      </h1>
+                      <div className="flex items-center gap-2">
+                        <h1 className="font-display text-xl font-bold leading-tight">
+                          {profile?.name}
+                        </h1>
+                        <SkillBadge level={profile?.skill_level || 3} size="sm" />
+                      </div>
                       {profile?.friend_code && (
                         <div className="flex items-center gap-1.5 mt-0.5">
                           <span className="text-[10px] text-muted-foreground">ID:</span>
@@ -309,9 +312,6 @@ export default function ProfilePage() {
                           </button>
                         </div>
                       )}
-                      <div className="flex items-center gap-1.5 mt-1 flex-wrap">
-                        <SkillBadge level={profile?.skill_level || 3} size="sm" />
-                      </div>
                       {profile?.bio && (
                         <p className="text-xs text-muted-foreground mt-1.5 line-clamp-2">
                           {profile.bio}
