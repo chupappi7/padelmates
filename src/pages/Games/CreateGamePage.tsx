@@ -40,7 +40,7 @@ const HOST_TYPE_CONFIG: Record<HostType, { title: string; subtitle: string; form
     subtitle: "Organize an Americano tournament",
     format: "americano",
     defaultMaxPlayers: 8,
-    defaultJoinMode: "request",
+    defaultJoinMode: "open",
   },
   sell_court: {
     title: "Sell / Give Away Court",
@@ -89,9 +89,10 @@ export default function CreateGamePage() {
     hostIsPlaying: hostType !== "sell_court",
     joinMode: config.defaultJoinMode,
     totalPrice: "",
-    priceMode: hostType === "find_players" ? "split_evenly"
+    priceMode: (hostType === "find_players" ? "split_evenly"
              : hostType === "sell_court"  ? "set_price"
-             : "free" as "split_evenly" | "free" | "set_price",
+             : hostType === "americano"   ? "set_price"
+             : "free") as "split_evenly" | "free" | "set_price",
   });
 
   // Find Players: spotsNeeded is the primary control (how many more players do you need?)
@@ -99,9 +100,11 @@ export default function CreateGamePage() {
   const minSpotsNeeded = (hIsPlaying: boolean, pCount: number) =>
     Math.max(0, 4 - pCount - (hIsPlaying ? 1 : 0));
 
-  const [spotsNeeded, setSpotsNeeded] = useState(() =>
-    Math.max(minSpotsNeeded(hostType !== "sell_court", 0), 2)
-  );
+  const [spotsNeeded, setSpotsNeeded] = useState(() => {
+    const isAmericano = hostType === "americano";
+    const defaultSpots = isAmericano ? 7 : 2; // americano default 8 players total
+    return Math.max(minSpotsNeeded(hostType !== "sell_court", 0), defaultSpots);
+  });
 
   const getPlayerName = (p: PrefilledPlayer) => typeof p === "string" ? p : p.name;
   const prefilledCount = prefilledPlayers.filter(p => getPlayerName(p).trim()).length;
@@ -111,17 +114,17 @@ export default function CreateGamePage() {
   const maxSpotsNeeded = Math.max(currentMin, 8 - prefilledCount - (formData.hostIsPlaying ? 1 : 0));
   const clampedSpotsNeeded = Math.min(Math.max(spotsNeeded, currentMin), maxSpotsNeeded);
 
-  // effectiveLookingFor = spotsNeeded in find_players, else legacy lookingFor
-  const effectiveLookingFor = hostType === "find_players"
+  // effectiveLookingFor = spotsNeeded in find_players/americano, else legacy lookingFor
+  const effectiveLookingFor = (hostType === "find_players" || hostType === "americano")
     ? clampedSpotsNeeded
     : Math.max(0, formData.maxPlayers - prefilledPlayers.length - (formData.hostIsPlaying ? 1 : 0));
 
-  // Derived maxPlayers for find_players: spotsNeeded + prefilled + (host if playing)
-  const derivedMaxPlayers = hostType === "find_players"
+  // Derived maxPlayers for find_players/americano: spotsNeeded + prefilled + (host if playing)
+  const derivedMaxPlayers = (hostType === "find_players" || hostType === "americano")
     ? clampedSpotsNeeded + prefilledCount + (formData.hostIsPlaying ? 1 : 0)
     : formData.maxPlayers;
 
-  const maxPrefilledSlots = hostType === "find_players"
+  const maxPrefilledSlots = (hostType === "find_players" || hostType === "americano")
     ? Math.max(0, clampedSpotsNeeded) // fill all open spots
     : 0;
 
@@ -183,8 +186,10 @@ export default function CreateGamePage() {
       : hostType === "sell_spots" ? "spot_selling" 
       : "pay_to_join";
 
+    const skillLabel = ["D","C","B","A"][formData.skillLevel - 1] ?? formData.skillLevel;
     const title = isSellCourt ? "Sell / Give Away Court" 
       : hostType === "find_players" ? `Looking for ${effectiveLookingFor} player${effectiveLookingFor !== 1 ? 's' : ''}`
+      : hostType === "americano" ? `Americano · ${skillLabel}`
       : formData.title;
 
     const { data, error } = await supabase.from("games").insert({
@@ -199,7 +204,9 @@ export default function CreateGamePage() {
       price_per_player: formData.totalPrice && Number(formData.totalPrice) > 0
         ? isSellCourt
           ? Number(formData.totalPrice)
-          : Math.ceil(Number(formData.totalPrice) / formData.maxPlayers)
+          : hostType === "americano"
+            ? Number(formData.totalPrice)
+            : Math.ceil(Number(formData.totalPrice) / derivedMaxPlayers)
         : 0,
       price_mode: formData.priceMode,
       payment_mode: paymentMode,
@@ -422,7 +429,7 @@ export default function CreateGamePage() {
             ) : (
               <>
                 {hostType === "find_players" ? (
-                  /* ========== FIND PLAYERS — Restructured 5-card flow ========== */
+                  /* ========== FIND PLAYERS — 5-card flow ========== */
                   <>
                     {/* Card 1: Location & Schedule */}
                     <div className="bg-card border border-border rounded-xl md:rounded-2xl p-4 md:p-6 space-y-4 md:space-y-5">
@@ -875,113 +882,22 @@ export default function CreateGamePage() {
                       </div>
                     </div>
                   </>
-                ) : (
-                  /* ========== OTHER HOST TYPES — Original full form ========== */
+                ) : hostType === "americano" ? (
+                  /* ========== AMERICANO — Same card-style as Find Players ========== */
                   <>
-                    {/* Game Details */}
+                    {/* Card 1: Location & Schedule */}
                     <div className="bg-card border border-border rounded-xl md:rounded-2xl p-4 md:p-6 space-y-4 md:space-y-5">
                       <h2 className="font-display font-bold text-base md:text-lg flex items-center gap-2">
-                        <Trophy className="w-4 h-4 md:w-5 md:h-5 text-primary" />
-                        Game Details
-                      </h2>
-
-                      <div className="space-y-1.5">
-                        <Label htmlFor="title" className="text-sm">Game Title <span className="text-destructive">*</span></Label>
-                        <Input
-                          id="title"
-                          placeholder="e.g., Friday Night Americano"
-                          value={formData.title}
-                          onChange={(e) => handleChange("title", e.target.value)}
-                          required
-                          className="h-11"
-                        />
-                      </div>
-
-                      <div className="space-y-1.5">
-                        <Label htmlFor="description" className="text-sm">Description (optional)</Label>
-                        <Textarea
-                          id="description"
-                          placeholder="Tell players what to expect..."
-                          value={formData.description}
-                          onChange={(e) => handleChange("description", e.target.value)}
-                          rows={3}
-                          className="text-sm resize-none"
-                        />
-                      </div>
-
-                      {hostType === "americano" && (
-                        <div className="grid grid-cols-2 gap-3 md:gap-4">
-                          <div className="space-y-1.5">
-                            <Label htmlFor="format" className="text-sm">Americano Type</Label>
-                            <Select
-                              value={formData.format}
-                              onValueChange={(v) => handleChange("format", v)}
-                            >
-                              <SelectTrigger className="h-11">
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="americano">Americano</SelectItem>
-                                <SelectItem value="team_americano">Team Americano</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </div>
-
-                          <div className="space-y-1.5">
-                            <Label htmlFor="skill" className="text-sm">Min Skill Level</Label>
-                            <Select
-                              value={String(formData.skillLevel)}
-                              onValueChange={(v) => handleChange("skillLevel", parseInt(v))}
-                            >
-                              <SelectTrigger className="h-11">
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="2">Level 2 – Beginner</SelectItem>
-                                <SelectItem value="3">Level 3 – Intermediate</SelectItem>
-                                <SelectItem value="4">Level 4 – Upper-Int</SelectItem>
-                                <SelectItem value="5">Level 5 – Pro</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </div>
-                        </div>
-                      )}
-
-                      {hostType !== "americano" && (
-                        <div className="space-y-1.5">
-                          <Label htmlFor="skill" className="text-sm">Min Skill Level</Label>
-                          <Select
-                            value={String(formData.skillLevel)}
-                            onValueChange={(v) => handleChange("skillLevel", parseInt(v))}
-                          >
-                            <SelectTrigger className="h-11">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="2">Level 2 – Beginner</SelectItem>
-                              <SelectItem value="3">Level 3 – Intermediate</SelectItem>
-                              <SelectItem value="4">Level 4 – Upper-Int</SelectItem>
-                              <SelectItem value="5">Level 5 – Pro</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* When & Where */}
-                    <div className="bg-card border border-border rounded-xl md:rounded-2xl p-4 md:p-6 space-y-4 md:space-y-5">
-                      <h2 className="font-display font-bold text-base md:text-lg flex items-center gap-2">
-                        <Calendar className="w-4 h-4 md:w-5 md:h-5 text-primary" />
-                        When & Where
+                        <MapPin className="w-4 h-4 md:w-5 md:h-5 text-primary" />
+                        Location & Schedule
                       </h2>
 
                       <div className="grid grid-cols-3 gap-3">
                         <div className="col-span-2 space-y-1.5">
-                          <Label htmlFor="location" className="text-sm">Court / Location <span className="text-destructive">*</span></Label>
+                          <Label className="text-sm">Court / Location <span className="text-destructive">*</span></Label>
                           <div className="relative">
                             <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                             <Input
-                              id="location"
                               placeholder="e.g., Padel Club Barcelona"
                               value={formData.location}
                               onChange={(e) => handleChange("location", e.target.value)}
@@ -991,9 +907,8 @@ export default function CreateGamePage() {
                           </div>
                         </div>
                         <div className="space-y-1.5">
-                          <Label htmlFor="courtNumber" className="text-sm">Court #</Label>
+                          <Label className="text-sm">Court #</Label>
                           <Input
-                            id="courtNumber"
                             placeholder="e.g., 3"
                             value={formData.courtNumber}
                             onChange={(e) => handleChange("courtNumber", e.target.value)}
@@ -1020,10 +935,7 @@ export default function CreateGamePage() {
                             <CalendarComponent
                               mode="single"
                               selected={selectedDate}
-                              onSelect={(date) => {
-                                setSelectedDate(date);
-                                setShowDatePicker(false);
-                              }}
+                              onSelect={(date) => { setSelectedDate(date); setShowDatePicker(false); }}
                               disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
                               initialFocus
                             />
@@ -1049,218 +961,233 @@ export default function CreateGamePage() {
                         <Label className="text-sm">Duration</Label>
                         <DurationChips duration={duration} onDurationChange={setDuration} selectedTime={selectedTime} />
                       </div>
+                    </div>
 
-                      {/* Price Mode */}
-                      <div className="space-y-3">
-                        <Label className="text-sm">Price</Label>
+                    {/* Card 2: Players */}
+                    <div className="bg-card border border-border rounded-xl md:rounded-2xl p-4 md:p-6 space-y-5">
+                      <h2 className="font-display font-bold text-base md:text-lg flex items-center gap-2">
+                        <Users className="w-4 h-4 md:w-5 md:h-5 text-primary" />
+                        Players
+                      </h2>
+
+                      <div className="space-y-2">
+                        <Label className="text-sm font-medium">Are you playing?</Label>
                         <div className="flex gap-2">
-                          {([
-                            { value: "split_evenly", label: "Split evenly", emoji: "🤝" },
-                            { value: "free", label: "Free", emoji: "🆓" },
-                            { value: "set_price", label: "Set price", emoji: "💰" },
-                          ] as const).map((mode) => (
+                          <button
+                            type="button"
+                            onClick={() => { handleChange("hostIsPlaying", true); setSpotsNeeded(prev => Math.max(minSpotsNeeded(true, prefilledCount), prev)); }}
+                            className={`flex-1 h-10 rounded-xl border-2 text-sm font-medium transition-all ${formData.hostIsPlaying ? "border-primary bg-primary/10 text-foreground" : "border-border text-muted-foreground hover:border-primary/40"}`}
+                          >
+                            🎾 Yes, I'm playing
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => { handleChange("hostIsPlaying", false); setSpotsNeeded(prev => Math.max(minSpotsNeeded(false, prefilledCount), prev)); }}
+                            className={`flex-1 h-10 rounded-xl border-2 text-sm font-medium transition-all ${!formData.hostIsPlaying ? "border-primary bg-primary/10 text-foreground" : "border-border text-muted-foreground hover:border-primary/40"}`}
+                          >
+                            📋 No, just organizing
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="h-px bg-border" />
+
+                      <div className="space-y-2">
+                        <Label className="text-sm font-medium flex items-center gap-1.5">
+                          <UserPlus className="w-3.5 h-3.5 text-primary" />
+                          Players already confirmed
+                        </Label>
+                        {formData.hostIsPlaying && (
+                          <div className="flex items-center gap-2 p-2 bg-primary/5 border border-primary/20 rounded-lg">
+                            <span className="w-2 h-2 rounded-full bg-primary shrink-0" />
+                            <span className="text-sm flex-1 truncate px-1 font-medium">You (host)</span>
+                            <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded-full">Playing</span>
+                          </div>
+                        )}
+                        {prefilledPlayers.map((player, index) => (
+                          <div key={index} className="flex items-center gap-2 p-2 bg-muted/30 border border-border rounded-lg">
+                            <span className="text-sm flex-1 truncate px-1">
+                              {typeof player === "object" ? player.name : player || "Guest"}
+                            </span>
+                            {typeof player === "object" && (
+                              <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded-full">Friend</span>
+                            )}
                             <button
-                              key={mode.value}
                               type="button"
-                              onClick={() => handleChange("priceMode", mode.value)}
-                              className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl border-2 text-sm font-medium transition-all ${
-                                formData.priceMode === mode.value
-                                  ? "border-primary bg-primary/5 text-foreground"
-                                  : "border-border hover:border-primary/50 text-muted-foreground"
-                              }`}
+                              onClick={() => setPrefilledPlayers(prev => prev.filter((_, i) => i !== index))}
+                              className="w-7 h-7 rounded-md bg-muted hover:bg-destructive/10 flex items-center justify-center transition-colors shrink-0"
                             >
-                              <span>{mode.emoji}</span>
-                              <span>{mode.label}</span>
+                              <XIcon className="w-3 h-3 text-muted-foreground" />
                             </button>
-                          ))}
+                          </div>
+                        ))}
+                        {prefilledPlayers.length < maxPrefilledSlots && (
+                          <button
+                            type="button"
+                            onClick={() => setShowPlayerPicker(true)}
+                            className="w-full flex items-center justify-center gap-1.5 h-9 rounded-lg border border-dashed border-border text-sm text-muted-foreground hover:text-foreground hover:border-primary/50 transition-colors"
+                          >
+                            <UserPlus className="w-3.5 h-3.5" />
+                            Add player
+                          </button>
+                        )}
+                      </div>
+
+                      <FriendPickerSheet
+                        open={showPlayerPicker}
+                        onOpenChange={setShowPlayerPicker}
+                        selected={prefilledPlayers}
+                        onSelect={(newPlayers) => {
+                          const added = newPlayers.length - prefilledPlayers.length;
+                          if (added > 0) {
+                            const newPrefilledCount = newPlayers.filter(p => (typeof p === "string" ? p : p.name).trim()).length;
+                            const newMin = Math.max(1, 4 - newPrefilledCount - (formData.hostIsPlaying ? 1 : 0));
+                            setSpotsNeeded(prev => Math.max(newMin, prev - added));
+                          }
+                          setPrefilledPlayers(newPlayers);
+                        }}
+                        maxSlots={maxPrefilledSlots}
+                      />
+
+                      <div className="h-px bg-border" />
+
+                      <div className="space-y-3">
+                        <Label className="text-sm font-medium">How many players do you need? <span className="text-destructive">*</span></Label>
+                        <div className="flex items-center gap-4">
+                          <button
+                            type="button"
+                            onClick={() => handleSpotsNeededChange(-1)}
+                            disabled={clampedSpotsNeeded <= currentMin}
+                            className="w-12 h-12 rounded-xl border-2 border-border bg-background text-xl font-bold flex items-center justify-center transition-all hover:border-primary/60 disabled:opacity-30 disabled:cursor-not-allowed select-none"
+                          >–</button>
+                          <div className="flex-1 flex flex-col items-center">
+                            <span className="text-4xl font-bold text-foreground leading-none">{clampedSpotsNeeded}</span>
+                            <span className="text-xs text-muted-foreground mt-1">{clampedSpotsNeeded === 1 ? "player" : "players"}</span>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => handleSpotsNeededChange(1)}
+                            disabled={clampedSpotsNeeded >= maxSpotsNeeded}
+                            className="w-12 h-12 rounded-xl border-2 border-border bg-background text-xl font-bold flex items-center justify-center transition-all hover:border-primary/60 disabled:opacity-30 disabled:cursor-not-allowed select-none"
+                          >+</button>
                         </div>
 
-                        {formData.priceMode === "split_evenly" && (
-                          <div className="space-y-2">
-                            <p className="text-xs text-muted-foreground">Players will split the court cost evenly</p>
-                            <div className="space-y-1.5">
-                              <Label className="text-xs text-muted-foreground">Total Court Price (optional)</Label>
-                              <div className="relative">
-                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-semibold text-sm">Kč</span>
-                                <Input
-                                  type="number"
-                                  min="0"
-                                  step="1"
-                                  placeholder="0"
-                                  value={formData.totalPrice}
-                                  onChange={(e) => handleChange("totalPrice", e.target.value)}
-                                  className="h-11 pl-10"
-                                />
-                              </div>
-                              {formData.totalPrice && Number(formData.totalPrice) > 0 && (
-                                <p className="text-xs text-muted-foreground">
-                                  ≈ {Math.ceil(Number(formData.totalPrice) / derivedMaxPlayers)} Kč per player
-                                </p>
-                              )}
-                            </div>
+                        <div className="bg-muted/40 rounded-xl px-4 py-3 space-y-1">
+                          <div className="flex items-center gap-1.5 text-sm text-muted-foreground flex-wrap">
+                            {formData.hostIsPlaying && (
+                              <span className="flex items-center gap-1">
+                                <span className="w-2 h-2 rounded-full bg-primary inline-block" />
+                                You
+                              </span>
+                            )}
+                            {formData.hostIsPlaying && prefilledCount > 0 && <span>·</span>}
+                            {prefilledCount > 0 && <span>{prefilledCount} confirmed</span>}
+                            {(formData.hostIsPlaying || prefilledCount > 0) && <span>·</span>}
+                            <span className="font-medium text-foreground">{clampedSpotsNeeded} spot{clampedSpotsNeeded !== 1 ? "s" : ""} open</span>
+                            <span>·</span>
+                            <span className="font-medium text-foreground">{derivedMaxPlayers} total</span>
                           </div>
-                        )}
-
-                        {formData.priceMode === "set_price" && (
-                          <div className="grid grid-cols-2 gap-3">
-                            <div className="space-y-1.5">
-                              <Label className="text-xs text-muted-foreground">Total Amount</Label>
-                              <div className="relative">
-                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-semibold text-sm">Kč</span>
-                                <Input
-                                  type="number"
-                                  min="0"
-                                  step="1"
-                                  placeholder="0"
-                                  value={formData.totalPrice}
-                                  onChange={(e) => handleChange("totalPrice", e.target.value)}
-                                  className="h-11 pl-10"
-                                />
-                              </div>
-                            </div>
-                            <div className="space-y-1.5">
-                              <Label className="text-xs text-muted-foreground">Per Player</Label>
-                              <div className="h-11 px-3 flex items-center bg-muted/50 border border-input rounded-md text-sm font-semibold">
-                                {formData.totalPrice && Number(formData.totalPrice) > 0
-                                  ? `${Math.ceil(Number(formData.totalPrice) / derivedMaxPlayers)} Kč`
-                                  : "Free"}
-                              </div>
-                            </div>
-                            <p className="col-span-2 text-xs text-muted-foreground">Enter the total court cost — it'll be split across {derivedMaxPlayers} players</p>
-                          </div>
-                        )}
+                          <p className="text-xs text-muted-foreground">
+                            Tournament total: <strong>{derivedMaxPlayers}</strong> players
+                          </p>
+                        </div>
                       </div>
                     </div>
 
-                    {/* Players & Settings */}
+                    {/* Card 3: Skill Level */}
                     <div className="bg-card border border-border rounded-xl md:rounded-2xl p-4 md:p-6 space-y-4 md:space-y-5">
                       <h2 className="font-display font-bold text-base md:text-lg flex items-center gap-2">
-                        <Users className="w-4 h-4 md:w-5 md:h-5 text-primary" />
-                        Players & Settings
+                        <Trophy className="w-4 h-4 md:w-5 md:h-5 text-primary" />
+                        Skill Level
+                      </h2>
+                      <div className="grid grid-cols-4 gap-2">
+                        {[
+                          { value: 4, label: "A", colorClass: "badge-skill-a" },
+                          { value: 3, label: "B", colorClass: "badge-skill-b" },
+                          { value: 2, label: "C", colorClass: "badge-skill-c" },
+                          { value: 1, label: "D", colorClass: "badge-skill-d" },
+                        ].map((lvl) => (
+                          <button
+                            key={lvl.value}
+                            type="button"
+                            onClick={() => handleChange("skillLevel", lvl.value)}
+                            className={`h-14 rounded-xl border-2 font-black text-xl transition-all ${
+                              formData.skillLevel === lvl.value
+                                ? `border-primary ${lvl.colorClass}`
+                                : "border-border text-muted-foreground hover:border-primary/40"
+                            }`}
+                          >
+                            {lvl.label}
+                          </button>
+                        ))}
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        Title: <strong>Americano · {["D","C","B","A"][formData.skillLevel - 1]}</strong>
+                      </p>
+                    </div>
+
+                    {/* Card 4: How to Join + Price */}
+                    <div className="bg-card border border-border rounded-xl md:rounded-2xl p-4 md:p-6 space-y-4 md:space-y-5">
+                      <h2 className="font-display font-bold text-base md:text-lg flex items-center gap-2">
+                        <DoorOpen className="w-4 h-4 md:w-5 md:h-5 text-primary" />
+                        How to Join
                       </h2>
 
-                      <div className="space-y-1.5">
-                        <Label htmlFor="maxPlayers" className="text-sm">Max Players</Label>
-                        <Select
-                          value={String(formData.maxPlayers)}
-                          onValueChange={(v) => handleChange("maxPlayers", parseInt(v))}
+                      <div className="space-y-2">
+                        <button
+                          type="button"
+                          onClick={() => handleChange("joinMode", "open")}
+                          className={`w-full flex items-center gap-3 p-3 rounded-xl border-2 transition-all text-left ${formData.joinMode === "open" ? "border-primary bg-primary/5" : "border-border hover:border-primary/50"}`}
                         >
-                          <SelectTrigger className="h-11">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="4">4 players</SelectItem>
-                            <SelectItem value="8">8 players</SelectItem>
-                            <SelectItem value="12">12 players</SelectItem>
-                            <SelectItem value="16">16 players</SelectItem>
-                            <SelectItem value="20">20 players</SelectItem>
-                          </SelectContent>
-                        </Select>
+                          <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                            <DoorOpen className="w-4 h-4 text-primary" />
+                          </div>
+                          <div>
+                            <p className="font-medium text-sm">Open</p>
+                            <p className="text-xs text-muted-foreground">Anyone can join directly</p>
+                          </div>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => handleChange("joinMode", "request")}
+                          className={`w-full flex items-center gap-3 p-3 rounded-xl border-2 transition-all text-left ${formData.joinMode === "request" ? "border-primary bg-primary/5" : "border-border hover:border-primary/50"}`}
+                        >
+                          <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                            <ShieldCheck className="w-4 h-4 text-primary" />
+                          </div>
+                          <div>
+                            <p className="font-medium text-sm">Request to Join</p>
+                            <p className="text-xs text-muted-foreground">You approve each player</p>
+                          </div>
+                        </button>
                       </div>
 
                       <div className="space-y-2">
-                        <Label className="text-sm">Your Role</Label>
-                        <div className="grid grid-cols-2 gap-2">
-                          <button
-                            type="button"
-                            onClick={() => handleChange("hostIsPlaying", true)}
-                            className={`flex items-center gap-2 p-3 rounded-xl border-2 transition-all text-left ${
-                              formData.hostIsPlaying
-                                ? "border-primary bg-primary/5"
-                                : "border-border hover:border-primary/50"
-                            }`}
-                          >
-                            <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                              <Trophy className="w-4 h-4 text-primary" />
-                            </div>
-                            <div>
-                              <p className="font-medium text-sm">🎾 Playing</p>
-                              <p className="text-xs text-muted-foreground">I'm joining the game</p>
-                            </div>
-                          </button>
-
-                          <button
-                            type="button"
-                            onClick={() => handleChange("hostIsPlaying", false)}
-                            className={`flex items-center gap-2 p-3 rounded-xl border-2 transition-all text-left ${
-                              !formData.hostIsPlaying
-                                ? "border-primary bg-primary/5"
-                                : "border-border hover:border-primary/50"
-                            }`}
-                          >
-                            <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                              <Users className="w-4 h-4 text-primary" />
-                            </div>
-                            <div>
-                              <p className="font-medium text-sm">📋 Organizer</p>
-                              <p className="text-xs text-muted-foreground">Just organizing</p>
-                            </div>
-                          </button>
+                        <Label className="text-sm">Price per Player <span className="text-destructive">*</span></Label>
+                        <div className="relative">
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-semibold text-sm">Kč</span>
+                          <Input
+                            type="number"
+                            min="0"
+                            step="1"
+                            placeholder="e.g., 200"
+                            value={formData.totalPrice}
+                            onChange={(e) => handleChange("totalPrice", e.target.value)}
+                            className="h-11 pl-10"
+                          />
                         </div>
-                      </div>
-
-                      {/* Join Mode Selection */}
-                      <div className="space-y-2">
-                        <Label className="text-sm">Join Mode</Label>
-                        <div className="space-y-2">
-                          <button
-                            type="button"
-                            onClick={() => handleChange("joinMode", "open")}
-                            className={`w-full flex items-center gap-3 p-3 rounded-xl border-2 transition-all text-left ${
-                              formData.joinMode === "open"
-                                ? "border-primary bg-primary/5"
-                                : "border-border hover:border-primary/50"
-                            }`}
-                          >
-                            <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                              <DoorOpen className="w-4 h-4 text-primary" />
-                            </div>
-                            <div>
-                              <p className="font-medium text-sm">Open</p>
-                              <p className="text-xs text-muted-foreground">Anyone can join directly</p>
-                            </div>
-                          </button>
-
-                          <button
-                            type="button"
-                            onClick={() => handleChange("joinMode", "request")}
-                            className={`w-full flex items-center gap-3 p-3 rounded-xl border-2 transition-all text-left ${
-                              formData.joinMode === "request"
-                                ? "border-primary bg-primary/5"
-                                : "border-border hover:border-primary/50"
-                            }`}
-                          >
-                            <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                              <ShieldCheck className="w-4 h-4 text-primary" />
-                            </div>
-                            <div>
-                              <p className="font-medium text-sm">Request to Join</p>
-                              <p className="text-xs text-muted-foreground">You approve each player</p>
-                            </div>
-                          </button>
-
-                          <button
-                            type="button"
-                            onClick={() => handleChange("joinMode", "request_and_pay")}
-                            className={`w-full flex items-center gap-3 p-3 rounded-xl border-2 transition-all text-left ${
-                              formData.joinMode === "request_and_pay"
-                                ? "border-primary bg-primary/5"
-                                : "border-border hover:border-primary/50"
-                            }`}
-                          >
-                            <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                              <CreditCard className="w-4 h-4 text-primary" />
-                            </div>
-                            <div>
-                              <p className="font-medium text-sm">Request & Pay</p>
-                              <p className="text-xs text-muted-foreground">Players request and pay to confirm</p>
-                            </div>
-                          </button>
-                        </div>
+                        {formData.totalPrice && Number(formData.totalPrice) > 0 ? (
+                          <p className="text-xs text-muted-foreground">
+                            {Number(formData.totalPrice)} Kč × {derivedMaxPlayers} players = {Number(formData.totalPrice) * derivedMaxPlayers} Kč total
+                          </p>
+                        ) : (
+                          <p className="text-xs text-muted-foreground">Set the entry fee each player pays</p>
+                        )}
                       </div>
 
                       <div className="space-y-1.5">
-                        <Label htmlFor="visibility" className="text-sm">Visibility</Label>
+                        <Label className="text-sm">Visibility</Label>
                         <Select
                           value={formData.visibility}
                           onValueChange={(v) => handleChange("visibility", v)}
@@ -1274,6 +1201,52 @@ export default function CreateGamePage() {
                             <SelectItem value="club_only">🏠 Club Only</SelectItem>
                           </SelectContent>
                         </Select>
+                      </div>
+                    </div>
+
+                    {/* Card 5: About (optional) */}
+                    <div className="bg-card border border-border rounded-xl md:rounded-2xl p-4 md:p-6 space-y-4 md:space-y-5">
+                      <h2 className="font-display font-bold text-base md:text-lg flex items-center gap-2">
+                        <Users className="w-4 h-4 md:w-5 md:h-5 text-muted-foreground" />
+                        About This Tournament
+                        <span className="text-xs font-normal text-muted-foreground ml-1">(optional)</span>
+                      </h2>
+                      <Textarea
+                        placeholder="Format details, house rules, prizes..."
+                        value={formData.description}
+                        onChange={(e) => handleChange("description", e.target.value)}
+                        rows={3}
+                        className="text-sm resize-none"
+                      />
+                    </div>
+                  </>
+                ) : (
+                  /* ========== SELL SPOTS / other ========== */
+                  <>
+                    <div className="bg-card border border-border rounded-xl md:rounded-2xl p-4 md:p-6 space-y-4 md:space-y-5">
+                      <h2 className="font-display font-bold text-base md:text-lg flex items-center gap-2">
+                        <Trophy className="w-4 h-4 md:w-5 md:h-5 text-primary" />
+                        Game Details
+                      </h2>
+                      <div className="space-y-1.5">
+                        <Label className="text-sm">Game Title <span className="text-destructive">*</span></Label>
+                        <Input
+                          placeholder="e.g., Friday Night Padel"
+                          value={formData.title}
+                          onChange={(e) => handleChange("title", e.target.value)}
+                          required
+                          className="h-11"
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label className="text-sm">Description (optional)</Label>
+                        <Textarea
+                          placeholder="Tell players what to expect..."
+                          value={formData.description}
+                          onChange={(e) => handleChange("description", e.target.value)}
+                          rows={3}
+                          className="text-sm resize-none"
+                        />
                       </div>
                     </div>
                   </>
@@ -1291,7 +1264,7 @@ export default function CreateGamePage() {
                 Cancel
               </Button>
               <Button type="submit" variant="hero" className="flex-1 h-11" disabled={loading}>
-                {loading ? "Creating..." : isSellCourt ? "🏟️ List Court" : "Create Game"}
+                {loading ? "Creating..." : isSellCourt ? "🏟️ List Court" : hostType === "americano" ? "🏆 Create Tournament" : "Create Game"}
               </Button>
             </div>
           </form>
