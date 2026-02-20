@@ -197,6 +197,8 @@ export function FriendPickerSheet({ open, onOpenChange, selected, onSelect, maxS
             </button>
           </div>
         </div>
+        {/* Safe bottom padding for notched devices */}
+        <div className="pb-6 safe-bottom" />
       </SheetContent>
     </Sheet>
   );
