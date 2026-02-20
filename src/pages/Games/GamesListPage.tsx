@@ -20,7 +20,7 @@ import { Plus, Search, Calendar } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useUserLocation, calculateDistance } from "@/hooks/useUserLocation";
-import { isSameDay, format, startOfDay, isToday, isTomorrow } from "date-fns";
+import { isSameDay, format, isToday, isTomorrow } from "date-fns";
 
 interface Game {
   id: string;
@@ -76,7 +76,7 @@ export default function GamesListPage() {
         game_players(id)
       `)
       .eq("visibility", "public")
-      .gte("date_time", startOfDay(new Date()).toISOString())
+      .gte("date_time", new Date(Date.now() - 30 * 60 * 1000).toISOString())
       .order("date_time", { ascending: true });
 
     if (!error && data) {
@@ -137,10 +137,10 @@ export default function GamesListPage() {
 
   const filteredGames = useMemo(() => {
     const now = new Date();
-    const todayStart = startOfDay(now);
+    const cutoff = new Date(now.getTime() - 30 * 60 * 1000); // 30 min ago
     let result = games.filter((game) => {
       const gameDate = new Date(game.date_time);
-      if (gameDate < todayStart) return false;
+      if (gameDate < cutoff) return false;
       const matchesDay = selectedDate === null || isSameDay(gameDate, selectedDate);
       const matchesSearch =
         game.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
