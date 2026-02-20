@@ -601,7 +601,9 @@ export default function CreateGamePage() {
                         onSelect={(newPlayers) => {
                           const added = newPlayers.length - prefilledPlayers.length;
                           if (added > 0) {
-                            setSpotsNeeded(prev => Math.max(currentMin, prev - added));
+                            const newPrefilledCount = newPlayers.filter(p => (typeof p === "string" ? p : p.name).trim()).length;
+                            const newMin = Math.max(1, 4 - newPrefilledCount - (formData.hostIsPlaying ? 1 : 0));
+                            setSpotsNeeded(prev => Math.max(newMin, prev - added));
                           }
                           setPrefilledPlayers(newPlayers);
                         }}
