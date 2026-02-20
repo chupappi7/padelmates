@@ -16,7 +16,7 @@ export function GameTimeGroup({ dateTime }: GameTimeGroupProps) {
     dayLabel = format(date, "EEE, MMM d, yyyy");
   }
   
-  const timeLabel = format(date, "h:mm a");
+  const timeLabel = format(date, "HH:mm");
 
   return (
     <div className="col-span-full flex items-center gap-3 pt-4 pb-2 first:pt-0">

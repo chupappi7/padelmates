@@ -677,8 +677,8 @@ export default function GameDetailPage() {
                     <div className="min-w-0">
                       <p className="text-[11px] text-muted-foreground">Date & Time</p>
                       <p className="text-sm font-medium">
-                        {format(new Date(game.date_time), "EEE, MMM d · h:mm a")}
-                        {game.end_date_time && ` – ${format(new Date(game.end_date_time), "h:mm a")}`}
+                        {format(new Date(game.date_time), "EEE, MMM d · HH:mm")}
+                        {game.end_date_time && ` – ${format(new Date(game.end_date_time), "HH:mm")}`}
                         {game.end_date_time && (() => {
                           const hrs = (new Date(game.end_date_time).getTime() - new Date(game.date_time).getTime()) / 3600000;
                           return hrs > 0 ? ` (${hrs % 1 === 0 ? hrs : hrs.toFixed(1)}h)` : "";
@@ -907,7 +907,7 @@ export default function GameDetailPage() {
                         <div className={cn("max-w-[75%]", msg.user_id === user?.id && "text-right")}>
                           <p className="text-[11px] text-muted-foreground mb-0.5">
                             <span className="font-medium">{msg.profiles?.name}</span>
-                            <span className="ml-1.5">{format(new Date(msg.created_at), "h:mm a")}</span>
+                            <span className="ml-1.5">{format(new Date(msg.created_at), "HH:mm")}</span>
                           </p>
                           <div className={cn(
                             "inline-block px-3 py-2 rounded-2xl text-sm",

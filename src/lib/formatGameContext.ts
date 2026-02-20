@@ -7,7 +7,7 @@ export const formatGameContext = (
   max?: number
 ) => {
   const d = new Date(dateTime);
-  const dateStr = format(d, "MMM d, h:mm a");
+  const dateStr = format(d, "MMM d, HH:mm");
   const countStr =
     current !== undefined && max !== undefined ? ` · ${current}/${max}` : "";
   return `${location} · ${dateStr}${countStr}`;
