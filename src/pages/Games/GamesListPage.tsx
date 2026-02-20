@@ -227,10 +227,13 @@ export default function GamesListPage() {
                    </SelectTrigger>
                    <SelectContent>
                      <SelectItem value="all">All Levels</SelectItem>
-                     <SelectItem value="2">Level 2</SelectItem>
-                     <SelectItem value="3">Level 3</SelectItem>
-                     <SelectItem value="4">Level 4</SelectItem>
-                     <SelectItem value="5">Level 5</SelectItem>
+                     <SelectItem value="1">D – Absolute Beginner</SelectItem>
+                     <SelectItem value="2">C− – Beginner</SelectItem>
+                     <SelectItem value="3">C+ – Casual</SelectItem>
+                     <SelectItem value="4">B− – Intermediate</SelectItem>
+                     <SelectItem value="5">B+ – Upper-Int</SelectItem>
+                     <SelectItem value="6">A− – Advanced</SelectItem>
+                     <SelectItem value="7">A+ – Pro</SelectItem>
                   </SelectContent>
                 </Select>
                 <Select value={formatFilter} onValueChange={setFormatFilter}>

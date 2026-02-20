@@ -6,15 +6,28 @@ interface SkillBadgeProps {
   className?: string;
 }
 
-const skillConfig: Record<number, { label: string; className: string }> = {
-  2: { label: "Level 2", className: "badge-beginner" },
-  3: { label: "Level 3", className: "badge-intermediate" },
-  4: { label: "Level 4", className: "badge-intermediate" },
-  5: { label: "Level 5", className: "badge-advanced" },
+export const SKILL_LEVELS: Record<number, { label: string; className: string }> = {
+  1: { label: "D",  className: "badge-beginner" },
+  2: { label: "C−", className: "badge-beginner" },
+  3: { label: "C+", className: "badge-intermediate" },
+  4: { label: "B−", className: "badge-intermediate" },
+  5: { label: "B+", className: "badge-intermediate" },
+  6: { label: "A−", className: "badge-advanced" },
+  7: { label: "A+", className: "badge-advanced" },
 };
 
+export const SKILL_LEVEL_OPTIONS = [
+  { value: 1, label: "D  – Absolute Beginner" },
+  { value: 2, label: "C− – Beginner" },
+  { value: 3, label: "C+ – Casual" },
+  { value: 4, label: "B− – Intermediate" },
+  { value: 5, label: "B+ – Upper-Int" },
+  { value: 6, label: "A− – Advanced" },
+  { value: 7, label: "A+ – Pro" },
+];
+
 export function SkillBadge({ level, size = "md", className }: SkillBadgeProps) {
-  const config = skillConfig[level] || skillConfig[3];
+  const config = SKILL_LEVELS[level] ?? SKILL_LEVELS[3];
 
   const sizeClasses = {
     sm: "px-2 py-0.5 text-xs",
@@ -25,7 +38,7 @@ export function SkillBadge({ level, size = "md", className }: SkillBadgeProps) {
   return (
     <span
       className={cn(
-        "badge-skill",
+        "badge-skill font-semibold",
         config.className,
         sizeClasses[size],
         className
@@ -37,11 +50,5 @@ export function SkillBadge({ level, size = "md", className }: SkillBadgeProps) {
 }
 
 export function getSkillLabel(level: number): string {
-  const labels: Record<number, string> = {
-    2: "Beginner",
-    3: "Intermediate",
-    4: "Upper-Int",
-    5: "Pro",
-  };
-  return labels[level] || `Level ${level}`;
+  return SKILL_LEVELS[level]?.label ?? `${level}`;
 }

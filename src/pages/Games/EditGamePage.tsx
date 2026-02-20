@@ -537,10 +537,13 @@ export default function EditGamePage() {
                         <Select value={String(formData.skillLevel)} onValueChange={(v) => handleChange("skillLevel", parseInt(v))}>
                           <SelectTrigger className="h-11"><SelectValue /></SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="2">Level 2 – Beginner</SelectItem>
-                            <SelectItem value="3">Level 3 – Intermediate</SelectItem>
-                            <SelectItem value="4">Level 4 – Upper-Int</SelectItem>
-                            <SelectItem value="5">Level 5 – Pro</SelectItem>
+                            <SelectItem value="1">D  – Absolute Beginner</SelectItem>
+                            <SelectItem value="2">C− – Beginner</SelectItem>
+                            <SelectItem value="3">C+ – Casual</SelectItem>
+                            <SelectItem value="4">B− – Intermediate</SelectItem>
+                            <SelectItem value="5">B+ – Upper-Int</SelectItem>
+                            <SelectItem value="6">A− – Advanced</SelectItem>
+                            <SelectItem value="7">A+ – Pro</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
@@ -551,10 +554,13 @@ export default function EditGamePage() {
                       <Select value={String(formData.skillLevel)} onValueChange={(v) => handleChange("skillLevel", parseInt(v))}>
                         <SelectTrigger className="h-11"><SelectValue /></SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="2">Level 2 – Beginner</SelectItem>
-                          <SelectItem value="3">Level 3 – Intermediate</SelectItem>
-                          <SelectItem value="4">Level 4 – Upper-Int</SelectItem>
-                          <SelectItem value="5">Level 5 – Pro</SelectItem>
+                          <SelectItem value="1">D  – Absolute Beginner</SelectItem>
+                          <SelectItem value="2">C− – Beginner</SelectItem>
+                          <SelectItem value="3">C+ – Casual</SelectItem>
+                          <SelectItem value="4">B− – Intermediate</SelectItem>
+                          <SelectItem value="5">B+ – Upper-Int</SelectItem>
+                          <SelectItem value="6">A− – Advanced</SelectItem>
+                          <SelectItem value="7">A+ – Pro</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
