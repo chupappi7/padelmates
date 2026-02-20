@@ -7,10 +7,10 @@ interface SkillBadgeProps {
 }
 
 export const SKILL_LEVELS: Record<number, { label: string; className: string }> = {
-  1: { label: "D", className: "badge-beginner" },
-  2: { label: "C", className: "badge-intermediate" },
-  3: { label: "B", className: "badge-intermediate" },
-  4: { label: "A", className: "badge-advanced" },
+  1: { label: "D", className: "badge-skill-d" },
+  2: { label: "C", className: "badge-skill-c" },
+  3: { label: "B", className: "badge-skill-b" },
+  4: { label: "A", className: "badge-skill-a" },
 };
 
 export const SKILL_LEVEL_OPTIONS = [
