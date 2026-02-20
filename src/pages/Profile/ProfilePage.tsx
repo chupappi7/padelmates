@@ -302,9 +302,6 @@ export default function ProfilePage() {
                       </h1>
                       <div className="flex items-center gap-1.5 mt-1 flex-wrap">
                         <SkillBadge level={profile?.skill_level || 3} size="sm" />
-                        <span className="text-xs text-muted-foreground">
-                          {friends.length} friends
-                        </span>
                       </div>
                       {profile?.bio && (
                         <p className="text-xs text-muted-foreground mt-1.5 line-clamp-2">
@@ -415,7 +412,7 @@ export default function ProfilePage() {
             <div className="bg-card border border-border rounded-xl px-4 py-3 flex items-center justify-between gap-3">
               <div className="min-w-0">
                 <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wide mb-0.5">
-                  Your Friend Code
+                  ID:
                 </p>
                 <code className="text-base font-mono font-bold tracking-widest">
                   {profile.friend_code}
