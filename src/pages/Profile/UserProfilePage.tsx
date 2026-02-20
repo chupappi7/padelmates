@@ -7,7 +7,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Navbar } from "@/components/layout/Navbar";
 import { SkillBadge } from "@/components/games/SkillBadge";
 import { motion } from "framer-motion";
-import { ArrowLeft, Calendar, Trophy, Users } from "lucide-react";
+import { ArrowLeft, Trophy, Swords, Percent, Users, MessageCircle, UserPlus, UserCheck, UserX } from "lucide-react";
+import { toast } from "sonner";
 
 interface PublicProfile {
   name: string;
@@ -18,6 +19,24 @@ interface PublicProfile {
   friend_code: string | null;
 }
 
+function StatCard({
+  icon,
+  value,
+  label,
+}: {
+  icon: React.ReactNode;
+  value: string | number;
+  label: string;
+}) {
+  return (
+    <div className="flex-1 bg-card border border-border rounded-xl p-3 flex flex-col items-center gap-1 min-w-0">
+      <div className="text-primary">{icon}</div>
+      <p className="text-lg font-bold leading-none">{value}</p>
+      <p className="text-[10px] text-muted-foreground text-center leading-tight">{label}</p>
+    </div>
+  );
+}
+
 export default function UserProfilePage() {
   const { userId } = useParams<{ userId: string }>();
   const { user } = useAuth();
@@ -26,6 +45,9 @@ export default function UserProfilePage() {
   const [loading, setLoading] = useState(true);
   const [matchStats, setMatchStats] = useState({ played: 0, wins: 0 });
   const [friendCount, setFriendCount] = useState(0);
+  const [friendshipStatus, setFriendshipStatus] = useState<"none" | "pending_sent" | "pending_received" | "accepted">("none");
+  const [friendshipId, setFriendshipId] = useState<string | null>(null);
+  const [friendActionLoading, setFriendActionLoading] = useState(false);
 
   // Redirect to own profile page if viewing self
   useEffect(() => {
@@ -39,7 +61,8 @@ export default function UserProfilePage() {
     fetchProfile();
     fetchMatchStats();
     fetchFriendCount();
-  }, [userId]);
+    if (user) fetchFriendshipStatus();
+  }, [userId, user]);
 
   const fetchProfile = async () => {
     const { data } = await supabase
@@ -94,14 +117,70 @@ export default function UserProfilePage() {
     setFriendCount(count || 0);
   };
 
+  const fetchFriendshipStatus = async () => {
+    if (!user || !userId) return;
+    const { data } = await supabase
+      .from("friendships")
+      .select("id, requester_id, addressee_id, status")
+      .or(
+        `and(requester_id.eq.${user.id},addressee_id.eq.${userId}),and(requester_id.eq.${userId},addressee_id.eq.${user.id})`
+      )
+      .maybeSingle();
+
+    if (!data) {
+      setFriendshipStatus("none");
+      setFriendshipId(null);
+      return;
+    }
+
+    setFriendshipId(data.id);
+    if (data.status === "accepted") {
+      setFriendshipStatus("accepted");
+    } else if (data.requester_id === user.id) {
+      setFriendshipStatus("pending_sent");
+    } else {
+      setFriendshipStatus("pending_received");
+    }
+  };
+
+  const handleAddFriend = async () => {
+    if (!user || !userId) return;
+    setFriendActionLoading(true);
+    const { error } = await supabase.from("friendships").insert({
+      requester_id: user.id,
+      addressee_id: userId,
+    } as any);
+    if (error) {
+      toast.error("Failed to send friend request");
+    } else {
+      toast.success("Friend request sent!");
+      fetchFriendshipStatus();
+    }
+    setFriendActionLoading(false);
+  };
+
+  const handleRemoveFriend = async () => {
+    if (!friendshipId) return;
+    setFriendActionLoading(true);
+    const { error } = await supabase.from("friendships").delete().eq("id", friendshipId);
+    if (error) {
+      toast.error("Failed to remove friend");
+    } else {
+      toast("Friend removed");
+      fetchFriendshipStatus();
+      fetchFriendCount();
+    }
+    setFriendActionLoading(false);
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background">
         <Navbar />
         <div className="container py-8">
           <div className="animate-pulse space-y-4">
-            <div className="h-32 w-32 bg-muted rounded-full mx-auto" />
-            <div className="h-8 w-48 bg-muted rounded mx-auto" />
+            <div className="h-20 bg-muted rounded-xl" />
+            <div className="h-24 bg-muted rounded-xl" />
           </div>
         </div>
       </div>
@@ -122,64 +201,144 @@ export default function UserProfilePage() {
     );
   }
 
+  const winRate =
+    matchStats.played > 0
+      ? Math.round((matchStats.wins / matchStats.played) * 100)
+      : 0;
+
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      <div className="container py-8 max-w-2xl px-4 pb-32 md:pb-8">
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+      <div className="container py-6 max-w-2xl px-4 pb-32 md:pb-8">
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="space-y-4"
+        >
           <button
             onClick={() => navigate(-1)}
-            className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors mb-6"
+            className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
             Back
           </button>
 
-          <div className="bg-card border border-border rounded-2xl p-8 text-center mb-6">
-            <Avatar className="h-24 w-24 mx-auto mb-4">
-              <AvatarImage src={profile.avatar_url || undefined} />
-              <AvatarFallback className="bg-primary/10 text-primary text-2xl font-bold">
-                {profile.name?.charAt(0).toUpperCase()}
-              </AvatarFallback>
-            </Avatar>
+          {/* ── Identity Header ── */}
+          <div className="bg-card border border-border rounded-2xl p-5">
+            <div className="flex items-start gap-4">
+              {/* Avatar */}
+              <Avatar className="h-20 w-20 shrink-0">
+                <AvatarImage src={profile.avatar_url || undefined} />
+                <AvatarFallback className="bg-primary/10 text-primary text-2xl font-bold">
+                  {profile.name?.charAt(0).toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
 
-            <h1 className="font-display text-2xl font-bold mb-2">{profile.name}</h1>
-            <div className="flex justify-center mb-4">
-              <SkillBadge level={profile.skill_level} />
-            </div>
-            {profile.bio && (
-              <p className="text-muted-foreground mb-4">{profile.bio}</p>
-            )}
-            {profile.friend_code && (
-              <div className="inline-flex items-center gap-2 bg-muted/50 rounded-lg px-4 py-2">
-                <span className="text-xs text-muted-foreground font-medium">Friend Code</span>
-                <code className="text-sm font-mono font-bold tracking-widest">{profile.friend_code}</code>
+              {/* Identity */}
+              <div className="flex-1 min-w-0">
+                <h1 className="font-display text-xl font-bold leading-tight">
+                  {profile.name}
+                </h1>
+                <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+                  <SkillBadge level={profile.skill_level} size="sm" />
+                  <span className="text-xs text-muted-foreground">
+                    {friendCount} friends
+                  </span>
+                </div>
+                {profile.bio && (
+                  <p className="text-xs text-muted-foreground mt-1.5 line-clamp-2">
+                    {profile.bio}
+                  </p>
+                )}
+
+                {/* CTAs */}
+                {user && (
+                  <div className="flex gap-2 mt-3">
+                    <Button
+                      size="sm"
+                      variant="hero"
+                      className="flex-1 text-xs h-8 gap-1.5"
+                      onClick={() => navigate(`/messages/${userId}`)}
+                    >
+                      <MessageCircle className="w-3.5 h-3.5" />
+                      Message
+                    </Button>
+
+                    {friendshipStatus === "none" && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="flex-1 text-xs h-8 gap-1.5"
+                        onClick={handleAddFriend}
+                        disabled={friendActionLoading}
+                      >
+                        <UserPlus className="w-3.5 h-3.5" />
+                        Add Friend
+                      </Button>
+                    )}
+                    {friendshipStatus === "pending_sent" && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="flex-1 text-xs h-8 gap-1.5"
+                        disabled
+                      >
+                        <UserCheck className="w-3.5 h-3.5" />
+                        Request Sent
+                      </Button>
+                    )}
+                    {friendshipStatus === "pending_received" && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="flex-1 text-xs h-8 gap-1.5"
+                        onClick={handleAddFriend}
+                        disabled={friendActionLoading}
+                      >
+                        <UserCheck className="w-3.5 h-3.5" />
+                        Accept
+                      </Button>
+                    )}
+                    {friendshipStatus === "accepted" && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="flex-1 text-xs h-8 gap-1.5 text-muted-foreground"
+                        onClick={handleRemoveFriend}
+                        disabled={friendActionLoading}
+                      >
+                        <UserX className="w-3.5 h-3.5" />
+                        Friends
+                      </Button>
+                    )}
+                  </div>
+                )}
               </div>
-            )}
+            </div>
           </div>
 
-          <div className="grid grid-cols-3 gap-4">
-            <div className="bg-card border border-border rounded-xl p-4 text-center">
-              <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center mx-auto mb-2">
-                <Calendar className="w-5 h-5 text-primary" />
-              </div>
-              <p className="text-2xl font-bold">{matchStats.played || profile.games_played || 0}</p>
-              <p className="text-sm text-muted-foreground">Matches</p>
-            </div>
-            <div className="bg-card border border-border rounded-xl p-4 text-center">
-              <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center mx-auto mb-2">
-                <Trophy className="w-5 h-5 text-primary" />
-              </div>
-              <p className="text-2xl font-bold">{matchStats.wins}</p>
-              <p className="text-sm text-muted-foreground">Wins</p>
-            </div>
-            <div className="bg-card border border-border rounded-xl p-4 text-center">
-              <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center mx-auto mb-2">
-                <Users className="w-5 h-5 text-primary" />
-              </div>
-              <p className="text-2xl font-bold">{friendCount}</p>
-              <p className="text-sm text-muted-foreground">Friends</p>
-            </div>
+          {/* ── Stats Row ── */}
+          <div className="flex gap-2">
+            <StatCard
+              icon={<Swords className="w-4 h-4" />}
+              value={matchStats.played || profile.games_played || 0}
+              label="Matches"
+            />
+            <StatCard
+              icon={<Trophy className="w-4 h-4" />}
+              value={matchStats.wins}
+              label="Wins"
+            />
+            <StatCard
+              icon={<Percent className="w-4 h-4" />}
+              value={`${winRate}%`}
+              label="Win Rate"
+            />
+            <StatCard
+              icon={<Users className="w-4 h-4" />}
+              value={friendCount}
+              label="Friends"
+            />
           </div>
         </motion.div>
       </div>

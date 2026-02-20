@@ -18,28 +18,26 @@ import { Navbar } from "@/components/layout/Navbar";
 import { SkillBadge } from "@/components/games/SkillBadge";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
-import { Camera, Calendar, Trophy, Users, UserPlus, Copy, Check, CreditCard, Pencil } from "lucide-react";
+import {
+  Camera,
+  Copy,
+  Check,
+  CreditCard,
+  Pencil,
+  ChevronDown,
+  ChevronUp,
+  Share2,
+  Trophy,
+  Swords,
+  Percent,
+  Users,
+} from "lucide-react";
 import { useFriends } from "@/hooks/useFriends";
-
-function FriendCodeBox({ code }: { code: string | null }) {
-  const [copied, setCopied] = useState(false);
-  if (!code) return null;
-  const handleCopy = () => {
-    navigator.clipboard.writeText(code);
-    setCopied(true);
-    toast.success("Friend code copied!");
-    setTimeout(() => setCopied(false), 2000);
-  };
-  return (
-    <div className="mt-4 flex items-center justify-center gap-2 bg-muted/50 rounded-lg px-4 py-2 max-w-xs mx-auto">
-      <span className="text-xs text-muted-foreground font-medium">Your Code</span>
-      <code className="text-sm font-mono font-bold tracking-widest">{code}</code>
-      <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" onClick={handleCopy}>
-        {copied ? <Check className="w-3.5 h-3.5 text-green-500" /> : <Copy className="w-3.5 h-3.5" />}
-      </Button>
-    </div>
-  );
-}
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 
 interface Profile {
   id: string;
@@ -49,6 +47,25 @@ interface Profile {
   bio: string | null;
   games_played: number;
   bank_details: string | null;
+  friend_code: string | null;
+}
+
+function StatCard({
+  icon,
+  value,
+  label,
+}: {
+  icon: React.ReactNode;
+  value: string | number;
+  label: string;
+}) {
+  return (
+    <div className="flex-1 bg-card border border-border rounded-xl p-3 flex flex-col items-center gap-1 min-w-0">
+      <div className="text-primary">{icon}</div>
+      <p className="text-lg font-bold leading-none">{value}</p>
+      <p className="text-[10px] text-muted-foreground text-center leading-tight">{label}</p>
+    </div>
+  );
 }
 
 export default function ProfilePage() {
@@ -61,7 +78,8 @@ export default function ProfilePage() {
   const [editingPayment, setEditingPayment] = useState(false);
   const [savingPayment, setSavingPayment] = useState(false);
   const [bankDetailsForm, setBankDetailsForm] = useState("");
-  const [copiedBank, setCopiedBank] = useState(false);
+  const [paymentOpen, setPaymentOpen] = useState(false);
+  const [copied, setCopied] = useState(false);
   const [matchStats, setMatchStats] = useState({ played: 0, wins: 0 });
   const { friends } = useFriends();
 
@@ -116,7 +134,6 @@ export default function ProfilePage() {
 
   const fetchMatchStats = async () => {
     if (!user) return;
-    // Get all match_players entries for this user
     const { data: myMatchPlayers } = await supabase
       .from("match_players")
       .select("match_id, team")
@@ -176,7 +193,6 @@ export default function ProfilePage() {
     if (!file || !user) return;
 
     const fileName = `${user.id}/${Date.now()}-${file.name}`;
-
     const { error: uploadError } = await supabase.storage
       .from("avatars")
       .upload(fileName, file);
@@ -186,9 +202,9 @@ export default function ProfilePage() {
       return;
     }
 
-    const { data: { publicUrl } } = supabase.storage
-      .from("avatars")
-      .getPublicUrl(fileName);
+    const {
+      data: { publicUrl },
+    } = supabase.storage.from("avatars").getPublicUrl(fileName);
 
     await supabase
       .from("profiles")
@@ -197,6 +213,23 @@ export default function ProfilePage() {
 
     toast.success("Avatar updated!");
     fetchProfile();
+  };
+
+  const handleCopyCode = () => {
+    if (!profile?.friend_code) return;
+    navigator.clipboard.writeText(profile.friend_code);
+    setCopied(true);
+    toast.success("Friend code copied!");
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleShareCode = () => {
+    if (!profile?.friend_code) return;
+    if (navigator.share) {
+      navigator.share({ text: `Add me on Padel! My code: ${profile.friend_code}` });
+    } else {
+      handleCopyCode();
+    }
   };
 
   if (!user) {
@@ -210,45 +243,90 @@ export default function ProfilePage() {
         <Navbar />
         <div className="container py-8">
           <div className="animate-pulse space-y-4">
-            <div className="h-32 w-32 bg-muted rounded-full mx-auto" />
-            <div className="h-8 w-48 bg-muted rounded mx-auto" />
+            <div className="h-20 bg-muted rounded-xl" />
+            <div className="h-24 bg-muted rounded-xl" />
           </div>
         </div>
       </div>
     );
   }
 
+  const winRate =
+    matchStats.played > 0
+      ? Math.round((matchStats.wins / matchStats.played) * 100)
+      : 0;
+
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
 
-      <div className="container py-8 max-w-2xl">
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-          <div className="bg-card border border-border rounded-2xl p-8 text-center mb-6">
-            <div className="relative inline-block mb-4">
-              <Avatar className="h-24 w-24">
-                <AvatarImage src={profile?.avatar_url || undefined} />
-                <AvatarFallback className="bg-primary/10 text-primary text-2xl font-bold">
-                  {profile?.name?.charAt(0).toUpperCase()}
-                </AvatarFallback>
-              </Avatar>
-              <label
-                htmlFor="avatar"
-                className="absolute bottom-0 right-0 w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center cursor-pointer hover:bg-primary/90 transition-colors"
-              >
-                <Camera className="w-4 h-4" />
-              </label>
-              <Input
-                type="file"
-                id="avatar"
-                accept="image/*"
-                className="hidden"
-                onChange={handleAvatarUpload}
-              />
-            </div>
+      <div className="container py-6 max-w-2xl px-4 pb-32 md:pb-8">
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="space-y-4"
+        >
+          {/* ── Identity Header ── */}
+          <div className="bg-card border border-border rounded-2xl p-5">
+            {!editing ? (
+              <div className="flex items-start gap-4">
+                {/* Avatar */}
+                <div className="relative shrink-0">
+                  <Avatar className="h-20 w-20">
+                    <AvatarImage src={profile?.avatar_url || undefined} />
+                    <AvatarFallback className="bg-primary/10 text-primary text-2xl font-bold">
+                      {profile?.name?.charAt(0).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                  <label
+                    htmlFor="avatar"
+                    className="absolute bottom-0 right-0 w-7 h-7 bg-primary text-primary-foreground rounded-full flex items-center justify-center cursor-pointer hover:bg-primary/90 transition-colors"
+                  >
+                    <Camera className="w-3.5 h-3.5" />
+                  </label>
+                  <Input
+                    type="file"
+                    id="avatar"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleAvatarUpload}
+                  />
+                </div>
 
-            {editing ? (
-              <div className="space-y-4 text-left">
+                {/* Identity info */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <h1 className="font-display text-xl font-bold leading-tight">
+                        {profile?.name}
+                      </h1>
+                      <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+                        <SkillBadge level={profile?.skill_level || 3} size="sm" />
+                        <span className="text-xs text-muted-foreground">
+                          {friends.length} friends
+                        </span>
+                      </div>
+                      {profile?.bio && (
+                        <p className="text-xs text-muted-foreground mt-1.5 line-clamp-2">
+                          {profile.bio}
+                        </p>
+                      )}
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="shrink-0 text-xs h-8"
+                      onClick={() => setEditing(true)}
+                    >
+                      <Pencil className="w-3 h-3 mr-1" />
+                      Edit
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <h2 className="font-semibold text-sm">Edit Profile</h2>
                 <div className="space-y-2">
                   <Label>Name</Label>
                   <Input
@@ -263,21 +341,18 @@ export default function ProfilePage() {
                   <Select
                     value={String(formData.skill_level)}
                     onValueChange={(v) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        skill_level: parseInt(v),
-                      }))
+                      setFormData((prev) => ({ ...prev, skill_level: parseInt(v) }))
                     }
                   >
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
-                     <SelectContent>
-                       <SelectItem value="4">A</SelectItem>
-                       <SelectItem value="3">B</SelectItem>
-                       <SelectItem value="2">C</SelectItem>
-                       <SelectItem value="1">D</SelectItem>
-                     </SelectContent>
+                    <SelectContent>
+                      <SelectItem value="4">A</SelectItem>
+                      <SelectItem value="3">B</SelectItem>
+                      <SelectItem value="2">C</SelectItem>
+                      <SelectItem value="1">D</SelectItem>
+                    </SelectContent>
                   </Select>
                 </div>
                 <div className="space-y-2">
@@ -308,120 +383,162 @@ export default function ProfilePage() {
                   </Button>
                 </div>
               </div>
-            ) : (
-              <>
-                <h1 className="font-display text-2xl font-bold mb-2">
-                  {profile?.name}
-                </h1>
-                <div className="flex justify-center mb-4">
-                  <SkillBadge level={profile?.skill_level || 3} />
-                </div>
-                {profile?.bio && (
-                  <p className="text-muted-foreground mb-4">{profile.bio}</p>
-                )}
-                <Button variant="outline" onClick={() => setEditing(true)}>
-                  Edit Profile
-                </Button>
-
-                {/* User ID display */}
-                <FriendCodeBox code={(profile as any)?.friend_code} />
-              </>
             )}
           </div>
 
-          {/* Payment Info Section */}
-          <div className="bg-card border border-border rounded-2xl p-6 mb-4">
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2">
-                <CreditCard className="w-4 h-4 text-primary" />
-                <h2 className="font-semibold text-sm">Payment Info</h2>
+          {/* ── Stats Row ── */}
+          <div className="flex gap-2">
+            <StatCard
+              icon={<Swords className="w-4 h-4" />}
+              value={matchStats.played || profile?.games_played || 0}
+              label="Matches"
+            />
+            <StatCard
+              icon={<Trophy className="w-4 h-4" />}
+              value={matchStats.wins}
+              label="Wins"
+            />
+            <StatCard
+              icon={<Percent className="w-4 h-4" />}
+              value={`${winRate}%`}
+              label="Win Rate"
+            />
+            <StatCard
+              icon={<Users className="w-4 h-4" />}
+              value={friends.length}
+              label="Friends"
+            />
+          </div>
+
+          {/* ── Friend Code ── */}
+          {profile?.friend_code && (
+            <div className="bg-card border border-border rounded-xl px-4 py-3 flex items-center justify-between gap-3">
+              <div className="min-w-0">
+                <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wide mb-0.5">
+                  Your Friend Code
+                </p>
+                <code className="text-base font-mono font-bold tracking-widest">
+                  {profile.friend_code}
+                </code>
               </div>
-              {!editingPayment && (
+              <div className="flex items-center gap-1 shrink-0">
                 <Button
                   variant="ghost"
-                  size="sm"
-                  className="h-7 text-xs gap-1"
-                  onClick={() => setEditingPayment(true)}
+                  size="icon"
+                  className="h-8 w-8"
+                  onClick={handleCopyCode}
                 >
-                  <Pencil className="w-3 h-3" />
-                  {profile?.bank_details ? "Edit" : "Add"}
+                  {copied ? (
+                    <Check className="w-3.5 h-3.5 text-green-500" />
+                  ) : (
+                    <Copy className="w-3.5 h-3.5" />
+                  )}
                 </Button>
-              )}
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8"
+                  onClick={handleShareCode}
+                >
+                  <Share2 className="w-3.5 h-3.5" />
+                </Button>
+              </div>
             </div>
+          )}
 
-            {editingPayment ? (
-              <div className="space-y-3">
-                <p className="text-xs text-muted-foreground">
-                  Add your account number, Revolut tag, or any payment link. This is shared with buyers during court listing chats.
-                </p>
-                <textarea
-                  className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm resize-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring min-h-[80px]"
-                  placeholder={"Revolut: @yourname\nBank: 1234 5678 9012\nPayPal: you@email.com"}
-                  value={bankDetailsForm}
-                  onChange={(e) => setBankDetailsForm(e.target.value)}
-                />
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="flex-1 text-xs"
-                    onClick={() => {
-                      setBankDetailsForm(profile?.bank_details || "");
-                      setEditingPayment(false);
-                    }}
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    variant="hero"
-                    size="sm"
-                    className="flex-1 text-xs"
-                    onClick={handleSavePayment}
-                    disabled={savingPayment}
-                  >
-                    {savingPayment ? "Saving..." : "Save"}
-                  </Button>
+          {/* ── Payment Info (Collapsible) ── */}
+          <Collapsible open={paymentOpen} onOpenChange={setPaymentOpen}>
+            <div className="bg-card border border-border rounded-xl overflow-hidden">
+              <CollapsibleTrigger className="w-full flex items-center justify-between px-4 py-3 hover:bg-muted/30 transition-colors">
+                <div className="flex items-center gap-2">
+                  <CreditCard className="w-4 h-4 text-muted-foreground" />
+                  <span className="text-sm font-medium">Payment Info</span>
+                  {profile?.bank_details && (
+                    <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded-full font-medium">
+                      Set
+                    </span>
+                  )}
                 </div>
-              </div>
-            ) : profile?.bank_details ? (
-              <div className="bg-muted/50 rounded-lg px-3 py-2.5">
-                <pre className="text-xs text-foreground whitespace-pre-wrap font-sans leading-relaxed">
-                  {profile.bank_details}
-                </pre>
-              </div>
-            ) : (
-              <p className="text-xs text-muted-foreground text-center py-3">
-                No payment info added yet. Tap <strong>Add</strong> to set it up.
-              </p>
-            )}
-          </div>
+                {paymentOpen ? (
+                  <ChevronUp className="w-4 h-4 text-muted-foreground" />
+                ) : (
+                  <ChevronDown className="w-4 h-4 text-muted-foreground" />
+                )}
+              </CollapsibleTrigger>
 
-          <div className="grid grid-cols-3 gap-4">
-            <div className="bg-card border border-border rounded-xl p-4 text-center">
-              <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center mx-auto mb-2">
-                <Calendar className="w-5 h-5 text-primary" />
-              </div>
-              <p className="text-2xl font-bold">{matchStats.played || profile?.games_played || 0}</p>
-              <p className="text-sm text-muted-foreground">Matches</p>
+              <CollapsibleContent>
+                <div className="px-4 pb-4 pt-1 border-t border-border space-y-3">
+                  {editingPayment ? (
+                    <>
+                      <p className="text-xs text-muted-foreground">
+                        Add your account number, Revolut tag, or any payment link.
+                        This is shared with buyers during court listing chats.
+                      </p>
+                      <textarea
+                        className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm resize-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring min-h-[80px]"
+                        placeholder={"Revolut: @yourname\nBank: 1234 5678 9012\nPayPal: you@email.com"}
+                        value={bankDetailsForm}
+                        onChange={(e) => setBankDetailsForm(e.target.value)}
+                      />
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="flex-1 text-xs"
+                          onClick={() => {
+                            setBankDetailsForm(profile?.bank_details || "");
+                            setEditingPayment(false);
+                          }}
+                        >
+                          Cancel
+                        </Button>
+                        <Button
+                          variant="hero"
+                          size="sm"
+                          className="flex-1 text-xs"
+                          onClick={handleSavePayment}
+                          disabled={savingPayment}
+                        >
+                          {savingPayment ? "Saving..." : "Save"}
+                        </Button>
+                      </div>
+                    </>
+                  ) : profile?.bank_details ? (
+                    <div className="space-y-2">
+                      <div className="bg-muted/50 rounded-lg px-3 py-2.5">
+                        <pre className="text-xs text-foreground whitespace-pre-wrap font-sans leading-relaxed">
+                          {profile.bank_details}
+                        </pre>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 text-xs gap-1 text-muted-foreground"
+                        onClick={() => setEditingPayment(true)}
+                      >
+                        <Pencil className="w-3 h-3" />
+                        Edit
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="text-center py-2">
+                      <p className="text-xs text-muted-foreground mb-2">
+                        No payment info added yet.
+                      </p>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="text-xs"
+                        onClick={() => setEditingPayment(true)}
+                      >
+                        Add Payment Info
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              </CollapsibleContent>
             </div>
-            <div className="bg-card border border-border rounded-xl p-4 text-center">
-              <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center mx-auto mb-2">
-                <Trophy className="w-5 h-5 text-primary" />
-              </div>
-              <p className="text-2xl font-bold">{matchStats.wins}</p>
-              <p className="text-sm text-muted-foreground">Wins</p>
-            </div>
-            <button
-              onClick={() => navigate("/friends")}
-              className="bg-card border border-border rounded-xl p-4 text-center hover:border-primary/50 transition-colors"
-            >
-              <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center mx-auto mb-2">
-                <UserPlus className="w-5 h-5 text-primary" />
-              </div>
-              <p className="text-2xl font-bold">{friends.length}</p>
-              <p className="text-sm text-muted-foreground">Friends</p>
-            </button>
-          </div>
+          </Collapsible>
         </motion.div>
       </div>
     </div>
