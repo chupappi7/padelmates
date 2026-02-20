@@ -37,9 +37,7 @@ const getUrgencyPill = (dateTime: string) => {
   const hoursUntil = differenceInHours(new Date(dateTime), now);
   if (hoursUntil < 0) return "bg-muted text-muted-foreground border-border";
   if (hoursUntil < 3) return "bg-destructive/15 text-destructive border-destructive/25";
-  if (hoursUntil < 12) return "bg-warning/15 text-warning border-warning/25";
-  if (hoursUntil < 24) return "bg-primary/10 text-primary border-primary/20";
-  return "bg-muted text-muted-foreground border-border";
+  return "bg-primary/15 text-primary border-primary/25";
 };
 
 // Role-based left border accent
