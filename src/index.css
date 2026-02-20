@@ -47,10 +47,11 @@
     --warning: 38 92% 50%;
     --warning-foreground: 0 0% 100%;
 
-    /* Skill level colors */
-    --skill-beginner: 152 69% 40%;
-    --skill-intermediate: 38 92% 50%;
-    --skill-advanced: 0 72% 51%;
+    /* Skill level colors — A=red, B=blue, C=green, D=pink */
+    --skill-a: 0 72% 51%;
+    --skill-b: 217 91% 55%;
+    --skill-c: 152 69% 40%;
+    --skill-d: 330 80% 58%;
 
     /* Gradients */
     --gradient-primary: linear-gradient(135deg, hsl(175 84% 32%), hsl(190 80% 40%));
@@ -177,20 +178,34 @@
     @apply px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wide;
   }
 
-  .badge-beginner {
-    background: hsl(var(--skill-beginner) / 0.15);
-    color: hsl(var(--skill-beginner));
+  .badge-skill-a {
+    background: hsl(var(--skill-a) / 0.15);
+    color: hsl(var(--skill-a));
+    border: 1px solid hsl(var(--skill-a) / 0.35);
   }
 
-  .badge-intermediate {
-    background: hsl(var(--skill-intermediate) / 0.15);
-    color: hsl(var(--skill-intermediate));
+  .badge-skill-b {
+    background: hsl(var(--skill-b) / 0.15);
+    color: hsl(var(--skill-b));
+    border: 1px solid hsl(var(--skill-b) / 0.35);
   }
 
-  .badge-advanced {
-    background: hsl(var(--skill-advanced) / 0.15);
-    color: hsl(var(--skill-advanced));
+  .badge-skill-c {
+    background: hsl(var(--skill-c) / 0.15);
+    color: hsl(var(--skill-c));
+    border: 1px solid hsl(var(--skill-c) / 0.35);
   }
+
+  .badge-skill-d {
+    background: hsl(var(--skill-d) / 0.15);
+    color: hsl(var(--skill-d));
+    border: 1px solid hsl(var(--skill-d) / 0.35);
+  }
+
+  /* Legacy aliases */
+  .badge-beginner { @apply badge-skill-c; }
+  .badge-intermediate { @apply badge-skill-b; }
+  .badge-advanced { @apply badge-skill-a; }
 
   .gradient-text {
     background: var(--gradient-hero);

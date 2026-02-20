@@ -27,9 +27,8 @@ interface GameCardProps {
 }
 
 const getSkillColor = (level: number) => {
-  if (level <= 1) return "badge-beginner";
-  if (level <= 3) return "badge-intermediate";
-  return "badge-advanced";
+  const map: Record<number, string> = { 4: "badge-skill-a", 3: "badge-skill-b", 2: "badge-skill-c", 1: "badge-skill-d" };
+  return map[level] ?? "badge-skill-c";
 };
 
 const getUrgencyPill = (dateTime: string) => {
