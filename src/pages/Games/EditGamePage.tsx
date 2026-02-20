@@ -537,28 +537,15 @@ export default function EditGamePage() {
                         <Select value={String(formData.skillLevel)} onValueChange={(v) => handleChange("skillLevel", parseInt(v))}>
                           <SelectTrigger className="h-11"><SelectValue /></SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="1">D – Beginner</SelectItem>
-                            <SelectItem value="2">C – Casual</SelectItem>
-                            <SelectItem value="3">B – Intermediate</SelectItem>
-                            <SelectItem value="4">A – Advanced</SelectItem>
+                            <SelectItem value="4">A</SelectItem>
+                            <SelectItem value="3">B</SelectItem>
+                            <SelectItem value="2">C</SelectItem>
+                            <SelectItem value="1">D</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
                     </div>
-                  ) : (
-                    <div className="space-y-1.5">
-                      <Label className="text-sm">Min Skill Level</Label>
-                      <Select value={String(formData.skillLevel)} onValueChange={(v) => handleChange("skillLevel", parseInt(v))}>
-                        <SelectTrigger className="h-11"><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="1">D – Beginner</SelectItem>
-                          <SelectItem value="2">C – Casual</SelectItem>
-                          <SelectItem value="3">B – Intermediate</SelectItem>
-                          <SelectItem value="4">A – Advanced</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  )}
+                  ) : null}
                 </div>
 
                 {/* When & Where */}
