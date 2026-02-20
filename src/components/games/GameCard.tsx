@@ -141,7 +141,7 @@ export function GameCard({
               )}
             </div>
             {!isCourtSharing && (
-              <span className={`badge-skill text-[9px] sm:text-[10px] px-1.5 sm:px-2 py-0.5 shrink-0 ${getSkillColor(skillLevel)}`}>
+              <span className={`badge-skill text-sm sm:text-base px-2.5 sm:px-3 py-1 font-black shrink-0 ${getSkillColor(skillLevel)}`}>
                 {["D","C","B","A"][skillLevel - 1] ?? skillLevel}
               </span>
             )}
