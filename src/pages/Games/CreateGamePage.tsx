@@ -97,7 +97,7 @@ export default function CreateGamePage() {
   // Find Players: spotsNeeded is the primary control (how many more players do you need?)
   // Min court size is 4, so minimum spots = max(1, 4 - prefilled - (hostIsPlaying ? 1 : 0))
   const minSpotsNeeded = (hIsPlaying: boolean, pCount: number) =>
-    Math.max(1, 4 - pCount - (hIsPlaying ? 1 : 0));
+    Math.max(0, 4 - pCount - (hIsPlaying ? 1 : 0));
 
   const [spotsNeeded, setSpotsNeeded] = useState(() =>
     Math.max(minSpotsNeeded(hostType !== "sell_court", 0), 2)
@@ -122,7 +122,7 @@ export default function CreateGamePage() {
     : formData.maxPlayers;
 
   const maxPrefilledSlots = hostType === "find_players"
-    ? Math.max(0, clampedSpotsNeeded - 1) // leave at least 1 open spot
+    ? Math.max(0, clampedSpotsNeeded) // fill all open spots
     : 0;
 
   const handleSpotsNeededChange = (delta: number) => {
