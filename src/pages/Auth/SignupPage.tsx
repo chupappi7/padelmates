@@ -135,10 +135,10 @@ export default function SignupPage() {
                   <SelectValue placeholder="Select your skill level" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="1">D – Beginner</SelectItem>
-                  <SelectItem value="2">C – Casual</SelectItem>
-                  <SelectItem value="3">B – Intermediate</SelectItem>
-                  <SelectItem value="4">A – Advanced</SelectItem>
+                  <SelectItem value="4">A</SelectItem>
+                  <SelectItem value="3">B</SelectItem>
+                  <SelectItem value="2">C</SelectItem>
+                  <SelectItem value="1">D</SelectItem>
                 </SelectContent>
               </Select>
             </div>

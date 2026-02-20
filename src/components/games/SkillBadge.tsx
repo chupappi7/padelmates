@@ -14,10 +14,10 @@ export const SKILL_LEVELS: Record<number, { label: string; className: string }> 
 };
 
 export const SKILL_LEVEL_OPTIONS = [
-  { value: 1, label: "D – Beginner" },
-  { value: 2, label: "C – Casual" },
-  { value: 3, label: "B – Intermediate" },
-  { value: 4, label: "A – Advanced" },
+  { value: 4, label: "A" },
+  { value: 3, label: "B" },
+  { value: 2, label: "C" },
+  { value: 1, label: "D" },
 ];
 
 export function SkillBadge({ level, size = "md", className }: SkillBadgeProps) {
