@@ -102,7 +102,7 @@ function ImageBubble({ filePath, isMine, senderName, createdAt }: {
     <div className={cn("max-w-[75%]", isMine && "text-right")}>
       <p className="text-[11px] text-muted-foreground mb-0.5">
         <span className="font-medium">{senderName}</span>
-        <span className="ml-1.5">{format(new Date(createdAt), "h:mm a")}</span>
+        <span className="ml-1.5">{format(new Date(createdAt), "HH:mm")}</span>
       </p>
       <div className={cn(
         "rounded-2xl overflow-hidden border",
@@ -287,7 +287,7 @@ export function CourtDMChat({
 
   // ── PRE-FILL INTEREST TEMPLATE (non-host, on button click) ─────────────
   const handlePrefillInterest = () => {
-    const template = `Hi! I'm interested in your court at ${gameLocation} on ${format(new Date(gameDateTime), "EEE, MMM d · h:mm a")}. Is it still available?`;
+    const template = `Hi! I'm interested in your court at ${gameLocation} on ${format(new Date(gameDateTime), "EEE, MMM d · HH:mm")}. Is it still available?`;
     setNewMessage(template);
   };
 
@@ -509,7 +509,7 @@ export function CourtDMChat({
           <span className="font-medium text-foreground truncate">{gameLocation}</span>
           <span className="opacity-40">·</span>
           <Calendar className="w-3 h-3 shrink-0" />
-          <span className="whitespace-nowrap">{format(new Date(gameDateTime), "MMM d · h:mm a")}</span>
+          <span className="whitespace-nowrap">{format(new Date(gameDateTime), "MMM d · HH:mm")}</span>
         </div>
 
         {loading ? (
@@ -552,7 +552,7 @@ export function CourtDMChat({
                 <div className="flex flex-col items-end gap-1 shrink-0">
                   {u.lastMessageAt && (
                     <span className="text-[10px] text-muted-foreground">
-                      {format(new Date(u.lastMessageAt), "h:mm a")}
+                      {format(new Date(u.lastMessageAt), "HH:mm")}
                     </span>
                   )}
                   {u.hasMessaged && u.interest_status !== "confirmed" && !isCourtTaken && (
@@ -595,7 +595,7 @@ export function CourtDMChat({
         <div className="max-w-[80%]">
           <p className="text-[10px] text-muted-foreground mb-0.5">
             <span className="font-medium">{msg.profile?.name}</span>
-            <span className="ml-1">{format(new Date(msg.created_at), "h:mm a")}</span>
+            <span className="ml-1">{format(new Date(msg.created_at), "HH:mm")}</span>
           </p>
           <div className="rounded-xl rounded-tl-sm border border-warning/40 bg-warning/5 px-3 py-2 flex items-center gap-2">
             <CreditCard className="w-3.5 h-3.5 text-warning shrink-0" />
@@ -635,7 +635,7 @@ export function CourtDMChat({
         <div className={cn("max-w-[75%]", isMine && "text-right")}>
           <p className="text-[11px] text-muted-foreground mb-0.5">
             <span className="font-medium">{msg.profile?.name}</span>
-            <span className="ml-1.5">{format(new Date(msg.created_at), "h:mm a")}</span>
+            <span className="ml-1.5">{format(new Date(msg.created_at), "HH:mm")}</span>
           </p>
           <div className="inline-flex items-center gap-2 px-3 py-2 rounded-2xl text-sm bg-success/15 border border-success/30 text-success dark:text-success">
             <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
@@ -650,7 +650,7 @@ export function CourtDMChat({
         <div className={cn("max-w-[75%]", isMine && "text-right")}>
           <p className="text-[11px] text-muted-foreground mb-0.5">
             <span className="font-medium">{msg.profile?.name}</span>
-            <span className="ml-1.5">{format(new Date(msg.created_at), "h:mm a")}</span>
+            <span className="ml-1.5">{format(new Date(msg.created_at), "HH:mm")}</span>
           </p>
           <div className="inline-block px-3 py-2 rounded-2xl text-sm bg-destructive/10 border border-destructive/20 text-destructive rounded-tl-sm">
             {msg.message}
@@ -663,7 +663,7 @@ export function CourtDMChat({
       <div className={cn("max-w-[75%]", isMine && "text-right")}>
         <p className="text-[11px] text-muted-foreground mb-0.5">
           <span className="font-medium">{msg.profile?.name}</span>
-          <span className="ml-1.5">{format(new Date(msg.created_at), "h:mm a")}</span>
+          <span className="ml-1.5">{format(new Date(msg.created_at), "HH:mm")}</span>
         </p>
         <div className={cn(
           "inline-block px-3 py-2 rounded-2xl text-sm whitespace-pre-line",
@@ -702,7 +702,7 @@ export function CourtDMChat({
           <p className="text-[10px] text-muted-foreground truncate">
             <span className="font-medium">{gameLocation}</span>
             <span className="mx-1 opacity-40">·</span>
-            <span>{format(new Date(gameDateTime), "MMM d · h:mm a")}</span>
+            <span>{format(new Date(gameDateTime), "MMM d · HH:mm")}</span>
             {isConfirmed && <span className="ml-1 text-success font-medium">· ✓ Confirmed</span>}
             {isTaken && !isConfirmed && <span className="ml-1 text-destructive font-medium">· Taken</span>}
           </p>

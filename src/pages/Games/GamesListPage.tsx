@@ -274,7 +274,7 @@ export default function GamesListPage() {
                     if (isToday(gameDate)) dayLabel = "Today";
                     else if (isTomorrow(gameDate)) dayLabel = "Tomorrow";
                     else dayLabel = format(gameDate, "MMM d, yyyy");
-                    const timeLabel = format(gameDate, "h:mm a");
+                    const timeLabel = format(gameDate, "HH:mm");
                     elements.push(
                       <div key={`datetime-${groupKey}`} className="flex items-center gap-3 pt-4 first:pt-0">
                         <span className="text-sm font-semibold text-foreground whitespace-nowrap">{dayLabel}</span>
@@ -284,7 +284,7 @@ export default function GamesListPage() {
                     );
                   }
                 } else {
-                  const timeKey = format(gameDate, "h:mm a");
+                  const timeKey = format(gameDate, "HH:mm");
                   if (timeKey !== lastGroupKey) {
                     lastGroupKey = timeKey;
                     elements.push(

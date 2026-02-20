@@ -57,9 +57,9 @@ const formatDistance = (km: number) =>
   km < 1 ? `${Math.round(km * 1000)}m` : `${km.toFixed(1)}km`;
 
 const formatTimeRange = (start: string, end?: string | null) => {
-  const s = format(new Date(start), "h:mm a");
+  const s = format(new Date(start), "HH:mm");
   if (!end) return s;
-  const e = format(new Date(end), "h:mm a");
+  const e = format(new Date(end), "HH:mm");
   return `${s} – ${e}`;
 };
 
