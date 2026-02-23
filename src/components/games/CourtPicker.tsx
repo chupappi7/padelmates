@@ -41,7 +41,7 @@ const COURTS: CourtGroup[] = [
   },
 ];
 
-const ALL_COURTS = COURTS.flatMap((g) => g.courts);
+export const ALL_COURTS = COURTS.flatMap((g) => g.courts);
 
 const FAVORITES_KEY = "padel_favorite_courts";
 
@@ -119,7 +119,6 @@ export function CourtPicker({ value, onChange }: CourtPickerProps) {
       >
         <div className="flex-1 min-w-0">
           <div className="font-medium">{court.name}</div>
-          <div className="text-xs text-muted-foreground">{court.address}</div>
         </div>
         <button
           type="button"
