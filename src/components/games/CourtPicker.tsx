@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { MapPin, ChevronDown, Search, X } from "lucide-react";
+import { useState, useCallback } from "react";
+import { MapPin, ChevronDown, Search, X, Star } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Input } from "@/components/ui/input";
 
@@ -41,6 +41,22 @@ const COURTS: CourtGroup[] = [
   },
 ];
 
+const ALL_COURTS = COURTS.flatMap((g) => g.courts);
+
+const FAVORITES_KEY = "padel_favorite_courts";
+
+function loadFavorites(): string[] {
+  try {
+    return JSON.parse(localStorage.getItem(FAVORITES_KEY) || "[]");
+  } catch {
+    return [];
+  }
+}
+
+function saveFavorites(favs: string[]) {
+  localStorage.setItem(FAVORITES_KEY, JSON.stringify(favs));
+}
+
 interface CourtPickerProps {
   value: string;
   onChange: (value: string) => void;
@@ -51,6 +67,18 @@ export function CourtPicker({ value, onChange }: CourtPickerProps) {
   const [search, setSearch] = useState("");
   const [isCustom, setIsCustom] = useState(false);
   const [customValue, setCustomValue] = useState("");
+  const [favorites, setFavorites] = useState<string[]>(loadFavorites);
+
+  const toggleFavorite = useCallback((courtName: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setFavorites((prev) => {
+      const next = prev.includes(courtName)
+        ? prev.filter((n) => n !== courtName)
+        : [...prev, courtName];
+      saveFavorites(next);
+      return next;
+    });
+  }, []);
 
   const q = search.toLowerCase();
   const filtered = COURTS.map((g) => ({
@@ -59,6 +87,11 @@ export function CourtPicker({ value, onChange }: CourtPickerProps) {
       (c) => c.name.toLowerCase().includes(q) || c.address.toLowerCase().includes(q)
     ),
   })).filter((g) => g.courts.length > 0);
+
+  const favCourts = ALL_COURTS.filter((c) => favorites.includes(c.name));
+  const filteredFavs = favCourts.filter(
+    (c) => c.name.toLowerCase().includes(q) || c.address.toLowerCase().includes(q)
+  );
 
   const handleSelect = (court: Court) => {
     onChange(court.name);
@@ -71,6 +104,34 @@ export function CourtPicker({ value, onChange }: CourtPickerProps) {
     setIsCustom(true);
     setOpen(false);
     setSearch("");
+  };
+
+  const renderCourt = (court: Court) => {
+    const isFav = favorites.includes(court.name);
+    return (
+      <button
+        key={court.name}
+        type="button"
+        onClick={() => handleSelect(court)}
+        className={`w-full text-left px-2 py-2 rounded-sm text-sm hover:bg-accent transition-colors flex items-start gap-2 ${
+          value === court.name ? "bg-accent" : ""
+        }`}
+      >
+        <div className="flex-1 min-w-0">
+          <div className="font-medium">{court.name}</div>
+          <div className="text-xs text-muted-foreground">{court.address}</div>
+        </div>
+        <button
+          type="button"
+          onClick={(e) => toggleFavorite(court.name, e)}
+          className="shrink-0 mt-0.5 p-1 rounded hover:bg-primary/10 transition-colors"
+        >
+          <Star
+            className={`w-3.5 h-3.5 ${isFav ? "fill-yellow-400 text-yellow-400" : "text-muted-foreground"}`}
+          />
+        </button>
+      </button>
+    );
   };
 
   if (isCustom) {
@@ -127,38 +188,39 @@ export function CourtPicker({ value, onChange }: CourtPickerProps) {
           />
         </div>
         <div className="max-h-64 overflow-y-auto p-1">
-            {filtered.map((group) => (
-              <div key={group.region}>
-                <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                  {group.region}
-                </div>
-                {group.courts.map((court) => (
-                  <button
-                    key={court.name}
-                    type="button"
-                    onClick={() => handleSelect(court)}
-                    className={`w-full text-left px-2 py-2 rounded-sm text-sm hover:bg-accent transition-colors ${
-                      value === court.name ? "bg-accent" : ""
-                    }`}
-                  >
-                    <div className="font-medium">{court.name}</div>
-                    <div className="text-xs text-muted-foreground">{court.address}</div>
-                  </button>
-                ))}
+          {/* Favorites section */}
+          {filteredFavs.length > 0 && (
+            <div>
+              <div className="px-2 py-1.5 text-xs font-semibold text-yellow-500 uppercase tracking-wider flex items-center gap-1">
+                <Star className="w-3 h-3 fill-yellow-400" />
+                Favorites
               </div>
-            ))}
-            {filtered.length === 0 && (
-              <div className="py-4 text-center text-sm text-muted-foreground">No courts found</div>
-            )}
-            <div className="border-t mt-1 pt-1">
-              <button
-                type="button"
-                onClick={handleOther}
-                className="w-full text-left px-2 py-2 rounded-sm text-sm hover:bg-accent transition-colors text-muted-foreground"
-              >
-                ✏️ Other — type in manually
-              </button>
+              {filteredFavs.map(renderCourt)}
+              <div className="h-px bg-border my-1" />
             </div>
+          )}
+
+          {/* All courts by region */}
+          {filtered.map((group) => (
+            <div key={group.region}>
+              <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                {group.region}
+              </div>
+              {group.courts.map(renderCourt)}
+            </div>
+          ))}
+          {filtered.length === 0 && filteredFavs.length === 0 && (
+            <div className="py-4 text-center text-sm text-muted-foreground">No courts found</div>
+          )}
+          <div className="border-t mt-1 pt-1">
+            <button
+              type="button"
+              onClick={handleOther}
+              className="w-full text-left px-2 py-2 rounded-sm text-sm hover:bg-accent transition-colors text-muted-foreground"
+            >
+              ✏️ Other — type in manually
+            </button>
+          </div>
         </div>
       </PopoverContent>
     </Popover>
