@@ -2,7 +2,6 @@ import { useState } from "react";
 import { MapPin, ChevronDown, Search, X } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Input } from "@/components/ui/input";
-import { ScrollArea } from "@/components/ui/scroll-area";
 
 export interface Court {
   name: string;
@@ -122,7 +121,7 @@ export function CourtPicker({ value, onChange }: CourtPickerProps) {
           <ChevronDown className="w-4 h-4 text-muted-foreground shrink-0" />
         </button>
       </PopoverTrigger>
-      <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start" sideOffset={4}>
+      <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0 z-50" align="start" sideOffset={4}>
         <div className="flex items-center border-b px-3">
           <Search className="w-4 h-4 text-muted-foreground shrink-0 mr-2" />
           <input
@@ -132,8 +131,7 @@ export function CourtPicker({ value, onChange }: CourtPickerProps) {
             onChange={(e) => setSearch(e.target.value)}
           />
         </div>
-        <ScrollArea className="max-h-64">
-          <div className="p-1">
+        <div className="max-h-64 overflow-y-auto p-1">
             {filtered.map((group) => (
               <div key={group.region}>
                 <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
@@ -166,8 +164,7 @@ export function CourtPicker({ value, onChange }: CourtPickerProps) {
                 ✏️ Other — type in manually
               </button>
             </div>
-          </div>
-        </ScrollArea>
+        </div>
       </PopoverContent>
     </Popover>
   );
