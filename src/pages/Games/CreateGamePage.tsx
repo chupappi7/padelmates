@@ -25,6 +25,7 @@ import { format } from "date-fns";
 import { ArrowLeft, Calendar, MapPin, Users, Trophy, Clock, DoorOpen, CreditCard, Building2 } from "lucide-react";
 // UserPlus and XIcon imported at top
 import { DurationChips } from "@/components/games/DurationChips";
+import { CourtPicker } from "@/components/games/CourtPicker";
 import type { HostType } from "@/components/games/HostTypeModal";
 
 const HOST_TYPE_CONFIG: Record<HostType, { title: string; subtitle: string; format: string; defaultMaxPlayers: number; defaultJoinMode: string }> = {
@@ -275,18 +276,8 @@ export default function CreateGamePage() {
 
                 <div className="grid grid-cols-3 gap-3">
                   <div className="col-span-2 space-y-1.5">
-                    <Label htmlFor="location" className="text-sm">Location <span className="text-destructive">*</span></Label>
-                    <div className="relative">
-                      <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                      <Input
-                        id="location"
-                        placeholder="e.g., Padel Club Barcelona"
-                        value={formData.location}
-                        onChange={(e) => handleChange("location", e.target.value)}
-                        required
-                        className="h-11 pl-10"
-                      />
-                    </div>
+                    <Label className="text-sm">Location <span className="text-destructive">*</span></Label>
+                    <CourtPicker value={formData.location} onChange={(v) => handleChange("location", v)} />
                   </div>
                   <div className="space-y-1.5">
                     <Label htmlFor="courtNumber" className="text-sm">Court #</Label>
@@ -440,18 +431,8 @@ export default function CreateGamePage() {
 
                       <div className="grid grid-cols-3 gap-3">
                         <div className="col-span-2 space-y-1.5">
-                          <Label htmlFor="location" className="text-sm">Court / Location <span className="text-destructive">*</span></Label>
-                          <div className="relative">
-                            <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                            <Input
-                              id="location"
-                              placeholder="e.g., Padel Club Barcelona"
-                              value={formData.location}
-                              onChange={(e) => handleChange("location", e.target.value)}
-                              required
-                              className="h-11 pl-10"
-                            />
-                          </div>
+                          <Label className="text-sm">Court / Location <span className="text-destructive">*</span></Label>
+                          <CourtPicker value={formData.location} onChange={(v) => handleChange("location", v)} />
                         </div>
                         <div className="space-y-1.5">
                           <Label htmlFor="courtNumber" className="text-sm">Court #</Label>
@@ -895,16 +876,7 @@ export default function CreateGamePage() {
                       <div className="grid grid-cols-3 gap-3">
                         <div className="col-span-2 space-y-1.5">
                           <Label className="text-sm">Court / Location <span className="text-destructive">*</span></Label>
-                          <div className="relative">
-                            <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                            <Input
-                              placeholder="e.g., Padel Club Barcelona"
-                              value={formData.location}
-                              onChange={(e) => handleChange("location", e.target.value)}
-                              required
-                              className="h-11 pl-10"
-                            />
-                          </div>
+                          <CourtPicker value={formData.location} onChange={(v) => handleChange("location", v)} />
                         </div>
                         <div className="space-y-1.5">
                           <Label className="text-sm">Court #</Label>
