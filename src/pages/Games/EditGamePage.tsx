@@ -24,6 +24,7 @@ import { motion } from "framer-motion";
 import { format } from "date-fns";
 import { ArrowLeft, Calendar, MapPin, Users, Trophy, Clock, DoorOpen, CreditCard } from "lucide-react";
 import { DurationChips, snapToDuration } from "@/components/games/DurationChips";
+import { CourtPicker } from "@/components/games/CourtPicker";
 
 export default function EditGamePage() {
   const { id } = useParams<{ id: string }>();
@@ -254,18 +255,8 @@ export default function EditGamePage() {
 
                 <div className="grid grid-cols-3 gap-3">
                   <div className="col-span-2 space-y-1.5">
-                    <Label htmlFor="location" className="text-sm">Location <span className="text-destructive">*</span></Label>
-                    <div className="relative">
-                      <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                      <Input
-                        id="location"
-                        placeholder="e.g., Padel Club Barcelona"
-                        value={formData.location}
-                        onChange={(e) => handleChange("location", e.target.value)}
-                        required
-                        className="h-11 pl-10"
-                      />
-                    </div>
+                    <Label className="text-sm">Location <span className="text-destructive">*</span></Label>
+                    <CourtPicker value={formData.location} onChange={(v) => handleChange("location", v)} />
                   </div>
                   <div className="space-y-1.5">
                     <Label htmlFor="courtNumber" className="text-sm">Court #</Label>
@@ -557,18 +548,8 @@ export default function EditGamePage() {
 
                   <div className="grid grid-cols-3 gap-3">
                     <div className="col-span-2 space-y-1.5">
-                      <Label htmlFor="location" className="text-sm">Court / Location <span className="text-destructive">*</span></Label>
-                      <div className="relative">
-                        <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                        <Input
-                          id="location"
-                          placeholder="e.g., Padel Club Barcelona"
-                          value={formData.location}
-                          onChange={(e) => handleChange("location", e.target.value)}
-                          required
-                          className="h-11 pl-10"
-                        />
-                      </div>
+                      <Label className="text-sm">Court / Location <span className="text-destructive">*</span></Label>
+                      <CourtPicker value={formData.location} onChange={(v) => handleChange("location", v)} />
                     </div>
                     <div className="space-y-1.5">
                       <Label htmlFor="courtNumber" className="text-sm">Court #</Label>
