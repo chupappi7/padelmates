@@ -45,6 +45,7 @@ import {
 } from "lucide-react";
 import { CourtDMChat } from "@/components/games/CourtDMChat";
 import { BookingProofTab } from "@/components/games/BookingProofTab";
+import { ALL_COURTS } from "@/components/games/CourtPicker";
 import { ShieldCheck } from "lucide-react";
 
 interface Game {
@@ -656,6 +657,12 @@ export default function GameDetailPage() {
                         {game.location}
                         {game.court_number && <span className="text-muted-foreground"> · Court {game.court_number}</span>}
                       </p>
+                      {(() => {
+                        const courtInfo = ALL_COURTS.find((c) => c.name === game.location);
+                        return courtInfo ? (
+                          <p className="text-xs text-muted-foreground mt-0.5">{courtInfo.address}</p>
+                        ) : null;
+                      })()}
                     </div>
                   </div>
                   <div className="flex items-center gap-2.5">
