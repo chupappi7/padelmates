@@ -661,7 +661,7 @@ export default function CreateGamePage() {
                         Skill Level
                       </h2>
                       <div className="space-y-1.5">
-                        <Label htmlFor="skill" className="text-sm">Min Skill Level</Label>
+                        <Label htmlFor="skill" className="text-sm">Skill Level</Label>
                         <Select
                           value={String(formData.skillLevel)}
                           onValueChange={(v) => handleChange("skillLevel", parseInt(v))}
