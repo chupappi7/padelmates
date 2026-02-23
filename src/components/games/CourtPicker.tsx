@@ -15,33 +15,28 @@ export interface CourtGroup {
 
 const COURTS: CourtGroup[] = [
   {
-    region: "Prague / Central Bohemian Region",
+    region: "Prague & Central Bohemian Region",
     courts: [
-      { name: "Padel Powers Smíchov", address: "Nádražní 32, Praha 5" },
-      { name: "Tenis & Padel klub Písečná", address: "Písečná 1, Praha 8" },
-      { name: "Czech Padel Academy", address: "Cukrovarská 30, Praha 9 – Čakovice" },
-      { name: "\"For Padel\" Sport park Zdiměřice", address: "Pražská 288, Jesenice u Prahy" },
-      { name: "SK Slavia Praha PADEL", address: "Vladivostocká 1460/10, Praha 10" },
-      { name: "Padel Prosek", address: "Vysočanská 546/55, Praha 9" },
-      { name: "Padel Club Spoje", address: "Koněvova 240, Praha 3" },
-      { name: "Padel Liberec", address: "Dr. Milady Horákové 787/78, Liberec" },
-      { name: "Padel court", address: "Praha 10" },
+      { name: "Padel Powers Praha Smíchov", address: "Křížová 6, 150 00 Praha 5 – Smíchov" },
+      { name: "Padel Club Spoje", address: "Na Balkáně 990/21A, 130 00 Praha 3 – Vysočany" },
+      { name: "Tenis & Padel klub Písečná Praha", address: "K Sadu 590/1, 182 00 Praha 8" },
+      { name: "For Padel Sport Park Zdiměřice", address: "U Geofyzikálního ústavu, 252 42 Jesenice u Prahy–Zdiměřice" },
+      { name: "TENIS CENTRUM HEAD – Vestec", address: "Sportovní 456, 252 50 Vestec – Jesenice u Prahy" },
+      { name: "Czech Padel Academy", address: "Prague area – contact club for exact address" },
+      { name: "Sportovní centrum EDEN Beroun", address: "Pod Homolkou 1482, 266 01 Beroun" },
     ],
   },
   {
-    region: "South Moravian Region",
+    region: "Other Major Cities & Regions",
     courts: [
-      { name: "Padel Club Brno", address: "Údolní 33, Brno" },
-      { name: "Padel Powers Kraví Hora", address: "Kraví Hora, Brno" },
-      { name: "Padel Březí", address: "Březí u Mikulova" },
-    ],
-  },
-  {
-    region: "Other Cities & Regions",
-    courts: [
-      { name: "Padel centrum Nový Jičín", address: "Nový Jičín" },
-      { name: "PADEL Klatovy", address: "Klatovy, Plzeň Region" },
-      { name: "Padel Space", address: "Osoblaha, Moravia-Silesia Region" },
+      { name: "Padel Powers Brno – Kraví Hora", address: "Rybkova 948/23, 602 00 Brno" },
+      { name: "Padel Club Brno", address: "Dobrovského 96/29, 602 00 Brno" },
+      { name: "Padel Klatovy", address: "Domažlická 609, 339 01 Klatovy" },
+      { name: "Kurty Březno – Louny", address: "Březno u Postoloprt 122, 440 01 Louny" },
+      { name: "Padel Centrum Nový Jičín", address: "Jiráskova (naproti gymnáziu), 741 01 Nový Jičín" },
+      { name: "PADEL CLUB OSTRAVA", address: "Hladnovská 259/128, 700 30 Ostrava" },
+      { name: "Trojhalí Karolina – Ostrava", address: "K Trojhalí 3361/5, 702 00 Ostrava" },
+      { name: "SC Landek – Ostrava", address: "Pod Landekem 65, 710 00 Ostrava – Slezská Ostrava" },
     ],
   },
 ];
