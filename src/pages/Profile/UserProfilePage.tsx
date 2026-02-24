@@ -258,7 +258,26 @@ export default function UserProfilePage() {
                       size="sm"
                       variant="hero"
                       className="flex-1 text-xs h-8 gap-1.5"
-                      onClick={() => navigate(`/messages/${userId}`)}
+                      onClick={async () => {
+                        if (!user || !userId) return;
+                        // Find existing chat
+                        const { data: existing } = await supabase
+                          .from("chats")
+                          .select("id")
+                          .or(`and(user_1_id.eq.${user.id},user_2_id.eq.${userId}),and(user_1_id.eq.${userId},user_2_id.eq.${user.id})`)
+                          .limit(1)
+                          .maybeSingle();
+                        if (existing) {
+                          navigate(`/messages/${existing.id}`);
+                        } else {
+                          const { data: newChat } = await supabase
+                            .from("chats")
+                            .insert({ user_1_id: user.id, user_2_id: userId })
+                            .select("id")
+                            .single();
+                          if (newChat) navigate(`/messages/${newChat.id}`);
+                        }
+                      }}
                     >
                       <MessageCircle className="w-3.5 h-3.5" />
                       Message

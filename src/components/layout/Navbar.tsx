@@ -67,6 +67,7 @@ export function Navbar() {
         <div className="flex md:hidden items-center gap-1">
           {user ? (
             <>
+              <IconButton icon={MessageCircle} onClick={() => navigate("/messages")} />
               <NotificationPanel>
                 <IconButton icon={Bell} badge={unreadCount} onClick={() => {}} />
               </NotificationPanel>
@@ -105,6 +106,7 @@ export function Navbar() {
         <div className="hidden md:flex items-center gap-2">
           {user ? (
             <>
+              <IconButton icon={MessageCircle} onClick={() => navigate("/messages")} />
               <NotificationPanel>
                 <IconButton icon={Bell} badge={unreadCount} onClick={() => {}} />
               </NotificationPanel>
