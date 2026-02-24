@@ -172,6 +172,39 @@ export type Database = {
         }
         Relationships: []
       }
+      conversation_preferences: {
+        Row: {
+          archived: boolean
+          conversation_id: string
+          created_at: string
+          deleted: boolean
+          id: string
+          muted: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          archived?: boolean
+          conversation_id: string
+          created_at?: string
+          deleted?: boolean
+          id?: string
+          muted?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          archived?: boolean
+          conversation_id?: string
+          created_at?: string
+          deleted?: boolean
+          id?: string
+          muted?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       court_messages: {
         Row: {
           created_at: string
