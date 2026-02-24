@@ -19,6 +19,8 @@ import UserProfilePage from "./pages/Profile/UserProfilePage";
 import MyMatchesPage from "./pages/Games/MyMatchesPage";
 import FriendsPage from "./pages/Friends/FriendsPage";
 import NotificationsPage from "./pages/Notifications/NotificationsPage";
+import InboxPage from "./pages/Messages/InboxPage";
+import ChatPage from "./pages/Messages/ChatPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -42,6 +44,8 @@ const App = () => (
             <Route path="/my-matches" element={<MyMatchesPage />} />
             <Route path="/friends" element={<FriendsPage />} />
             <Route path="/notifications" element={<NotificationsPage />} />
+            <Route path="/messages" element={<InboxPage />} />
+            <Route path="/messages/:chatId" element={<ChatPage />} />
             <Route path="/profile" element={<ProfilePage />} />
             <Route path="/user/:userId" element={<UserProfilePage />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
