@@ -36,6 +36,8 @@ const filterTabs: { key: FilterTab; label: string }[] = [
 function SwipeableRow({
   convo,
   inboxTab,
+  isOpen,
+  onSwipeOpen,
   onClick,
   onArchive,
   onMute,
@@ -44,6 +46,8 @@ function SwipeableRow({
 }: {
   convo: UnifiedConversation;
   inboxTab: InboxTab;
+  isOpen: boolean;
+  onSwipeOpen: () => void;
   onClick: () => void;
   onArchive: () => void;
   onMute: () => void;
@@ -52,7 +56,14 @@ function SwipeableRow({
 }) {
   const touchStartX = useRef(0);
   const [swipeOffset, setSwipeOffset] = useState(0);
-  const [showActions, setShowActions] = useState(false);
+  const maxOffset = inboxTab === "active" ? 200 : 140;
+
+  // Sync with parent close
+  const prevOpen = useRef(isOpen);
+  if (!isOpen && prevOpen.current) {
+    if (swipeOffset !== 0) setSwipeOffset(0);
+  }
+  prevOpen.current = isOpen;
 
   const handleTouchStart = (e: React.TouchEvent) => {
     touchStartX.current = e.touches[0].clientX;
@@ -61,25 +72,23 @@ function SwipeableRow({
   const handleTouchMove = (e: React.TouchEvent) => {
     const diff = touchStartX.current - e.touches[0].clientX;
     if (diff > 10) {
-      setSwipeOffset(Math.min(diff, inboxTab === "active" ? 200 : 140));
-    } else if (diff < -10 && showActions) {
-      setSwipeOffset(Math.max(0, swipeOffset + diff));
+      setSwipeOffset(Math.min(diff, maxOffset));
+    } else if (diff < -10) {
+      setSwipeOffset(Math.max(0, (isOpen ? maxOffset : 0) + diff));
     }
   };
 
   const handleTouchEnd = () => {
-    const threshold = inboxTab === "active" ? 80 : 60;
+    const threshold = maxOffset * 0.4;
     if (swipeOffset > threshold) {
-      setShowActions(true);
-      setSwipeOffset(inboxTab === "active" ? 200 : 140);
+      onSwipeOpen();
+      setSwipeOffset(maxOffset);
     } else {
-      setShowActions(false);
       setSwipeOffset(0);
     }
   };
 
   const closeSwipe = () => {
-    setShowActions(false);
     setSwipeOffset(0);
   };
 
@@ -174,7 +183,7 @@ function SwipeableRow({
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
         onClick={() => {
-          if (showActions) {
+          if (isOpen) {
             closeSwipe();
           } else {
             onClick();
@@ -239,6 +248,46 @@ function SwipeableRow({
           )}
         </div>
       </div>
+    </div>
+  );
+}
+
+// ── Swipeable List (only one row open at a time) ────────────────────────
+function SwipeableList({
+  conversations,
+  inboxTab,
+  onConversationClick,
+  onArchive,
+  onMute,
+  onDelete,
+  onUnarchive,
+}: {
+  conversations: UnifiedConversation[];
+  inboxTab: InboxTab;
+  onConversationClick: (c: UnifiedConversation) => void;
+  onArchive: (id: string) => void;
+  onMute: (id: string, currentMuted: boolean) => void;
+  onDelete: (id: string) => void;
+  onUnarchive: (id: string) => void;
+}) {
+  const [openId, setOpenId] = useState<string | null>(null);
+
+  return (
+    <div className="space-y-0.5">
+      {conversations.map((convo) => (
+        <SwipeableRow
+          key={convo.id}
+          convo={convo}
+          inboxTab={inboxTab}
+          isOpen={openId === convo.id}
+          onSwipeOpen={() => setOpenId(convo.id)}
+          onClick={() => { setOpenId(null); onConversationClick(convo); }}
+          onArchive={() => { setOpenId(null); onArchive(convo.id); }}
+          onMute={() => { setOpenId(null); onMute(convo.id, convo.prefs.muted); }}
+          onDelete={() => { setOpenId(null); onDelete(convo.id); }}
+          onUnarchive={() => { setOpenId(null); onUnarchive(convo.id); }}
+        />
+      ))}
     </div>
   );
 }
@@ -489,20 +538,15 @@ export default function InboxPage() {
               </p>
             </div>
           ) : (
-            <div className="space-y-0.5">
-              {visibleConversations.map((convo) => (
-                <SwipeableRow
-                  key={convo.id}
-                  convo={convo}
-                  inboxTab={inboxTab}
-                  onClick={() => handleConversationClick(convo)}
-                  onArchive={() => updatePreference(convo.id, { archived: true })}
-                  onMute={() => updatePreference(convo.id, { muted: !convo.prefs.muted })}
-                  onDelete={() => handleDelete(convo.id)}
-                  onUnarchive={() => updatePreference(convo.id, { archived: false })}
-                />
-              ))}
-            </div>
+            <SwipeableList
+              conversations={visibleConversations}
+              inboxTab={inboxTab}
+              onConversationClick={handleConversationClick}
+              onArchive={(id) => updatePreference(id, { archived: true })}
+              onMute={(id, muted) => updatePreference(id, { muted: !muted })}
+              onDelete={handleDelete}
+              onUnarchive={(id) => updatePreference(id, { archived: false })}
+            />
           )}
         </div>
       </div>
