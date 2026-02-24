@@ -679,15 +679,17 @@ export function CourtDMChat({
 
   return (
     <div className="bg-card border border-border rounded-xl flex flex-col overflow-hidden flex-1">
-      {/* Conversation header — single compact row */}
-      <div className="flex items-center gap-2 px-2.5 py-1.5 border-b border-border">
+      {/* Conversation header */}
+      <div className="flex items-center gap-2.5 px-3 py-2.5 border-b border-border">
         {isHost && (
-          <button
+          <Button
+            variant="ghost"
+            size="icon"
             onClick={() => { setSelectedUserId(null); setActiveChatId(null); setMessages([]); loadInterestedUsers(); }}
-            className="w-6 h-6 rounded-md bg-muted flex items-center justify-center hover:bg-muted/80 transition-colors shrink-0"
+            className="h-8 w-8 shrink-0"
           >
-            <ArrowLeft className="w-3 h-3" />
-          </button>
+            <ArrowLeft className="w-4 h-4" />
+          </Button>
         )}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5 overflow-hidden">
