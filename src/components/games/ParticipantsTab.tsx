@@ -132,7 +132,7 @@ export function ParticipantsTab({
             </Badge>
           </div>
 
-          <div className={`grid gap-2 ${maxPlayers <= 4 ? "grid-cols-2" : "grid-cols-3 sm:grid-cols-4 md:grid-cols-5"}`}>
+          <div className="space-y-1.5">
             {/* Host */}
             {hostIsPlaying && hostProfile && (
               <PlayerCard
@@ -193,12 +193,12 @@ export function ParticipantsTab({
             {Array.from({ length: emptySlots }).map((_, i) => (
               <div
                 key={`empty-${i}`}
-                className="flex flex-col items-center justify-center gap-1 p-2 bg-muted/20 border border-dashed border-border/50 rounded-lg min-h-[80px]"
+                className="flex items-center gap-3 px-3 py-2 rounded-xl bg-muted/10 border border-dashed border-border/30"
               >
-                <div className="h-8 w-8 rounded-full bg-muted/40 flex items-center justify-center">
+                <div className="h-8 w-8 rounded-full bg-muted/30 flex items-center justify-center shrink-0">
                   <Users className="h-3.5 w-3.5 text-muted-foreground/40" />
                 </div>
-                <p className="text-[10px] text-muted-foreground/60">Open</p>
+                <p className="text-sm text-muted-foreground/50">Open spot</p>
               </div>
             ))}
           </div>
@@ -297,9 +297,9 @@ function PlayerCard({
   const isAdmin = role === "admin";
 
   return (
-    <div className="flex flex-col items-center gap-1 p-2 bg-card border border-border rounded-lg text-center relative">
-      <div className="relative">
-        <Avatar className="h-9 w-9">
+    <div className="flex items-center gap-3 px-3 py-2 rounded-xl bg-muted/30">
+      <div className="relative shrink-0">
+        <Avatar className="h-8 w-8">
           <AvatarImage src={avatarUrl || undefined} />
           <AvatarFallback className="bg-primary/10 text-primary font-semibold text-xs">
             {name?.charAt(0).toUpperCase()}
@@ -316,29 +316,36 @@ function PlayerCard({
           </div>
         )}
       </div>
-      <p className="text-[11px] font-medium truncate w-full max-w-full">{name}</p>
-      {isHost && (
-        <Badge variant="outline" className="rounded-full text-[9px] px-1.5 py-0 bg-primary/10 text-primary border-primary/20">
-          Host
-        </Badge>
-      )}
-      {isAdmin && !isHost && (
-        <Badge variant="outline" className="rounded-full text-[9px] px-1.5 py-0 bg-accent/10 text-accent border-accent/20">
-          Admin
-        </Badge>
-      )}
-      {isGuest && (
-        <Badge variant="outline" className="rounded-full text-[9px] px-1.5 py-0 bg-muted text-muted-foreground border-border">
-          Guest
-        </Badge>
-      )}
-      {showRoleToggle && !isHost && onToggleRole && (
-        <button
-          onClick={onToggleRole}
-          className="text-[9px] text-muted-foreground hover:text-foreground transition-colors mt-0.5"
-        >
-          {isAdmin ? "Remove admin" : "Make admin"}
-        </button>
+      <div className="flex-1 min-w-0 flex items-center gap-2">
+        <p className="text-sm font-medium truncate">{name}</p>
+        {isHost && (
+          <Badge variant="outline" className="rounded-full text-[9px] px-1.5 py-0 bg-primary/10 text-primary border-primary/20 shrink-0">
+            Host
+          </Badge>
+        )}
+        {isAdmin && !isHost && (
+          <Badge variant="outline" className="rounded-full text-[9px] px-1.5 py-0 bg-accent/10 text-accent border-accent/20 shrink-0">
+            Admin
+          </Badge>
+        )}
+        {isGuest && (
+          <Badge variant="outline" className="rounded-full text-[9px] px-1.5 py-0 bg-muted text-muted-foreground border-border shrink-0">
+            Guest
+          </Badge>
+        )}
+        {showRoleToggle && !isHost && onToggleRole && (
+          <button
+            onClick={onToggleRole}
+            className="text-[9px] text-muted-foreground hover:text-foreground transition-colors shrink-0"
+          >
+            {isAdmin ? "Remove admin" : "Make admin"}
+          </button>
+        )}
+      </div>
+      {skillLevel && (
+        <div className="ml-auto shrink-0">
+          <SkillBadge level={skillLevel} size="sm" />
+        </div>
       )}
     </div>
   );
