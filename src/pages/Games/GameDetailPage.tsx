@@ -836,6 +836,7 @@ export default function GameDetailPage() {
                   avatar_url: game.profiles.avatar_url,
                   skill_level: game.profiles.skill_level as number | undefined,
                 } : null}
+                hostUserId={game.host_id}
                 requests={requests as any}
                 players={players as any}
                 maxPlayers={game.max_players}

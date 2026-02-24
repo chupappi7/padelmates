@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -35,6 +36,7 @@ interface ParticipantsTabProps {
   canManage: boolean;
   hostIsPlaying: boolean;
   hostProfile: Profile | null;
+  hostUserId?: string;
   requests: JoinRequest[];
   players: Player[];
   maxPlayers: number;
@@ -54,6 +56,7 @@ export function ParticipantsTab({
   canManage,
   hostIsPlaying,
   hostProfile,
+  hostUserId,
   requests,
   players,
   maxPlayers,
@@ -139,6 +142,7 @@ export function ParticipantsTab({
                 name={hostProfile.name}
                 avatarUrl={hostProfile.avatar_url}
                 skillLevel={hostProfile.skill_level}
+                userId={hostUserId}
                 isHost
               />
             )}
@@ -152,6 +156,7 @@ export function ParticipantsTab({
                   name={request.profiles?.name || "Player"}
                   avatarUrl={request.profiles?.avatar_url || null}
                   skillLevel={request.profiles?.skill_level}
+                  userId={request.user_id}
                   role={matchingPlayer?.role}
                   showRoleToggle={isHost}
                   onToggleRole={matchingPlayer ? () => onToggleRole(matchingPlayer.id, matchingPlayer.role) : undefined}
@@ -166,6 +171,7 @@ export function ParticipantsTab({
                 name={player.profiles?.name || "Player"}
                 avatarUrl={player.profiles?.avatar_url || null}
                 skillLevel={player.profiles?.skill_level}
+                userId={player.user_id}
                 role={player.role}
                 showRoleToggle={isHost}
                 onToggleRole={() => onToggleRole(player.id, player.role)}
@@ -184,6 +190,7 @@ export function ParticipantsTab({
                   key={`guest-${i}`}
                   name={name}
                   avatarUrl={null}
+                  userId={isLinked ? (player as { name: string; user_id: string }).user_id : undefined}
                   isGuest={!isLinked}
                 />
               );
@@ -274,11 +281,12 @@ export function ParticipantsTab({
   );
 }
 
-// Compact player card component
+// Compact player row component
 function PlayerCard({
   name,
   avatarUrl,
   skillLevel,
+  userId,
   isHost,
   isGuest,
   role,
@@ -288,6 +296,7 @@ function PlayerCard({
   name: string;
   avatarUrl: string | null;
   skillLevel?: number;
+  userId?: string;
   isHost?: boolean;
   isGuest?: boolean;
   role?: string;
@@ -295,9 +304,16 @@ function PlayerCard({
   onToggleRole?: () => void;
 }) {
   const isAdmin = role === "admin";
+  const navigate = useNavigate();
 
   return (
-    <div className="flex items-center gap-3 px-3 py-2 rounded-xl bg-muted/30">
+    <div
+      className={cn(
+        "flex items-center gap-3 px-3 py-2 rounded-xl bg-muted/30",
+        userId && "cursor-pointer hover:bg-muted/50 transition-colors"
+      )}
+      onClick={userId ? () => navigate(`/user/${userId}`) : undefined}
+    >
       <div className="relative shrink-0">
         <Avatar className="h-8 w-8">
           <AvatarImage src={avatarUrl || undefined} />
@@ -335,7 +351,7 @@ function PlayerCard({
         )}
         {showRoleToggle && !isHost && onToggleRole && (
           <button
-            onClick={onToggleRole}
+            onClick={(e) => { e.stopPropagation(); onToggleRole(); }}
             className="text-[9px] text-muted-foreground hover:text-foreground transition-colors shrink-0"
           >
             {isAdmin ? "Remove admin" : "Make admin"}
