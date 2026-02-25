@@ -11,7 +11,7 @@ interface TimeScrollPickerProps {
 }
 
 const hours = Array.from({ length: 24 }, (_, i) => i.toString().padStart(2, "0"));
-const minutes = ["00", "15", "30", "45"];
+const minutes = ["00", "30"];
 
 const ITEM_HEIGHT = 44;
 const VISIBLE_ITEMS = 5;

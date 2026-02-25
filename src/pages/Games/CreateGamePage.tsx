@@ -70,7 +70,7 @@ export default function CreateGamePage() {
   const [bookingScreenshotPath, setBookingScreenshotPath] = useState<string | null>(null);
   const [bookingScreenshotUploading, setBookingScreenshotUploading] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
-  const [selectedTime, setSelectedTime] = useState("18:00");
+  const [selectedTime, setSelectedTime] = useState("12:00");
   const [duration, setDuration] = useState(90);
   const [showTimePicker, setShowTimePicker] = useState(false);
   const [showDatePicker, setShowDatePicker] = useState(false);
