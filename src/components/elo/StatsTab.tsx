@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
 import { format } from "date-fns";
-import { TrendingUp, TrendingDown, Trophy, Swords } from "lucide-react";
+import { TrendingUp, TrendingDown, Swords } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 
@@ -40,11 +40,11 @@ export function StatsTab({ onNavigateToSubmit }: StatsTabProps) {
   const reversedHistory = [...history].reverse();
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       {/* Rating Trend Card */}
-      <div className="bg-white rounded-2xl border border-border/50 shadow-sm overflow-hidden">
+      <div className="bg-card rounded-lg border border-border/40 overflow-hidden">
         <div className="px-4 pt-4 pb-2 flex items-center justify-between">
-          <h3 className="text-sm font-semibold text-foreground">Rating Trend</h3>
+          <h3 className="text-sm font-medium text-foreground">Rating Trend</h3>
           {hasData && (
             <span className="text-xs text-muted-foreground">{history.length} matches</span>
           )}
@@ -61,57 +61,48 @@ export function StatsTab({ onNavigateToSubmit }: StatsTabProps) {
                   contentStyle={{
                     background: "hsl(var(--card))",
                     border: "1px solid hsl(var(--border))",
-                    borderRadius: "12px",
+                    borderRadius: "8px",
                     fontSize: "12px",
-                    boxShadow: "var(--shadow-md)",
                   }}
                 />
                 <Line
                   type="monotone"
                   dataKey="rating"
                   stroke="hsl(var(--primary))"
-                  strokeWidth={2.5}
+                  strokeWidth={2}
                   dot={false}
-                  activeDot={{ r: 4, fill: "hsl(var(--primary))" }}
+                  activeDot={{ r: 3, fill: "hsl(var(--primary))" }}
                 />
               </LineChart>
             </ResponsiveContainer>
           </div>
         ) : (
           /* Empty State */
-          <div className="px-6 pb-6 pt-2">
+          <div className="px-5 pb-5 pt-1">
             {/* Ghost chart grid */}
-            <div className="relative h-[140px] mb-4">
+            <div className="relative h-[120px] mb-3">
               <svg width="100%" height="100%" className="text-border">
-                {/* Grid lines */}
                 {[0, 1, 2, 3].map((i) => (
-                  <line key={i} x1="0" y1={`${(i / 3) * 100}%`} x2="100%" y2={`${(i / 3) * 100}%`} stroke="currentColor" strokeDasharray="4 4" strokeWidth="1" opacity="0.5" />
+                  <line key={i} x1="0" y1={`${(i / 3) * 100}%`} x2="100%" y2={`${(i / 3) * 100}%`} stroke="currentColor" strokeDasharray="4 4" strokeWidth="1" opacity="0.4" />
                 ))}
-                {/* Ghost sparkline */}
                 <path
                   d="M 0 100 Q 40 80, 80 85 T 160 70 T 240 60 T 320 50 T 400 55"
                   fill="none"
                   stroke="hsl(var(--primary))"
-                  strokeWidth="2"
+                  strokeWidth="1.5"
                   strokeDasharray="6 4"
-                  opacity="0.25"
+                  opacity="0.2"
                   vectorEffect="non-scaling-stroke"
                 />
               </svg>
             </div>
 
-            <div className="text-center space-y-3">
-              <div className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-primary/10">
-                <Trophy className="w-5 h-5 text-primary" />
-              </div>
-              <div>
-                <p className="text-sm font-semibold text-foreground">Your rating will chart here</p>
-                <p className="text-xs text-muted-foreground mt-0.5">after your first match</p>
-              </div>
+            <div className="text-center space-y-2.5">
+              <p className="text-sm text-foreground font-medium">Your rating will chart here after your first match</p>
               <Button
                 variant="default"
                 size="sm"
-                className="rounded-xl"
+                className="rounded-lg text-xs"
                 onClick={onNavigateToSubmit}
               >
                 Submit a Score
@@ -122,19 +113,16 @@ export function StatsTab({ onNavigateToSubmit }: StatsTabProps) {
       </div>
 
       {/* Match History */}
-      <div className="bg-white rounded-2xl border border-border/50 shadow-sm overflow-hidden">
+      <div className="bg-card rounded-lg border border-border/40 overflow-hidden">
         <div className="px-4 pt-4 pb-2">
-          <h3 className="text-sm font-semibold text-foreground">Match History</h3>
+          <h3 className="text-sm font-medium text-foreground">Match History</h3>
         </div>
 
         {reversedHistory.length === 0 ? (
-          /* Empty State */
-          <div className="px-6 pb-6 pt-2 text-center space-y-3">
-            <div className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-secondary/10">
-              <Swords className="w-5 h-5 text-secondary" />
-            </div>
+          <div className="px-5 pb-5 pt-1 text-center space-y-2.5">
+            <Swords className="w-5 h-5 text-muted-foreground mx-auto" />
             <div>
-              <p className="text-sm font-bold text-foreground">No matches yet</p>
+              <p className="text-sm font-medium text-foreground">No matches yet</p>
               <p className="text-xs text-muted-foreground mt-0.5">
                 Play a match and submit your score to start building your history
               </p>
@@ -142,19 +130,19 @@ export function StatsTab({ onNavigateToSubmit }: StatsTabProps) {
             <Button
               variant="outline"
               size="sm"
-              className="rounded-xl"
+              className="rounded-lg text-xs"
               onClick={() => navigate("/")}
             >
               Find a Match
             </Button>
           </div>
         ) : (
-          <div className="px-3 pb-3 space-y-1.5">
+          <div className="px-3 pb-3 space-y-1">
             {reversedHistory.map((h: any) => {
               const change = h.new_rating - h.old_rating;
               const positive = change >= 0;
               return (
-                <div key={h.id} className="flex items-center justify-between rounded-xl bg-muted/40 p-3">
+                <div key={h.id} className="flex items-center justify-between rounded-lg bg-muted/30 p-3">
                   <div>
                     <p className="text-[11px] text-muted-foreground">
                       {format(new Date(h.created_at), "MMM d, yyyy")}
@@ -163,8 +151,8 @@ export function StatsTab({ onNavigateToSubmit }: StatsTabProps) {
                       {h.old_rating} → {h.new_rating}
                     </p>
                   </div>
-                  <div className={`flex items-center gap-1 font-bold text-sm ${positive ? "text-green-600" : "text-red-500"}`}>
-                    {positive ? <TrendingUp className="w-4 h-4" /> : <TrendingDown className="w-4 h-4" />}
+                  <div className={`flex items-center gap-1 font-semibold text-sm ${positive ? "text-green-600" : "text-red-500"}`}>
+                    {positive ? <TrendingUp className="w-3.5 h-3.5" /> : <TrendingDown className="w-3.5 h-3.5" />}
                     {positive ? "+" : ""}{change}
                   </div>
                 </div>
