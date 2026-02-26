@@ -67,11 +67,11 @@ export default function EloPage() {
   const tier = profile?.pdr_rating ? getTier(profile.pdr_rating) : null;
 
   return (
-    <div className="min-h-screen bg-[hsl(210_20%_96%)] pb-24 relative">
+    <div className="min-h-screen bg-[hsl(210_20%_96%)] pb-24 relative overflow-hidden">
       <Navbar />
 
       {/* Blurred content */}
-      <div className="filter blur-sm pointer-events-none select-none" aria-hidden="true">
+      <div className="pointer-events-none select-none" style={{ filter: "blur(3px)" }} aria-hidden="true">
         <PDRHero
           profile={profile}
           wins={wins}
@@ -124,8 +124,8 @@ export default function EloPage() {
         </div>
       </div>
 
-      {/* Coming Soon overlay */}
-      <div className="absolute inset-0 flex items-center justify-center z-20">
+      {/* Coming Soon overlay — fixed to viewport center, below navbar */}
+      <div className="fixed inset-0 flex items-center justify-center z-20 pointer-events-none" style={{ top: "56px" }}>
         <div className="text-center space-y-2">
           <h2
             className="text-4xl font-extrabold tracking-tight text-foreground"
