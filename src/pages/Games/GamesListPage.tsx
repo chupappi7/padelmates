@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, Fragment } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+
 import {
   Select,
   SelectContent,
@@ -16,7 +16,7 @@ import { Navbar } from "@/components/layout/Navbar";
 import { MobileFilterSheet } from "@/components/games/MobileFilterSheet";
 import { SkillRangePicker } from "@/components/games/SkillRangePicker";
 import { motion } from "framer-motion";
-import { Plus, Search, Calendar } from "lucide-react";
+import { Plus, Calendar } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useUserLocation, calculateDistance } from "@/hooks/useUserLocation";
@@ -51,7 +51,7 @@ interface Game {
 export default function GamesListPage() {
   const [games, setGames] = useState<Game[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState("");
+  
   const [skillMin, setSkillMin] = useState<number | null>(null);
   const [skillMax, setSkillMax] = useState<number | null>(null);
   const [formatFilter, setFormatFilter] = useState<string>("all");
@@ -142,9 +142,6 @@ export default function GamesListPage() {
       const gameDate = new Date(game.date_time);
       if (gameDate < cutoff) return false;
       const matchesDay = selectedDate === null || isSameDay(gameDate, selectedDate);
-      const matchesSearch =
-        game.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        game.location.toLowerCase().includes(searchQuery.toLowerCase());
       const matchesSkill =
         skillMin === null ||
         (game.skill_level >= skillMin && game.skill_level <= (skillMax ?? skillMin));
@@ -154,7 +151,7 @@ export default function GamesListPage() {
         (formatFilter === "backup" && game.payment_mode === "spot_selling") ||
         (formatFilter === "casual_match" && game.format === "casual_match" && game.payment_mode !== "court_sharing" && game.payment_mode !== "spot_selling") ||
         (formatFilter === "americano" && (game.format === "americano" || game.format === "team_americano"));
-      return matchesDay && matchesSearch && matchesSkill && matchesFormat;
+      return matchesDay && matchesSkill && matchesFormat;
     });
 
     if (userLocation) {
@@ -174,7 +171,7 @@ export default function GamesListPage() {
     result.sort((a, b) => new Date(a.date_time).getTime() - new Date(b.date_time).getTime());
 
     return result;
-  }, [games, selectedDate, searchQuery, skillMin, skillMax, formatFilter, userLocation]);
+  }, [games, selectedDate, skillMin, skillMax, formatFilter, userLocation]);
 
   const isAllMode = selectedDate === null;
 
@@ -213,16 +210,6 @@ export default function GamesListPage() {
 
           {/* Search + Type Filter */}
           <div className="flex gap-2 mt-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input
-                placeholder="Search games..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 h-11"
-              />
-            </div>
-
             <Select value={formatFilter} onValueChange={setFormatFilter}>
               <SelectTrigger className="w-[140px] h-11 shrink-0">
                 <SelectValue placeholder="Type" />
@@ -362,7 +349,7 @@ export default function GamesListPage() {
               {isAllMode ? "No upcoming matches" : "No matches on this day"}
             </h3>
             <p className="text-sm sm:text-base text-muted-foreground mb-6">
-              {searchQuery || skillMin !== null || formatFilter !== "all"
+              {skillMin !== null || formatFilter !== "all"
                 ? "Try adjusting your filters"
                 : "Be the first to host a game!"}
             </p>
