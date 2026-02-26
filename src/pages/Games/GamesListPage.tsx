@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, Fragment } from "react";
+import { cn } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 
@@ -209,39 +210,62 @@ export default function GamesListPage() {
           <DayPicker selectedDate={selectedDate} onSelectDate={setSelectedDate} />
 
           {/* Filters */}
-          <div className="flex gap-2 mt-4">
-            {isMobile ? (
-              <MobileFilterSheet
-                skillMin={skillMin}
-                skillMax={skillMax}
-                setSkillRange={setSkillRange}
-                formatFilter={formatFilter}
-                setFormatFilter={setFormatFilter}
+          {isMobile ? (
+            <div className="flex flex-col gap-3 mt-4">
+              {/* Type chips */}
+              <div className="flex gap-1.5 overflow-x-auto no-scrollbar">
+                {[
+                  { value: "all", label: "All" },
+                  { value: "casual_match", label: "Match" },
+                  { value: "americano", label: "Americano" },
+                  { value: "court", label: "Court" },
+                  { value: "backup", label: "Backup" },
+                ].map((opt) => (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => setFormatFilter(opt.value)}
+                    className={cn(
+                      "h-8 px-3.5 rounded-full text-xs font-semibold border whitespace-nowrap transition-all select-none shrink-0",
+                      formatFilter === opt.value
+                        ? "bg-primary text-primary-foreground border-primary"
+                        : "bg-background text-muted-foreground border-border"
+                    )}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+              {/* Skill chips */}
+              <SkillRangePicker
+                min={skillMin}
+                max={skillMax}
+                onChange={setSkillRange}
               />
-            ) : (
-              <>
-                <Select value={formatFilter} onValueChange={setFormatFilter}>
-                  <SelectTrigger className="w-[140px] h-11 shrink-0">
-                    <SelectValue placeholder="Type" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-popover z-50">
-                    <SelectItem value="all">All Types</SelectItem>
-                    <SelectItem value="casual_match">Match</SelectItem>
-                    <SelectItem value="americano">Americano</SelectItem>
-                    <SelectItem value="court">Court</SelectItem>
-                    <SelectItem value="backup">Backup</SelectItem>
-                  </SelectContent>
-                </Select>
-                <div className="flex items-center gap-1.5 border border-input rounded-md px-3 h-11 bg-background">
-                  <SkillRangePicker
-                    min={skillMin}
-                    max={skillMax}
-                    onChange={setSkillRange}
-                  />
-                </div>
-              </>
-            )}
-          </div>
+            </div>
+          ) : (
+            <div className="flex gap-2 mt-4">
+              <Select value={formatFilter} onValueChange={setFormatFilter}>
+                <SelectTrigger className="w-[140px] h-11 shrink-0">
+                  <SelectValue placeholder="Type" />
+                </SelectTrigger>
+                <SelectContent className="bg-popover z-50">
+                  <SelectItem value="all">All Types</SelectItem>
+                  <SelectItem value="casual_match">Match</SelectItem>
+                  <SelectItem value="americano">Americano</SelectItem>
+                  <SelectItem value="court">Court</SelectItem>
+                  <SelectItem value="backup">Backup</SelectItem>
+                </SelectContent>
+              </Select>
+              <div className="flex items-center gap-1.5 border border-input rounded-md px-3 h-11 bg-background">
+                <SkillRangePicker
+                  min={skillMin}
+                  max={skillMax}
+                  onChange={setSkillRange}
+                />
+              </div>
+            </div>
+          )}
         </motion.div>
 
         {loading ? (
