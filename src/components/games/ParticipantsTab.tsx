@@ -85,7 +85,7 @@ export function ParticipantsTab({
 
   const showConfirmed = activeFilter === "all";
   const showRequests = activeFilter === "all" || activeFilter === "requests";
-  const showRequestsSection = canManage;
+  const showRequestsSection = pendingRequests.length > 0;
 
   return (
     <div className="space-y-4">
@@ -100,7 +100,7 @@ export function ParticipantsTab({
           All
         </Button>
 
-        {canManage && pendingRequests.length > 0 && (
+        {pendingRequests.length > 0 && (
           <Button
             variant={activeFilter === "requests" ? "default" : "outline"}
             size="sm"
@@ -213,7 +213,7 @@ export function ParticipantsTab({
       )}
 
       {/* Pending Requests Section (Host Only) */}
-      {showRequests && canManage && pendingRequests.length > 0 && (
+      {showRequests && pendingRequests.length > 0 && (
         <section>
           <div className="flex items-center gap-2 mb-3">
             <span className="text-base">⏳</span>
@@ -243,27 +243,29 @@ export function ParticipantsTab({
                     )}
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => onRejectRequest(request.id)}
-                    disabled={loadingAction === request.id}
-                    className="h-8 px-2.5"
-                  >
-                    <X className="w-3.5 h-3.5" />
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="hero"
-                    onClick={() => onAcceptRequest(request.id)}
-                    disabled={loadingAction === request.id}
-                    className="h-8"
-                  >
-                    <Check className="w-3.5 h-3.5 mr-1" />
-                    Accept
-                  </Button>
-                </div>
+                {canManage && (
+                  <div className="flex items-center gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => onRejectRequest(request.id)}
+                      disabled={loadingAction === request.id}
+                      className="h-8 px-2.5"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="hero"
+                      onClick={() => onAcceptRequest(request.id)}
+                      disabled={loadingAction === request.id}
+                      className="h-8"
+                    >
+                      <Check className="w-3.5 h-3.5 mr-1" />
+                      Accept
+                    </Button>
+                  </div>
+                )}
               </div>
             ))}
           </div>
