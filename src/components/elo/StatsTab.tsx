@@ -8,19 +8,6 @@ import { TrendingUp, TrendingDown } from "lucide-react";
 export function StatsTab() {
   const { user } = useAuth();
 
-  const { data: profile } = useQuery({
-    queryKey: ["profile", user?.id],
-    queryFn: async () => {
-      const { data } = await supabase
-        .from("profiles")
-        .select("name, elo_rating")
-        .eq("user_id", user!.id)
-        .single();
-      return data;
-    },
-    enabled: !!user,
-  });
-
   const { data: history = [] } = useQuery({
     queryKey: ["elo-history", user?.id],
     queryFn: async () => {
@@ -46,15 +33,6 @@ export function StatsTab() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="text-center space-y-1">
-        <h2 className="text-lg font-bold">{profile?.name || "Player"}</h2>
-        <div className="text-4xl font-black text-primary">
-          {profile?.elo_rating ?? 1200}
-        </div>
-        <p className="text-xs text-muted-foreground uppercase tracking-wider">ELO Rating</p>
-      </div>
-
       {/* Chart */}
       <div className="bg-card rounded-xl border p-4">
         <h3 className="text-sm font-semibold mb-3">Rating Trend</h3>
