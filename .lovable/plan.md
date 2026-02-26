@@ -1,20 +1,29 @@
 
-## Move "Joined/Requested/Court Secured" Badge Next to Title
 
-Move the role status pill (Joined, Requested, Court Secured) from its current stacked position in the bottom-right corner to **Row 1**, placed inline between the title text and the skill level badge. The "Host" pill stays in Row 4 next to the host name as it is now.
+## Move Price to Top-Right (Below Skill Badge)
+
+Based on the reference screenshot, the price (`375 Kc`) should sit in the top-right area of the card, aligned with the skill level badge -- not down in the bottom row with spots and host info.
 
 ### Changes in `src/components/games/GameCard.tsx`
 
-**Row 1 (title row):** Insert the role pill after the title text (and after the Available/Taken badge for court sharing), before the skill chip:
+**1. Add price below the skill badge in Row 1 (top-right column)**
+
+Wrap the skill badge and price in a vertical stack on the right side of Row 1:
 
 ```text
-[ Title  (Joined) .............. [C] ]
+[ Title  (Joined) .............. [C]     ]
+[                                375 Kc  ]
 ```
 
-**Row 4 (bottom row):** Remove the stacked pill+price column. Price stays but the Joined/Requested/Court Secured pill is no longer rendered there.
+The right side becomes a `flex flex-col items-end` container holding the skill chip on top and price below it.
 
-### Specific edits:
+**2. Remove price from Row 4 (bottom row)**
 
-1. **Row 1** -- Inside the left `div` (flex items-center), after the court-sharing badge, add the role pill when `showTopRightPill` is true.
+Delete the `showPrice` block from the bottom-right section (lines 211-214). The bottom row will only contain host info + spots/interest count.
 
-2. **Row 4** -- Remove the `showTopRightPill` rendering block from the stacked column. Keep the price display as a simple inline element alongside spots.
+### Technical detail
+
+- Lines 147-151: Wrap in a `div` with `flex flex-col items-end gap-0.5`, add the price element below the skill badge.
+- Lines 211-215: Remove the price `span` from the bottom row entirely.
+- For court-sharing cards (no skill badge), the price still renders top-right on its own.
+
