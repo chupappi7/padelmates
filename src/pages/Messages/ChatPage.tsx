@@ -229,6 +229,9 @@ export default function ChatPage() {
               </div>
               {group.messages.map((msg, i) => {
                 const isMine = msg.sender_id === user?.id;
+                const showAvatar =
+                  !isMine &&
+                  (i === 0 || group.messages[i - 1]?.sender_id !== msg.sender_id);
                 const showTail =
                   i === group.messages.length - 1 ||
                   group.messages[i + 1]?.sender_id !== msg.sender_id;
@@ -237,11 +240,23 @@ export default function ChatPage() {
                   <div
                     key={msg.id}
                     className={cn(
-                      "flex mb-0.5",
+                      "flex gap-2 mb-0.5",
                       isMine ? "justify-end" : "justify-start",
                       showTail && "mb-2"
                     )}
                   >
+                    {!isMine && (
+                      <div className="w-7 shrink-0">
+                        {showAvatar && otherUser && (
+                          <Avatar className="h-7 w-7">
+                            <AvatarImage src={otherUser.avatar_url || undefined} />
+                            <AvatarFallback className="text-[10px] bg-primary/10 text-primary">
+                              {otherUser.name.charAt(0).toUpperCase()}
+                            </AvatarFallback>
+                          </Avatar>
+                        )}
+                      </div>
+                    )}
                     <div
                       className={cn(
                         "max-w-[75%] px-3.5 py-2 text-sm",
