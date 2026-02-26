@@ -144,18 +144,11 @@ export function GameCard({
                 </span>
               )}
             </div>
-            <div className="flex flex-col items-end gap-0.5 shrink-0">
-              {!isCourtSharing && (
-                <span className={`badge-skill text-sm sm:text-base px-2.5 sm:px-3 py-1 font-black ${getSkillColor(skillLevel)}`}>
-                  {["D","C","B","A"][skillLevel - 1] ?? skillLevel}
-                </span>
-              )}
-              {showPrice && (
-                <span className="text-primary font-bold text-[11px] sm:text-xs">
-                  {pricePerPlayer} Kč
-                </span>
-              )}
-            </div>
+            {!isCourtSharing && (
+              <span className={`badge-skill text-sm sm:text-base px-2.5 sm:px-3 py-1 font-black shrink-0 ${getSkillColor(skillLevel)}`}>
+                {["D","C","B","A"][skillLevel - 1] ?? skillLevel}
+              </span>
+            )}
           </div>
 
           {/* Row 2: Location + distance */}
@@ -175,7 +168,16 @@ export function GameCard({
             </span>
           </div>
 
-          {/* Row 4: Host + spots/interest + price (+ joined/requested pill stacked above price) */}
+          {/* Row 3.5: Price right-aligned above divider */}
+          {showPrice && (
+            <div className="flex justify-end">
+              <span className="text-primary font-bold text-xs sm:text-sm">
+                {pricePerPlayer} Kč
+              </span>
+            </div>
+          )}
+
+          {/* Row 4: Host + spots/interest */}
           <div className="flex items-center justify-between gap-2 pt-1.5 border-t border-border/60">
 
             {/* Left: avatar + host name + host pill (if hosting) */}
