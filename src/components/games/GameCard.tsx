@@ -31,13 +31,7 @@ const getSkillColor = (level: number) => {
   return map[level] ?? "badge-skill-c";
 };
 
-const getUrgencyPill = (dateTime: string) => {
-  const now = new Date();
-  const hoursUntil = differenceInHours(new Date(dateTime), now);
-  if (hoursUntil < 0) return "bg-muted text-muted-foreground border-border";
-  if (hoursUntil < 3) return "bg-destructive/15 text-destructive border-destructive/25";
-  return "bg-primary/15 text-primary border-primary/25";
-};
+const getUrgencyPill = () => "bg-primary/15 text-primary border-primary/25";
 
 // Role-based left border accent
 const getRoleAccent = (userStatus?: "joined" | "hosting" | "requested" | "court_secured") => {
@@ -85,7 +79,7 @@ export function GameCard({
   const totalPlayers = currentPlayers + prefilledCount;
   const spotsLeft = maxPlayers - totalPlayers;
 
-  const urgencyPill = getUrgencyPill(dateTime);
+  const urgencyPill = getUrgencyPill();
   const roleAccent = getRoleAccent(userStatus);
   const showPrice = pricePerPlayer > 0 && (priceMode !== "free" || isCourtSharing);
 
