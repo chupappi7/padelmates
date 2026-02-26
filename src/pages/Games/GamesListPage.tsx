@@ -20,7 +20,7 @@ import { Plus, Search, Calendar } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useUserLocation, calculateDistance } from "@/hooks/useUserLocation";
-import { isSameDay, format, isToday, isTomorrow } from "date-fns";
+import { isSameDay, format, isToday, isTomorrow, differenceInMinutes } from "date-fns";
 
 interface Game {
   id: string;
@@ -275,11 +275,25 @@ export default function GamesListPage() {
                     else if (isTomorrow(gameDate)) dayLabel = "Tomorrow";
                     else dayLabel = format(gameDate, "MMM d, yyyy");
                     const timeLabel = format(gameDate, "HH:mm");
+                    let countdown: string | null = null;
+                    if (isToday(gameDate) || isTomorrow(gameDate)) {
+                      const minsUntil = differenceInMinutes(gameDate, new Date());
+                      if (minsUntil > 0) {
+                        const hours = Math.floor(minsUntil / 60);
+                        const mins = minsUntil % 60;
+                        countdown = hours > 0 && mins > 0 ? `in ${hours}h ${mins}m` : hours > 0 ? `in ${hours}h` : `in ${mins}m`;
+                      }
+                    }
                     elements.push(
-                      <div key={`datetime-${groupKey}`} className="flex items-center gap-3 pt-4 first:pt-0">
-                        <span className="text-sm font-semibold text-foreground whitespace-nowrap">{dayLabel}</span>
-                        <span className="text-sm font-medium text-primary whitespace-nowrap">{timeLabel}</span>
+                      <div key={`datetime-${groupKey}`} className="flex items-center gap-3 pt-4 pb-2 first:pt-0">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-semibold text-foreground whitespace-nowrap">{dayLabel}</span>
+                          <span className="text-sm font-medium text-primary whitespace-nowrap">{timeLabel}</span>
+                        </div>
                         <div className="flex-1 h-px bg-border" />
+                        {countdown && (
+                          <span className="text-[11px] font-medium text-primary shrink-0">{countdown}</span>
+                        )}
                       </div>
                     );
                   }
