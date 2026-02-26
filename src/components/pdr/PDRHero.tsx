@@ -26,8 +26,8 @@ export function PDRHero({ profile, wins, losses, winRate, trendDelta, tier }: PD
 
   return (
     <div className="max-w-lg mx-auto px-4 mt-2">
-      <div className="bg-gradient-to-br from-[#0D2137] via-[#142D4A] to-[#1A4060] rounded-2xl px-5 pt-3 pb-5 relative">
-        <p className="text-right text-[10px] uppercase tracking-[0.2em] text-white/50 font-medium mb-3" style={{ fontFamily: "'Space Grotesk', system-ui, sans-serif" }}>Padel Dynamic Rating</p>
+      <div className="bg-gradient-to-br from-[#0D2137] via-[#142D4A] to-[#1A4060] rounded-2xl px-5 pt-2.5 pb-5 relative">
+        <p className="text-right text-[10px] uppercase tracking-[0.2em] text-white/50 font-medium mb-2" style={{ fontFamily: "'Space Grotesk', system-ui, sans-serif" }}>Padel Dynamic Rating</p>
         {/* Avatar + Name + Rating */}
         <div className="flex items-center gap-5">
           <Avatar className="w-16 h-16 border-2 border-white/15 shrink-0">
