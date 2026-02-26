@@ -1368,7 +1368,7 @@ export default function CreateGamePage() {
                 Cancel
               </Button>
               <Button type="submit" variant="hero" className="flex-1 h-11" disabled={loading}>
-                {loading ? "Creating..." : isSellCourt ? "🏟️ List Court" : hostType === "americano" ? "🏆 Create Tournament" : "Create Game"}
+                {loading ? "Creating..." : isSellCourt ? "🏟️ List Court" : hostType === "americano" ? "🏆 Create Tournament" : "Create Listing"}
               </Button>
             </div>
           </form>
