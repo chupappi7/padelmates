@@ -402,7 +402,7 @@ export default function InboxPage() {
         <div className="container max-w-2xl py-4">
           {/* Header */}
           <div className="flex items-center gap-3 mb-4">
-            <Button variant="ghost" size="icon" className="md:hidden h-9 w-9" onClick={() => navigate(-1)}>
+            <Button variant="ghost" size="icon" className="md:hidden h-9 w-9" onClick={() => navigate("/")}>
               <ArrowLeft className="w-5 h-5" />
             </Button>
             <h1 className="font-display text-xl font-bold">Messages</h1>
