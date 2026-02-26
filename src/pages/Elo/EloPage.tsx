@@ -67,59 +67,75 @@ export default function EloPage() {
   const tier = profile?.pdr_rating ? getTier(profile.pdr_rating) : null;
 
   return (
-    <div className="min-h-screen bg-[hsl(210_20%_96%)] pb-24">
+    <div className="min-h-screen bg-[hsl(210_20%_96%)] pb-24 relative">
       <Navbar />
 
-      <PDRHero
-        profile={profile}
-        wins={wins}
-        losses={losses}
-        winRate={winRate}
-        trendDelta={trendDelta}
-        tier={tier}
-      />
+      {/* Blurred content */}
+      <div className="filter blur-sm pointer-events-none select-none" aria-hidden="true">
+        <PDRHero
+          profile={profile}
+          wins={wins}
+          losses={losses}
+          winRate={winRate}
+          trendDelta={trendDelta}
+          tier={tier}
+        />
 
-      {/* Tabs */}
-      <div className="max-w-lg mx-auto px-4 mt-4">
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <div className="flex items-center justify-between mb-4">
-            <TabsList className="flex-1 grid grid-cols-3 bg-[hsl(210_20%_92%)] rounded-full p-1 h-auto">
-              {["stats", "submit", "forecast"].map((tab) => (
-                <TabsTrigger
-                  key={tab}
-                  value={tab}
-                  className={cn(
-                    "rounded-full py-2 text-sm font-medium capitalize transition-all",
-                    "data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:font-semibold",
-                    "data-[state=inactive]:text-muted-foreground"
-                  )}
-                  style={activeTab === tab && tier ? { color: tier.color } : undefined}
-                >
-                  {tab}
-                </TabsTrigger>
-              ))}
-            </TabsList>
+        <div className="max-w-lg mx-auto px-4 mt-4">
+          <Tabs value={activeTab} onValueChange={setActiveTab}>
+            <div className="flex items-center justify-between mb-4">
+              <TabsList className="flex-1 grid grid-cols-3 bg-[hsl(210_20%_92%)] rounded-full p-1 h-auto">
+                {["stats", "submit", "forecast"].map((tab) => (
+                  <TabsTrigger
+                    key={tab}
+                    value={tab}
+                    className={cn(
+                      "rounded-full py-2 text-sm font-medium capitalize transition-all",
+                      "data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:font-semibold",
+                      "data-[state=inactive]:text-muted-foreground"
+                    )}
+                    style={activeTab === tab && tier ? { color: tier.color } : undefined}
+                  >
+                    {tab}
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+            </div>
+
+            <TabsContent value="stats" className="mt-0">
+              <PDRStatsTab
+                history={history}
+                submissions={submissions}
+                profile={profile}
+                onNavigateToSubmit={() => setActiveTab("submit")}
+              />
+            </TabsContent>
+            <TabsContent value="submit" className="mt-0">
+              <PDRSubmitTab />
+            </TabsContent>
+            <TabsContent value="forecast" className="mt-0">
+              <PDRForecastTab />
+            </TabsContent>
+          </Tabs>
+
+          <div className="mt-6">
+            <PDRLeaderboard currentUserId={user?.id} />
           </div>
+        </div>
+      </div>
 
-          <TabsContent value="stats" className="mt-0">
-            <PDRStatsTab
-              history={history}
-              submissions={submissions}
-              profile={profile}
-              onNavigateToSubmit={() => setActiveTab("submit")}
-            />
-          </TabsContent>
-          <TabsContent value="submit" className="mt-0">
-            <PDRSubmitTab />
-          </TabsContent>
-          <TabsContent value="forecast" className="mt-0">
-            <PDRForecastTab />
-          </TabsContent>
-        </Tabs>
-
-        {/* Leaderboard below tabs */}
-        <div className="mt-6">
-          <PDRLeaderboard currentUserId={user?.id} />
+      {/* Coming Soon overlay */}
+      <div className="absolute inset-0 flex items-center justify-center z-20">
+        <div className="text-center space-y-2">
+          <h2
+            className="text-4xl font-extrabold tracking-tight text-foreground"
+            style={{ fontFamily: "'Space Grotesk', system-ui, sans-serif" }}
+          >
+            Coming Soon
+          </h2>
+          <p className="text-sm text-muted-foreground max-w-[260px] mx-auto">
+            Your Padel Dynamic Rating is on the way. Stay tuned!
+          </p>
         </div>
       </div>
     </div>
