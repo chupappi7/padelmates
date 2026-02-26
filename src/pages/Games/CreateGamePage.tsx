@@ -87,13 +87,13 @@ export default function CreateGamePage() {
     maxPlayers: config.defaultMaxPlayers,
     format: config.format,
     visibility: "public",
-    hostIsPlaying: hostType !== "sell_court",
-    joinMode: config.defaultJoinMode,
+    hostIsPlaying: hostType !== "sell_court" && hostType !== "sell_spots",
+    joinMode: hostType === "sell_spots" ? "open" : config.defaultJoinMode,
     totalPrice: "",
     priceMode: (hostType === "find_players" ? "split_evenly"
              : hostType === "sell_court"  ? "set_price"
              : hostType === "americano"   ? "set_price"
-             : "free") as "split_evenly" | "free" | "set_price",
+             : "set_price") as "split_evenly" | "free" | "set_price",
   });
 
   // Find Players: spotsNeeded is the primary control (how many more players do you need?)
@@ -115,17 +115,21 @@ export default function CreateGamePage() {
   const maxSpotsNeeded = Math.max(currentMin, 8 - prefilledCount - (formData.hostIsPlaying ? 1 : 0));
   const clampedSpotsNeeded = Math.min(Math.max(spotsNeeded, currentMin), maxSpotsNeeded);
 
-  // effectiveLookingFor = spotsNeeded in find_players/americano/sell_spots, else legacy lookingFor
-  const effectiveLookingFor = (hostType === "find_players" || hostType === "americano" || hostType === "sell_spots")
-    ? clampedSpotsNeeded
-    : Math.max(0, formData.maxPlayers - prefilledPlayers.length - (formData.hostIsPlaying ? 1 : 0));
+  // effectiveLookingFor = spotsNeeded in find_players/americano, 1 for sell_spots, else legacy lookingFor
+  const effectiveLookingFor = hostType === "sell_spots"
+    ? 1
+    : (hostType === "find_players" || hostType === "americano")
+      ? clampedSpotsNeeded
+      : Math.max(0, formData.maxPlayers - prefilledPlayers.length - (formData.hostIsPlaying ? 1 : 0));
 
-  // Derived maxPlayers for find_players/americano/sell_spots: spotsNeeded + prefilled + (host if playing)
-  const derivedMaxPlayers = (hostType === "find_players" || hostType === "americano" || hostType === "sell_spots")
-    ? clampedSpotsNeeded + prefilledCount + (formData.hostIsPlaying ? 1 : 0)
-    : formData.maxPlayers;
+  // Derived maxPlayers: sell_spots always 1 (backup for 1 player)
+  const derivedMaxPlayers = hostType === "sell_spots"
+    ? 1
+    : (hostType === "find_players" || hostType === "americano")
+      ? clampedSpotsNeeded + prefilledCount + (formData.hostIsPlaying ? 1 : 0)
+      : formData.maxPlayers;
 
-  const maxPrefilledSlots = (hostType === "find_players" || hostType === "americano" || hostType === "sell_spots")
+  const maxPrefilledSlots = (hostType === "find_players" || hostType === "americano")
     ? Math.max(0, clampedSpotsNeeded) // fill all open spots
     : 0;
 
@@ -175,6 +179,16 @@ export default function CreateGamePage() {
       return;
     }
 
+    if (hostType === "sell_spots" && !formData.description.trim()) {
+      toast.error("Please describe what kind of match or event this is");
+      return;
+    }
+
+    if (hostType === "sell_spots" && (!formData.totalPrice || Number(formData.totalPrice) <= 0)) {
+      toast.error("Please set a price for the backup spot");
+      return;
+    }
+
     const [hours, minutes] = selectedTime.split(":").map(Number);
     const dateTime = new Date(selectedDate);
     dateTime.setHours(hours, minutes, 0, 0);
@@ -189,7 +203,8 @@ export default function CreateGamePage() {
 
     const skillLabel = ["D","C","B","A"][formData.skillLevel - 1] ?? formData.skillLevel;
     const title = isSellCourt ? "Sell / Give Away Court" 
-      : (hostType === "find_players" || hostType === "sell_spots") ? `Looking for ${effectiveLookingFor} player${effectiveLookingFor !== 1 ? 's' : ''}`
+      : hostType === "sell_spots" ? "Looking for backup"
+      : hostType === "find_players" ? `Looking for ${effectiveLookingFor} player${effectiveLookingFor !== 1 ? 's' : ''}`
       : hostType === "americano" ? `Americano · ${skillLabel}`
       : formData.title;
 
@@ -214,8 +229,8 @@ export default function CreateGamePage() {
       format: formData.format as "casual_match" | "americano" | "team_americano",
       visibility: formData.visibility as "public" | "private" | "club_only",
       host_id: user.id,
-      host_is_playing: isSellCourt ? false : formData.hostIsPlaying,
-      join_mode: isSellCourt ? "open" : formData.joinMode,
+      host_is_playing: (isSellCourt || hostType === "sell_spots") ? false : formData.hostIsPlaying,
+      join_mode: (isSellCourt || hostType === "sell_spots") ? "open" : formData.joinMode,
       prefilled_players: prefilledPlayers.filter(p => getPlayerName(p).trim() !== ""),
       ...(isSellCourt && bookingScreenshotPath ? { booking_screenshot_url: bookingScreenshotPath } : {}),
     } as any).select().single();
@@ -419,7 +434,124 @@ export default function CreateGamePage() {
               </div>
             ) : (
               <>
-                {(hostType === "find_players" || hostType === "sell_spots") ? (
+                {hostType === "sell_spots" ? (
+                  /* ========== FIND BACKUP — Simplified flow ========== */
+                  <>
+                    {/* Card 1: Location & Schedule */}
+                    <div className="bg-card border border-border rounded-xl md:rounded-2xl p-4 md:p-6 space-y-4 md:space-y-5">
+                      <h2 className="font-display font-bold text-base md:text-lg flex items-center gap-2">
+                        <MapPin className="w-4 h-4 md:w-5 md:h-5 text-primary" />
+                        Location & Schedule
+                      </h2>
+
+                      <div className="grid grid-cols-3 gap-3">
+                        <div className="col-span-2 space-y-1.5">
+                          <Label className="text-sm">Court / Location <span className="text-destructive">*</span></Label>
+                          <CourtPicker value={formData.location} onChange={(v) => handleChange("location", v)} />
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label htmlFor="courtNumber" className="text-sm">Court #</Label>
+                          <Input
+                            id="courtNumber"
+                            placeholder="e.g., 3"
+                            value={formData.courtNumber}
+                            onChange={(e) => handleChange("courtNumber", e.target.value)}
+                            className="h-11"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <Label className="text-sm">Date <span className="text-destructive">*</span></Label>
+                        <Popover open={showDatePicker} onOpenChange={setShowDatePicker}>
+                          <PopoverTrigger asChild>
+                            <button
+                              type="button"
+                              className="w-full h-11 px-3 flex items-center justify-between bg-background border border-input rounded-md text-sm hover:bg-accent transition-colors"
+                            >
+                              <span className={selectedDate ? "text-foreground" : "text-muted-foreground"}>
+                                {selectedDate ? format(selectedDate, "EEE, MMM d") : "Select date"}
+                              </span>
+                              <Calendar className="w-4 h-4 text-muted-foreground" />
+                            </button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0" align="start">
+                            <CalendarComponent
+                              mode="single"
+                              selected={selectedDate}
+                              onSelect={(date) => {
+                                setSelectedDate(date);
+                                setShowDatePicker(false);
+                              }}
+                              disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
+                              initialFocus
+                            />
+                          </PopoverContent>
+                        </Popover>
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <Label className="text-sm">Start Time <span className="text-destructive">*</span></Label>
+                        <button
+                          type="button"
+                          onClick={() => setShowTimePicker(true)}
+                          className="w-full h-11 px-3 flex items-center justify-between bg-background border border-input rounded-md text-sm hover:bg-accent transition-colors"
+                        >
+                          <span className="text-foreground">{selectedTime}</span>
+                          <Clock className="w-4 h-4 text-muted-foreground" />
+                        </button>
+                      </div>
+
+                      <TimeScrollPicker open={showTimePicker} onOpenChange={setShowTimePicker} value={selectedTime} onChange={setSelectedTime} />
+
+                      <div className="space-y-1.5">
+                        <Label className="text-sm">Duration</Label>
+                        <DurationChips duration={duration} onDurationChange={setDuration} selectedTime={selectedTime} />
+                      </div>
+                    </div>
+
+                    {/* Card 2: Details (required) */}
+                    <div className="bg-card border border-border rounded-xl md:rounded-2xl p-4 md:p-6 space-y-4 md:space-y-5">
+                      <h2 className="font-display font-bold text-base md:text-lg flex items-center gap-2">
+                        <Users className="w-4 h-4 md:w-5 md:h-5 text-primary" />
+                        Details <span className="text-destructive">*</span>
+                      </h2>
+                      <div className="space-y-1.5">
+                        <Textarea
+                          id="description"
+                          placeholder="Describe the match — e.g. 'Casual doubles, B level, need 1 backup for our regular group'"
+                          value={formData.description}
+                          onChange={(e) => handleChange("description", e.target.value)}
+                          rows={3}
+                          className="text-sm resize-none"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Card 3: Price (required) */}
+                    <div className="bg-card border border-border rounded-xl md:rounded-2xl p-4 md:p-6 space-y-4 md:space-y-5">
+                      <h2 className="font-display font-bold text-base md:text-lg flex items-center gap-2">
+                        <CreditCard className="w-4 h-4 md:w-5 md:h-5 text-primary" />
+                        Price <span className="text-destructive">*</span>
+                      </h2>
+                      <div className="space-y-1.5">
+                        <Label className="text-xs text-muted-foreground">How much for the backup spot?</Label>
+                        <div className="relative">
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-semibold text-sm">Kč</span>
+                          <Input
+                            type="number"
+                            min="0"
+                            step="1"
+                            placeholder="0"
+                            value={formData.totalPrice}
+                            onChange={(e) => handleChange("totalPrice", e.target.value)}
+                            className="h-11 pl-10"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </>
+                ) : hostType === "find_players" ? (
                   /* ========== FIND PLAYERS — 5-card flow ========== */
                   <>
                     {/* Card 1: Location & Schedule */}
