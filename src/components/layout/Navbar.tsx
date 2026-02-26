@@ -32,7 +32,7 @@ export function Navbar() {
     <Button variant="ghost" size="icon" className="relative h-9 w-9 rounded-full" onClick={onClick}>
       <Icon className="w-5 h-5 text-muted-foreground" />
       {badge !== undefined && badge > 0 && (
-        <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold flex items-center justify-center px-1">
+        <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center px-1">
           {badge > 9 ? "9+" : badge}
         </span>
       )}
