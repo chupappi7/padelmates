@@ -25,8 +25,8 @@ export function PDRHero({ profile, wins, losses, winRate, trendDelta, tier }: PD
     : tier && !nextTier ? 100 : 0;
 
   return (
-    <div className="bg-gradient-to-br from-[#0D2137] via-[#142D4A] to-[#1A4060] rounded-b-3xl">
-      <div className="max-w-lg mx-auto px-4 pt-6 pb-6">
+    <div className="max-w-lg mx-auto px-4 mt-2">
+      <div className="bg-gradient-to-br from-[#0D2137] via-[#142D4A] to-[#1A4060] rounded-2xl px-5 py-5">
         {/* Avatar + Name + Rating */}
         <div className="flex items-center gap-5">
           <Avatar className="w-16 h-16 border-2 border-white/15 shrink-0">
