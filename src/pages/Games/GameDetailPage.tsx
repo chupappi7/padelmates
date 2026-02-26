@@ -843,6 +843,9 @@ export default function GameDetailPage() {
                 onRejectRequest={handleRejectRequest}
                 onToggleRole={handleToggleRole}
                 loadingAction={actionLoading}
+                showJoinInSlot={!!user && !isHost && !isCourtSharing && !isPlayer && !myRequest && spotsLeft > 0}
+                joinLabel={isOpenJoin ? "Join Game" : "Request to Join"}
+                onJoinFromSlot={() => isOpenJoin ? setShowJoinConfirm(true) : setShowJoinModal(true)}
               />
             </motion.div>
           )}
