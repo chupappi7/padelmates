@@ -6,14 +6,14 @@
 
 @layer base {
   :root {
-    /* Core brand — Dark navy PDR palette */
-    --background: 210 40% 8%;
+    /* Core brand — Lighter navy palette */
+    --background: 210 35% 13%;
     --foreground: 210 20% 92%;
 
-    --card: 210 35% 12%;
+    --card: 210 30% 17%;
     --card-foreground: 210 20% 92%;
 
-    --popover: 210 35% 14%;
+    --popover: 210 30% 18%;
     --popover-foreground: 210 20% 92%;
 
     /* Primary - Vibrant Teal */
