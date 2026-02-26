@@ -2,6 +2,13 @@ import { useState, useEffect, useMemo, Fragment } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { GameCard } from "@/components/games/GameCard";
 import { DayPicker } from "@/components/games/DayPicker";
 import { supabase } from "@/integrations/supabase/client";
@@ -10,7 +17,6 @@ import { MobileFilterSheet } from "@/components/games/MobileFilterSheet";
 import { SkillRangePicker } from "@/components/games/SkillRangePicker";
 import { motion } from "framer-motion";
 import { Plus, Search, Calendar } from "lucide-react";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { useAuth } from "@/contexts/AuthContext";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useUserLocation, calculateDistance } from "@/hooks/useUserLocation";
@@ -205,30 +211,8 @@ export default function GamesListPage() {
           {/* Day Picker */}
           <DayPicker selectedDate={selectedDate} onSelectDate={setSelectedDate} />
 
-          {/* Search + Filters */}
-          <div className="flex gap-2 mt-4 overflow-x-auto no-scrollbar">
-            <ToggleGroup
-              type="single"
-              value={formatFilter}
-              onValueChange={(v) => setFormatFilter(v || "all")}
-              className="gap-1.5 flex-nowrap"
-            >
-              {[
-                { value: "all", label: "All" },
-                { value: "casual_match", label: "Match" },
-                { value: "americano", label: "Americano" },
-                { value: "court", label: "Court" },
-                { value: "backup", label: "Backup" },
-              ].map((f) => (
-                <ToggleGroupItem key={f.value} value={f.value} className="rounded-full px-3.5 h-8 text-xs font-semibold border border-border whitespace-nowrap shrink-0 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground data-[state=on]:border-primary">
-                  {f.label}
-                </ToggleGroupItem>
-              ))}
-            </ToggleGroup>
-          </div>
-
-          {/* Search + Filters */}
-          <div className="flex gap-2 mt-3">
+          {/* Search + Type Filter */}
+          <div className="flex gap-2 mt-4">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
@@ -238,6 +222,19 @@ export default function GamesListPage() {
                 className="pl-10 h-11"
               />
             </div>
+
+            <Select value={formatFilter} onValueChange={setFormatFilter}>
+              <SelectTrigger className="w-[140px] h-11 shrink-0">
+                <SelectValue placeholder="Type" />
+              </SelectTrigger>
+              <SelectContent className="bg-popover z-50">
+                <SelectItem value="all">All Types</SelectItem>
+                <SelectItem value="casual_match">Match</SelectItem>
+                <SelectItem value="americano">Americano</SelectItem>
+                <SelectItem value="court">Court</SelectItem>
+                <SelectItem value="backup">Backup</SelectItem>
+              </SelectContent>
+            </Select>
 
             {isMobile ? (
               <MobileFilterSheet
