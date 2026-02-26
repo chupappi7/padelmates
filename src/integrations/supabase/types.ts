@@ -803,6 +803,7 @@ export type Database = {
           games_played: number | null
           id: string
           name: string
+          pdr_internal_rating: number
           pdr_last_match_at: string | null
           pdr_matches_count: number
           pdr_phase: string
@@ -824,6 +825,7 @@ export type Database = {
           games_played?: number | null
           id?: string
           name: string
+          pdr_internal_rating?: number
           pdr_last_match_at?: string | null
           pdr_matches_count?: number
           pdr_phase?: string
@@ -845,6 +847,7 @@ export type Database = {
           games_played?: number | null
           id?: string
           name?: string
+          pdr_internal_rating?: number
           pdr_last_match_at?: string | null
           pdr_matches_count?: number
           pdr_phase?: string
@@ -862,6 +865,7 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          internal_rating_after: number | null
           match_id: string | null
           player_id: string
           rating_after: number
@@ -871,6 +875,7 @@ export type Database = {
         Insert: {
           created_at?: string
           id?: string
+          internal_rating_after?: number | null
           match_id?: string | null
           player_id: string
           rating_after: number
@@ -880,6 +885,7 @@ export type Database = {
         Update: {
           created_at?: string
           id?: string
+          internal_rating_after?: number | null
           match_id?: string | null
           player_id?: string
           rating_after?: number
