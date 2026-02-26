@@ -144,11 +144,18 @@ export function GameCard({
                 </span>
               )}
             </div>
-            {!isCourtSharing && (
-              <span className={`badge-skill text-sm sm:text-base px-2.5 sm:px-3 py-1 font-black shrink-0 ${getSkillColor(skillLevel)}`}>
-                {["D","C","B","A"][skillLevel - 1] ?? skillLevel}
-              </span>
-            )}
+            <div className="flex flex-col items-end gap-0.5 shrink-0">
+              {!isCourtSharing && (
+                <span className={`badge-skill text-sm sm:text-base px-2.5 sm:px-3 py-1 font-black ${getSkillColor(skillLevel)}`}>
+                  {["D","C","B","A"][skillLevel - 1] ?? skillLevel}
+                </span>
+              )}
+              {showPrice && (
+                <span className="text-primary font-bold text-[11px] sm:text-xs">
+                  {pricePerPlayer} Kč
+                </span>
+              )}
+            </div>
           </div>
 
           {/* Row 2: Location + distance */}
@@ -208,11 +215,6 @@ export function GameCard({
                 })()}
               </div>
 
-              {showPrice && (
-                <span className="text-primary font-bold text-xs sm:text-sm">
-                  {pricePerPlayer} Kč
-                </span>
-              )}
             </div>
 
           </div>
