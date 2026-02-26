@@ -115,17 +115,17 @@ export default function CreateGamePage() {
   const maxSpotsNeeded = Math.max(currentMin, 8 - prefilledCount - (formData.hostIsPlaying ? 1 : 0));
   const clampedSpotsNeeded = Math.min(Math.max(spotsNeeded, currentMin), maxSpotsNeeded);
 
-  // effectiveLookingFor = spotsNeeded in find_players/americano, else legacy lookingFor
-  const effectiveLookingFor = (hostType === "find_players" || hostType === "americano")
+  // effectiveLookingFor = spotsNeeded in find_players/americano/sell_spots, else legacy lookingFor
+  const effectiveLookingFor = (hostType === "find_players" || hostType === "americano" || hostType === "sell_spots")
     ? clampedSpotsNeeded
     : Math.max(0, formData.maxPlayers - prefilledPlayers.length - (formData.hostIsPlaying ? 1 : 0));
 
-  // Derived maxPlayers for find_players/americano: spotsNeeded + prefilled + (host if playing)
-  const derivedMaxPlayers = (hostType === "find_players" || hostType === "americano")
+  // Derived maxPlayers for find_players/americano/sell_spots: spotsNeeded + prefilled + (host if playing)
+  const derivedMaxPlayers = (hostType === "find_players" || hostType === "americano" || hostType === "sell_spots")
     ? clampedSpotsNeeded + prefilledCount + (formData.hostIsPlaying ? 1 : 0)
     : formData.maxPlayers;
 
-  const maxPrefilledSlots = (hostType === "find_players" || hostType === "americano")
+  const maxPrefilledSlots = (hostType === "find_players" || hostType === "americano" || hostType === "sell_spots")
     ? Math.max(0, clampedSpotsNeeded) // fill all open spots
     : 0;
 
@@ -189,7 +189,7 @@ export default function CreateGamePage() {
 
     const skillLabel = ["D","C","B","A"][formData.skillLevel - 1] ?? formData.skillLevel;
     const title = isSellCourt ? "Sell / Give Away Court" 
-      : hostType === "find_players" ? `Looking for ${effectiveLookingFor} player${effectiveLookingFor !== 1 ? 's' : ''}`
+      : (hostType === "find_players" || hostType === "sell_spots") ? `Looking for ${effectiveLookingFor} player${effectiveLookingFor !== 1 ? 's' : ''}`
       : hostType === "americano" ? `Americano · ${skillLabel}`
       : formData.title;
 
@@ -419,7 +419,7 @@ export default function CreateGamePage() {
               </div>
             ) : (
               <>
-                {hostType === "find_players" ? (
+                {(hostType === "find_players" || hostType === "sell_spots") ? (
                   /* ========== FIND PLAYERS — 5-card flow ========== */
                   <>
                     {/* Card 1: Location & Schedule */}
