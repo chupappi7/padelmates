@@ -803,6 +803,7 @@ export type Database = {
           games_played: number | null
           id: string
           name: string
+          pdr_anchored: boolean
           pdr_internal_rating: number
           pdr_last_match_at: string | null
           pdr_matches_count: number
@@ -825,6 +826,7 @@ export type Database = {
           games_played?: number | null
           id?: string
           name: string
+          pdr_anchored?: boolean
           pdr_internal_rating?: number
           pdr_last_match_at?: string | null
           pdr_matches_count?: number
@@ -847,6 +849,7 @@ export type Database = {
           games_played?: number | null
           id?: string
           name?: string
+          pdr_anchored?: boolean
           pdr_internal_rating?: number
           pdr_last_match_at?: string | null
           pdr_matches_count?: number

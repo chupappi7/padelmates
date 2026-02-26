@@ -94,11 +94,27 @@ function updatePDR(
   const newSigma = Math.exp(A / 2);
   const phiStar = Math.sqrt(phi * phi + newSigma * newSigma);
   const newRD = Math.max(0.08, 1 / Math.sqrt(1 / (phiStar * phiStar) + d2_inv));
-  // Apply volatility multiplier
   const rawDelta = newRD * newRD * delta_sum;
   const scaledR = r + rawDelta * volatilityMultiplier(matchCount);
   const newR = Math.min(8.0, Math.max(2.0, scaledR));
   return { r: newR, rd: newRD, sigma: newSigma };
+}
+
+// --- Cold-start anchor logic ---
+// A player is "anchored" if they've played against a provisional/established player
+// NR-vs-NR matches get a dampening multiplier since neither rating is grounded
+const NR_VS_NR_DAMPEN = 0.3; // 30% weight for floating matches
+
+function isPlayerAnchored(profile: any): boolean {
+  return profile.pdr_anchored === true || 
+    profile.pdr_phase === "provisional" || 
+    profile.pdr_phase === "established";
+}
+
+function calcAnchorWeight(playerAnchored: boolean, opponentsAnchored: boolean[]): number {
+  const anyOpponentAnchored = opponentsAnchored.some(a => a);
+  if (playerAnchored || anyOpponentAnchored) return 1.0; // grounded match
+  return NR_VS_NR_DAMPEN; // both sides floating — dampen
 }
 
 Deno.serve(async (req) => {
@@ -133,10 +149,10 @@ Deno.serve(async (req) => {
 
     const playerIds = [sub.team_a_player1, sub.team_a_player2, sub.team_b_player1, sub.team_b_player2];
 
-    // Fetch profiles — use pdr_internal_rating for all calculations
+    // Fetch profiles
     const { data: profiles } = await supabase
       .from("profiles")
-      .select("user_id, pdr_rating, pdr_internal_rating, pdr_rd, pdr_sigma, pdr_phase, pdr_matches_count")
+      .select("user_id, pdr_rating, pdr_internal_rating, pdr_rd, pdr_sigma, pdr_phase, pdr_matches_count, pdr_anchored")
       .in("user_id", playerIds);
 
     if (!profiles || profiles.length < 4) {
@@ -164,10 +180,17 @@ Deno.serve(async (req) => {
     const sActualB = calcActualScore(setsPlayed - setsWonA, setsPlayed, gamesWonB, totalGames);
 
     const monthsAgo = (Date.now() - new Date(sub.played_at).getTime()) / (1000 * 60 * 60 * 24 * 30);
-    const weight = calcMatchWeight(sub.match_type, sub.status === "confirmed", monthsAgo);
+    const baseWeight = calcMatchWeight(sub.match_type, sub.status === "confirmed", monthsAgo);
 
     const teamA = [sub.team_a_player1, sub.team_a_player2];
     const teamB = [sub.team_b_player1, sub.team_b_player2];
+
+    // Determine anchor status for each team
+    const teamAAnchored = teamA.map(id => isPlayerAnchored(profileMap[id]));
+    const teamBAnchored = teamB.map(id => isPlayerAnchored(profileMap[id]));
+    const anyAnchored = [...teamAAnchored, ...teamBAnchored].some(a => a);
+
+    console.log(`[process_pdr] Anchor status: teamA=[${teamAAnchored}], teamB=[${teamBAnchored}], anyAnchored=${anyAnchored}`);
 
     for (const playerId of playerIds) {
       const p = profileMap[playerId];
@@ -175,7 +198,6 @@ Deno.serve(async (req) => {
       const opponents = isTeamA ? teamB : teamA;
       const sActual = isTeamA ? sActualA : sActualB;
 
-      // Always use pdr_internal_rating for calculations (handles NR vs NR)
       const opponentAvgR = opponents.reduce((sum: number, id: string) => sum + (profileMap[id].pdr_internal_rating ?? 3.0), 0) / 2;
       const opponentAvgRD = opponents.reduce((sum: number, id: string) => sum + (profileMap[id].pdr_rd ?? 1.5), 0) / 2;
 
@@ -184,16 +206,21 @@ Deno.serve(async (req) => {
       const currentSigma = p.pdr_sigma ?? 0.06;
       const newMatchCount = (p.pdr_matches_count ?? 0) + 1;
 
+      // Cold-start: dampen NR-vs-NR matches
+      const opponentsAnchored = opponents.map((id: string) => isPlayerAnchored(profileMap[id]));
+      const anchorWeight = calcAnchorWeight(isPlayerAnchored(p), opponentsAnchored);
+      const weight = baseWeight * anchorWeight;
+
       let newInternalR: number, newRD: number, newSigma: number;
 
       if (p.pdr_phase === "calibrating" && newMatchCount >= 5) {
-        // Fetch all matches for calibration
+        // Calibration: fetch previous matches for this player
         const { data: allSubs } = await supabase
           .from("match_submissions")
           .select("*")
           .or(`team_a_player1.eq.${playerId},team_a_player2.eq.${playerId},team_b_player1.eq.${playerId},team_b_player2.eq.${playerId}`)
           .in("status", ["confirmed", "pending"])
-          .eq("rating_processed", false);
+          .eq("rating_processed", true);
 
         const calibrationMatches = (allSubs || []).map((s: any) => {
           const isA = s.team_a_player1 === playerId || s.team_a_player2 === playerId;
@@ -210,7 +237,6 @@ Deno.serve(async (req) => {
 
         calibrationMatches.push({ opponentR: opponentAvgR, sActual: sActual });
         newInternalR = calibratePDR(calibrationMatches);
-        // After calibration, do one Glicko-2 update with volatility
         const result = updatePDR(newInternalR, 1.2, 0.06, newMatchCount, [{
           opponentR: opponentAvgR, opponentRD: opponentAvgRD, sActual, weight
         }]);
@@ -229,9 +255,11 @@ Deno.serve(async (req) => {
       const newPhase = determinePDRPhase(newMatchCount, newRD);
       const roundedInternalR = Math.round(newInternalR * 100) / 100;
 
-      // Public rating: only show when player qualifies (matchCount >= 5 AND RD < 1.1)
       const qualifiesForPublic = newMatchCount >= 5 && newRD < 1.1;
       const newPublicRating = qualifiesForPublic ? roundedInternalR : null;
+
+      // Anchor propagation: if any opponent is anchored, this player becomes anchored
+      const newAnchored = p.pdr_anchored || opponentsAnchored.some((a: boolean) => a);
 
       const oldPublicR = p.pdr_rating;
       const ratingChange = oldPublicR != null && newPublicRating != null
@@ -249,6 +277,7 @@ Deno.serve(async (req) => {
         pdr_matches_count: newMatchCount,
         pdr_last_match_at: new Date().toISOString(),
         pdr_reliability: calcReliability(newRD),
+        pdr_anchored: newAnchored,
       }).eq("user_id", playerId);
 
       await supabase.from("rating_history").insert({
@@ -259,12 +288,14 @@ Deno.serve(async (req) => {
         match_id: submission_id,
         rating_change: ratingChange,
       });
+
+      console.log(`[process_pdr] Player ${playerId}: r=${roundedInternalR}, anchored=${newAnchored}, phase=${newPhase}, anchorWeight=${anchorWeight}`);
     }
 
     // Mark as processed
     await supabase.from("match_submissions").update({ rating_processed: true }).eq("id", submission_id);
 
-    return new Response(JSON.stringify({ success: true }), { headers: corsHeaders });
+    return new Response(JSON.stringify({ success: true, anyAnchored }), { headers: corsHeaders });
   } catch (err) {
     console.error(err);
     return new Response(JSON.stringify({ error: String(err) }), { status: 500, headers: corsHeaders });
