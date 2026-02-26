@@ -4,7 +4,7 @@ import { useNotifications, AppNotification } from "@/hooks/useNotifications";
 import { useAuth } from "@/contexts/AuthContext";
 import { motion } from "framer-motion";
 import { ArrowLeft, Bell, UserPlus, CalendarCheck, Megaphone, LogIn, LogOut, Inbox, CheckCheck } from "lucide-react";
-import { formatDistanceToNow } from "date-fns";
+import { formatDistanceToNow, isToday, isThisWeek } from "date-fns";
 import { cn } from "@/lib/utils";
 
 const iconMap: Record<AppNotification["type"], typeof Bell> = {
@@ -24,6 +24,23 @@ const colorMap: Record<AppNotification["type"], string> = {
   game_leave: "bg-destructive/10 text-destructive",
   game_request: "bg-warning/10 text-warning",
 };
+
+function groupNotifications(notifications: AppNotification[]) {
+  const today: AppNotification[] = [];
+  const thisWeek: AppNotification[] = [];
+  const earlier: AppNotification[] = [];
+  for (const n of notifications) {
+    const d = new Date(n.created_at);
+    if (isToday(d)) today.push(n);
+    else if (isThisWeek(d)) thisWeek.push(n);
+    else earlier.push(n);
+  }
+  return [
+    { label: "Today", items: today },
+    { label: "This Week", items: thisWeek },
+    { label: "Earlier", items: earlier },
+  ].filter((g) => g.items.length > 0);
+}
 
 export default function NotificationsPage() {
   const navigate = useNavigate();
@@ -73,40 +90,47 @@ export default function NotificationsPage() {
               <p className="text-sm text-muted-foreground">No notifications yet</p>
             </div>
           ) : (
-            <div className="space-y-2">
-              {notifications.map((n) => {
-                const Icon = iconMap[n.type];
-                return (
-                  <button
-                    key={n.id}
-                    onClick={() => {
-                      markAsRead(n);
-                      if (n.link) navigate(n.link);
-                    }}
-                    className={cn(
-                      "w-full text-left flex items-start gap-3 p-4 rounded-xl border border-border bg-card hover:bg-muted/50 transition-colors relative",
-                      n.link && "cursor-pointer",
-                      !n.read && "bg-primary/5 border-primary/20"
-                    )}
-                  >
-                    {!n.read && (
-                      <span className="absolute top-4 right-4 w-2.5 h-2.5 rounded-full bg-primary" />
-                    )}
-                    <div className={cn("w-9 h-9 rounded-lg flex items-center justify-center shrink-0", colorMap[n.type])}>
-                      <Icon className="w-4 h-4" />
-                    </div>
-                    <div className="flex-1 min-w-0 pr-4">
-                      {n.type !== "game_join" && n.type !== "game_leave" && (
-                        <p className={cn("text-sm", !n.read ? "font-semibold" : "font-medium text-muted-foreground")}>{n.title}</p>
-                      )}
-                      <p className={cn("text-xs", n.type === "game_join" || n.type === "game_leave" ? (!n.read ? "font-medium text-foreground" : "text-muted-foreground") : "text-muted-foreground truncate")}>{n.message}</p>
-                      <p className="text-[10px] text-muted-foreground/60 mt-1">
-                        {formatDistanceToNow(new Date(n.created_at), { addSuffix: true })}
-                      </p>
-                    </div>
-                  </button>
-                );
-              })}
+            <div className="space-y-6">
+              {groupNotifications(notifications).map((group) => (
+                <div key={group.label}>
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 px-1">{group.label}</p>
+                  <div className="space-y-2">
+                    {group.items.map((n) => {
+                      const Icon = iconMap[n.type];
+                      return (
+                        <button
+                          key={n.id}
+                          onClick={() => {
+                            markAsRead(n);
+                            if (n.link) navigate(n.link);
+                          }}
+                          className={cn(
+                            "w-full text-left flex items-start gap-3 p-4 rounded-xl border border-border bg-card hover:bg-muted/50 transition-colors relative",
+                            n.link && "cursor-pointer",
+                            !n.read && "bg-primary/5 border-primary/20"
+                          )}
+                        >
+                          {!n.read && (
+                            <span className="absolute top-4 right-4 w-2.5 h-2.5 rounded-full bg-primary" />
+                          )}
+                          <div className={cn("w-9 h-9 rounded-lg flex items-center justify-center shrink-0", colorMap[n.type])}>
+                            <Icon className="w-4 h-4" />
+                          </div>
+                          <div className="flex-1 min-w-0 pr-4">
+                            {n.type !== "game_join" && n.type !== "game_leave" && (
+                              <p className={cn("text-sm leading-tight", !n.read ? "font-semibold" : "font-medium text-muted-foreground")}>{n.title}</p>
+                            )}
+                            <p className={cn("text-xs leading-snug break-words", n.type === "game_join" || n.type === "game_leave" ? (!n.read ? "font-medium text-foreground" : "text-muted-foreground") : "text-muted-foreground")}>{n.message}</p>
+                            <p className="text-[10px] text-muted-foreground/60 mt-1">
+                              {formatDistanceToNow(new Date(n.created_at), { addSuffix: true })}
+                            </p>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
             </div>
           )}
         </motion.div>
