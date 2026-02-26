@@ -211,37 +211,37 @@ export default function GamesListPage() {
 
           {/* Filters */}
           {isMobile ? (
-            <div className="flex flex-col gap-3 mt-4">
-              {/* Type chips */}
-              <div className="flex gap-1.5 overflow-x-auto no-scrollbar">
-                {[
-                  { value: "all", label: "All" },
-                  { value: "casual_match", label: "Match" },
-                  { value: "americano", label: "Americano" },
-                  { value: "court", label: "Court" },
-                  { value: "backup", label: "Backup" },
-                ].map((opt) => (
-                  <button
-                    key={opt.value}
-                    type="button"
-                    onClick={() => setFormatFilter(opt.value)}
-                    className={cn(
-                      "h-8 px-3.5 rounded-full text-xs font-semibold border whitespace-nowrap transition-all select-none shrink-0",
-                      formatFilter === opt.value
-                        ? "bg-primary text-primary-foreground border-primary"
-                        : "bg-background text-muted-foreground border-border"
-                    )}
-                  >
-                    {opt.label}
-                  </button>
-                ))}
-              </div>
-              {/* Skill chips */}
-              <SkillRangePicker
-                min={skillMin}
-                max={skillMax}
-                onChange={setSkillRange}
-              />
+            <div className="flex gap-2 mt-4">
+              <Select value={formatFilter} onValueChange={setFormatFilter}>
+                <SelectTrigger className="flex-1 h-11">
+                  <SelectValue placeholder="Type" />
+                </SelectTrigger>
+                <SelectContent className="bg-popover z-50">
+                  <SelectItem value="all">All Types</SelectItem>
+                  <SelectItem value="casual_match">Match</SelectItem>
+                  <SelectItem value="americano">Americano</SelectItem>
+                  <SelectItem value="court">Court</SelectItem>
+                  <SelectItem value="backup">Backup</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select
+                value={skillMin !== null ? String(skillMin) : "all"}
+                onValueChange={(val) => {
+                  if (val === "all") setSkillRange(null, null);
+                  else { const n = Number(val); setSkillRange(n, n); }
+                }}
+              >
+                <SelectTrigger className="flex-1 h-11">
+                  <SelectValue placeholder="Level" />
+                </SelectTrigger>
+                <SelectContent className="bg-popover z-50">
+                  <SelectItem value="all">All Levels</SelectItem>
+                  <SelectItem value="4">A</SelectItem>
+                  <SelectItem value="3">B</SelectItem>
+                  <SelectItem value="2">C</SelectItem>
+                  <SelectItem value="1">D</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           ) : (
             <div className="flex gap-2 mt-4">
