@@ -68,6 +68,15 @@ export function parseSetScores(
   return { setsWonA, setsPlayed, gamesWonA, totalGames };
 }
 
+// --- Team Helpers ---
+export function teamRating(r1: number, r2: number): number {
+  return (r1 + r2) / 2;
+}
+
+export function teamRD(rd1: number, rd2: number): number {
+  return Math.sqrt((rd1 * rd1 + rd2 * rd2) / 2);
+}
+
 // --- Glicko-2 functions ---
 export function gFactor(rd: number): number {
   return 1 / Math.sqrt(1 + (3 * rd * rd) / (Math.PI * Math.PI));
@@ -77,8 +86,20 @@ export function expectedScore(rA: number, rB: number, rdB: number): number {
   return 1 / (1 + Math.pow(10, (-gFactor(rdB) * (rA - rB)) / 4));
 }
 
+// --- Volatility Multiplier ---
+// Big swings early to find true level fast, small adjustments once established
+export const VOLATILITY_MULTIPLIER = (matchCount: number): number => {
+  if (matchCount <= 5)  return 1.8;
+  if (matchCount <= 10) return 1.4;
+  if (matchCount <= 20) return 1.0;
+  if (matchCount <= 50) return 0.7;
+  return 0.4;
+};
+
+// --- Full Rating Update (Glicko-2 with volatility multiplier) ---
 export function updatePDR(
   r: number, rd: number, sigma: number,
+  matchCount: number,
   matches: Array<{ opponentR: number; opponentRD: number; sActual: number; weight: number }>
 ): { r: number; rd: number; sigma: number } {
   const tau = 0.5;
@@ -116,9 +137,8 @@ export function updatePDR(
   };
 
   let fA = f(A), fB = f(B);
-  const epsilon = 0.000001;
   let iterations = 0;
-  while (Math.abs(B - A) > epsilon && iterations < 100) {
+  while (Math.abs(B - A) > 0.000001 && iterations < 100) {
     const C = A + (A - B) * fA / (fB - fA);
     const fC = f(C);
     if (fC * fB < 0) { A = B; fA = fB; } else { fA = fA / 2; }
@@ -129,7 +149,11 @@ export function updatePDR(
   const newSigma = Math.exp(A / 2);
   const phiStar = Math.sqrt(phi * phi + newSigma * newSigma);
   const newRD = Math.max(0.08, 1 / Math.sqrt(1 / (phiStar * phiStar) + d2_inv));
-  const newR = Math.min(8.0, Math.max(2.0, r + newRD * newRD * delta_sum));
+
+  // Apply volatility multiplier: big swings early, small later
+  const rawDelta = newRD * newRD * delta_sum;
+  const scaledR = r + rawDelta * VOLATILITY_MULTIPLIER(matchCount);
+  const newR = Math.min(8.0, Math.max(2.0, scaledR));
 
   return { r: newR, rd: newRD, sigma: newSigma };
 }
@@ -166,8 +190,13 @@ export function calcMatchWeight(
   };
   const base = typeWeights[matchType] ?? 0.5;
   const confirmation = confirmedByOpponent ? 1.0 : 0.2;
-  const decay = Math.exp(-0.1 * monthsAgo);
+  const decay = Math.exp(-0.08 * monthsAgo);
   return base * confirmation * decay;
+}
+
+// --- Recalibration weight (nightly job) ---
+export function recalibrationWeight(monthsAgo: number): number {
+  return Math.exp(-0.08 * monthsAgo);
 }
 
 // --- Reliability & Phase ---
@@ -176,9 +205,15 @@ export function calcReliability(rd: number): number {
 }
 
 export function determinePDRPhase(matchCount: number, rd: number): string {
-  if (matchCount < 5) return 'calibrating';
+  if (matchCount < 5 || rd > 1.1) return 'calibrating';
   if (matchCount < 20 || rd > 0.9) return 'provisional';
   return 'established';
+}
+
+// --- Inactivity Decay ---
+// If player has not played in the last 30 days, grow their RD
+export function applyInactivityDecay(rd: number, sigma: number): number {
+  return Math.min(Math.sqrt(rd * rd + sigma * sigma), 1.5);
 }
 
 // --- Display helpers ---
@@ -210,30 +245,33 @@ export function forecastPDR(
   team1Ratings: [number, number],
   team1RDs: [number, number],
   team2Ratings: [number, number],
-  team2RDs: [number, number]
+  team2RDs: [number, number],
+  matchCounts?: [number, number, number, number]
 ) {
-  const avgR1 = (team1Ratings[0] + team1Ratings[1]) / 2;
-  const avgR2 = (team2Ratings[0] + team2Ratings[1]) / 2;
-  const avgRD1 = (team1RDs[0] + team1RDs[1]) / 2;
-  const avgRD2 = (team2RDs[0] + team2RDs[1]) / 2;
+  const avgR1 = teamRating(team1Ratings[0], team1Ratings[1]);
+  const avgR2 = teamRating(team2Ratings[0], team2Ratings[1]);
+  const avgRD1 = teamRD(team1RDs[0], team1RDs[1]);
+  const avgRD2 = teamRD(team2RDs[0], team2RDs[1]);
 
   const e1 = expectedScore(avgR1, avgR2, avgRD2);
 
-  // Simulate win (dominant: S=0.85) and loss (close: S=0.17)
+  const defaultMC = 20; // default match count for forecast if not provided
+  const mc = matchCounts || [defaultMC, defaultMC, defaultMC, defaultMC];
+
   const t1IfWin = team1Ratings.map((r, i) => {
-    const result = updatePDR(r, team1RDs[i], 0.06, [{ opponentR: avgR2, opponentRD: avgRD2, sActual: 0.85, weight: 1.0 }]);
+    const result = updatePDR(r, team1RDs[i], 0.06, mc[i], [{ opponentR: avgR2, opponentRD: avgRD2, sActual: 0.85, weight: 1.0 }]);
     return Math.round((result.r - r) * 100) / 100;
   });
   const t1IfLose = team1Ratings.map((r, i) => {
-    const result = updatePDR(r, team1RDs[i], 0.06, [{ opponentR: avgR2, opponentRD: avgRD2, sActual: 0.17, weight: 1.0 }]);
+    const result = updatePDR(r, team1RDs[i], 0.06, mc[i], [{ opponentR: avgR2, opponentRD: avgRD2, sActual: 0.17, weight: 1.0 }]);
     return Math.round((result.r - r) * 100) / 100;
   });
   const t2IfWin = team2Ratings.map((r, i) => {
-    const result = updatePDR(r, team2RDs[i], 0.06, [{ opponentR: avgR1, opponentRD: avgRD1, sActual: 0.85, weight: 1.0 }]);
+    const result = updatePDR(r, team2RDs[i], 0.06, mc[i + 2], [{ opponentR: avgR1, opponentRD: avgRD1, sActual: 0.85, weight: 1.0 }]);
     return Math.round((result.r - r) * 100) / 100;
   });
   const t2IfLose = team2Ratings.map((r, i) => {
-    const result = updatePDR(r, team2RDs[i], 0.06, [{ opponentR: avgR1, opponentRD: avgRD1, sActual: 0.17, weight: 1.0 }]);
+    const result = updatePDR(r, team2RDs[i], 0.06, mc[i + 2], [{ opponentR: avgR1, opponentRD: avgRD1, sActual: 0.17, weight: 1.0 }]);
     return Math.round((result.r - r) * 100) / 100;
   });
 

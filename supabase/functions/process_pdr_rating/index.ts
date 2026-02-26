@@ -19,15 +19,22 @@ function calcActualScore(setsWonA: number, setsPlayed: number, gamesWonA: number
 }
 function calcMatchWeight(matchType: string, confirmed: boolean, monthsAgo: number): number {
   const tw: Record<string, number> = { tournament: 1.5, club: 1.0, americano: 0.75, casual: 0.5 };
-  return (tw[matchType] ?? 0.5) * (confirmed ? 1.0 : 0.2) * Math.exp(-0.1 * monthsAgo);
+  return (tw[matchType] ?? 0.5) * (confirmed ? 1.0 : 0.2) * Math.exp(-0.08 * monthsAgo);
 }
 function calcReliability(rd: number): number {
   return Math.max(0, Math.min(100, Math.round((1 - rd / 1.5) * 100)));
 }
 function determinePDRPhase(mc: number, rd: number): string {
-  if (mc < 5) return "calibrating";
+  if (mc < 5 || rd > 1.1) return "calibrating";
   if (mc < 20 || rd > 0.9) return "provisional";
   return "established";
+}
+function volatilityMultiplier(matchCount: number): number {
+  if (matchCount <= 5) return 1.8;
+  if (matchCount <= 10) return 1.4;
+  if (matchCount <= 20) return 1.0;
+  if (matchCount <= 50) return 0.7;
+  return 0.4;
 }
 function calibratePDR(matches: Array<{ opponentR: number; sActual: number }>): number {
   let r = 3.0;
@@ -44,7 +51,7 @@ function calibratePDR(matches: Array<{ opponentR: number; sActual: number }>): n
   return Math.round(r * 100) / 100;
 }
 function updatePDR(
-  r: number, rd: number, sigma: number,
+  r: number, rd: number, sigma: number, matchCount: number,
   matches: Array<{ opponentR: number; opponentRD: number; sActual: number; weight: number }>
 ): { r: number; rd: number; sigma: number } {
   const tau = 0.5;
@@ -87,7 +94,10 @@ function updatePDR(
   const newSigma = Math.exp(A / 2);
   const phiStar = Math.sqrt(phi * phi + newSigma * newSigma);
   const newRD = Math.max(0.08, 1 / Math.sqrt(1 / (phiStar * phiStar) + d2_inv));
-  const newR = Math.min(8.0, Math.max(2.0, r + newRD * newRD * delta_sum));
+  // Apply volatility multiplier
+  const rawDelta = newRD * newRD * delta_sum;
+  const scaledR = r + rawDelta * volatilityMultiplier(matchCount);
+  const newR = Math.min(8.0, Math.max(2.0, scaledR));
   return { r: newR, rd: newRD, sigma: newSigma };
 }
 
@@ -123,10 +133,10 @@ Deno.serve(async (req) => {
 
     const playerIds = [sub.team_a_player1, sub.team_a_player2, sub.team_b_player1, sub.team_b_player2];
 
-    // Fetch profiles
+    // Fetch profiles — use pdr_internal_rating for all calculations
     const { data: profiles } = await supabase
       .from("profiles")
-      .select("user_id, pdr_rating, pdr_rd, pdr_sigma, pdr_phase, pdr_matches_count")
+      .select("user_id, pdr_rating, pdr_internal_rating, pdr_rd, pdr_sigma, pdr_phase, pdr_matches_count")
       .in("user_id", playerIds);
 
     if (!profiles || profiles.length < 4) {
@@ -156,7 +166,6 @@ Deno.serve(async (req) => {
     const monthsAgo = (Date.now() - new Date(sub.played_at).getTime()) / (1000 * 60 * 60 * 24 * 30);
     const weight = calcMatchWeight(sub.match_type, sub.status === "confirmed", monthsAgo);
 
-    // Process each player
     const teamA = [sub.team_a_player1, sub.team_a_player2];
     const teamB = [sub.team_b_player1, sub.team_b_player2];
 
@@ -166,14 +175,19 @@ Deno.serve(async (req) => {
       const opponents = isTeamA ? teamB : teamA;
       const sActual = isTeamA ? sActualA : sActualB;
 
-      const opponentAvgR = opponents.reduce((sum: number, id: string) => sum + (profileMap[id].pdr_rating ?? 3.0), 0) / 2;
+      // Always use pdr_internal_rating for calculations (handles NR vs NR)
+      const opponentAvgR = opponents.reduce((sum: number, id: string) => sum + (profileMap[id].pdr_internal_rating ?? 3.0), 0) / 2;
       const opponentAvgRD = opponents.reduce((sum: number, id: string) => sum + (profileMap[id].pdr_rd ?? 1.5), 0) / 2;
 
+      const currentInternalR = p.pdr_internal_rating ?? 3.0;
+      const currentRD = p.pdr_rd ?? 1.5;
+      const currentSigma = p.pdr_sigma ?? 0.06;
       const newMatchCount = (p.pdr_matches_count ?? 0) + 1;
-      let newR: number, newRD: number, newSigma: number;
+
+      let newInternalR: number, newRD: number, newSigma: number;
 
       if (p.pdr_phase === "calibrating" && newMatchCount >= 5) {
-        // Fetch all confirmed matches for calibration
+        // Fetch all matches for calibration
         const { data: allSubs } = await supabase
           .from("match_submissions")
           .select("*")
@@ -184,7 +198,7 @@ Deno.serve(async (req) => {
         const calibrationMatches = (allSubs || []).map((s: any) => {
           const isA = s.team_a_player1 === playerId || s.team_a_player2 === playerId;
           const opps = isA ? [s.team_b_player1, s.team_b_player2] : [s.team_a_player1, s.team_a_player2];
-          const oppR = opps.reduce((sum: number, id: string) => sum + (profileMap[id]?.pdr_rating ?? 3.0), 0) / 2;
+          const oppR = opps.reduce((sum: number, id: string) => sum + (profileMap[id]?.pdr_internal_rating ?? 3.0), 0) / 2;
           const sSets = [{ a: s.set1_a, b: s.set1_b }, { a: s.set2_a, b: s.set2_b }];
           if (s.set3_a != null && s.set3_b != null) sSets.push({ a: s.set3_a, b: s.set3_b });
           const sw = sSets.filter((ss: any) => isA ? ss.a > ss.b : ss.b > ss.a).length;
@@ -194,34 +208,41 @@ Deno.serve(async (req) => {
           return { opponentR: oppR, sActual: calcActualScore(sw, sp, gw, tg) };
         });
 
-        // Add current match
         calibrationMatches.push({ opponentR: opponentAvgR, sActual: sActual });
-        newR = calibratePDR(calibrationMatches);
-        // After calibration, do one Glicko-2 update
-        const result = updatePDR(newR, 1.2, 0.06, [{
+        newInternalR = calibratePDR(calibrationMatches);
+        // After calibration, do one Glicko-2 update with volatility
+        const result = updatePDR(newInternalR, 1.2, 0.06, newMatchCount, [{
           opponentR: opponentAvgR, opponentRD: opponentAvgRD, sActual, weight
         }]);
-        newR = result.r;
+        newInternalR = result.r;
         newRD = result.rd;
         newSigma = result.sigma;
       } else {
-        const currentR = p.pdr_rating ?? 3.0;
-        const currentRD = p.pdr_rd ?? 1.5;
-        const currentSigma = p.pdr_sigma ?? 0.06;
-        const result = updatePDR(currentR, currentRD, currentSigma, [{
+        const result = updatePDR(currentInternalR, currentRD, currentSigma, newMatchCount, [{
           opponentR: opponentAvgR, opponentRD: opponentAvgRD, sActual, weight
         }]);
-        newR = result.r;
+        newInternalR = result.r;
         newRD = result.rd;
         newSigma = result.sigma;
       }
 
-      const oldR = p.pdr_rating ?? newR;
-      const ratingChange = Math.round((newR - oldR) * 100) / 100;
       const newPhase = determinePDRPhase(newMatchCount, newRD);
+      const roundedInternalR = Math.round(newInternalR * 100) / 100;
+
+      // Public rating: only show when player qualifies (matchCount >= 5 AND RD < 1.1)
+      const qualifiesForPublic = newMatchCount >= 5 && newRD < 1.1;
+      const newPublicRating = qualifiesForPublic ? roundedInternalR : null;
+
+      const oldPublicR = p.pdr_rating;
+      const ratingChange = oldPublicR != null && newPublicRating != null
+        ? Math.round((newPublicRating - oldPublicR) * 100) / 100
+        : newPublicRating != null
+          ? Math.round((newPublicRating - (p.pdr_internal_rating ?? 3.0)) * 100) / 100
+          : Math.round((roundedInternalR - (p.pdr_internal_rating ?? 3.0)) * 100) / 100;
 
       await supabase.from("profiles").update({
-        pdr_rating: Math.round(newR * 100) / 100,
+        pdr_internal_rating: roundedInternalR,
+        pdr_rating: newPublicRating,
         pdr_rd: Math.round(newRD * 1000) / 1000,
         pdr_sigma: Math.round(newSigma * 10000) / 10000,
         pdr_phase: newPhase,
@@ -232,8 +253,9 @@ Deno.serve(async (req) => {
 
       await supabase.from("rating_history").insert({
         player_id: playerId,
-        rating_after: Math.round(newR * 100) / 100,
+        rating_after: newPublicRating ?? roundedInternalR,
         rd_after: Math.round(newRD * 1000) / 1000,
+        internal_rating_after: roundedInternalR,
         match_id: submission_id,
         rating_change: ratingChange,
       });
