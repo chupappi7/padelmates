@@ -60,10 +60,11 @@ function StatCard({
   label: string;
 }) {
   return (
-    <div className="flex-1 bg-card border border-border rounded-xl p-3 flex flex-col items-center gap-1 min-w-0">
-      <div className="text-primary">{icon}</div>
-      <p className="text-lg font-bold leading-none">{value}</p>
-      <p className="text-[10px] text-muted-foreground text-center leading-tight">{label}</p>
+    <div className="flex items-center">
+      <div>
+        <span className="text-white font-semibold text-xs">{value}</span>
+        <span className="text-white/35 text-[9px] ml-1">{label}</span>
+      </div>
     </div>
   );
 }
@@ -266,155 +267,97 @@ export default function ProfilePage() {
           animate={{ opacity: 1, y: 0 }}
           className="space-y-4"
         >
-          {/* ── Identity Header ── */}
-          <div className="bg-card border border-border rounded-2xl p-5">
-            {!editing ? (
-              <div className="flex items-start gap-4">
-                {/* Avatar */}
+          {/* ── PDR-style Identity Card ── */}
+          {!editing ? (
+            <div className="bg-gradient-to-br from-[#0D2137] via-[#142D4A] to-[#1A4060] rounded-2xl px-5 pt-3 pb-5 relative">
+              <div className="flex justify-between items-start mb-3">
+                <p className="text-[10px] uppercase tracking-[0.2em] text-white/50 font-medium" style={{ fontFamily: "'Space Grotesk', system-ui, sans-serif" }}>Player Profile</p>
+                <Button variant="ghost" size="sm" className="h-7 px-2 text-white/50 hover:text-white hover:bg-white/10" onClick={() => setEditing(true)}>
+                  <Pencil className="w-3 h-3 mr-1" />
+                  <span className="text-[10px]">Edit</span>
+                </Button>
+              </div>
+              <div className="flex items-center gap-5">
                 <div className="relative shrink-0">
-                  <Avatar className="h-20 w-20">
+                  <Avatar className="w-16 h-16 border-2 border-white/15">
                     <AvatarImage src={profile?.avatar_url || undefined} />
-                    <AvatarFallback className="bg-primary/10 text-primary text-2xl font-bold">
+                    <AvatarFallback className="text-xl bg-white/10 text-white font-semibold">
                       {profile?.name?.charAt(0).toUpperCase()}
                     </AvatarFallback>
                   </Avatar>
-                  <label
-                    htmlFor="avatar"
-                    className="absolute bottom-0 right-0 w-7 h-7 bg-primary text-primary-foreground rounded-full flex items-center justify-center cursor-pointer hover:bg-primary/90 transition-colors"
-                  >
-                    <Camera className="w-3.5 h-3.5" />
+                  <label htmlFor="avatar" className="absolute bottom-0 right-0 w-6 h-6 bg-primary text-primary-foreground rounded-full flex items-center justify-center cursor-pointer hover:bg-primary/90 transition-colors">
+                    <Camera className="w-3 h-3" />
                   </label>
-                  <Input
-                    type="file"
-                    id="avatar"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={handleAvatarUpload}
-                  />
+                  <Input type="file" id="avatar" accept="image/*" className="hidden" onChange={handleAvatarUpload} />
                 </div>
-
-                {/* Identity info */}
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-start justify-between gap-2">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <h1 className="font-display text-xl font-bold leading-tight">
-                          {profile?.name}
-                        </h1>
-                        <SkillBadge level={profile?.skill_level || 3} size="sm" />
-                      </div>
-                      {profile?.friend_code && (
-                        <div className="flex items-center gap-1.5 mt-0.5">
-                          <span className="text-[10px] text-muted-foreground">ID:</span>
-                          <code className="text-[10px] font-mono text-muted-foreground tracking-wider">{profile.friend_code}</code>
-                          <button onClick={handleCopyCode} className="text-muted-foreground hover:text-foreground transition-colors">
-                            {copied ? <Check className="w-2.5 h-2.5 text-green-500" /> : <Copy className="w-2.5 h-2.5" />}
-                          </button>
-                        </div>
-                      )}
-                      {profile?.bio && (
-                        <p className="text-xs text-muted-foreground mt-1.5 line-clamp-2">
-                          {profile.bio}
-                        </p>
-                      )}
-                    </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="shrink-0 text-xs h-8"
-                      onClick={() => setEditing(true)}
-                    >
-                      <Pencil className="w-3 h-3 mr-1" />
-                      Edit
-                    </Button>
+                  <div className="flex items-center gap-2">
+                    <h1 className="text-white text-[15px] font-medium truncate">{profile?.name}</h1>
+                    <SkillBadge level={profile?.skill_level || 3} size="sm" />
                   </div>
+                  {profile?.friend_code && (
+                    <div className="flex items-center gap-1.5 mt-0.5">
+                      <span className="text-[10px] text-white/30">ID:</span>
+                      <code className="text-[10px] font-mono text-white/40 tracking-wider">{profile.friend_code}</code>
+                      <button onClick={handleCopyCode} className="text-white/30 hover:text-white/60 transition-colors">
+                        {copied ? <Check className="w-2.5 h-2.5 text-primary" /> : <Copy className="w-2.5 h-2.5" />}
+                      </button>
+                      <button onClick={handleShareCode} className="text-white/30 hover:text-white/60 transition-colors">
+                        <Share2 className="w-2.5 h-2.5" />
+                      </button>
+                    </div>
+                  )}
+                  {profile?.bio && (
+                    <p className="text-[11px] text-white/40 mt-1 line-clamp-2">{profile.bio}</p>
+                  )}
                 </div>
               </div>
-            ) : (
-              <div className="space-y-4">
-                <h2 className="font-semibold text-sm">Edit Profile</h2>
-                <div className="space-y-2">
-                  <Label>Name</Label>
-                  <Input
-                    value={formData.name}
-                    onChange={(e) =>
-                      setFormData((prev) => ({ ...prev, name: e.target.value }))
-                    }
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Skill Level</Label>
-                  <Select
-                    value={String(formData.skill_level)}
-                    onValueChange={(v) =>
-                      setFormData((prev) => ({ ...prev, skill_level: parseInt(v) }))
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="4">A</SelectItem>
-                      <SelectItem value="3">B</SelectItem>
-                      <SelectItem value="2">C</SelectItem>
-                      <SelectItem value="1">D</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label>Bio</Label>
-                  <Textarea
-                    value={formData.bio}
-                    onChange={(e) =>
-                      setFormData((prev) => ({ ...prev, bio: e.target.value }))
-                    }
-                    placeholder="Tell others about yourself..."
-                  />
-                </div>
-                <div className="flex gap-3">
-                  <Button
-                    variant="outline"
-                    className="flex-1"
-                    onClick={() => setEditing(false)}
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    variant="hero"
-                    className="flex-1"
-                    onClick={handleSave}
-                    disabled={saving}
-                  >
-                    {saving ? "Saving..." : "Save Changes"}
-                  </Button>
-                </div>
+              <div className="flex items-center gap-0 mt-4 ml-[5.25rem]">
+                {[
+                  { label: "Matches", value: matchStats.played || profile?.games_played || 0 },
+                  { label: "Wins", value: matchStats.wins },
+                  { label: "Win%", value: `${winRate}%` },
+                  { label: "Friends", value: friends.length },
+                ].map((stat, i) => (
+                  <div key={stat.label} className="flex items-center">
+                    {i > 0 && <div className="w-px h-4 bg-white/15 mx-3" />}
+                    <div>
+                      <span className="text-white font-semibold text-xs">{stat.value}</span>
+                      <span className="text-white/35 text-[9px] ml-1">{stat.label}</span>
+                    </div>
+                  </div>
+                ))}
               </div>
-            )}
-          </div>
-
-          {/* ── Stats Row ── */}
-          <div className="flex gap-2">
-            <StatCard
-              icon={<Swords className="w-4 h-4" />}
-              value={matchStats.played || profile?.games_played || 0}
-              label="Matches"
-            />
-            <StatCard
-              icon={<Trophy className="w-4 h-4" />}
-              value={matchStats.wins}
-              label="Wins"
-            />
-            <StatCard
-              icon={<Percent className="w-4 h-4" />}
-              value={`${winRate}%`}
-              label="Win Rate"
-            />
-            <StatCard
-              icon={<Users className="w-4 h-4" />}
-              value={friends.length}
-              label="Friends"
-            />
-          </div>
+            </div>
+          ) : (
+            <div className="bg-card border border-border rounded-2xl p-5 space-y-4">
+              <h2 className="font-semibold text-sm">Edit Profile</h2>
+              <div className="space-y-2">
+                <Label>Name</Label>
+                <Input value={formData.name} onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))} />
+              </div>
+              <div className="space-y-2">
+                <Label>Skill Level</Label>
+                <Select value={String(formData.skill_level)} onValueChange={(v) => setFormData((prev) => ({ ...prev, skill_level: parseInt(v) }))}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="4">A</SelectItem>
+                    <SelectItem value="3">B</SelectItem>
+                    <SelectItem value="2">C</SelectItem>
+                    <SelectItem value="1">D</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Bio</Label>
+                <Textarea value={formData.bio} onChange={(e) => setFormData((prev) => ({ ...prev, bio: e.target.value }))} placeholder="Tell others about yourself..." />
+              </div>
+              <div className="flex gap-3">
+                <Button variant="outline" className="flex-1" onClick={() => setEditing(false)}>Cancel</Button>
+                <Button variant="hero" className="flex-1" onClick={handleSave} disabled={saving}>{saving ? "Saving..." : "Save Changes"}</Button>
+              </div>
+            </div>
+          )}
 
 
           {/* ── Payment Info (Collapsible) ── */}
