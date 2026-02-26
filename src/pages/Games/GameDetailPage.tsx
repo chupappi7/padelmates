@@ -674,10 +674,6 @@ export default function GameDetailPage() {
                       <p className="text-sm font-medium">
                         {format(new Date(game.date_time), "EEE, MMM d · HH:mm")}
                         {game.end_date_time && ` – ${format(new Date(game.end_date_time), "HH:mm")}`}
-                        {game.end_date_time && (() => {
-                          const hrs = (new Date(game.end_date_time).getTime() - new Date(game.date_time).getTime()) / 3600000;
-                          return hrs > 0 ? ` (${hrs % 1 === 0 ? hrs : hrs.toFixed(1)}h)` : "";
-                        })()}
                       </p>
                     </div>
                   </div>
