@@ -22,6 +22,7 @@ import NotificationsPage from "./pages/Notifications/NotificationsPage";
 import InboxPage from "./pages/Messages/InboxPage";
 import ChatPage from "./pages/Messages/ChatPage";
 import GroupChatPage from "./pages/Messages/GroupChatPage";
+import EloPage from "./pages/Elo/EloPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -48,6 +49,7 @@ const App = () => (
             <Route path="/messages" element={<InboxPage />} />
             <Route path="/messages/game/:gameId" element={<GroupChatPage />} />
             <Route path="/messages/:chatId" element={<ChatPage />} />
+            <Route path="/elo" element={<EloPage />} />
             <Route path="/profile" element={<ProfilePage />} />
             <Route path="/user/:userId" element={<UserProfilePage />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

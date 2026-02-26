@@ -240,6 +240,41 @@ export type Database = {
           },
         ]
       }
+      elo_history: {
+        Row: {
+          created_at: string
+          id: string
+          match_id: string | null
+          new_rating: number
+          old_rating: number
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          match_id?: string | null
+          new_rating: number
+          old_rating: number
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          match_id?: string | null
+          new_rating?: number
+          old_rating?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "elo_history_match_id_fkey"
+            columns: ["match_id"]
+            isOneToOne: false
+            referencedRelation: "matches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       friendships: {
         Row: {
           addressee_id: string
@@ -620,6 +655,7 @@ export type Database = {
           bank_details: string | null
           bio: string | null
           created_at: string
+          elo_rating: number
           friend_code: string | null
           games_played: number | null
           id: string
@@ -633,6 +669,7 @@ export type Database = {
           bank_details?: string | null
           bio?: string | null
           created_at?: string
+          elo_rating?: number
           friend_code?: string | null
           games_played?: number | null
           id?: string
@@ -646,6 +683,7 @@ export type Database = {
           bank_details?: string | null
           bio?: string | null
           created_at?: string
+          elo_rating?: number
           friend_code?: string | null
           games_played?: number | null
           id?: string
