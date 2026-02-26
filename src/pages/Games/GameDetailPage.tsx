@@ -530,12 +530,12 @@ export default function GameDetailPage() {
               <ArrowLeft className="w-3.5 h-3.5" />
             </button>
             <div className="min-w-0 flex-1">
-              <h1 className="font-display text-sm md:text-xl font-bold truncate">{game.title}</h1>
-              {!isCourtSharing && (
-                <div className="flex items-center gap-1 flex-wrap mt-0.5">
+              <div className="flex items-center gap-1.5">
+                <h1 className="font-display text-sm md:text-xl font-bold truncate">{game.title}</h1>
+                {!isCourtSharing && (
                   <SkillBadge level={game.skill_level as number} size="sm" />
-                </div>
-              )}
+                )}
+              </div>
               {isCourtSharing && (
                 <p className="text-[11px] text-muted-foreground mt-0.5">
                   {game.location}{game.court_number ? ` · Court ${game.court_number}` : ""}
