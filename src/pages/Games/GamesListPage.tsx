@@ -206,29 +206,26 @@ export default function GamesListPage() {
           <DayPicker selectedDate={selectedDate} onSelectDate={setSelectedDate} />
 
           {/* Search + Filters */}
-          {/* Format chips */}
-          <ToggleGroup
-            type="single"
-            value={formatFilter}
-            onValueChange={(v) => setFormatFilter(v || "all")}
-            className="justify-start gap-2 mt-4 flex-wrap"
-          >
-            <ToggleGroupItem value="all" className="rounded-full px-4 h-9 text-xs font-semibold border border-border data-[state=on]:bg-primary data-[state=on]:text-primary-foreground data-[state=on]:border-primary">
-              All
-            </ToggleGroupItem>
-            <ToggleGroupItem value="casual_match" className="rounded-full px-4 h-9 text-xs font-semibold border border-border data-[state=on]:bg-primary data-[state=on]:text-primary-foreground data-[state=on]:border-primary">
-              Match
-            </ToggleGroupItem>
-            <ToggleGroupItem value="americano" className="rounded-full px-4 h-9 text-xs font-semibold border border-border data-[state=on]:bg-primary data-[state=on]:text-primary-foreground data-[state=on]:border-primary">
-              Americano
-            </ToggleGroupItem>
-            <ToggleGroupItem value="court" className="rounded-full px-4 h-9 text-xs font-semibold border border-border data-[state=on]:bg-primary data-[state=on]:text-primary-foreground data-[state=on]:border-primary">
-              Court
-            </ToggleGroupItem>
-            <ToggleGroupItem value="backup" className="rounded-full px-4 h-9 text-xs font-semibold border border-border data-[state=on]:bg-primary data-[state=on]:text-primary-foreground data-[state=on]:border-primary">
-              Backup
-            </ToggleGroupItem>
-          </ToggleGroup>
+          <div className="flex gap-2 mt-4 overflow-x-auto no-scrollbar">
+            <ToggleGroup
+              type="single"
+              value={formatFilter}
+              onValueChange={(v) => setFormatFilter(v || "all")}
+              className="gap-1.5 flex-nowrap"
+            >
+              {[
+                { value: "all", label: "All" },
+                { value: "casual_match", label: "Match" },
+                { value: "americano", label: "Americano" },
+                { value: "court", label: "Court" },
+                { value: "backup", label: "Backup" },
+              ].map((f) => (
+                <ToggleGroupItem key={f.value} value={f.value} className="rounded-full px-3.5 h-8 text-xs font-semibold border border-border whitespace-nowrap shrink-0 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground data-[state=on]:border-primary">
+                  {f.label}
+                </ToggleGroupItem>
+              ))}
+            </ToggleGroup>
+          </div>
 
           {/* Search + Filters */}
           <div className="flex gap-2 mt-3">
