@@ -2,13 +2,6 @@ import { useState, useEffect, useMemo, Fragment } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { GameCard } from "@/components/games/GameCard";
 import { DayPicker } from "@/components/games/DayPicker";
 import { supabase } from "@/integrations/supabase/client";
@@ -17,6 +10,7 @@ import { MobileFilterSheet } from "@/components/games/MobileFilterSheet";
 import { SkillRangePicker } from "@/components/games/SkillRangePicker";
 import { motion } from "framer-motion";
 import { Plus, Search, Calendar } from "lucide-react";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { useAuth } from "@/contexts/AuthContext";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useUserLocation, calculateDistance } from "@/hooks/useUserLocation";
@@ -207,7 +201,29 @@ export default function GamesListPage() {
           <DayPicker selectedDate={selectedDate} onSelectDate={setSelectedDate} />
 
           {/* Search + Filters */}
-          <div className="flex gap-2 mt-4">
+          {/* Format chips */}
+          <ToggleGroup
+            type="single"
+            value={formatFilter}
+            onValueChange={(v) => setFormatFilter(v || "all")}
+            className="justify-start gap-2 mt-4 flex-wrap"
+          >
+            <ToggleGroupItem value="all" className="rounded-full px-4 h-9 text-xs font-semibold border border-border data-[state=on]:bg-primary data-[state=on]:text-primary-foreground data-[state=on]:border-primary">
+              All
+            </ToggleGroupItem>
+            <ToggleGroupItem value="casual_match" className="rounded-full px-4 h-9 text-xs font-semibold border border-border data-[state=on]:bg-primary data-[state=on]:text-primary-foreground data-[state=on]:border-primary">
+              Match
+            </ToggleGroupItem>
+            <ToggleGroupItem value="americano" className="rounded-full px-4 h-9 text-xs font-semibold border border-border data-[state=on]:bg-primary data-[state=on]:text-primary-foreground data-[state=on]:border-primary">
+              Americano
+            </ToggleGroupItem>
+            <ToggleGroupItem value="team_americano" className="rounded-full px-4 h-9 text-xs font-semibold border border-border data-[state=on]:bg-primary data-[state=on]:text-primary-foreground data-[state=on]:border-primary">
+              Team Americano
+            </ToggleGroupItem>
+          </ToggleGroup>
+
+          {/* Search + Filters */}
+          <div className="flex gap-2 mt-3">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
@@ -227,27 +243,13 @@ export default function GamesListPage() {
                 setFormatFilter={setFormatFilter}
               />
             ) : (
-              <>
-                {/* Desktop skill range picker inline */}
-                <div className="flex items-center gap-1.5 border border-input rounded-md px-3 h-11 bg-background">
-                  <SkillRangePicker
-                    min={skillMin}
-                    max={skillMax}
-                    onChange={setSkillRange}
-                  />
-                </div>
-                <Select value={formatFilter} onValueChange={setFormatFilter}>
-                  <SelectTrigger className="w-44 h-11">
-                    <SelectValue placeholder="Game format" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Formats</SelectItem>
-                    <SelectItem value="casual_match">Casual Match</SelectItem>
-                    <SelectItem value="americano">Americano</SelectItem>
-                    <SelectItem value="team_americano">Team Americano</SelectItem>
-                  </SelectContent>
-                </Select>
-              </>
+              <div className="flex items-center gap-1.5 border border-input rounded-md px-3 h-11 bg-background">
+                <SkillRangePicker
+                  min={skillMin}
+                  max={skillMax}
+                  onChange={setSkillRange}
+                />
+              </div>
             )}
           </div>
         </motion.div>
