@@ -102,22 +102,8 @@ function updatePDR(
   return { r: newR, rd: newRD, sigma: newSigma };
 }
 
-// --- Parse set scores from a submission row ---
-function parseSubmissionScores(sub: any, playerId: string) {
-  const isTeamA = sub.team_a_player1 === playerId || sub.team_a_player2 === playerId;
-  const sets = [
-    { a: sub.set1_a, b: sub.set1_b },
-    { a: sub.set2_a, b: sub.set2_b },
-  ];
-  if (sub.set3_a != null && sub.set3_b != null) {
-    sets.push({ a: sub.set3_a, b: sub.set3_b });
-  }
-  const setsPlayed = sets.length;
-  const setsWon = sets.filter(s => isTeamA ? s.a > s.b : s.b > s.a).length;
-  const gamesWon = sets.reduce((sum, s) => sum + (isTeamA ? s.a : s.b), 0);
-  const totalGames = sets.reduce((sum, s) => sum + s.a + s.b, 0);
-  return { sActual: calcActualScore(setsWon, setsPlayed, gamesWon, totalGames), isTeamA };
-}
+// --- Cold-start anchor constants ---
+const NR_VS_NR_DAMPEN = 0.3;
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -133,7 +119,6 @@ Deno.serve(async (req) => {
     console.log("[nightly_pdr_recalibration] Starting...");
 
     // ── Step 1: Auto-expire pending submissions older than 72h ──
-    const expiryCutoff = new Date(Date.now() - 72 * 60 * 60 * 1000).toISOString();
     const { data: expiredSubs } = await supabase
       .from("match_submissions")
       .select("id")
@@ -143,11 +128,7 @@ Deno.serve(async (req) => {
 
     let autoExpiredCount = 0;
     if (expiredSubs && expiredSubs.length > 0) {
-      // Process each expired match at 0.2x weight by marking confirmed and triggering rating
       for (const expired of expiredSubs) {
-        // Leave status as pending (unconfirmed) — the process_pdr_rating function
-        // already applies 0.2x weight when status !== "confirmed"
-        // Just set rating_processed via calling the process function
         try {
           const fnUrl = `${Deno.env.get("SUPABASE_URL")}/functions/v1/process_pdr_rating`;
           await fetch(fnUrl, {
@@ -166,7 +147,7 @@ Deno.serve(async (req) => {
       console.log(`[nightly] Auto-processed ${autoExpiredCount} expired submissions at 0.2x weight`);
     }
 
-    // ── Step 2: Fetch ALL confirmed/processed matches, sorted oldest first ──
+    // ── Step 2: Fetch ALL processed matches, sorted oldest first ──
     const { data: allMatches, error: matchErr } = await supabase
       .from("match_submissions")
       .select("*")
@@ -193,7 +174,6 @@ Deno.serve(async (req) => {
     }
     const allPlayerIds = [...playerIdSet];
 
-    // Fetch current profiles for sigma and last_match_at
     const { data: profilesData } = await supabase
       .from("profiles")
       .select("user_id, pdr_sigma, pdr_last_match_at, pdr_phase")
@@ -210,7 +190,8 @@ Deno.serve(async (req) => {
 
     // ── Step 4: Reset all players to initial state in memory ──
     const state: Record<string, {
-      r: number; rd: number; sigma: number; matchCount: number; lastMatchAt: string | null;
+      r: number; rd: number; sigma: number; matchCount: number;
+      lastMatchAt: string | null; anchored: boolean;
     }> = {};
 
     for (const id of allPlayerIds) {
@@ -220,60 +201,102 @@ Deno.serve(async (req) => {
         sigma: originalProfiles[id]?.sigma ?? 0.06,
         matchCount: 0,
         lastMatchAt: null,
+        anchored: false, // everyone starts unanchored during replay
       };
     }
 
-    // ── Step 5: Replay every match chronologically ──
+    // ── Step 5: TWO-PASS replay for anchor chain propagation ──
+    // Pass 1: Replay all matches to establish initial ratings and discover anchors
+    // Pass 2: Re-replay with anchor knowledge propagated, applying correct weights
+    
     const now = new Date();
-    for (const sub of allMatches) {
-      const playedAt = new Date(sub.played_at);
-      const monthsAgo = (now.getTime() - playedAt.getTime()) / (1000 * 60 * 60 * 24 * 30);
-      const baseWeight = calcMatchWeight(sub.match_type, sub.status === "confirmed", monthsAgo);
-      // Apply recalibration time decay on top
-      const totalWeight = baseWeight * recalibrationWeight(monthsAgo);
-
-      const teamAIds = [sub.team_a_player1, sub.team_a_player2];
-      const teamBIds = [sub.team_b_player1, sub.team_b_player2];
-      const allFour = [...teamAIds, ...teamBIds];
-
-      // Parse scores
-      const sets = [
-        { a: sub.set1_a, b: sub.set1_b },
-        { a: sub.set2_a, b: sub.set2_b },
-      ];
-      if (sub.set3_a != null && sub.set3_b != null) {
-        sets.push({ a: sub.set3_a, b: sub.set3_b });
+    
+    for (let pass = 0; pass < 2; pass++) {
+      // Reset state for each pass (except anchored status carries from pass 1 to pass 2)
+      const anchorSnapshot: Record<string, boolean> = {};
+      if (pass === 1) {
+        // Save anchor status from pass 1
+        for (const id of allPlayerIds) {
+          anchorSnapshot[id] = state[id].anchored;
+        }
       }
-      const setsPlayed = sets.length;
-      const setsWonA = sets.filter(s => s.a > s.b).length;
-      const gamesWonA = sets.reduce((sum, s) => sum + s.a, 0);
-      const gamesWonB = sets.reduce((sum, s) => sum + s.b, 0);
-      const totalGames = gamesWonA + gamesWonB;
-      const sActualA = calcActualScore(setsWonA, setsPlayed, gamesWonA, totalGames);
-      const sActualB = calcActualScore(setsPlayed - setsWonA, setsPlayed, gamesWonB, totalGames);
+      
+      // Reset ratings for this pass
+      for (const id of allPlayerIds) {
+        state[id].r = 3.0;
+        state[id].rd = 1.5;
+        state[id].matchCount = 0;
+        state[id].lastMatchAt = null;
+        if (pass === 1) {
+          // Use anchor knowledge from pass 1
+          state[id].anchored = anchorSnapshot[id];
+        }
+      }
 
-      // Update each player
-      for (const pid of allFour) {
-        const s = state[pid];
-        const isTeamA = teamAIds.includes(pid);
-        const opponents = isTeamA ? teamBIds : teamAIds;
-        const sActual = isTeamA ? sActualA : sActualB;
+      for (const sub of allMatches) {
+        const playedAt = new Date(sub.played_at);
+        const monthsAgo = (now.getTime() - playedAt.getTime()) / (1000 * 60 * 60 * 24 * 30);
+        const baseWeight = calcMatchWeight(sub.match_type, sub.status === "confirmed", monthsAgo);
+        const timeDecay = recalibrationWeight(monthsAgo);
 
-        const opponentAvgR = opponents.reduce((sum, id) => sum + state[id].r, 0) / 2;
-        const opponentAvgRD = opponents.reduce((sum, id) => sum + state[id].rd, 0) / 2;
+        const teamAIds = [sub.team_a_player1, sub.team_a_player2];
+        const teamBIds = [sub.team_b_player1, sub.team_b_player2];
+        const allFour = [...teamAIds, ...teamBIds];
 
-        const result = updatePDR(s.r, s.rd, s.sigma, s.matchCount, [{
-          opponentR: opponentAvgR,
-          opponentRD: opponentAvgRD,
-          sActual,
-          weight: totalWeight,
-        }]);
+        // Parse scores
+        const sets = [
+          { a: sub.set1_a, b: sub.set1_b },
+          { a: sub.set2_a, b: sub.set2_b },
+        ];
+        if (sub.set3_a != null && sub.set3_b != null) {
+          sets.push({ a: sub.set3_a, b: sub.set3_b });
+        }
+        const setsPlayed = sets.length;
+        const setsWonA = sets.filter(s => s.a > s.b).length;
+        const gamesWonA = sets.reduce((sum, s) => sum + s.a, 0);
+        const gamesWonB = sets.reduce((sum, s) => sum + s.b, 0);
+        const totalGames = gamesWonA + gamesWonB;
+        const sActualA = calcActualScore(setsWonA, setsPlayed, gamesWonA, totalGames);
+        const sActualB = calcActualScore(setsPlayed - setsWonA, setsPlayed, gamesWonB, totalGames);
 
-        s.r = result.r;
-        s.rd = result.rd;
-        s.sigma = result.sigma;
-        s.matchCount++;
-        s.lastMatchAt = sub.played_at;
+        // Determine anchor weight for this match
+        const teamAAnchored = teamAIds.some(id => state[id].anchored);
+        const teamBAnchored = teamBIds.some(id => state[id].anchored);
+        const matchAnchored = teamAAnchored || teamBAnchored;
+        const anchorWeight = matchAnchored ? 1.0 : NR_VS_NR_DAMPEN;
+
+        const totalWeight = baseWeight * timeDecay * anchorWeight;
+
+        // Update each player
+        for (const pid of allFour) {
+          const s = state[pid];
+          const isTeamA = teamAIds.includes(pid);
+          const opponents = isTeamA ? teamBIds : teamAIds;
+          const sActual = isTeamA ? sActualA : sActualB;
+
+          const opponentAvgR = opponents.reduce((sum, id) => sum + state[id].r, 0) / 2;
+          const opponentAvgRD = opponents.reduce((sum, id) => sum + state[id].rd, 0) / 2;
+
+          const result = updatePDR(s.r, s.rd, s.sigma, s.matchCount, [{
+            opponentR: opponentAvgR,
+            opponentRD: opponentAvgRD,
+            sActual,
+            weight: totalWeight,
+          }]);
+
+          s.r = result.r;
+          s.rd = result.rd;
+          s.sigma = result.sigma;
+          s.matchCount++;
+          s.lastMatchAt = sub.played_at;
+
+          // Anchor propagation: if opponents are anchored, this player becomes anchored
+          // Also: once a player reaches provisional/established, they self-anchor
+          const opponentsAnchored = opponents.some(id => state[id].anchored);
+          if (opponentsAnchored) s.anchored = true;
+          const phase = determinePDRPhase(s.matchCount, s.rd);
+          if (phase === "provisional" || phase === "established") s.anchored = true;
+        }
       }
     }
 
@@ -292,6 +315,7 @@ Deno.serve(async (req) => {
     // ── Step 7: Write final ratings back to all profiles ──
     let updatedCount = 0;
     let phaseChanges = 0;
+    let anchorChanges = 0;
 
     for (const id of allPlayerIds) {
       const s = state[id];
@@ -313,6 +337,7 @@ Deno.serve(async (req) => {
         pdr_matches_count: s.matchCount,
         pdr_reliability: newReliability,
         pdr_last_match_at: s.lastMatchAt,
+        pdr_anchored: s.anchored,
       }).eq("user_id", id);
 
       if (!updateErr) updatedCount++;
@@ -323,6 +348,7 @@ Deno.serve(async (req) => {
       matchesReplayed: allMatches.length,
       playersUpdated: updatedCount,
       phaseChanges,
+      anchorChanges,
       autoExpired: autoExpiredCount,
       timestamp: now.toISOString(),
     };
