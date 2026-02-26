@@ -27,48 +27,48 @@ export function PDRHero({ profile, wins, losses, winRate, trendDelta, tier }: PD
   return (
     <div className="bg-gradient-to-br from-[#0D2137] via-[#142D4A] to-[#1A4060] rounded-b-3xl">
       <div className="max-w-lg mx-auto px-4 pt-6 pb-6">
-        {/* Avatar + Name + Rating — compact row */}
-        <div className="flex items-center gap-4">
-          <Avatar className="w-14 h-14 border-2 border-white/20">
+        {/* Avatar + Name + Rating */}
+        <div className="flex items-center gap-5">
+          <Avatar className="w-16 h-16 border-2 border-white/15 shrink-0">
             <AvatarImage src={profile?.avatar_url || ""} />
-            <AvatarFallback className="text-lg bg-white/10 text-white">
+            <AvatarFallback className="text-xl bg-white/10 text-white font-semibold">
               {profile?.name?.[0] || "?"}
             </AvatarFallback>
           </Avatar>
 
           <div className="flex-1 min-w-0">
-            <p className="text-white/70 text-sm truncate">{profile?.name || "Player"}</p>
+            <p className="text-white/80 text-[15px] font-medium truncate">{profile?.name || "Player"}</p>
 
             {phase === "calibrating" ? (
-              <div className="flex items-center gap-2 mt-0.5">
+              <div className="flex items-center gap-3 mt-1">
                 <span
-                  className="text-[32px] leading-none font-extrabold text-white/40 tracking-tight"
+                  className="text-[40px] leading-none font-extrabold text-white/35 tracking-tight"
                   style={{ fontFamily: "'Space Grotesk', system-ui, sans-serif" }}
                 >
                   NR
                 </span>
-                <div className="flex flex-col gap-0.5">
-                  <span className="text-[10px] text-white/40 font-medium">Not Rated</span>
-                  <div className="flex items-center gap-1.5">
-                    <div className="flex gap-0.5">
+                <div className="flex flex-col gap-1 pt-0.5">
+                  <span className="text-[11px] text-white/40 font-medium leading-none">Not Rated</span>
+                  <div className="flex items-center gap-2">
+                    <div className="flex gap-1">
                       {[0, 1, 2, 3, 4].map((i) => (
                         <div
                           key={i}
                           className={cn(
-                            "w-4 h-1 rounded-full transition-all",
+                            "w-5 h-[5px] rounded-full transition-all",
                             i < matchCount ? "bg-primary" : "bg-white/15"
                           )}
                         />
                       ))}
                     </div>
-                    <span className="text-[9px] text-white/30">{matchCount}/5</span>
+                    <span className="text-[11px] text-white/30 font-medium">{matchCount}/5</span>
                   </div>
                 </div>
               </div>
             ) : (
-              <div className="flex items-baseline gap-2 mt-0.5">
+              <div className="flex items-baseline gap-2.5 mt-1">
                 <span
-                  className="text-[36px] leading-none font-extrabold text-white tracking-tight"
+                  className="text-[40px] leading-none font-extrabold text-white tracking-tight"
                   style={{ fontFamily: "'Space Grotesk', system-ui, sans-serif" }}
                 >
                   {formatPDR(rating, phase)}
