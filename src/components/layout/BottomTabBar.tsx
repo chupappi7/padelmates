@@ -19,7 +19,10 @@ export function BottomTabBar() {
   const { user } = useAuth();
   const [showHostModal, setShowHostModal] = useState(false);
 
-  if (!user) return null;
+  // Hide on chat pages where the message input needs the full bottom area
+  const isChatPage = /^\/messages\/.+/.test(location.pathname);
+
+  if (!user || isChatPage) return null;
 
   return (
     <>
