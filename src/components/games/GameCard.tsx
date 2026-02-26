@@ -160,22 +160,18 @@ export function GameCard({
             )}
           </div>
 
-          {/* Row 3: Time range pill */}
-          <div className="flex items-center gap-1.5 flex-wrap">
+          {/* Row 3: Time range pill + Price */}
+          <div className="flex items-center justify-between gap-2">
             <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] sm:text-xs font-semibold ${urgencyPill}`}>
               <Clock className="w-3 h-3" />
               {formatTimeRange(dateTime, endDateTime)}
             </span>
-          </div>
-
-          {/* Row 3.5: Price right-aligned above divider */}
-          {showPrice && (
-            <div className="flex justify-end">
+            {showPrice && (
               <span className="text-primary font-bold text-xs sm:text-sm">
                 {pricePerPlayer} Kč
               </span>
-            </div>
-          )}
+            )}
+          </div>
 
           {/* Row 4: Host + spots/interest */}
           <div className="flex items-center justify-between gap-2 pt-1.5 border-t border-border/60">
