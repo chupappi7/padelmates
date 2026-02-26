@@ -741,6 +741,19 @@ export default function GameDetailPage() {
                 </div>
               </div>
 
+              {/* Details */}
+              {game.description && (
+                <div className="bg-card border border-border rounded-xl p-4">
+                  <h3 className="font-display font-bold text-sm mb-2 flex items-center gap-2">
+                    <Info className="w-4 h-4 text-primary" />
+                    Details
+                  </h3>
+                  <p className="text-sm text-muted-foreground whitespace-pre-wrap leading-relaxed">
+                    {game.description}
+                  </p>
+                </div>
+              )}
+
               {/* Host Info */}
               <div className="bg-card border border-border rounded-xl p-4">
                 <div className="flex items-center gap-3">
@@ -761,19 +774,6 @@ export default function GameDetailPage() {
                   )}
                 </div>
               </div>
-
-              {/* Description / Notes */}
-              {game.description && (
-                <div className="bg-card border border-border rounded-xl p-4">
-                  <h3 className="font-display font-bold text-sm mb-2 flex items-center gap-2">
-                    <Info className="w-4 h-4 text-primary" />
-                    Notes from Host
-                  </h3>
-                  <p className="text-sm text-muted-foreground whitespace-pre-wrap leading-relaxed">
-                    {game.description}
-                  </p>
-                </div>
-              )}
 
               {/* Court Sharing: Host "Mark as Taken" / "Undo" */}
               {isCourtSharing && isHost && (
