@@ -71,7 +71,7 @@ export default function EloPage() {
       <Navbar />
 
       {/* Blurred content */}
-      <div className="pointer-events-none select-none" style={{ filter: "blur(1.5px)" }} aria-hidden="true">
+      <div className="pointer-events-none select-none" style={{ filter: "blur(3px)" }} aria-hidden="true">
         <PDRHero
           profile={profile}
           wins={wins}
