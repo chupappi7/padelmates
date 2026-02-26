@@ -8,24 +8,24 @@
   :root {
     /* Core brand — Lighter navy palette */
     --background: 210 35% 13%;
-    --foreground: 210 20% 92%;
+    --foreground: 215 15% 85%;
 
     --card: 210 30% 17%;
-    --card-foreground: 210 20% 92%;
+    --card-foreground: 215 12% 83%;
 
     --popover: 210 30% 18%;
-    --popover-foreground: 210 20% 92%;
+    --popover-foreground: 215 12% 83%;
 
     /* Primary - Vibrant Teal */
-    --primary: 175 84% 32%;
+    --primary: 175 65% 40%;
     --primary-foreground: 0 0% 100%;
 
     /* Secondary - Warm Coral */
-    --secondary: 16 85% 58%;
+    --secondary: 16 70% 55%;
     --secondary-foreground: 0 0% 100%;
 
     --muted: 210 30% 16%;
-    --muted-foreground: 210 15% 55%;
+    --muted-foreground: 215 12% 58%;
 
     /* Accent - Electric Orange */
     --accent: 28 95% 55%;
