@@ -138,6 +138,11 @@ export function GameCard({
                   {isCourtTaken ? "Taken" : "Available"}
                 </span>
               )}
+              {showTopRightPill && userStatus && (
+                <span className={`inline-flex items-center rounded-full border px-1.5 py-0.5 text-[9px] sm:text-[10px] font-semibold shrink-0 ${rolePillStyle[userStatus as keyof typeof rolePillStyle]}`}>
+                  {rolePillLabel[userStatus as keyof typeof rolePillLabel]}
+                </span>
+              )}
             </div>
             {!isCourtSharing && (
               <span className={`badge-skill text-sm sm:text-base px-2.5 sm:px-3 py-1 font-black shrink-0 ${getSkillColor(skillLevel)}`}>
@@ -203,19 +208,11 @@ export function GameCard({
                 })()}
               </div>
 
-              {/* Stacked: [Joined/Requested pill] + price */}
-              <div className="flex flex-col items-end gap-1">
-                {showTopRightPill && userStatus && (
-                  <span className={`inline-flex items-center rounded-full border px-1.5 py-0.5 text-[9px] sm:text-[10px] font-semibold ${rolePillStyle[userStatus as keyof typeof rolePillStyle]}`}>
-                    {rolePillLabel[userStatus as keyof typeof rolePillLabel]}
-                  </span>
-                )}
-                {showPrice && (
-                  <span className="text-primary font-bold text-xs sm:text-sm">
-                    {pricePerPlayer} Kč
-                  </span>
-                )}
-              </div>
+              {showPrice && (
+                <span className="text-primary font-bold text-xs sm:text-sm">
+                  {pricePerPlayer} Kč
+                </span>
+              )}
             </div>
 
           </div>
