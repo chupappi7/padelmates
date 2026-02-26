@@ -47,6 +47,10 @@ interface ParticipantsTabProps {
   onRejectRequest: (requestId: string) => void;
   onToggleRole: (playerId: string, currentRole: string) => void;
   loadingAction?: string | null;
+  /** Show a join/request button in the first empty slot */
+  showJoinInSlot?: boolean;
+  joinLabel?: string;
+  onJoinFromSlot?: () => void;
 }
 
 type FilterType = "all" | "requests";
@@ -65,6 +69,9 @@ export function ParticipantsTab({
   onRejectRequest,
   onToggleRole,
   loadingAction,
+  showJoinInSlot,
+  joinLabel,
+  onJoinFromSlot,
 }: ParticipantsTabProps) {
   const [activeFilter, setActiveFilter] = useState<FilterType>("all");
 
@@ -198,15 +205,28 @@ export function ParticipantsTab({
 
             {/* Empty slots */}
             {Array.from({ length: emptySlots }).map((_, i) => (
-              <div
-                key={`empty-${i}`}
-                className="flex items-center gap-3 px-3 py-2 rounded-xl bg-muted/10 border border-dashed border-border/30"
-              >
-                <div className="h-8 w-8 rounded-full bg-muted/30 flex items-center justify-center shrink-0">
-                  <Users className="h-3.5 w-3.5 text-muted-foreground/40" />
+              i === 0 && showJoinInSlot && onJoinFromSlot ? (
+                <button
+                  key="join-slot"
+                  onClick={onJoinFromSlot}
+                  className="flex items-center gap-3 px-3 py-2 rounded-xl border-2 border-dashed border-primary/30 bg-primary/5 hover:bg-primary/10 hover:border-primary/50 transition-colors w-full text-left"
+                >
+                  <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                    <Users className="h-3.5 w-3.5 text-primary" />
+                  </div>
+                  <p className="text-sm font-medium text-primary">{joinLabel || "Join"}</p>
+                </button>
+              ) : (
+                <div
+                  key={`empty-${i}`}
+                  className="flex items-center gap-3 px-3 py-2 rounded-xl bg-muted/10 border border-dashed border-border/30"
+                >
+                  <div className="h-8 w-8 rounded-full bg-muted/30 flex items-center justify-center shrink-0">
+                    <Users className="h-3.5 w-3.5 text-muted-foreground/40" />
+                  </div>
+                  <p className="text-sm text-muted-foreground/50">Open spot</p>
                 </div>
-                <p className="text-sm text-muted-foreground/50">Open spot</p>
-              </div>
+              )
             ))}
           </div>
         </section>
