@@ -142,7 +142,12 @@ export default function GamesListPage() {
       const matchesSkill =
         skillMin === null ||
         (game.skill_level >= skillMin && game.skill_level <= (skillMax ?? skillMin));
-      const matchesFormat = formatFilter === "all" || game.format === formatFilter;
+      const matchesFormat =
+        formatFilter === "all" ||
+        (formatFilter === "court" && game.payment_mode === "court_sharing") ||
+        (formatFilter === "backup" && game.payment_mode === "spot_selling") ||
+        (formatFilter === "casual_match" && game.format === "casual_match" && game.payment_mode !== "court_sharing" && game.payment_mode !== "spot_selling") ||
+        (formatFilter === "americano" && (game.format === "americano" || game.format === "team_americano"));
       return matchesDay && matchesSearch && matchesSkill && matchesFormat;
     });
 
@@ -217,8 +222,11 @@ export default function GamesListPage() {
             <ToggleGroupItem value="americano" className="rounded-full px-4 h-9 text-xs font-semibold border border-border data-[state=on]:bg-primary data-[state=on]:text-primary-foreground data-[state=on]:border-primary">
               Americano
             </ToggleGroupItem>
-            <ToggleGroupItem value="team_americano" className="rounded-full px-4 h-9 text-xs font-semibold border border-border data-[state=on]:bg-primary data-[state=on]:text-primary-foreground data-[state=on]:border-primary">
-              Team Americano
+            <ToggleGroupItem value="court" className="rounded-full px-4 h-9 text-xs font-semibold border border-border data-[state=on]:bg-primary data-[state=on]:text-primary-foreground data-[state=on]:border-primary">
+              Court
+            </ToggleGroupItem>
+            <ToggleGroupItem value="backup" className="rounded-full px-4 h-9 text-xs font-semibold border border-border data-[state=on]:bg-primary data-[state=on]:text-primary-foreground data-[state=on]:border-primary">
+              Backup
             </ToggleGroupItem>
           </ToggleGroup>
 
