@@ -1,29 +1,62 @@
 
 
-## Move Price to Top-Right (Below Skill Badge)
+## Replace Messages Tab with ELO Hub
 
-Based on the reference screenshot, the price (`375 Kc`) should sit in the top-right area of the card, aligned with the skill level badge -- not down in the bottom row with spots and host info.
+Replace the "Messages" bottom tab with a new "ELO" tab that contains three sub-tabs: **Stats**, **Submit Score**, and **Forecast**.
 
-### Changes in `src/components/games/GameCard.tsx`
+### Overview
 
-**1. Add price below the skill badge in Row 1 (top-right column)**
+The new `/elo` route will be a single page with horizontal tab navigation at the top, providing a competitive stats hub for padel players.
 
-Wrap the skill badge and price in a vertical stack on the right side of Row 1:
+### Tab 1: Stats (default)
 
-```text
-[ Title  (Joined) .............. [C]     ]
-[                                375 Kc  ]
-```
+- Player name and current ELO rating displayed prominently at the top
+- ELO trend chart (line chart using Recharts, already installed) showing rating over time
+- Match history list sorted latest first, each row showing:
+  - Date, opponent names, score
+  - ELO change (+/- with green/red coloring)
 
-The right side becomes a `flex flex-col items-end` container holding the skill chip on top and price below it.
+### Tab 2: Submit Score
 
-**2. Remove price from Row 4 (bottom row)**
+- Form to submit a match result:
+  - Select 4 players (2v2) from a searchable player list (profiles table)
+  - Enter set scores using existing ScoreScrollPicker component
+  - Submit button that records the match and triggers ELO calculation
 
-Delete the `showPrice` block from the bottom-right section (lines 211-214). The bottom row will only contain host info + spots/interest count.
+### Tab 3: Forecast
 
-### Technical detail
+- Select 4 players (2v2) from searchable player list
+- Display predicted win probability and expected ELO gain/loss for each team
+- Uses standard ELO formula (K-factor based calculation) -- computed client-side, no API needed
 
-- Lines 147-151: Wrap in a `div` with `flex flex-col items-end gap-0.5`, add the price element below the skill badge.
-- Lines 211-215: Remove the price `span` from the bottom row entirely.
-- For court-sharing cards (no skill badge), the price still renders top-right on its own.
+### Database Changes
+
+1. **Add `elo_rating` column to `profiles` table** (integer, default 1200)
+2. **Create `elo_history` table** to track rating changes over time:
+   - `id` (uuid, PK)
+   - `user_id` (uuid, NOT NULL)
+   - `match_id` (uuid, nullable -- links to matches table)
+   - `old_rating` (integer)
+   - `new_rating` (integer)
+   - `created_at` (timestamptz)
+   - RLS: users can read all history (public leaderboard), only system inserts
+
+### File Changes
+
+1. **`src/pages/Elo/EloPage.tsx`** -- New page with three tabs (Stats, Submit, Forecast)
+2. **`src/components/elo/StatsTab.tsx`** -- ELO chart + match history
+3. **`src/components/elo/SubmitScoreTab.tsx`** -- Score submission form
+4. **`src/components/elo/ForecastTab.tsx`** -- Player selector + ELO prediction
+5. **`src/lib/elo.ts`** -- ELO calculation utility functions (compute new ratings, forecast)
+6. **`src/components/layout/BottomTabBar.tsx`** -- Replace Messages tab with ELO tab (Trophy icon, path `/elo`)
+7. **`src/App.tsx`** -- Add `/elo` route
+
+### ELO Calculation
+
+Standard formula with K=32:
+- Expected score: `E = 1 / (1 + 10^((opponent_rating - player_rating) / 400))`
+- New rating: `R' = R + K * (actual - expected)`
+- For doubles: average team ratings for the calculation
+
+Messages will remain accessible from the top navbar or profile, just removed from the bottom tab bar.
 
