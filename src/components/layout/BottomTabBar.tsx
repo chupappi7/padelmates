@@ -7,7 +7,7 @@ import { HostTypeModal } from "@/components/games/HostTypeModal";
 
 const tabs = [
   { path: "/", label: "Matches", icon: Home },
-  { path: "/elo", label: "ELO", icon: Trophy },
+  { path: "/elo", label: "PDR", icon: Trophy },
   { path: "__host__", label: "Host", icon: Plus, isFab: true },
   { path: "/my-matches", label: "My Matches", icon: CalendarCheck },
   { path: "/profile", label: "Profile", icon: User },
