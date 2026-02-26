@@ -14,6 +14,77 @@ export type Database = {
   }
   public: {
     Tables: {
+      americano_rounds: {
+        Row: {
+          id: string
+          player1: string
+          player2: string
+          player3: string
+          player4: string
+          round_number: number
+          session_id: string
+          team_a_points: number
+          team_b_points: number
+          total_points: number
+        }
+        Insert: {
+          id?: string
+          player1: string
+          player2: string
+          player3: string
+          player4: string
+          round_number: number
+          session_id: string
+          team_a_points: number
+          team_b_points: number
+          total_points: number
+        }
+        Update: {
+          id?: string
+          player1?: string
+          player2?: string
+          player3?: string
+          player4?: string
+          round_number?: number
+          session_id?: string
+          team_a_points?: number
+          team_b_points?: number
+          total_points?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "americano_rounds_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "americano_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      americano_sessions: {
+        Row: {
+          created_at: string
+          hosted_by: string
+          id: string
+          played_at: string
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          hosted_by: string
+          id?: string
+          played_at?: string
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          hosted_by?: string
+          id?: string
+          played_at?: string
+          status?: string
+        }
+        Relationships: []
+      }
       chat_messages: {
         Row: {
           chat_id: string
@@ -575,6 +646,78 @@ export type Database = {
           },
         ]
       }
+      match_submissions: {
+        Row: {
+          confirmed_at: string | null
+          confirmed_by: string | null
+          created_at: string
+          expires_at: string
+          id: string
+          match_type: string
+          played_at: string
+          rating_processed: boolean
+          set1_a: number
+          set1_b: number
+          set2_a: number
+          set2_b: number
+          set3_a: number | null
+          set3_b: number | null
+          status: string
+          submitted_by: string
+          team_a_player1: string
+          team_a_player2: string
+          team_b_player1: string
+          team_b_player2: string
+          weight: number
+        }
+        Insert: {
+          confirmed_at?: string | null
+          confirmed_by?: string | null
+          created_at?: string
+          expires_at?: string
+          id?: string
+          match_type?: string
+          played_at?: string
+          rating_processed?: boolean
+          set1_a: number
+          set1_b: number
+          set2_a: number
+          set2_b: number
+          set3_a?: number | null
+          set3_b?: number | null
+          status?: string
+          submitted_by: string
+          team_a_player1: string
+          team_a_player2: string
+          team_b_player1: string
+          team_b_player2: string
+          weight?: number
+        }
+        Update: {
+          confirmed_at?: string | null
+          confirmed_by?: string | null
+          created_at?: string
+          expires_at?: string
+          id?: string
+          match_type?: string
+          played_at?: string
+          rating_processed?: boolean
+          set1_a?: number
+          set1_b?: number
+          set2_a?: number
+          set2_b?: number
+          set3_a?: number | null
+          set3_b?: number | null
+          status?: string
+          submitted_by?: string
+          team_a_player1?: string
+          team_a_player2?: string
+          team_b_player1?: string
+          team_b_player2?: string
+          weight?: number
+        }
+        Relationships: []
+      }
       matches: {
         Row: {
           created_at: string
@@ -660,6 +803,13 @@ export type Database = {
           games_played: number | null
           id: string
           name: string
+          pdr_last_match_at: string | null
+          pdr_matches_count: number
+          pdr_phase: string
+          pdr_rating: number | null
+          pdr_rd: number
+          pdr_reliability: number
+          pdr_sigma: number
           skill_level: number
           updated_at: string
           user_id: string
@@ -674,6 +824,13 @@ export type Database = {
           games_played?: number | null
           id?: string
           name: string
+          pdr_last_match_at?: string | null
+          pdr_matches_count?: number
+          pdr_phase?: string
+          pdr_rating?: number | null
+          pdr_rd?: number
+          pdr_reliability?: number
+          pdr_sigma?: number
           skill_level?: number
           updated_at?: string
           user_id: string
@@ -688,9 +845,46 @@ export type Database = {
           games_played?: number | null
           id?: string
           name?: string
+          pdr_last_match_at?: string | null
+          pdr_matches_count?: number
+          pdr_phase?: string
+          pdr_rating?: number | null
+          pdr_rd?: number
+          pdr_reliability?: number
+          pdr_sigma?: number
           skill_level?: number
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      rating_history: {
+        Row: {
+          created_at: string
+          id: string
+          match_id: string | null
+          player_id: string
+          rating_after: number
+          rating_change: number
+          rd_after: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          match_id?: string | null
+          player_id: string
+          rating_after: number
+          rating_change: number
+          rd_after: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          match_id?: string | null
+          player_id?: string
+          rating_after?: number
+          rating_change?: number
+          rd_after?: number
         }
         Relationships: []
       }
