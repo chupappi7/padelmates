@@ -208,21 +208,8 @@ export default function GamesListPage() {
           {/* Day Picker */}
           <DayPicker selectedDate={selectedDate} onSelectDate={setSelectedDate} />
 
-          {/* Search + Type Filter */}
+          {/* Filters */}
           <div className="flex gap-2 mt-4">
-            <Select value={formatFilter} onValueChange={setFormatFilter}>
-              <SelectTrigger className="w-[140px] h-11 shrink-0">
-                <SelectValue placeholder="Type" />
-              </SelectTrigger>
-              <SelectContent className="bg-popover z-50">
-                <SelectItem value="all">All Types</SelectItem>
-                <SelectItem value="casual_match">Match</SelectItem>
-                <SelectItem value="americano">Americano</SelectItem>
-                <SelectItem value="court">Court</SelectItem>
-                <SelectItem value="backup">Backup</SelectItem>
-              </SelectContent>
-            </Select>
-
             {isMobile ? (
               <MobileFilterSheet
                 skillMin={skillMin}
@@ -232,13 +219,27 @@ export default function GamesListPage() {
                 setFormatFilter={setFormatFilter}
               />
             ) : (
-              <div className="flex items-center gap-1.5 border border-input rounded-md px-3 h-11 bg-background">
-                <SkillRangePicker
-                  min={skillMin}
-                  max={skillMax}
-                  onChange={setSkillRange}
-                />
-              </div>
+              <>
+                <Select value={formatFilter} onValueChange={setFormatFilter}>
+                  <SelectTrigger className="w-[140px] h-11 shrink-0">
+                    <SelectValue placeholder="Type" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-popover z-50">
+                    <SelectItem value="all">All Types</SelectItem>
+                    <SelectItem value="casual_match">Match</SelectItem>
+                    <SelectItem value="americano">Americano</SelectItem>
+                    <SelectItem value="court">Court</SelectItem>
+                    <SelectItem value="backup">Backup</SelectItem>
+                  </SelectContent>
+                </Select>
+                <div className="flex items-center gap-1.5 border border-input rounded-md px-3 h-11 bg-background">
+                  <SkillRangePicker
+                    min={skillMin}
+                    max={skillMax}
+                    onChange={setSkillRange}
+                  />
+                </div>
+              </>
             )}
           </div>
         </motion.div>
