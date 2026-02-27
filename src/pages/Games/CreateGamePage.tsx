@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef, useCallback } from "react";
+import { useState, useMemo } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -101,14 +101,6 @@ export default function CreateGamePage() {
   const [allowSubstitutions, setAllowSubstitutions] = useState(false);
   const [gameType, setGameType] = useState<"friendly" | "americano" | "other">("friendly");
   const [customGameType, setCustomGameType] = useState("");
-
-  // Refs for auto-scroll on selection
-  const cardRefs = useRef<Record<string, HTMLDivElement | null>>({});
-  const scrollToCard = useCallback((key: string) => {
-    setTimeout(() => {
-      cardRefs.current[key]?.scrollIntoView({ behavior: "smooth", block: "start" });
-    }, 150);
-  }, []);
 
   // Find Players: spotsNeeded is the primary control (how many more players do you need?)
   // Min court size is 4, so minimum spots = max(1, 4 - prefilled - (hostIsPlaying ? 1 : 0))
@@ -585,7 +577,7 @@ export default function CreateGamePage() {
                           <button
                             key={opt.value}
                             type="button"
-                            onClick={() => { setGameType(opt.value); if (opt.value !== "other") scrollToCard("fp-location"); }}
+                            onClick={() => setGameType(opt.value)}
                             className={`flex-1 h-10 rounded-xl border-2 text-sm font-medium transition-all ${
                               gameType === opt.value
                                 ? "border-primary bg-primary/10 text-foreground"
@@ -607,7 +599,7 @@ export default function CreateGamePage() {
                     </div>
 
                     {/* Card 1: Location & Schedule */}
-                    <div ref={(el) => { cardRefs.current["fp-location"] = el; }} className="bg-card border border-border rounded-xl md:rounded-2xl p-4 md:p-6 space-y-4 md:space-y-5">
+                    <div className="bg-card border border-border rounded-xl md:rounded-2xl p-4 md:p-6 space-y-4 md:space-y-5">
                       <h2 className="font-display font-bold text-base md:text-lg flex items-center gap-2">
                         <MapPin className="w-4 h-4 md:w-5 md:h-5 text-primary" />
                         Location & Schedule
