@@ -99,6 +99,8 @@ export default function CreateGamePage() {
   });
 
   const [allowSubstitutions, setAllowSubstitutions] = useState(false);
+  const [gameType, setGameType] = useState<"friendly" | "americano" | "other">("friendly");
+  const [customGameType, setCustomGameType] = useState("");
 
   // Find Players: spotsNeeded is the primary control (how many more players do you need?)
   // Min court size is 4, so minimum spots = max(1, 4 - prefilled - (hostIsPlaying ? 1 : 0))
@@ -209,7 +211,7 @@ export default function CreateGamePage() {
     const skillLabel = ["D","C","B","A"][formData.skillLevel - 1] ?? formData.skillLevel;
     const title = isSellCourt ? "Sell / Give Away Court" 
       : hostType === "sell_spots" ? "Looking for backup"
-      : hostType === "find_players" ? `Looking for ${effectiveLookingFor} player${effectiveLookingFor !== 1 ? 's' : ''}`
+      : hostType === "find_players" ? `Looking for ${effectiveLookingFor} player${effectiveLookingFor !== 1 ? 's' : ''} for ${gameType === "friendly" ? "friendly match" : gameType === "americano" ? "americano" : (customGameType.trim() || "match")}`
       : hostType === "americano" ? `Americano · ${skillLabel}`
       : formData.title;
 
@@ -560,6 +562,42 @@ export default function CreateGamePage() {
                 ) : hostType === "find_players" ? (
                   /* ========== FIND PLAYERS — 5-card flow ========== */
                   <>
+                    {/* Card 0: Type of Game */}
+                    <div className="bg-card border border-border rounded-xl md:rounded-2xl p-4 md:p-6 space-y-4 md:space-y-5">
+                      <h2 className="font-display font-bold text-base md:text-lg flex items-center gap-2">
+                        <Trophy className="w-4 h-4 md:w-5 md:h-5 text-primary" />
+                        Type of Game <span className="text-destructive">*</span>
+                      </h2>
+                      <div className="flex gap-2">
+                        {([
+                          { value: "friendly" as const, label: "Friendly Match" },
+                          { value: "americano" as const, label: "Americano" },
+                          { value: "other" as const, label: "Other" },
+                        ]).map((opt) => (
+                          <button
+                            key={opt.value}
+                            type="button"
+                            onClick={() => setGameType(opt.value)}
+                            className={`flex-1 h-10 rounded-xl border-2 text-sm font-medium transition-all ${
+                              gameType === opt.value
+                                ? "border-primary bg-primary/10 text-foreground"
+                                : "border-border text-muted-foreground hover:border-primary/40"
+                            }`}
+                          >
+                            {opt.label}
+                          </button>
+                        ))}
+                      </div>
+                      {gameType === "other" && (
+                        <Input
+                          placeholder="e.g., Training, Team Americano..."
+                          value={customGameType}
+                          onChange={(e) => setCustomGameType(e.target.value)}
+                          className="h-11"
+                        />
+                      )}
+                    </div>
+
                     {/* Card 1: Location & Schedule */}
                     <div className="bg-card border border-border rounded-xl md:rounded-2xl p-4 md:p-6 space-y-4 md:space-y-5">
                       <h2 className="font-display font-bold text-base md:text-lg flex items-center gap-2">
