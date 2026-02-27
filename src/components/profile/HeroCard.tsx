@@ -51,7 +51,7 @@ export function HeroCard({
         </button>
       )}
 
-      <div className="flex items-center gap-5">
+      <div className="flex items-start gap-5">
         {/* Big avatar left-centered */}
         <div className="relative shrink-0">
           <Avatar className="w-24 h-24 border-2 border-white/15">
