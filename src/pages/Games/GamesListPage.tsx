@@ -39,11 +39,13 @@ interface Game {
   price_mode?: string;
   host_id: string;
   host_is_playing: boolean;
+  club_id?: string | null;
   court_taken_by?: string | null;
   profiles: {
     name: string;
     avatar_url: string | null;
   } | null;
+  club?: { name: string; logo_url: string | null } | null;
   game_players: { id: string }[];
   distance?: number;
   interest_count?: number;
@@ -119,29 +121,28 @@ export default function GamesListPage() {
     }
 
     if (!publicError && allGames.length > 0) {
+      // Batch-fetch all host profiles
+      const hostIds = [...new Set(allGames.map((g) => g.host_id))];
+      const { data: profiles } = await supabase
+        .from("profiles")
+        .select("user_id, name, avatar_url")
+        .in("user_id", hostIds);
+      const profileMap: Record<string, { name: string; avatar_url: string | null }> = {};
+      profiles?.forEach((p) => { profileMap[p.user_id] = { name: p.name, avatar_url: p.avatar_url }; });
+
+      // Batch-fetch all clubs
+      const clubIds = [...new Set(allGames.filter((g) => g.club_id).map((g) => g.club_id!))];
+      const clubMap: Record<string, { name: string; logo_url: string | null }> = {};
+      if (clubIds.length > 0) {
+        const { data: clubs } = await supabase
+          .from("clubs")
+          .select("id, name, logo_url")
+          .in("id", clubIds);
+        clubs?.forEach((c) => { clubMap[c.id] = { name: c.name, logo_url: c.logo_url }; });
+      }
+
       const gamesWithProfiles = await Promise.all(
         allGames.map(async (game) => {
-          // If game has club_id, fetch club info for display
-          let profileData: { name: string; avatar_url: string | null } | null = null;
-          if (game.club_id) {
-            const { data: club } = await supabase
-              .from("clubs")
-              .select("name, logo_url")
-              .eq("id", game.club_id)
-              .single();
-            if (club) {
-              profileData = { name: club.name, avatar_url: club.logo_url };
-            }
-          }
-          if (!profileData) {
-            const { data: profile } = await supabase
-              .from("profiles")
-              .select("name, avatar_url")
-              .eq("user_id", game.host_id)
-              .single();
-            profileData = profile;
-          }
-
           let interest_count = 0;
           if (game.payment_mode === "court_sharing") {
             const { count } = await supabase
@@ -151,8 +152,12 @@ export default function GamesListPage() {
               .eq("status", "pending");
             interest_count = count || 0;
           }
-
-          return { ...game, profiles: profileData, interest_count };
+          return {
+            ...game,
+            profiles: profileMap[game.host_id] || null,
+            club: game.club_id ? clubMap[game.club_id] || null : null,
+            interest_count,
+          };
         })
       );
       setGames(gamesWithProfiles as Game[]);
@@ -415,6 +420,9 @@ export default function GamesListPage() {
                       pricePerPlayer={Number(game.price_per_player)}
                       hostName={game.profiles?.name || "Unknown"}
                       hostAvatar={game.profiles?.avatar_url || undefined}
+                      clubName={game.club?.name}
+                      clubLogo={game.club?.logo_url || undefined}
+                      clubId={game.club_id || undefined}
                       distance={game.distance}
                       paymentMode={game.payment_mode}
                       priceMode={game.price_mode}

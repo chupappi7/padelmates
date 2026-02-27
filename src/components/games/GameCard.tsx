@@ -18,6 +18,9 @@ interface GameCardProps {
   pricePerPlayer: number;
   hostName: string;
   hostAvatar?: string;
+  clubName?: string;
+  clubLogo?: string;
+  clubId?: string;
   distance?: number;
   paymentMode?: string;
   priceMode?: string;
@@ -67,6 +70,9 @@ export function GameCard({
   pricePerPlayer,
   hostName,
   hostAvatar,
+  clubName,
+  clubLogo,
+  clubId,
   distance,
   paymentMode,
   priceMode,
@@ -170,21 +176,54 @@ export function GameCard({
           {/* Row 4: Host + spots/interest */}
           <div className="flex items-center justify-between gap-2 pt-1.5 border-t border-border/60">
 
-            {/* Left: avatar + host name + host pill (if hosting) */}
-            <div className="flex items-center gap-1.5 min-w-0">
-              <Avatar className="h-5 w-5 sm:h-6 sm:w-6 shrink-0">
-                <AvatarImage src={hostAvatar} />
-                <AvatarFallback className="bg-primary/10 text-primary text-[8px] sm:text-[9px] font-semibold">
-                  {hostName.charAt(0).toUpperCase()}
-                </AvatarFallback>
-              </Avatar>
-              <span className="text-[10px] sm:text-xs text-muted-foreground truncate">{hostName}</span>
-              {userStatus === "hosting" && (
-                <span className={`inline-flex items-center rounded-full border px-1.5 py-0.5 text-[9px] sm:text-[10px] font-semibold shrink-0 ${rolePillStyle.hosting}`}>
-                  {rolePillLabel.hosting}
-                </span>
-              )}
-            </div>
+            {/* Left: club+admin or personal host */}
+            {clubName ? (
+              <div className="flex items-center gap-2 min-w-0">
+                <Avatar className="h-8 w-8 rounded-lg shrink-0 border border-border/60">
+                  <AvatarImage src={clubLogo} />
+                  <AvatarFallback className="rounded-lg bg-primary/10 text-primary text-[10px] font-bold">
+                    {clubName.charAt(0).toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="flex flex-col min-w-0">
+                  <span
+                    className="text-[11px] sm:text-xs font-semibold text-primary truncate leading-tight cursor-pointer hover:underline"
+                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); window.location.href = `/clubs/${clubId}`; }}
+                  >
+                    {clubName}
+                  </span>
+                  <span className="text-[9px] sm:text-[10px] text-muted-foreground truncate leading-tight flex items-center gap-1">
+                    <Avatar className="h-3.5 w-3.5 shrink-0">
+                      <AvatarImage src={hostAvatar} />
+                      <AvatarFallback className="bg-muted text-[6px] font-semibold">
+                        {hostName.charAt(0).toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                    by {hostName}
+                  </span>
+                </div>
+                {userStatus === "hosting" && (
+                  <span className={`inline-flex items-center rounded-full border px-1.5 py-0.5 text-[9px] sm:text-[10px] font-semibold shrink-0 ${rolePillStyle.hosting}`}>
+                    {rolePillLabel.hosting}
+                  </span>
+                )}
+              </div>
+            ) : (
+              <div className="flex items-center gap-1.5 min-w-0">
+                <Avatar className="h-5 w-5 sm:h-6 sm:w-6 shrink-0">
+                  <AvatarImage src={hostAvatar} />
+                  <AvatarFallback className="bg-primary/10 text-primary text-[8px] sm:text-[9px] font-semibold">
+                    {hostName.charAt(0).toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+                <span className="text-[10px] sm:text-xs text-muted-foreground truncate">{hostName}</span>
+                {userStatus === "hosting" && (
+                  <span className={`inline-flex items-center rounded-full border px-1.5 py-0.5 text-[9px] sm:text-[10px] font-semibold shrink-0 ${rolePillStyle.hosting}`}>
+                    {rolePillLabel.hosting}
+                  </span>
+                )}
+              </div>
+            )}
 
             {/* Right: spots/interest + stacked pill+price */}
             <div className="flex items-end gap-2 shrink-0">
