@@ -656,7 +656,7 @@ export default function CreateGamePage() {
                                 : "border-border text-muted-foreground hover:border-primary/40"
                             }`}
                           >
-                            🎾 Yes, I'm playing
+                            I'm playing
                           </button>
                           <button
                             type="button"
@@ -670,7 +670,7 @@ export default function CreateGamePage() {
                                 : "border-border text-muted-foreground hover:border-primary/40"
                             }`}
                           >
-                            📋 No, just organizing
+                            I'm organizing
                           </button>
                         </div>
                       </div>
@@ -1088,14 +1088,14 @@ export default function CreateGamePage() {
                             onClick={() => { handleChange("hostIsPlaying", true); setSpotsNeeded(prev => Math.max(minSpotsNeeded(true, prefilledCount), prev)); }}
                             className={`flex-1 h-10 rounded-xl border-2 text-sm font-medium transition-all ${formData.hostIsPlaying ? "border-primary bg-primary/10 text-foreground" : "border-border text-muted-foreground hover:border-primary/40"}`}
                           >
-                            🎾 Yes, I'm playing
+                            I'm playing
                           </button>
                           <button
                             type="button"
                             onClick={() => { handleChange("hostIsPlaying", false); setSpotsNeeded(prev => Math.max(minSpotsNeeded(false, prefilledCount), prev)); }}
                             className={`flex-1 h-10 rounded-xl border-2 text-sm font-medium transition-all ${!formData.hostIsPlaying ? "border-primary bg-primary/10 text-foreground" : "border-border text-muted-foreground hover:border-primary/40"}`}
                           >
-                            📋 No, just organizing
+                            I'm organizing
                           </button>
                         </div>
                       </div>
