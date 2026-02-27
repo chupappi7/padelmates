@@ -531,7 +531,7 @@ export default function GameDetailPage() {
             </button>
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-1.5">
-                <h1 className="font-display text-sm md:text-xl font-bold truncate">{game.title}</h1>
+                <h1 className="font-display text-sm md:text-xl font-bold line-clamp-2 break-words">{game.title}</h1>
                 {!isCourtSharing && (
                   <SkillBadge level={game.skill_level as number} size="sm" />
                 )}
