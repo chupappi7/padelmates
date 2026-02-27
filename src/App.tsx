@@ -15,6 +15,7 @@ import GameDetailPage from "./pages/Games/GameDetailPage";
 import EditGamePage from "./pages/Games/EditGamePage";
 import ClubsListPage from "./pages/Clubs/ClubsListPage";
 import CreateClubPage from "./pages/Clubs/CreateClubPage";
+import ClubDetailPage from "./pages/Clubs/ClubDetailPage";
 import ProfilePage from "./pages/Profile/ProfilePage";
 import UserProfilePage from "./pages/Profile/UserProfilePage";
 import MyMatchesPage from "./pages/Games/MyMatchesPage";
@@ -45,6 +46,7 @@ const App = () => (
             <Route path="/games/:id/edit" element={<EditGamePage />} />
             <Route path="/clubs" element={<ClubsListPage />} />
             <Route path="/clubs/create" element={<CreateClubPage />} />
+            <Route path="/clubs/:id" element={<ClubDetailPage />} />
             <Route path="/my-matches" element={<MyMatchesPage />} />
             <Route path="/friends" element={<FriendsPage />} />
             <Route path="/notifications" element={<NotificationsPage />} />
