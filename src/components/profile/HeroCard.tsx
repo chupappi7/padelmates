@@ -54,7 +54,7 @@ export function HeroCard({
       <div className="flex items-start gap-5">
         {/* Big avatar left-centered */}
         <div className="relative shrink-0">
-          <Avatar className="w-24 h-24 border-2 border-white/15">
+          <Avatar className="w-28 h-28 border-2 border-white/15">
             <AvatarImage src={avatarUrl || undefined} />
             <AvatarFallback className="text-3xl bg-white/10 text-white font-semibold">
               {name?.charAt(0).toUpperCase()}
