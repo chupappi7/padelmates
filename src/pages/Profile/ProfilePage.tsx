@@ -258,6 +258,7 @@ export default function ProfilePage() {
               onEditClick={() => setEditing(true)}
               onAvatarUpload={handleAvatarUpload}
               onLevelBadgeClick={() => setLevelSheetOpen(true)}
+              onPdrClick={() => navigate("/elo")}
             />
           ) : (
             <div className="bg-card border border-border rounded-2xl p-5 space-y-4">

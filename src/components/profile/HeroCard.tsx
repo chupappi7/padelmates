@@ -16,6 +16,7 @@ interface HeroCardProps {
   onEditClick?: () => void;
   onAvatarUpload?: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onLevelBadgeClick?: () => void;
+  onPdrClick?: () => void;
 }
 
 export function HeroCard({
@@ -28,6 +29,7 @@ export function HeroCard({
   onEditClick,
   onAvatarUpload,
   onLevelBadgeClick,
+  onPdrClick,
 }: HeroCardProps) {
   const [copied, setCopied] = useState(false);
 
@@ -91,13 +93,18 @@ export function HeroCard({
                 <SkillBadge level={skillLevel} size="sm" />
               </button>
               <span className="text-white/15 text-sm">|</span>
-              <span className="text-[11px] text-white/40 uppercase tracking-wider font-medium">PDR</span>
-              <span
-                className="text-[24px] leading-none font-extrabold text-white tracking-tight"
-                style={{ fontFamily: "'Space Grotesk', system-ui, sans-serif" }}
+              <button
+                onClick={onPdrClick}
+                className={onPdrClick ? "flex items-center gap-2.5 cursor-pointer hover:opacity-80 transition-opacity" : "flex items-center gap-2.5 cursor-default"}
               >
-                {pdrRating != null ? pdrRating.toFixed(2) : "NR"}
-              </span>
+                <span className="text-[11px] text-white/40 uppercase tracking-wider font-medium">PDR</span>
+                <span
+                  className="text-[24px] leading-none font-extrabold text-white tracking-tight"
+                  style={{ fontFamily: "'Space Grotesk', system-ui, sans-serif" }}
+                >
+                  {pdrRating != null ? pdrRating.toFixed(2) : "NR"}
+                </span>
+              </button>
             </div>
           </div>
         </div>
