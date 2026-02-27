@@ -1024,7 +1024,7 @@ export default function CreateGamePage() {
                     <div className="bg-card border border-border rounded-xl md:rounded-2xl p-4 md:p-6 space-y-4 md:space-y-5">
                       <h2 className="font-display font-bold text-base md:text-lg flex items-center gap-2">
                         <Users className="w-4 h-4 md:w-5 md:h-5 text-muted-foreground" />
-                        About This Game
+                        Game Details
                         <span className="text-xs font-normal text-muted-foreground ml-1">(optional)</span>
                       </h2>
                       <div className="space-y-1.5">
