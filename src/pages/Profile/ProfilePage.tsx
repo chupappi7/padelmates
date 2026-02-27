@@ -30,7 +30,7 @@ import {
 import { HeroCard } from "@/components/profile/HeroCard";
 import { PDRSection } from "@/components/profile/PDRSection";
 import { PerformanceStats } from "@/components/profile/PerformanceStats";
-import { PastMatches } from "@/components/profile/PastMatches";
+
 import { LevelSelectSheet } from "@/components/profile/LevelSelectSheet";
 
 interface Profile {
@@ -334,9 +334,6 @@ export default function ProfilePage() {
             losses={losses}
             winRate={winRate}
           />
-
-          {/* 6️⃣ Past Matches */}
-          {user && <PastMatches userId={user.id} />}
 
           {/* 7️⃣ Payment Info (Collapsible) */}
           <Collapsible open={paymentOpen} onOpenChange={setPaymentOpen}>

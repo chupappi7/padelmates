@@ -10,7 +10,7 @@ import { HeroCard } from "@/components/profile/HeroCard";
 import { PDRSection } from "@/components/profile/PDRSection";
 import { ProfileActionButtons } from "@/components/profile/ProfileActionButtons";
 import { PerformanceStats } from "@/components/profile/PerformanceStats";
-import { PastMatches } from "@/components/profile/PastMatches";
+
 
 interface PublicProfile {
   name: string;
@@ -198,8 +198,8 @@ export default function UserProfilePage() {
             winRate={winRate}
           />
 
-          {/* 6️⃣ Past Matches */}
-          {userId && <PastMatches userId={userId} />}
+
+
         </motion.div>
       </div>
     </div>
