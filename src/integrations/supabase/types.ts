@@ -439,6 +439,7 @@ export type Database = {
       }
       games: {
         Row: {
+          allow_substitutions: boolean
           booking_screenshot_url: string | null
           club_id: string | null
           court_number: string | null
@@ -467,6 +468,7 @@ export type Database = {
           visibility: Database["public"]["Enums"]["visibility_type"]
         }
         Insert: {
+          allow_substitutions?: boolean
           booking_screenshot_url?: string | null
           club_id?: string | null
           court_number?: string | null
@@ -495,6 +497,7 @@ export type Database = {
           visibility?: Database["public"]["Enums"]["visibility_type"]
         }
         Update: {
+          allow_substitutions?: boolean
           booking_screenshot_url?: string | null
           club_id?: string | null
           court_number?: string | null

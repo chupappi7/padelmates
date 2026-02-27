@@ -846,6 +846,9 @@ export default function GameDetailPage() {
                 showJoinInSlot={!!user && !isHost && !isCourtSharing && !isPlayer && !myRequest && spotsLeft > 0}
                 joinLabel={isOpenJoin ? "Join Game" : "Request to Join"}
                 onJoinFromSlot={() => isOpenJoin ? setShowJoinConfirm(true) : setShowJoinModal(true)}
+                allowSubstitutions={!!(game as any).allow_substitutions}
+                showSubstituteJoin={!!user && !isHost && !isPlayer && !myRequest && spotsLeft <= 0}
+                onJoinAsSubstitute={() => isOpenJoin ? setShowJoinConfirm(true) : setShowJoinModal(true)}
               />
             </motion.div>
           )}
