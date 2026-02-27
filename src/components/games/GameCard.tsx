@@ -126,7 +126,7 @@ export function GameCard({
           {/* Row 1: Title + Available/Taken badge + Skill chip */}
           <div className="flex items-start justify-between gap-2">
             <div className="flex items-center gap-1.5 min-w-0 flex-1">
-              <h3 className="font-display font-bold text-sm sm:text-base group-hover:text-primary transition-colors truncate max-w-[180px] sm:max-w-[220px]">
+              <h3 className="font-display font-bold text-sm sm:text-base group-hover:text-primary transition-colors">
                 {title}
               </h3>
               {isCourtSharing && (
