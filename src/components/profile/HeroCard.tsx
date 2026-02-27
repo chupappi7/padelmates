@@ -40,16 +40,7 @@ export function HeroCard({
   };
 
   return (
-    <div className="bg-gradient-to-br from-[#0D2137] via-[#142D4A] to-[#1A4060] rounded-2xl px-6 py-6 relative">
-      {/* Edit icon top-right */}
-      {isSelf && onEditClick && (
-        <button
-          onClick={onEditClick}
-          className="absolute top-2.5 right-2.5 text-white/30 hover:text-white/60 transition-colors"
-        >
-          <Pencil className="w-4 h-4" />
-        </button>
-      )}
+    <div className="bg-gradient-to-br from-[#0D2137] via-[#142D4A] to-[#1A4060] rounded-2xl px-7 py-7 relative">
 
       <div className="flex items-start gap-4">
         {/* Avatar */}
