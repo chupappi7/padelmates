@@ -104,7 +104,7 @@ export function HeroCard({
           )}
 
           {/* Level + PDR */}
-          <div className="flex items-baseline gap-2 mt-2">
+          <div className="flex items-baseline gap-2 mt-0.5">
             <button
               onClick={isSelf ? onLevelBadgeClick : undefined}
               className={isSelf ? "cursor-pointer" : "cursor-default"}
