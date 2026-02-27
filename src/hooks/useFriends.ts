@@ -10,6 +10,7 @@ export interface FriendProfile {
   skill_level: number;
   pdr_rating: number | null;
   friend_code: string | null;
+  region: string | null;
 }
 
 export interface Friendship {
@@ -53,7 +54,7 @@ export function useFriends() {
     if (otherUserIds.length > 0) {
       const { data: profileData } = await supabase
         .from("profiles")
-        .select("user_id, name, avatar_url, skill_level, pdr_rating, friend_code")
+        .select("user_id, name, avatar_url, skill_level, pdr_rating, friend_code, region")
         .in("user_id", otherUserIds);
       profiles = (profileData || []) as FriendProfile[];
     }
@@ -64,7 +65,7 @@ export function useFriends() {
       const otherId = f.requester_id === user.id ? f.addressee_id : f.requester_id;
       return {
         ...f,
-        profile: profileMap.get(otherId) || { user_id: otherId, name: "Unknown", avatar_url: null, skill_level: 3, pdr_rating: null, friend_code: null },
+        profile: profileMap.get(otherId) || { user_id: otherId, name: "Unknown", avatar_url: null, skill_level: 3, pdr_rating: null, friend_code: null, region: null },
       };
     });
 

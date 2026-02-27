@@ -8,8 +8,17 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Check, X, UserPlus, MoreHorizontal, User, Swords, UserMinus, Clock } from "lucide-react";
+import { Check, X, UserPlus, MoreHorizontal, User, Swords, UserMinus, Clock, MapPin } from "lucide-react";
 import { cn } from "@/lib/utils";
+
+function getPdrBadge(rating: number | null | undefined) {
+  if (rating == null) return { label: "NR", color: "bg-muted text-muted-foreground" };
+  if (rating < 2.0) return { label: "Beginner", color: "bg-muted text-muted-foreground" };
+  if (rating < 3.0) return { label: "Intermediate", color: "bg-blue-500/15 text-blue-600 border border-blue-500/30" };
+  if (rating < 4.0) return { label: "Advanced", color: "bg-orange-500/15 text-orange-600 border border-orange-500/30" };
+  if (rating < 5.0) return { label: "Expert", color: "bg-purple-500/15 text-purple-600 border border-purple-500/30" };
+  return { label: "Elite", color: "bg-amber-500/15 text-amber-600 border border-amber-500/30" };
+}
 
 interface FriendCardProps {
   userId?: string;
@@ -17,6 +26,7 @@ interface FriendCardProps {
   avatarUrl: string | null;
   skillLevel: number;
   pdrRating?: number | null;
+  region?: string | null;
   variant: "friend" | "incoming" | "outgoing" | "search";
   subtitle?: string;
   onAccept?: () => void;
@@ -32,6 +42,7 @@ export function FriendCard({
   avatarUrl,
   skillLevel,
   pdrRating,
+  region,
   variant,
   subtitle,
   onAccept,
@@ -46,7 +57,8 @@ export function FriendCard({
     if (userId) navigate(`/user/${userId}`);
   };
 
-  const pdrDisplay = pdrRating != null ? pdrRating.toFixed(2) : "NR";
+  const pdrBadge = getPdrBadge(pdrRating);
+  const pdrDisplay = pdrRating != null ? pdrRating.toFixed(1) : null;
 
   return (
     <div className="flex items-center gap-3 p-3.5 bg-card border border-border rounded-xl hover:bg-muted/30 transition-colors">
@@ -60,40 +72,34 @@ export function FriendCard({
       </button>
 
       <button onClick={handleProfileClick} className="flex-1 min-w-0 text-left">
-        <div className="flex items-center gap-2 mb-0.5">
+        <div className="flex items-center gap-2 mb-0.5 flex-wrap">
           <p className="text-sm font-semibold truncate">{name}</p>
-          <SkillBadge level={skillLevel} size="sm" />
-          <span
-            className="text-[11px] font-bold text-muted-foreground tabular-nums shrink-0"
-            style={{ fontFamily: "'Space Grotesk', system-ui, sans-serif" }}
-          >
-            {pdrDisplay}
-          </span>
+          {pdrDisplay && (
+            <span className={cn("text-[10px] font-bold px-1.5 py-0.5 rounded-full", pdrBadge.color)}>
+              {pdrDisplay} · {pdrBadge.label}
+            </span>
+          )}
         </div>
-        {subtitle && (
-          <p className="text-[11px] text-muted-foreground truncate">{subtitle}</p>
-        )}
+        <div className="flex items-center gap-2">
+          {subtitle && (
+            <p className="text-[11px] text-muted-foreground truncate">{subtitle}</p>
+          )}
+          {region && (
+            <span className="text-[10px] text-muted-foreground flex items-center gap-0.5 shrink-0">
+              <MapPin className="w-2.5 h-2.5" />
+              {region}
+            </span>
+          )}
+        </div>
       </button>
 
       <div className="flex items-center gap-1.5 shrink-0">
         {variant === "incoming" && (
           <>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={onReject}
-              disabled={disabled}
-              className="h-8 px-2.5 text-muted-foreground"
-            >
+            <Button size="sm" variant="outline" onClick={onReject} disabled={disabled} className="h-8 px-2.5 text-muted-foreground">
               <X className="w-3.5 h-3.5" />
             </Button>
-            <Button
-              size="sm"
-              variant="hero"
-              onClick={onAccept}
-              disabled={disabled}
-              className="h-8 gap-1"
-            >
+            <Button size="sm" variant="hero" onClick={onAccept} disabled={disabled} className="h-8 gap-1">
               <Check className="w-3.5 h-3.5" />
               Accept
             </Button>
@@ -106,13 +112,7 @@ export function FriendCard({
               <Clock className="w-3 h-3" />
               Pending
             </span>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={onReject}
-              disabled={disabled}
-              className="h-7 px-2 text-xs text-muted-foreground"
-            >
+            <Button size="sm" variant="outline" onClick={onReject} disabled={disabled} className="h-7 px-2 text-xs text-muted-foreground">
               Cancel
             </Button>
           </div>
@@ -130,10 +130,11 @@ export function FriendCard({
                 <User className="mr-2 h-3.5 w-3.5" />
                 View Profile
               </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={onRemove}
-                className="text-destructive focus:text-destructive"
-              >
+              <DropdownMenuItem onClick={() => navigate(`/games/create`)}>
+                <Swords className="mr-2 h-3.5 w-3.5" />
+                Invite to Match
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={onRemove} className="text-destructive focus:text-destructive">
                 <UserMinus className="mr-2 h-3.5 w-3.5" />
                 Remove Friend
               </DropdownMenuItem>
@@ -142,13 +143,7 @@ export function FriendCard({
         )}
 
         {variant === "search" && (
-          <Button
-            size="sm"
-            variant="hero"
-            onClick={onAdd}
-            disabled={disabled}
-            className="h-8 gap-1 rounded-full px-4"
-          >
+          <Button size="sm" variant="hero" onClick={onAdd} disabled={disabled} className="h-8 gap-1 rounded-full px-4">
             <UserPlus className="w-3.5 h-3.5" />
             Add
           </Button>
