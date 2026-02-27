@@ -781,6 +781,11 @@ export default function GameDetailPage() {
                         >
                           {game.club.name}
                         </p>
+                        {game.profiles?.name && (
+                          <p className="text-[11px] text-muted-foreground mt-0.5">
+                            Admin: {game.profiles.name}
+                          </p>
+                        )}
                       </div>
                     </>
                   ) : (
