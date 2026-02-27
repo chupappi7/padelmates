@@ -211,7 +211,7 @@ export default function CreateGamePage() {
     const skillLabel = ["D","C","B","A"][formData.skillLevel - 1] ?? formData.skillLevel;
     const title = isSellCourt ? "Sell / Give Away Court" 
       : hostType === "sell_spots" ? "Looking for backup"
-      : hostType === "find_players" ? `Looking for ${effectiveLookingFor} player${effectiveLookingFor !== 1 ? 's' : ''} for ${gameType === "friendly" ? "friendly match" : gameType === "americano" ? "americano" : (customGameType.trim() || "match")}`
+      : hostType === "find_players" ? `Looking for ${effectiveLookingFor} player${effectiveLookingFor !== 1 ? 's' : ''} - ${gameType === "friendly" ? "Friendly Match" : gameType === "americano" ? "Americano" : (customGameType.trim() || "Match")}`
       : hostType === "americano" ? `Americano · ${skillLabel}`
       : formData.title;
 
