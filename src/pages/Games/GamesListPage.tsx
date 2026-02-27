@@ -71,24 +71,76 @@ export default function GamesListPage() {
   }, [user]);
 
   const fetchGames = async () => {
-    const { data, error } = await supabase
+    const cutoffTime = new Date(Date.now() - 30 * 60 * 1000).toISOString();
+
+    // Fetch public games
+    const { data: publicData, error: publicError } = await supabase
       .from("games")
-      .select(`
-        *,
-        game_players(id)
-      `)
+      .select(`*, game_players(id)`)
       .eq("visibility", "public")
-      .gte("date_time", new Date(Date.now() - 30 * 60 * 1000).toISOString())
+      .gte("date_time", cutoffTime)
       .order("date_time", { ascending: true });
 
-    if (!error && data) {
+    let allGames = publicData || [];
+
+    // If user is logged in, also fetch club_only games for clubs they follow
+    if (user) {
+      const { data: followedClubs } = await supabase
+        .from("club_followers")
+        .select("club_id")
+        .eq("user_id", user.id);
+
+      const { data: ownedClubs } = await supabase
+        .from("clubs")
+        .select("id")
+        .eq("owner_id", user.id);
+
+      const clubIds = new Set<string>();
+      followedClubs?.forEach((f) => clubIds.add(f.club_id));
+      ownedClubs?.forEach((c) => clubIds.add(c.id));
+
+      if (clubIds.size > 0) {
+        const { data: clubGames } = await supabase
+          .from("games")
+          .select(`*, game_players(id)`)
+          .eq("visibility", "club_only")
+          .in("club_id", Array.from(clubIds))
+          .gte("date_time", cutoffTime)
+          .order("date_time", { ascending: true });
+
+        if (clubGames) {
+          // Merge, avoiding duplicates
+          const existingIds = new Set(allGames.map((g) => g.id));
+          clubGames.forEach((g) => {
+            if (!existingIds.has(g.id)) allGames.push(g);
+          });
+        }
+      }
+    }
+
+    if (!publicError && allGames.length > 0) {
       const gamesWithProfiles = await Promise.all(
-        data.map(async (game) => {
-          const { data: profile } = await supabase
-            .from("profiles")
-            .select("name, avatar_url")
-            .eq("user_id", game.host_id)
-            .single();
+        allGames.map(async (game) => {
+          // If game has club_id, fetch club info for display
+          let profileData: { name: string; avatar_url: string | null } | null = null;
+          if (game.club_id) {
+            const { data: club } = await supabase
+              .from("clubs")
+              .select("name, logo_url")
+              .eq("id", game.club_id)
+              .single();
+            if (club) {
+              profileData = { name: club.name, avatar_url: club.logo_url };
+            }
+          }
+          if (!profileData) {
+            const { data: profile } = await supabase
+              .from("profiles")
+              .select("name, avatar_url")
+              .eq("user_id", game.host_id)
+              .single();
+            profileData = profile;
+          }
 
           let interest_count = 0;
           if (game.payment_mode === "court_sharing") {
@@ -100,7 +152,7 @@ export default function GamesListPage() {
             interest_count = count || 0;
           }
 
-          return { ...game, profiles: profile, interest_count };
+          return { ...game, profiles: profileData, interest_count };
         })
       );
       setGames(gamesWithProfiles as Game[]);
