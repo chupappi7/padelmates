@@ -62,7 +62,7 @@ export default function GamesListPage() {
   const [joinedGameIds, setJoinedGameIds] = useState<Set<string>>(new Set());
   const [requestedGameIds, setRequestedGameIds] = useState<Set<string>>(new Set());
   const [clubFilter, setClubFilter] = useState<string>("all");
-  const [userClubs, setUserClubs] = useState<{ id: string; name: string }[]>([]);
+  const [userClubs, setUserClubs] = useState<{ id: string; name: string; logo_url: string | null }[]>([]);
   const navigate = useNavigate();
   const { user } = useAuth();
   const isMobile = useIsMobile();
@@ -88,9 +88,9 @@ export default function GamesListPage() {
     const clubIds = follows.map((f) => f.club_id);
     const { data: clubs } = await supabase
       .from("clubs")
-      .select("id, name")
+      .select("id, name, logo_url")
       .in("id", clubIds);
-    setUserClubs(clubs?.map((c) => ({ id: c.id, name: c.name })) || []);
+    setUserClubs(clubs?.map((c) => ({ id: c.id, name: c.name, logo_url: c.logo_url })) || []);
   };
 
   const fetchGames = async () => {
@@ -215,7 +215,6 @@ export default function GamesListPage() {
     return undefined;
   };
 
-  const userClubIds = useMemo(() => new Set(userClubs.map((c) => c.id)), [userClubs]);
 
   const filteredGames = useMemo(() => {
     const now = new Date();
@@ -234,8 +233,7 @@ export default function GamesListPage() {
         (formatFilter === "casual_match" && game.format === "casual_match" && game.payment_mode !== "court_sharing" && game.payment_mode !== "spot_selling") ||
         (formatFilter === "americano" && (game.format === "americano" || game.format === "team_americano"));
       const matchesClub =
-        clubFilter === "all" ||
-        (clubFilter === "my_clubs" ? (game.club_id != null && userClubIds.has(game.club_id)) : game.club_id === clubFilter);
+        clubFilter === "all" || game.club_id === clubFilter;
       return matchesDay && matchesSkill && matchesFormat && matchesClub;
     });
 
@@ -256,7 +254,7 @@ export default function GamesListPage() {
     result.sort((a, b) => new Date(a.date_time).getTime() - new Date(b.date_time).getTime());
 
     return result;
-  }, [games, selectedDate, skillMin, skillMax, formatFilter, clubFilter, userClubIds, userLocation]);
+  }, [games, selectedDate, skillMin, skillMax, formatFilter, clubFilter, userLocation]);
 
   const isAllMode = selectedDate === null;
 
@@ -366,46 +364,58 @@ export default function GamesListPage() {
             </div>
           )}
 
-          {/* Club chip bar */}
-          {user && userClubs.length > 0 && (
-            <div className="flex gap-2 mt-3 overflow-x-auto scrollbar-hide pb-1">
-              <button
-                onClick={() => setClubFilter("all")}
-                className={cn(
-                  "shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-colors",
-                  clubFilter === "all"
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-muted text-muted-foreground hover:bg-muted/80"
-                )}
-              >
-                All
-              </button>
-              <button
-                onClick={() => setClubFilter("my_clubs")}
-                className={cn(
-                  "shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-colors",
-                  clubFilter === "my_clubs"
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-muted text-muted-foreground hover:bg-muted/80"
-                )}
-              >
-                My Clubs
-              </button>
-              {userClubs.map((club) => (
-                <button
-                  key={club.id}
-                  onClick={() => setClubFilter(club.id)}
-                  className={cn(
-                    "shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-colors whitespace-nowrap",
-                    clubFilter === club.id
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-muted text-muted-foreground hover:bg-muted/80"
-                  )}
-                >
-                  {club.name}
-                </button>
-              ))}
-            </div>
+          {/* Club filter */}
+          {user && (
+            userClubs.length > 0 ? (
+              <div className="mt-5">
+                <p className="text-[11px] text-muted-foreground mb-2">Filter by club</p>
+                <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1">
+                  <button
+                    onClick={() => setClubFilter("all")}
+                    className={cn(
+                      "shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-colors",
+                      clubFilter === "all"
+                        ? "bg-primary text-primary-foreground"
+                        : "border border-border text-foreground hover:bg-muted"
+                    )}
+                  >
+                    All
+                  </button>
+                  {userClubs.map((club) => (
+                    <button
+                      key={club.id}
+                      onClick={() => setClubFilter(club.id)}
+                      className={cn(
+                        "shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-colors whitespace-nowrap",
+                        clubFilter === club.id
+                          ? "bg-primary text-primary-foreground"
+                          : "border border-border text-foreground hover:bg-muted"
+                      )}
+                    >
+                      {club.logo_url ? (
+                        <img
+                          src={club.logo_url}
+                          alt=""
+                          className="w-5 h-5 rounded object-cover"
+                        />
+                      ) : (
+                        <div className="w-5 h-5 rounded bg-muted flex items-center justify-center text-[10px] font-bold text-muted-foreground">
+                          {club.name.charAt(0)}
+                        </div>
+                      )}
+                      {club.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <p className="mt-4 text-[11px] text-muted-foreground">
+                <button onClick={() => navigate("/clubs")} className="text-primary hover:underline">
+                  Join a club
+                </button>{" "}
+                to filter matches
+              </p>
+            )
           )}
         </motion.div>
 
