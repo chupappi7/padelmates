@@ -40,23 +40,23 @@ export function HeroCard({
   };
 
   return (
-    <div className="bg-gradient-to-br from-[#0D2137] via-[#142D4A] to-[#1A4060] rounded-2xl px-5 py-4 relative">
+    <div className="bg-gradient-to-br from-[#0D2137] via-[#142D4A] to-[#1A4060] rounded-2xl px-5 py-5 relative">
       {/* Edit icon top-right */}
       {isSelf && onEditClick && (
         <button
           onClick={onEditClick}
-          className="absolute top-3 right-3 text-white/30 hover:text-white/60 transition-colors"
+          className="absolute top-4 right-4 text-white/30 hover:text-white/60 transition-colors"
         >
-          <Pencil className="w-3.5 h-3.5" />
+          <Pencil className="w-4 h-4" />
         </button>
       )}
 
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-5">
         {/* Big avatar left-centered */}
         <div className="relative shrink-0">
-          <Avatar className="w-20 h-20 border-2 border-white/15">
+          <Avatar className="w-24 h-24 border-2 border-white/15">
             <AvatarImage src={avatarUrl || undefined} />
-            <AvatarFallback className="text-2xl bg-white/10 text-white font-semibold">
+            <AvatarFallback className="text-3xl bg-white/10 text-white font-semibold">
               {name?.charAt(0).toUpperCase()}
             </AvatarFallback>
           </Avatar>
@@ -64,9 +64,9 @@ export function HeroCard({
             <>
               <label
                 htmlFor="avatar-upload"
-                className="absolute -bottom-0.5 -right-0.5 w-5 h-5 bg-primary text-primary-foreground rounded-full flex items-center justify-center cursor-pointer hover:bg-primary/90 transition-colors"
+                className="absolute -bottom-0.5 -right-0.5 w-6 h-6 bg-primary text-primary-foreground rounded-full flex items-center justify-center cursor-pointer hover:bg-primary/90 transition-colors"
               >
-                <Camera className="w-2.5 h-2.5" />
+                <Camera className="w-3 h-3" />
               </label>
               <Input
                 type="file"
@@ -83,17 +83,17 @@ export function HeroCard({
         <div className="flex-1 min-w-0">
           {/* Big name */}
           <p
-            className="text-white text-2xl font-bold truncate leading-tight"
+            className="text-white text-[28px] font-bold truncate leading-none"
             style={{ fontFamily: "'Space Grotesk', system-ui, sans-serif" }}
           >
             {name}
           </p>
 
-          {/* Small ID under name */}
+          {/* ID tight under name */}
           {friendCode && (
-            <div className="flex items-center gap-1.5 -mt-0.5">
-              <span className="text-[9px] text-white/30 uppercase tracking-wider">ID</span>
-              <code className="text-[10px] font-mono text-white/40 tracking-wider">{friendCode}</code>
+            <div className="flex items-center gap-1.5 mt-1">
+              <span className="text-[10px] text-white/30 uppercase tracking-wider">ID</span>
+              <code className="text-[11px] font-mono text-white/40 tracking-wider">{friendCode}</code>
               <button
                 onClick={handleCopyCode}
                 className="text-white/25 hover:text-white/50 transition-colors p-0.5"
@@ -103,8 +103,8 @@ export function HeroCard({
             </div>
           )}
 
-          {/* Level + PDR */}
-          <div className="flex items-baseline gap-2 mt-0.5">
+          {/* Level + PDR tight under ID */}
+          <div className="flex items-center gap-2.5 mt-1.5">
             <button
               onClick={isSelf ? onLevelBadgeClick : undefined}
               className={isSelf ? "cursor-pointer" : "cursor-default"}
@@ -112,10 +112,10 @@ export function HeroCard({
             >
               <SkillBadge level={skillLevel} size="sm" />
             </button>
-            <span className="text-white/15 text-xs">|</span>
-            <span className="text-[10px] text-white/40 uppercase tracking-wider font-medium">PDR</span>
+            <span className="text-white/15 text-sm">|</span>
+            <span className="text-[11px] text-white/40 uppercase tracking-wider font-medium">PDR</span>
             <span
-              className="text-[20px] leading-none font-extrabold text-white tracking-tight"
+              className="text-[28px] leading-none font-extrabold text-white tracking-tight"
               style={{ fontFamily: "'Space Grotesk', system-ui, sans-serif" }}
             >
               {pdrRating != null ? pdrRating.toFixed(2) : "NR"}
