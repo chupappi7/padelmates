@@ -189,18 +189,24 @@ export type Database = {
           club_id: string
           created_at: string
           id: string
+          role: string
+          status: string
           user_id: string
         }
         Insert: {
           club_id: string
           created_at?: string
           id?: string
+          role?: string
+          status?: string
           user_id: string
         }
         Update: {
           club_id?: string
           created_at?: string
           id?: string
+          role?: string
+          status?: string
           user_id?: string
         }
         Relationships: [
@@ -215,31 +221,52 @@ export type Database = {
       }
       clubs: {
         Row: {
+          city: string | null
+          country: string | null
+          cover_url: string | null
           created_at: string
           description: string | null
           id: string
+          instagram_url: string | null
+          is_private: boolean
           logo_url: string | null
           name: string
+          num_courts: number | null
           owner_id: string
           updated_at: string
+          website_url: string | null
         }
         Insert: {
+          city?: string | null
+          country?: string | null
+          cover_url?: string | null
           created_at?: string
           description?: string | null
           id?: string
+          instagram_url?: string | null
+          is_private?: boolean
           logo_url?: string | null
           name: string
+          num_courts?: number | null
           owner_id: string
           updated_at?: string
+          website_url?: string | null
         }
         Update: {
+          city?: string | null
+          country?: string | null
+          cover_url?: string | null
           created_at?: string
           description?: string | null
           id?: string
+          instagram_url?: string | null
+          is_private?: boolean
           logo_url?: string | null
           name?: string
+          num_courts?: number | null
           owner_id?: string
           updated_at?: string
+          website_url?: string | null
         }
         Relationships: []
       }
@@ -905,6 +932,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      is_club_admin: {
+        Args: { _club_id: string; _user_id: string }
+        Returns: boolean
+      }
+      is_club_member: {
+        Args: { _club_id: string; _user_id: string }
+        Returns: boolean
+      }
       is_game_admin: {
         Args: { _game_id: string; _user_id: string }
         Returns: boolean

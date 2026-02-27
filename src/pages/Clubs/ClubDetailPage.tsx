@@ -7,16 +7,46 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
-import { ArrowLeft, Users, Calendar, MapPin, Globe, Instagram, MessageCircle, UserPlus, UserMinus, Megaphone } from "lucide-react";
+import {
+  Users, Calendar, CalendarDays, MoreVertical, Settings,
+  UserPlus, Check, Lock, MapPin, LogOut, Flag
+} from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import ClubFeedTab from "@/components/clubs/ClubFeedTab";
+import ClubMatchesTab from "@/components/clubs/ClubMatchesTab";
+import ClubMembersTab from "@/components/clubs/ClubMembersTab";
+import ClubAboutTab from "@/components/clubs/ClubAboutTab";
+import ClubAdminPanel from "@/components/clubs/ClubAdminPanel";
 
 interface Club {
   id: string;
   name: string;
   logo_url: string | null;
+  cover_url: string | null;
   description: string | null;
   owner_id: string;
   created_at: string;
+  city: string | null;
+  country: string | null;
+  num_courts: number | null;
+  is_private: boolean;
+  instagram_url: string | null;
+  website_url: string | null;
 }
+
+type TabId = "feed" | "matches" | "members" | "about";
+
+const TABS: { id: TabId; label: string }[] = [
+  { id: "feed", label: "Feed" },
+  { id: "matches", label: "Matches" },
+  { id: "members", label: "Members" },
+  { id: "about", label: "About" },
+];
 
 export default function ClubDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -25,11 +55,14 @@ export default function ClubDetailPage() {
 
   const [club, setClub] = useState<Club | null>(null);
   const [loading, setLoading] = useState(true);
-  const [followersCount, setFollowersCount] = useState(0);
+  const [membersCount, setMembersCount] = useState(0);
   const [gamesCount, setGamesCount] = useState(0);
-  const [isFollowing, setIsFollowing] = useState(false);
-  const [followLoading, setFollowLoading] = useState(false);
-  const [ownerName, setOwnerName] = useState("");
+  const [upcomingCount, setUpcomingCount] = useState(0);
+  const [memberStatus, setMemberStatus] = useState<"none" | "pending" | "active">("none");
+  const [memberRole, setMemberRole] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<TabId>("feed");
+  const [actionLoading, setActionLoading] = useState(false);
+  const [adminOpen, setAdminOpen] = useState(false);
 
   useEffect(() => {
     if (id) fetchClub();
@@ -48,69 +81,86 @@ export default function ClubDetailPage() {
       return;
     }
 
-    setClub(data);
+    setClub(data as Club);
 
-    // Fetch counts & follow status in parallel
-    const [followersRes, gamesRes, ownerRes, followRes] = await Promise.all([
-      supabase.from("club_followers").select("id", { count: "exact", head: true }).eq("club_id", id!),
+    const now = new Date().toISOString();
+    const [membersRes, gamesRes, upcomingRes, membershipRes] = await Promise.all([
+      supabase.from("club_followers").select("id", { count: "exact", head: true }).eq("club_id", id!).eq("status", "active"),
       supabase.from("games").select("id", { count: "exact", head: true }).eq("club_id", id!),
-      supabase.from("profiles").select("name").eq("user_id", data.owner_id).single(),
+      supabase.from("games").select("id", { count: "exact", head: true }).eq("club_id", id!).gte("date_time", now),
       user
-        ? supabase.from("club_followers").select("id").eq("club_id", id!).eq("user_id", user.id).maybeSingle()
+        ? supabase.from("club_followers").select("id, role, status").eq("club_id", id!).eq("user_id", user.id).maybeSingle()
         : Promise.resolve({ data: null }),
     ]);
 
-    setFollowersCount(followersRes.count || 0);
+    setMembersCount(membersRes.count || 0);
     setGamesCount(gamesRes.count || 0);
-    setOwnerName(ownerRes.data?.name || "Unknown");
-    setIsFollowing(!!followRes.data);
+    setUpcomingCount(upcomingRes.count || 0);
+
+    if (membershipRes.data) {
+      setMemberStatus(membershipRes.data.status as "active" | "pending");
+      setMemberRole(membershipRes.data.role);
+    } else {
+      setMemberStatus("none");
+      setMemberRole(null);
+    }
+
     setLoading(false);
   };
 
-  const toggleFollow = async () => {
+  const isOwner = user?.id === club?.owner_id;
+  const isAdmin = isOwner || memberRole === "admin";
+
+  const handleJoin = async () => {
     if (!user) { navigate("/login"); return; }
-    setFollowLoading(true);
+    setActionLoading(true);
     try {
-      if (isFollowing) {
-        await supabase.from("club_followers").delete().eq("club_id", id!).eq("user_id", user.id);
-        setIsFollowing(false);
-        setFollowersCount((c) => c - 1);
-        toast.success("Unfollowed");
+      const status = club?.is_private ? "pending" : "active";
+      await supabase.from("club_followers").insert({
+        club_id: id!,
+        user_id: user.id,
+        role: "member",
+        status,
+      });
+      setMemberStatus(status);
+      if (status === "active") {
+        setMembersCount(c => c + 1);
+        setMemberRole("member");
+        toast.success("Joined club!");
       } else {
-        await supabase.from("club_followers").insert({ club_id: id!, user_id: user.id });
-        setIsFollowing(true);
-        setFollowersCount((c) => c + 1);
-        toast.success("Following!");
+        toast.success("Join request sent!");
       }
     } catch {
       toast.error("Something went wrong");
     } finally {
-      setFollowLoading(false);
+      setActionLoading(false);
     }
   };
 
-  // Parse social links from description
-  const parseSocials = (desc: string | null) => {
-    if (!desc) return { text: "", location: "", website: "", instagram: "", whatsapp: "" };
-    const lines = desc.split("\n");
-    let text = "", location = "", website = "", instagram = "", whatsapp = "";
-    for (const line of lines) {
-      if (line.startsWith("📍")) location = line.replace("📍 ", "");
-      else if (line.startsWith("🌐")) website = line.replace("🌐 ", "");
-      else if (line.startsWith("📸")) instagram = line.replace("📸 ", "");
-      else if (line.startsWith("💬")) whatsapp = line.replace("💬 ", "");
-      else if (line.trim()) text += (text ? "\n" : "") + line;
+  const handleLeave = async () => {
+    if (!user) return;
+    setActionLoading(true);
+    try {
+      await supabase.from("club_followers").delete().eq("club_id", id!).eq("user_id", user.id);
+      setMemberStatus("none");
+      setMemberRole(null);
+      setMembersCount(c => Math.max(0, c - 1));
+      toast.success("Left club");
+    } catch {
+      toast.error("Something went wrong");
+    } finally {
+      setActionLoading(false);
     }
-    return { text, location, website, instagram, whatsapp };
   };
 
   if (loading) {
     return (
       <div className="min-h-screen bg-background">
         <Navbar />
-        <div className="container max-w-lg py-10">
-          <div className="h-32 bg-card rounded-2xl animate-pulse mb-4" />
-          <div className="h-20 bg-card rounded-2xl animate-pulse" />
+        <div className="h-44 bg-muted animate-pulse" />
+        <div className="container max-w-2xl -mt-12 relative z-10">
+          <div className="h-20 w-20 bg-card rounded-xl animate-pulse border-4 border-background" />
+          <div className="h-6 w-48 bg-muted rounded animate-pulse mt-3" />
         </div>
       </div>
     );
@@ -118,101 +168,160 @@ export default function ClubDetailPage() {
 
   if (!club) return null;
 
-  const isOwner = user?.id === club.owner_id;
-  const socials = parseSocials(club.description);
+  const location = [club.city, club.country].filter(Boolean).join(", ");
 
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      <div className="container max-w-lg py-6 pb-28">
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-          {/* Back */}
-          <Button variant="ghost" size="icon" onClick={() => navigate("/clubs")} className="mb-4">
-            <ArrowLeft className="w-5 h-5" />
-          </Button>
 
-          {/* Hero Card */}
-          <div className="bg-card border border-border rounded-2xl p-6 mb-6">
-            <div className="flex items-start gap-4 mb-4">
-              <Avatar className="h-20 w-20 rounded-2xl">
-                <AvatarImage src={club.logo_url || undefined} />
-                <AvatarFallback className="bg-primary/10 text-primary font-bold text-2xl rounded-2xl">
-                  {club.name.charAt(0)}
-                </AvatarFallback>
-              </Avatar>
-              <div className="flex-1 min-w-0">
-                <h1 className="font-display text-2xl font-bold leading-tight break-words">{club.name}</h1>
-                <p className="text-sm text-muted-foreground mt-1">by {ownerName}</p>
-              </div>
-            </div>
-
-            {/* Stats row */}
-            <div className="flex items-center gap-6 mb-4 text-sm">
-              <div className="flex items-center gap-1.5 text-muted-foreground">
-                <Users className="w-4 h-4" />
-                <span className="font-semibold text-foreground">{followersCount}</span> followers
-              </div>
-              <div className="flex items-center gap-1.5 text-muted-foreground">
-                <Calendar className="w-4 h-4" />
-                <span className="font-semibold text-foreground">{gamesCount}</span> games
-              </div>
-            </div>
-
-            {/* Follow / Owner */}
-            {!isOwner ? (
-              <Button
-                variant={isFollowing ? "outline" : "hero"}
-                className="w-full"
-                onClick={toggleFollow}
-                disabled={followLoading}
-              >
-                {isFollowing ? (
-                  <><UserMinus className="w-4 h-4" /> Unfollow</>
-                ) : (
-                  <><UserPlus className="w-4 h-4" /> Follow</>
-                )}
+      {/* Hero Cover */}
+      <div
+        className="h-44 w-full relative"
+        style={{
+          background: club.cover_url
+            ? `url(${club.cover_url}) center/cover no-repeat`
+            : "linear-gradient(135deg, #0D2137, #1A4060)",
+        }}
+      >
+        {/* Top-right actions */}
+        <div className="absolute top-3 right-3 flex items-center gap-2">
+          {isAdmin && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="bg-black/30 text-white hover:bg-black/50 rounded-full h-9 w-9"
+              onClick={() => setAdminOpen(true)}
+            >
+              <Settings className="w-4 h-4" />
+            </Button>
+          )}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="bg-black/30 text-white hover:bg-black/50 rounded-full h-9 w-9">
+                <MoreVertical className="w-4 h-4" />
               </Button>
-            ) : (
-              <p className="text-xs text-center text-muted-foreground">You own this club</p>
-            )}
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              {memberStatus === "active" && !isOwner && (
+                <DropdownMenuItem onClick={handleLeave} disabled={actionLoading}>
+                  <LogOut className="w-4 h-4 mr-2" /> Leave Club
+                </DropdownMenuItem>
+              )}
+              <DropdownMenuItem>
+                <Flag className="w-4 h-4 mr-2" /> Report
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          {/* Join / Status button */}
+          {!isOwner && memberStatus === "none" && (
+            <Button
+              onClick={handleJoin}
+              disabled={actionLoading}
+              className="rounded-full bg-primary text-primary-foreground hover:bg-primary/90 h-9 px-5 text-sm font-semibold"
+            >
+              <UserPlus className="w-4 h-4 mr-1" />
+              {club.is_private ? "Request" : "Join Club"}
+            </Button>
+          )}
+          {memberStatus === "pending" && (
+            <div className="rounded-full bg-muted text-muted-foreground h-9 px-5 flex items-center text-sm font-semibold">
+              Pending...
+            </div>
+          )}
+          {memberStatus === "active" && !isOwner && !isAdmin && (
+            <div className="rounded-full border border-primary text-primary h-9 px-5 flex items-center text-sm font-semibold gap-1.5">
+              <Check className="w-3.5 h-3.5" /> Joined
+            </div>
+          )}
+          {isAdmin && !isOwner && (
+            <div className="rounded-full bg-primary text-primary-foreground h-9 px-5 flex items-center text-sm font-semibold">
+              Admin
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Club info overlay */}
+      <div className="container max-w-2xl -mt-10 relative z-10 pb-28">
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+          {/* Logo + Name */}
+          <div className="flex items-end gap-3 mb-3">
+            <Avatar className="h-20 w-20 rounded-xl border-4 border-background shadow-md">
+              <AvatarImage src={club.logo_url || undefined} className="object-cover" />
+              <AvatarFallback className="bg-primary/10 text-primary font-bold text-2xl rounded-xl">
+                {club.name.charAt(0)}
+              </AvatarFallback>
+            </Avatar>
           </div>
 
-          {/* About */}
-          {socials.text && (
-            <div className="bg-card border border-border rounded-2xl p-5 mb-4">
-              <h3 className="font-display font-bold mb-2">About</h3>
-              <p className="text-sm text-muted-foreground whitespace-pre-line">{socials.text}</p>
+          <h1 className="font-display text-[22px] font-bold leading-tight flex items-center gap-2">
+            {club.name}
+            {club.is_private && <Lock className="w-4 h-4 text-muted-foreground" />}
+          </h1>
+
+          {location && (
+            <div className="flex items-center gap-1 text-sm text-muted-foreground mt-1">
+              <MapPin className="w-3.5 h-3.5" /> {location}
             </div>
           )}
 
-          {/* Info chips */}
-          {(socials.location || socials.website || socials.instagram || socials.whatsapp) && (
-            <div className="bg-card border border-border rounded-2xl p-5 mb-4 space-y-3">
-              <h3 className="font-display font-bold mb-1">Info</h3>
-              {socials.location && (
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <MapPin className="w-4 h-4 shrink-0" /> {socials.location}
-                </div>
-              )}
-              {socials.website && (
-                <a href={socials.website.startsWith("http") ? socials.website : `https://${socials.website}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm text-primary hover:underline">
-                  <Globe className="w-4 h-4 shrink-0" /> {socials.website}
-                </a>
-              )}
-              {socials.instagram && (
-                <a href={`https://instagram.com/${socials.instagram.replace("@", "")}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm text-primary hover:underline">
-                  <Instagram className="w-4 h-4 shrink-0" /> {socials.instagram}
-                </a>
-              )}
-              {socials.whatsapp && (
-                <a href={socials.whatsapp.startsWith("http") ? socials.whatsapp : `https://${socials.whatsapp}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm text-primary hover:underline">
-                  <MessageCircle className="w-4 h-4 shrink-0" /> WhatsApp Group
-                </a>
-              )}
+          {/* Stats Bar */}
+          <div className="flex items-center gap-3 mt-4">
+            <div className="flex items-center gap-1.5 bg-card border border-border rounded-full px-3.5 py-1.5 text-sm">
+              <Users className="w-3.5 h-3.5 text-muted-foreground" />
+              <span className="font-semibold">{membersCount}</span>
+              <span className="text-muted-foreground">Members</span>
             </div>
-          )}
+            <div className="flex items-center gap-1.5 bg-card border border-border rounded-full px-3.5 py-1.5 text-sm">
+              <Calendar className="w-3.5 h-3.5 text-muted-foreground" />
+              <span className="font-semibold">{gamesCount}</span>
+              <span className="text-muted-foreground">Matches</span>
+            </div>
+            <div className="flex items-center gap-1.5 bg-card border border-border rounded-full px-3.5 py-1.5 text-sm">
+              <CalendarDays className="w-3.5 h-3.5 text-muted-foreground" />
+              <span className="font-semibold">{upcomingCount}</span>
+              <span className="text-muted-foreground">Upcoming</span>
+            </div>
+          </div>
+
+          {/* Tabs */}
+          <div className="flex gap-1.5 mt-6 overflow-x-auto scrollbar-hide">
+            {TABS.map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`rounded-full px-4 py-2 text-sm font-semibold transition-colors whitespace-nowrap ${
+                  activeTab === tab.id
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-card border border-border text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Tab Content */}
+          <div className="mt-5">
+            {activeTab === "feed" && <ClubFeedTab clubId={id!} isAdmin={isAdmin} />}
+            {activeTab === "matches" && <ClubMatchesTab clubId={id!} />}
+            {activeTab === "members" && <ClubMembersTab clubId={id!} ownerId={club.owner_id} />}
+            {activeTab === "about" && <ClubAboutTab club={club} ownerId={club.owner_id} />}
+          </div>
         </motion.div>
       </div>
+
+      {/* Admin Panel */}
+      {adminOpen && (
+        <ClubAdminPanel
+          clubId={id!}
+          club={club}
+          isOwner={isOwner}
+          onClose={() => setAdminOpen(false)}
+          onClubUpdated={fetchClub}
+        />
+      )}
     </div>
   );
 }
