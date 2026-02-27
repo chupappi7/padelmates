@@ -169,17 +169,9 @@ export default function UserProfilePage() {
             avatarUrl={profile.avatar_url}
             skillLevel={profile.skill_level}
             friendCode={profile.friend_code}
-            stats={{
-              matches: matchStats.played || profile.games_played || 0,
-              wins: matchStats.wins,
-              losses,
-              winRate,
-            }}
+            pdrRating={profile.pdr_rating}
             isSelf={false}
           />
-
-          {/* 2️⃣ PDR Section */}
-          <PDRSection pdrRating={profile.pdr_rating} />
 
           {/* 3️⃣ Action Buttons */}
           {user && userId && (
@@ -204,7 +196,6 @@ export default function UserProfilePage() {
             wins={matchStats.wins}
             losses={losses}
             winRate={winRate}
-            skillLevel={profile.skill_level}
           />
 
           {/* 6️⃣ Past Matches */}

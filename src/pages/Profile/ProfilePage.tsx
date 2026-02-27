@@ -252,12 +252,7 @@ export default function ProfilePage() {
               avatarUrl={profile?.avatar_url || null}
               skillLevel={profile?.skill_level || 2}
               friendCode={profile?.friend_code || null}
-              stats={{
-                matches: matchStats.played || profile?.games_played || 0,
-                wins: matchStats.wins,
-                losses,
-                winRate,
-              }}
+              pdrRating={profile?.pdr_rating ?? null}
               isSelf
               onEditClick={() => setEditing(true)}
               onAvatarUpload={handleAvatarUpload}
@@ -332,16 +327,12 @@ export default function ProfilePage() {
             </div>
           )}
 
-          {/* 2️⃣ PDR Section */}
-          <PDRSection pdrRating={profile?.pdr_rating ?? null} />
-
           {/* 5️⃣ Performance Stats */}
           <PerformanceStats
             matches={matchStats.played || profile?.games_played || 0}
             wins={matchStats.wins}
             losses={losses}
             winRate={winRate}
-            skillLevel={profile?.skill_level || 2}
           />
 
           {/* 6️⃣ Past Matches */}

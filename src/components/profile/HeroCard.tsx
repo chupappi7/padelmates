@@ -11,12 +11,7 @@ interface HeroCardProps {
   avatarUrl: string | null;
   skillLevel: number;
   friendCode: string | null;
-  stats: {
-    matches: number;
-    wins: number;
-    losses: number;
-    winRate: number;
-  };
+  pdrRating: number | null;
   isSelf: boolean;
   onEditClick?: () => void;
   onAvatarUpload?: (e: React.ChangeEvent<HTMLInputElement>) => void;
@@ -28,7 +23,7 @@ export function HeroCard({
   avatarUrl,
   skillLevel,
   friendCode,
-  stats,
+  pdrRating,
   isSelf,
   onEditClick,
   onAvatarUpload,
@@ -92,7 +87,19 @@ export function HeroCard({
             className={isSelf ? "cursor-pointer" : "cursor-default"}
             disabled={!isSelf}
           >
-            <SkillBadge level={skillLevel} size="sm" />
+            <div className="flex items-center gap-2">
+              <SkillBadge level={skillLevel} size="md" />
+              <div className="flex items-center gap-1.5">
+                <span className="text-white/25 text-xs">|</span>
+                <span className="text-[10px] text-white/40 uppercase tracking-wider font-medium">PDR</span>
+                <span
+                  className="text-white font-bold text-sm tabular-nums"
+                  style={{ fontFamily: "'Space Grotesk', system-ui, sans-serif" }}
+                >
+                  {pdrRating != null ? pdrRating.toFixed(2) : "NR"}
+                </span>
+              </div>
+            </div>
           </button>
         </div>
 
@@ -123,30 +130,6 @@ export function HeroCard({
               </button>
             </div>
           )}
-
-          {/* Right-aligned stats stack (inside center for layout) */}
-          <div className="mt-3">
-            <div className="grid grid-cols-4 gap-0">
-              {[
-                { value: stats.matches, label: "Matches" },
-                { value: stats.wins, label: "Wins" },
-                { value: stats.losses, label: "Losses" },
-                { value: `${stats.winRate}%`, label: "Win %" },
-              ].map((stat, i) => (
-                <div key={stat.label} className="text-center">
-                  <p
-                    className="text-white font-bold text-base tabular-nums leading-none"
-                    style={{ fontFamily: "'Space Grotesk', system-ui, sans-serif" }}
-                  >
-                    {stat.value}
-                  </p>
-                  <p className="text-white/35 text-[9px] mt-1 uppercase tracking-wider">
-                    {stat.label}
-                  </p>
-                </div>
-              ))}
-            </div>
-          </div>
         </div>
       </div>
     </div>

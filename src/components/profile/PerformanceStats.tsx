@@ -1,11 +1,8 @@
-import { getSkillLabel } from "@/components/games/SkillBadge";
-
 interface PerformanceStatsProps {
   matches: number;
   wins: number;
   losses: number;
   winRate: number;
-  skillLevel: number;
 }
 
 export function PerformanceStats({
@@ -13,14 +10,12 @@ export function PerformanceStats({
   wins,
   losses,
   winRate,
-  skillLevel,
 }: PerformanceStatsProps) {
   const stats = [
     { label: "Matches Played", value: matches },
     { label: "Wins", value: wins },
     { label: "Losses", value: losses },
     { label: "Win %", value: `${winRate}%` },
-    { label: "Current Level", value: getSkillLabel(skillLevel) },
   ];
 
   return (
