@@ -24,7 +24,9 @@ interface Game {
   payment_mode: string;
   price_mode: string;
   court_taken_by: string | null;
+  club_id?: string | null;
   profiles: { name: string; avatar_url: string | null } | null;
+  club?: { name: string; logo_url: string | null } | null;
   game_players: { id: string }[];
 }
 
@@ -49,7 +51,23 @@ export default function MyMatchesPage() {
       .in("user_id", hostIds);
     const profileMap: Record<string, { name: string; avatar_url: string | null }> = {};
     profiles?.forEach((p) => { profileMap[p.user_id] = { name: p.name, avatar_url: p.avatar_url }; });
-    return data.map((game) => ({ ...game, profiles: profileMap[game.host_id] || null })) as Game[];
+
+    // Fetch clubs
+    const clubIds = [...new Set(data.filter((g) => g.club_id).map((g) => g.club_id!))];
+    const clubMap: Record<string, { name: string; logo_url: string | null }> = {};
+    if (clubIds.length > 0) {
+      const { data: clubs } = await supabase
+        .from("clubs")
+        .select("id, name, logo_url")
+        .in("id", clubIds);
+      clubs?.forEach((c) => { clubMap[c.id] = { name: c.name, logo_url: c.logo_url }; });
+    }
+
+    return data.map((game) => ({
+      ...game,
+      profiles: profileMap[game.host_id] || null,
+      club: game.club_id ? clubMap[game.club_id] || null : null,
+    })) as Game[];
   };
 
   const fetchAll = async () => {
@@ -153,6 +171,9 @@ export default function MyMatchesPage() {
                 pricePerPlayer={Number(game.price_per_player)}
                 hostName={game.profiles?.name || "Unknown"}
                 hostAvatar={game.profiles?.avatar_url || undefined}
+                clubName={game.club?.name}
+                clubLogo={game.club?.logo_url || undefined}
+                clubId={game.club_id || undefined}
                 paymentMode={game.payment_mode}
                 priceMode={game.price_mode}
                 courtTakenBy={game.court_taken_by}
