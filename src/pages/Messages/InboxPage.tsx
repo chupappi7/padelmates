@@ -208,7 +208,7 @@ function SwipeableRow({
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5 mb-0.5">
             <p className={cn(
-              "text-sm line-clamp-1 break-all",
+              "text-sm line-clamp-2",
               convo.unreadCount > 0 && !isArchived ? "font-bold" : "font-medium"
             )}>
               {convo.title}
