@@ -79,9 +79,9 @@ export function HeroCard({
           )}
         </div>
 
-        {/* Right side: name, ID, level+PDR */}
+        {/* Right side: name, level+PDR */}
         <div className="flex-1 min-w-0">
-          <div className="flex flex-col gap-0.5">
+          <div className="flex flex-col gap-1">
             {/* Name */}
             <p
               className="text-white text-[26px] font-bold truncate leading-none"
@@ -90,22 +90,8 @@ export function HeroCard({
               {name}
             </p>
 
-            {/* ID tight under name */}
-            {friendCode && (
-              <div className="flex items-center gap-1.5 leading-none">
-                <span className="text-[10px] text-white/30 uppercase tracking-wider">ID</span>
-                <code className="text-[11px] font-mono text-white/40 tracking-wider leading-none">{friendCode}</code>
-                <button
-                  onClick={handleCopyCode}
-                  className="text-white/25 hover:text-white/50 transition-colors p-0.5"
-                >
-                  {copied ? <Check className="w-2.5 h-2.5 text-primary" /> : <Copy className="w-2.5 h-2.5" />}
-                </button>
-              </div>
-            )}
-
             {/* Level + PDR */}
-            <div className="flex items-center gap-2.5 mt-0.5 leading-none">
+            <div className="flex items-center gap-2.5 leading-none">
               <button
                 onClick={isSelf ? onLevelBadgeClick : undefined}
                 className={isSelf ? "cursor-pointer" : "cursor-default"}
@@ -125,6 +111,26 @@ export function HeroCard({
           </div>
         </div>
       </div>
+
+      {/* Copy ID - bottom right */}
+      {friendCode && (
+        <button
+          onClick={handleCopyCode}
+          className="absolute bottom-4 right-4 flex items-center gap-1 text-white/30 hover:text-white/50 transition-colors"
+        >
+          {copied ? (
+            <>
+              <Check className="w-3 h-3 text-primary" />
+              <span className="text-[10px] uppercase tracking-wider font-medium text-primary">Copied</span>
+            </>
+          ) : (
+            <>
+              <Copy className="w-3 h-3" />
+              <span className="text-[10px] uppercase tracking-wider font-medium">Copy ID</span>
+            </>
+          )}
+        </button>
+      )}
     </div>
   );
 }
