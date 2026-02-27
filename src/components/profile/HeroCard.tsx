@@ -80,7 +80,7 @@ export function HeroCard({
         </div>
 
         {/* Right side: name, ID, level+PDR */}
-        <div className="flex-1 min-w-0">
+        <div className="flex-1 min-w-0 self-stretch flex flex-col justify-between">
           {/* Big name */}
           <p
             className="text-white text-[28px] font-bold truncate leading-none"
