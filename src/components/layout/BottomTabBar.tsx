@@ -1,16 +1,16 @@
 import { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Home, Plus, User, CalendarCheck, Trophy } from "lucide-react";
+import { Home, Plus, Building2, CalendarCheck, Trophy } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { HostTypeModal } from "@/components/games/HostTypeModal";
 
 const tabs = [
   { path: "/", label: "Matches", icon: Home },
-  { path: "/elo", label: "PDR", icon: Trophy },
+  { path: "/clubs", label: "Clubs", icon: Building2 },
   { path: "__host__", label: "Host", icon: Plus, isFab: true },
   { path: "/my-matches", label: "My Matches", icon: CalendarCheck },
-  { path: "/profile", label: "Profile", icon: User },
+  { path: "/elo", label: "PDR", icon: Trophy },
 ];
 
 export function BottomTabBar() {
@@ -43,10 +43,10 @@ export function BottomTabBar() {
                   onClick={() => setShowHostModal(true)}
                   className="flex flex-col items-center justify-center -mt-4"
                 >
-                  <div className="w-12 h-12 rounded-full bg-secondary flex items-center justify-center shadow-md shadow-secondary/30">
-                    <Plus className="w-6 h-6 text-secondary-foreground" />
+                  <div className="w-12 h-12 rounded-full bg-primary flex items-center justify-center shadow-md shadow-primary/30">
+                    <Plus className="w-6 h-6 text-primary-foreground" />
                   </div>
-                  <span className="text-[10px] font-semibold text-secondary mt-0.5">Host</span>
+                  <span className="text-[10px] font-semibold text-primary mt-0.5">Host</span>
                 </button>
               );
             }
