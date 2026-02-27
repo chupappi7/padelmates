@@ -1,27 +1,24 @@
 
+# Reorder Bottom Tab Bar and Update Host Button Color
 
-## Consolidate Filters: Move Type Dropdown Into the Mobile Filter Sheet
+## Summary
+Reorder the mobile bottom tab bar to: **Matches | Clubs | Host | My Matches | PDR**, replacing Profile with Clubs. Change the Host FAB button from coral (secondary) to teal (primary) for visual consistency. Update the desktop navbar to match by adding Clubs.
 
-Right now on mobile there are two filter controls visible: the Type dropdown in the main row AND the filter sheet (which also has Game Format). This is redundant and clutters the UI.
+## Changes
 
-### Approach
+### 1. `src/components/layout/BottomTabBar.tsx`
+- Update the `tabs` array to the new order:
+  1. Matches (`/`, Home icon)
+  2. Clubs (`/clubs`, Building2 icon)
+  3. Host (FAB, Plus icon)
+  4. My Matches (`/my-matches`, CalendarCheck icon)
+  5. PDR (`/elo`, Trophy icon)
+- Remove Profile tab (already accessible from top navbar avatar menu)
+- Change Host FAB colors from `bg-secondary` / `text-secondary` to `bg-primary` / `text-primary` (teal)
+- Update icon imports: swap `User` for `Building2`, remove unused imports
 
-**On mobile**: Remove the Type dropdown from the main row entirely. Move it into the MobileFilterSheet alongside Skill Level. The main row will just show a single filter button that opens the sheet with both filters.
+### 2. `src/components/layout/Navbar.tsx`
+- Add Clubs (`/clubs`, Building2 icon) to the `desktopNavLinks` array so desktop stays in sync
+- Final desktop nav links: **Clubs | My Matches | PDR** (Matches via logo click)
 
-**On desktop**: Keep the Type dropdown and Skill Range picker inline as they are today (no sheet needed).
-
-### Changes
-
-**`src/pages/Games/GamesListPage.tsx`**:
-- Wrap the `Select` (Type dropdown) in a `!isMobile &&` conditional so it only renders on desktop
-- On mobile, the filter row will only contain the `MobileFilterSheet` button (full width)
-- Adjust layout: on mobile just render the filter button; on desktop render the dropdown + skill chips side by side
-
-**`src/components/games/MobileFilterSheet.tsx`**:
-- No changes needed -- it already contains the Game Format dropdown and Skill Level picker
-
-### Result
-
-- Mobile: One filter icon button that opens a bottom sheet with both Skill Level and Game Format
-- Desktop: Type dropdown + Skill chips inline in a row
-- No duplicate controls, cleaner mobile UX
+No other files need changes -- the `/clubs` route and `ClubsListPage` already exist.
