@@ -1,47 +1,48 @@
 
-# Show Club + Admin on Game Cards
+
+# Add Club Filter -- Scrollable Chip Bar
 
 ## Problem
-When a game is club-hosted, the card currently shows either the club name OR the host name, but not both. You want it to display something like **"PadelKings · Bob Marley"** so users can see which club is hosting and which admin published it.
+Three side-by-side dropdowns won't fit on mobile. We need a space-efficient way to add club filtering.
 
-## Design Approach
-Row 4 of the GameCard will show a **two-line host section** for club-hosted games:
-- **Line 1**: Club logo (rounded square) + Club name (clickable, links to club page)
-- **Line 2**: Small admin avatar + admin name in muted text, like "by Bob Marley"
+## Approach: Horizontal Chip/Pill Bar
 
-For personal games, the current single-line layout stays unchanged.
+Instead of a third dropdown, add a **horizontally scrollable chip bar** below the existing Type + Level filters. This only appears when the user is logged in and has joined at least one club.
 
 ```text
-+------------------------------------------+
-| PadelKings                               |
-|  [club logo]  PadelKings                 |
-|               by Bob Marley              |
-+------------------------------------------+
+[ Type v ] [ Level v ]
+[ All ] [ My Clubs ] [ PadelKings ] [ Smash FC ] ...
+          ^^^ scrollable chip row ^^^
 ```
+
+- Chips are small pill buttons (like the DayPicker style)
+- "All" is selected by default (no club filtering)
+- "My Clubs" filters to any game from a joined club
+- Individual club names let you drill into one specific club
+- The row scrolls horizontally with `overflow-x-auto` and hidden scrollbar
+- When no user is logged in or user has no clubs, this row is hidden entirely
 
 ## Technical Changes
 
-### 1. GameCard props -- add club fields
-Add optional `clubName`, `clubLogo`, and `clubId` props to `GameCardProps`. When present, Row 4 renders the two-line club+admin layout. The existing `hostName` and `hostAvatar` always represent the admin/user.
+### 1. GamesListPage.tsx
 
-### 2. GamesListPage data fetching
-Update `fetchGames` to always fetch the host profile. When `club_id` exists, also fetch the club data separately. Pass both to `GameCard`:
-- `hostName` / `hostAvatar` = admin's profile (always)
-- `clubName` / `clubLogo` / `clubId` = club data (only when club-hosted)
+**New state:**
+- `clubFilter`: string -- `"all"`, `"my_clubs"`, or a specific club ID
+- `userClubs`: array of `{ id: string; name: string }` -- fetched from `club_followers` joined with `clubs`
 
-### 3. GameCard Row 4 rendering
-When `clubName` is set:
-- Club logo as a small rounded-square avatar (not circle)
-- Club name as primary text (clickable link to `/clubs/{clubId}`)
-- Below: "by {hostName}" in smaller muted text with the admin's tiny circular avatar
+**New data fetch (inside existing `useEffect`):**
+- When `user` exists, query `club_followers` (status = active) for user's clubs, then batch-fetch club names from `clubs` table
 
-When `clubName` is not set:
-- Current layout: circular avatar + host name (no changes)
+**Filter logic update in `filteredGames`:**
+- `"all"` -- no club filter applied
+- `"my_clubs"` -- `game.club_id` must be in `userClubs` IDs
+- specific ID -- `game.club_id === clubFilter`
 
-### 4. MyMatchesPage consistency
-Apply the same pattern to `MyMatchesPage.tsx` so club+admin info appears there too.
+**UI addition:**
+- After the Type + Level filter row, render a scrollable `div` with chip buttons
+- Each chip uses conditional styling (filled primary when active, outline when inactive)
+- Same layout for both mobile and desktop -- chips naturally adapt
 
 ### Files Modified
-- `src/components/games/GameCard.tsx` -- add club props, update Row 4 rendering
-- `src/pages/Games/GamesListPage.tsx` -- fetch both club and host profile, pass both to GameCard
-- `src/pages/Games/MyMatchesPage.tsx` -- same data fetching update
+- `src/pages/Games/GamesListPage.tsx` -- add club chip bar, state, fetch, and filter logic
+
