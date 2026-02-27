@@ -164,26 +164,18 @@ export default function GroupChatPage() {
           </Button>
           {gameInfo && (
             <button
-              className="flex items-center gap-2.5 min-w-0 flex-1"
+              className="flex-1 min-w-0"
               onClick={() => navigate(`/games/${gameInfo.id}`)}
             >
-              <div className="h-9 w-9 rounded-full bg-emerald-500/10 flex items-center justify-center shrink-0">
-                <Trophy className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-              </div>
-              <div className="min-w-0">
-                <div className="flex items-center gap-1.5">
-                  <Badge className="text-[9px] h-4 px-1.5 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20 border shrink-0 font-semibold">
-                    Match
-                  </Badge>
-                  <span className="font-display font-semibold text-sm truncate">{gameInfo.title}</span>
-                </div>
-                <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
-                  <MapPin className="w-2.5 h-2.5" />
-                  <span className="truncate">{gameInfo.location}</span>
-                  <span className="opacity-40">·</span>
-                  <Calendar className="w-2.5 h-2.5" />
-                  <span>{format(new Date(gameInfo.date_time), "MMM d · HH:mm")}</span>
-                </div>
+              <p className="font-display font-semibold text-sm leading-tight line-clamp-2 text-left">
+                {gameInfo.title}
+              </p>
+              <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground mt-0.5">
+                <MapPin className="w-2.5 h-2.5 shrink-0" />
+                <span className="line-clamp-1">{gameInfo.location}</span>
+                <span className="opacity-40 shrink-0">·</span>
+                <Calendar className="w-2.5 h-2.5 shrink-0" />
+                <span className="shrink-0">{format(new Date(gameInfo.date_time), "MMM d, yyyy · HH:mm")}</span>
               </div>
             </button>
           )}
