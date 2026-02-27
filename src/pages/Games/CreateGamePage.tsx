@@ -1216,6 +1216,7 @@ export default function CreateGamePage() {
                         <Switch
                           checked={allowSubstitutions}
                           onCheckedChange={setAllowSubstitutions}
+                          className="shrink-0 scale-100"
                         />
                       </div>
                     </div>
