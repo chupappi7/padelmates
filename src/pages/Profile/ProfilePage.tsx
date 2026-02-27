@@ -11,33 +11,27 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Navbar } from "@/components/layout/Navbar";
-import { SkillBadge } from "@/components/games/SkillBadge";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 import {
-  Camera,
-  Copy,
-  Check,
   CreditCard,
   Pencil,
   ChevronDown,
   ChevronUp,
-  Share2,
-  Trophy,
-  Swords,
-  Percent,
-  Users,
 } from "lucide-react";
-import { useFriends } from "@/hooks/useFriends";
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import { HeroCard } from "@/components/profile/HeroCard";
+import { PDRSection } from "@/components/profile/PDRSection";
+import { PerformanceStats } from "@/components/profile/PerformanceStats";
+import { PastMatches } from "@/components/profile/PastMatches";
+import { LevelSelectSheet } from "@/components/profile/LevelSelectSheet";
 
 interface Profile {
   id: string;
@@ -48,25 +42,7 @@ interface Profile {
   games_played: number;
   bank_details: string | null;
   friend_code: string | null;
-}
-
-function StatCard({
-  icon,
-  value,
-  label,
-}: {
-  icon: React.ReactNode;
-  value: string | number;
-  label: string;
-}) {
-  return (
-    <div className="flex items-center">
-      <div>
-        <span className="text-white font-semibold text-xs">{value}</span>
-        <span className="text-white/35 text-[9px] ml-1">{label}</span>
-      </div>
-    </div>
-  );
+  pdr_rating: number | null;
 }
 
 export default function ProfilePage() {
@@ -80,9 +56,9 @@ export default function ProfilePage() {
   const [savingPayment, setSavingPayment] = useState(false);
   const [bankDetailsForm, setBankDetailsForm] = useState("");
   const [paymentOpen, setPaymentOpen] = useState(false);
-  const [copied, setCopied] = useState(false);
+  const [levelSheetOpen, setLevelSheetOpen] = useState(false);
+  const [savingLevel, setSavingLevel] = useState(false);
   const [matchStats, setMatchStats] = useState({ played: 0, wins: 0 });
-  const { friends } = useFriends();
 
   const [formData, setFormData] = useState({
     name: "",
@@ -116,23 +92,6 @@ export default function ProfilePage() {
     setLoading(false);
   };
 
-  const handleSavePayment = async () => {
-    if (!user) return;
-    setSavingPayment(true);
-    const { error } = await supabase
-      .from("profiles")
-      .update({ bank_details: bankDetailsForm } as any)
-      .eq("user_id", user.id);
-    if (error) {
-      toast.error("Failed to save payment info");
-    } else {
-      toast.success("Payment info saved!");
-      setEditingPayment(false);
-      fetchProfile();
-    }
-    setSavingPayment(false);
-  };
-
   const fetchMatchStats = async () => {
     if (!user) return;
     const { data: myMatchPlayers } = await supabase
@@ -156,8 +115,8 @@ export default function ProfilePage() {
       const mp = myMatchPlayers.find((p) => p.match_id === m.id);
       if (!mp) return;
       if (
-        (mp.team === 1 && m.team1_score > m.team2_score) ||
-        (mp.team === 2 && m.team2_score > m.team1_score)
+        (mp.team === 1 && (m.team1_score ?? 0) > (m.team2_score ?? 0)) ||
+        (mp.team === 2 && (m.team2_score ?? 0) > (m.team1_score ?? 0))
       ) {
         wins++;
       }
@@ -169,7 +128,6 @@ export default function ProfilePage() {
   const handleSave = async () => {
     if (!user) return;
     setSaving(true);
-
     const { error } = await supabase
       .from("profiles")
       .update({
@@ -187,6 +145,23 @@ export default function ProfilePage() {
       fetchProfile();
     }
     setSaving(false);
+  };
+
+  const handleSavePayment = async () => {
+    if (!user) return;
+    setSavingPayment(true);
+    const { error } = await supabase
+      .from("profiles")
+      .update({ bank_details: bankDetailsForm } as any)
+      .eq("user_id", user.id);
+    if (error) {
+      toast.error("Failed to save payment info");
+    } else {
+      toast.success("Payment info saved!");
+      setEditingPayment(false);
+      fetchProfile();
+    }
+    setSavingPayment(false);
   };
 
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -216,21 +191,22 @@ export default function ProfilePage() {
     fetchProfile();
   };
 
-  const handleCopyCode = () => {
-    if (!profile?.friend_code) return;
-    navigator.clipboard.writeText(profile.friend_code);
-    setCopied(true);
-    toast.success("Friend code copied!");
-    setTimeout(() => setCopied(false), 2000);
-  };
+  const handleSaveLevel = async (level: number) => {
+    if (!user) return;
+    setSavingLevel(true);
+    const { error } = await supabase
+      .from("profiles")
+      .update({ skill_level: level })
+      .eq("user_id", user.id);
 
-  const handleShareCode = () => {
-    if (!profile?.friend_code) return;
-    if (navigator.share) {
-      navigator.share({ text: `Add me on Padel! My code: ${profile.friend_code}` });
+    if (error) {
+      toast.error("Failed to update level");
     } else {
-      handleCopyCode();
+      toast.success("Level updated!");
+      setLevelSheetOpen(false);
+      fetchProfile();
     }
+    setSavingLevel(false);
   };
 
   if (!user) {
@@ -244,7 +220,8 @@ export default function ProfilePage() {
         <Navbar />
         <div className="container py-8">
           <div className="animate-pulse space-y-4">
-            <div className="h-20 bg-muted rounded-xl" />
+            <div className="h-32 bg-muted rounded-xl" />
+            <div className="h-16 bg-muted rounded-xl" />
             <div className="h-24 bg-muted rounded-xl" />
           </div>
         </div>
@@ -252,6 +229,7 @@ export default function ProfilePage() {
     );
   }
 
+  const losses = matchStats.played - matchStats.wins;
   const winRate =
     matchStats.played > 0
       ? Math.round((matchStats.wins / matchStats.played) * 100)
@@ -265,81 +243,57 @@ export default function ProfilePage() {
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
-          className="space-y-4"
+          className="space-y-3"
         >
-          {/* ── PDR-style Identity Card ── */}
+          {/* 1️⃣ Hero Card / Edit Form */}
           {!editing ? (
-            <div className="bg-gradient-to-br from-[#0D2137] via-[#142D4A] to-[#1A4060] rounded-2xl px-5 pt-3 pb-5 relative">
-              <div className="flex justify-between items-start mb-3">
-                <p className="text-[10px] uppercase tracking-[0.2em] text-white/50 font-medium" style={{ fontFamily: "'Space Grotesk', system-ui, sans-serif" }}>Player Profile</p>
-                <Button variant="ghost" size="sm" className="h-7 px-2 text-white/50 hover:text-white hover:bg-white/10" onClick={() => setEditing(true)}>
-                  <Pencil className="w-3 h-3 mr-1" />
-                  <span className="text-[10px]">Edit</span>
-                </Button>
-              </div>
-              <div className="flex items-center gap-5">
-                <div className="relative shrink-0">
-                  <Avatar className="w-16 h-16 border-2 border-white/15">
-                    <AvatarImage src={profile?.avatar_url || undefined} />
-                    <AvatarFallback className="text-xl bg-white/10 text-white font-semibold">
-                      {profile?.name?.charAt(0).toUpperCase()}
-                    </AvatarFallback>
-                  </Avatar>
-                  <label htmlFor="avatar" className="absolute bottom-0 right-0 w-6 h-6 bg-primary text-primary-foreground rounded-full flex items-center justify-center cursor-pointer hover:bg-primary/90 transition-colors">
-                    <Camera className="w-3 h-3" />
-                  </label>
-                  <Input type="file" id="avatar" accept="image/*" className="hidden" onChange={handleAvatarUpload} />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <h1 className="text-white text-[15px] font-medium truncate">{profile?.name}</h1>
-                    <SkillBadge level={profile?.skill_level || 3} size="sm" />
-                  </div>
-                  {profile?.friend_code && (
-                    <div className="flex items-center gap-1.5 mt-0.5">
-                      <span className="text-[10px] text-white/30">ID:</span>
-                      <code className="text-[10px] font-mono text-white/40 tracking-wider">{profile.friend_code}</code>
-                      <button onClick={handleCopyCode} className="text-white/30 hover:text-white/60 transition-colors">
-                        {copied ? <Check className="w-2.5 h-2.5 text-primary" /> : <Copy className="w-2.5 h-2.5" />}
-                      </button>
-                      <button onClick={handleShareCode} className="text-white/30 hover:text-white/60 transition-colors">
-                        <Share2 className="w-2.5 h-2.5" />
-                      </button>
-                    </div>
-                  )}
-                  {profile?.bio && (
-                    <p className="text-[11px] text-white/40 mt-1 line-clamp-2">{profile.bio}</p>
-                  )}
-                </div>
-              </div>
-              <div className="flex items-center gap-0 mt-4 ml-[5.25rem]">
-                {[
-                  { label: "Matches", value: matchStats.played || profile?.games_played || 0 },
-                  { label: "Wins", value: matchStats.wins },
-                  { label: "Win%", value: `${winRate}%` },
-                  { label: "Friends", value: friends.length },
-                ].map((stat, i) => (
-                  <div key={stat.label} className="flex items-center">
-                    {i > 0 && <div className="w-px h-4 bg-white/15 mx-3" />}
-                    <div>
-                      <span className="text-white font-semibold text-xs">{stat.value}</span>
-                      <span className="text-white/35 text-[9px] ml-1">{stat.label}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
+            <HeroCard
+              name={profile?.name || ""}
+              avatarUrl={profile?.avatar_url || null}
+              skillLevel={profile?.skill_level || 2}
+              friendCode={profile?.friend_code || null}
+              stats={{
+                matches: matchStats.played || profile?.games_played || 0,
+                wins: matchStats.wins,
+                losses,
+                winRate,
+              }}
+              isSelf
+              onEditClick={() => setEditing(true)}
+              onAvatarUpload={handleAvatarUpload}
+              onLevelBadgeClick={() => setLevelSheetOpen(true)}
+            />
           ) : (
             <div className="bg-card border border-border rounded-2xl p-5 space-y-4">
-              <h2 className="font-semibold text-sm">Edit Profile</h2>
+              <h2
+                className="font-semibold text-sm"
+                style={{ fontFamily: "'Space Grotesk', system-ui, sans-serif" }}
+              >
+                Edit Profile
+              </h2>
               <div className="space-y-2">
                 <Label>Name</Label>
-                <Input value={formData.name} onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))} />
+                <Input
+                  value={formData.name}
+                  onChange={(e) =>
+                    setFormData((prev) => ({ ...prev, name: e.target.value }))
+                  }
+                />
               </div>
               <div className="space-y-2">
                 <Label>Skill Level</Label>
-                <Select value={String(formData.skill_level)} onValueChange={(v) => setFormData((prev) => ({ ...prev, skill_level: parseInt(v) }))}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                <Select
+                  value={String(formData.skill_level)}
+                  onValueChange={(v) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      skill_level: parseInt(v),
+                    }))
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="4">A</SelectItem>
                     <SelectItem value="3">B</SelectItem>
@@ -350,17 +304,50 @@ export default function ProfilePage() {
               </div>
               <div className="space-y-2">
                 <Label>Bio</Label>
-                <Textarea value={formData.bio} onChange={(e) => setFormData((prev) => ({ ...prev, bio: e.target.value }))} placeholder="Tell others about yourself..." />
+                <Textarea
+                  value={formData.bio}
+                  onChange={(e) =>
+                    setFormData((prev) => ({ ...prev, bio: e.target.value }))
+                  }
+                  placeholder="Tell others about yourself..."
+                />
               </div>
               <div className="flex gap-3">
-                <Button variant="outline" className="flex-1" onClick={() => setEditing(false)}>Cancel</Button>
-                <Button variant="hero" className="flex-1" onClick={handleSave} disabled={saving}>{saving ? "Saving..." : "Save Changes"}</Button>
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => setEditing(false)}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  variant="hero"
+                  className="flex-1"
+                  onClick={handleSave}
+                  disabled={saving}
+                >
+                  {saving ? "Saving..." : "Save Changes"}
+                </Button>
               </div>
             </div>
           )}
 
+          {/* 2️⃣ PDR Section */}
+          <PDRSection pdrRating={profile?.pdr_rating ?? null} />
 
-          {/* ── Payment Info (Collapsible) ── */}
+          {/* 5️⃣ Performance Stats */}
+          <PerformanceStats
+            matches={matchStats.played || profile?.games_played || 0}
+            wins={matchStats.wins}
+            losses={losses}
+            winRate={winRate}
+            skillLevel={profile?.skill_level || 2}
+          />
+
+          {/* 6️⃣ Past Matches */}
+          {user && <PastMatches userId={user.id} />}
+
+          {/* 7️⃣ Payment Info (Collapsible) */}
           <Collapsible open={paymentOpen} onOpenChange={setPaymentOpen}>
             <div className="bg-card border border-border rounded-xl overflow-hidden">
               <CollapsibleTrigger className="w-full flex items-center justify-between px-4 py-3 hover:bg-muted/30 transition-colors">
@@ -385,12 +372,15 @@ export default function ProfilePage() {
                   {editingPayment ? (
                     <>
                       <p className="text-xs text-muted-foreground">
-                        Add your account number, Revolut tag, or any payment link.
-                        This is shared with buyers during court listing chats.
+                        Add your account number, Revolut tag, or any payment
+                        link. This is shared with buyers during court listing
+                        chats.
                       </p>
                       <textarea
                         className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm resize-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring min-h-[80px]"
-                        placeholder={"Revolut: @yourname\nBank: 1234 5678 9012\nPayPal: you@email.com"}
+                        placeholder={
+                          "Revolut: @yourname\nBank: 1234 5678 9012\nPayPal: you@email.com"
+                        }
                         value={bankDetailsForm}
                         onChange={(e) => setBankDetailsForm(e.target.value)}
                       />
@@ -455,6 +445,15 @@ export default function ProfilePage() {
           </Collapsible>
         </motion.div>
       </div>
+
+      {/* Level Select Sheet */}
+      <LevelSelectSheet
+        open={levelSheetOpen}
+        onOpenChange={setLevelSheetOpen}
+        currentLevel={profile?.skill_level || 2}
+        onSave={handleSaveLevel}
+        saving={savingLevel}
+      />
     </div>
   );
 }
