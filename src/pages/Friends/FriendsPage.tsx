@@ -9,49 +9,133 @@ import { useFriends } from "@/hooks/useFriends";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { motion } from "framer-motion";
-import { ArrowLeft, Search, Users, Clock, UserPlus } from "lucide-react";
+import { Search, Users, Clock, UserPlus, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type Tab = "friends" | "requests" | "search";
+
+interface SearchResult {
+  user_id: string;
+  name: string;
+  avatar_url: string | null;
+  skill_level: number;
+  pdr_rating: number | null;
+  friend_code: string | null;
+}
 
 export default function FriendsPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { user } = useAuth();
-  const { friends, incomingRequests, outgoingRequests, acceptRequest, rejectRequest, removeFriend, sendRequest, loading } = useFriends();
-  const [activeTab, setActiveTab] = useState<Tab>((searchParams.get("tab") as Tab) || "friends");
+  const {
+    friends,
+    incomingRequests,
+    outgoingRequests,
+    acceptRequest,
+    rejectRequest,
+    removeFriend,
+    sendRequest,
+    loading,
+  } = useFriends();
+
+  const [activeTab, setActiveTab] = useState<Tab>(
+    (searchParams.get("tab") as Tab) || "friends"
+  );
+  const [friendsFilter, setFriendsFilter] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
-  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [searching, setSearching] = useState(false);
+  const [suggestions, setSuggestions] = useState<SearchResult[]>([]);
+  const [suggestionsLoading, setSuggestionsLoading] = useState(false);
 
-  const isFriendCode = (s: string) => /^[A-Z0-9]{6}$/i.test(s);
+  const isFriendCode = (s: string) => /^[A-Z0-9]{6}$/i.test(s.replace("#", ""));
 
-  const handleSearch = async () => {
-    if (!searchQuery.trim() || !user) return;
+  // Fetch suggestions when Find tab is active
+  useEffect(() => {
+    if (activeTab !== "search" || !user) return;
+    fetchSuggestions();
+  }, [activeTab, user?.id]);
+
+  const fetchSuggestions = async () => {
+    if (!user) return;
+    setSuggestionsLoading(true);
+
+    // Get club IDs the user belongs to
+    const { data: userClubs } = await supabase
+      .from("club_followers")
+      .select("club_id")
+      .eq("user_id", user.id)
+      .eq("status", "active");
+
+    const clubIds = userClubs?.map((c) => c.club_id) || [];
+
+    let suggestedProfiles: SearchResult[] = [];
+
+    if (clubIds.length > 0) {
+      // Find other members of the same clubs
+      const { data: clubMembers } = await supabase
+        .from("club_followers")
+        .select("user_id")
+        .in("club_id", clubIds)
+        .eq("status", "active")
+        .neq("user_id", user.id)
+        .limit(30);
+
+      const memberIds = [
+        ...new Set(clubMembers?.map((m) => m.user_id) || []),
+      ];
+
+      // Exclude existing friends and pending requests
+      const existingIds = new Set([
+        ...friends.map((f) => f.profile.user_id),
+        ...incomingRequests.map((f) => f.profile.user_id),
+        ...outgoingRequests.map((f) => f.profile.user_id),
+      ]);
+
+      const filteredIds = memberIds.filter((id) => !existingIds.has(id));
+
+      if (filteredIds.length > 0) {
+        const { data: profiles } = await supabase
+          .from("profiles")
+          .select("user_id, name, avatar_url, skill_level, pdr_rating, friend_code")
+          .in("user_id", filteredIds.slice(0, 10));
+
+        suggestedProfiles = (profiles || []) as SearchResult[];
+      }
+    }
+
+    setSuggestions(suggestedProfiles);
+    setSuggestionsLoading(false);
+  };
+
+  const handleSearch = async (query?: string) => {
+    const q = query ?? searchQuery;
+    if (!q.trim() || !user) return;
     setSearching(true);
-    const trimmed = searchQuery.trim();
+    const trimmed = q.trim().replace("#", "");
 
-    let query = supabase
+    let dbQuery = supabase
       .from("profiles")
-      .select("user_id, name, avatar_url, skill_level")
+      .select("user_id, name, avatar_url, skill_level, pdr_rating, friend_code")
       .neq("user_id", user.id);
 
     if (isFriendCode(trimmed)) {
-      query = query.eq("friend_code", trimmed.toUpperCase());
+      dbQuery = dbQuery.eq("friend_code", trimmed.toUpperCase());
     } else {
-      query = query.ilike("name", `%${trimmed}%`).limit(20);
+      dbQuery = dbQuery.ilike("name", `%${trimmed}%`).limit(20);
     }
 
-    const { data } = await query;
+    const { data } = await dbQuery;
 
-    // Filter out existing friends and pending requests
     const existingIds = new Set([
-      ...friends.map(f => f.profile.user_id),
-      ...incomingRequests.map(f => f.profile.user_id),
-      ...outgoingRequests.map(f => f.profile.user_id),
+      ...friends.map((f) => f.profile.user_id),
+      ...incomingRequests.map((f) => f.profile.user_id),
+      ...outgoingRequests.map((f) => f.profile.user_id),
     ]);
 
-    setSearchResults((data || []).filter(p => !existingIds.has(p.user_id)));
+    setSearchResults(
+      ((data || []) as SearchResult[]).filter((p) => !existingIds.has(p.user_id))
+    );
     setSearching(false);
   };
 
@@ -60,36 +144,55 @@ export default function FriendsPage() {
     return null;
   }
 
+  const filteredFriends = friendsFilter
+    ? friends.filter((f) =>
+        f.profile.name.toLowerCase().includes(friendsFilter.toLowerCase())
+      )
+    : friends;
+
   const tabs: { value: Tab; label: string; icon: any; count?: number }[] = [
     { value: "friends", label: "Friends", icon: Users, count: friends.length },
-    { value: "requests", label: "Requests", icon: Clock, count: incomingRequests.length },
+    {
+      value: "requests",
+      label: "Requests",
+      icon: Clock,
+      count: incomingRequests.length,
+    },
     { value: "search", label: "Find", icon: Search },
   ];
 
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      <div className="container py-6 max-w-2xl px-4 pb-32 md:pb-8">
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-          <button
-            onClick={() => navigate(-1)}
-            className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors mb-6"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Back
-          </button>
-
-          <h1 className="font-display text-2xl font-bold mb-6">Friends</h1>
+      <div className="container py-5 max-w-2xl px-4 pb-32 md:pb-8">
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.25 }}
+        >
+          {/* Header */}
+          <div className="mb-5">
+            <h1 className="font-display text-2xl font-bold mb-1">Friends</h1>
+            <p className="text-xs text-muted-foreground">
+              {friends.length} {friends.length === 1 ? "friend" : "friends"}
+              {incomingRequests.length > 0 && (
+                <span> · {incomingRequests.length} pending</span>
+              )}
+            </p>
+          </div>
 
           {/* Tabs */}
-          <div className="flex items-center gap-2 mb-6">
+          <div className="flex gap-1 mb-5 bg-muted/50 rounded-lg p-1">
             {tabs.map((tab) => (
-              <Button
+              <button
                 key={tab.value}
-                variant={activeTab === tab.value ? "default" : "outline"}
-                size="sm"
                 onClick={() => setActiveTab(tab.value)}
-                className="h-9 text-xs gap-1.5"
+                className={cn(
+                  "flex-1 flex items-center justify-center gap-1.5 py-2 text-sm font-semibold rounded-md transition-colors",
+                  activeTab === tab.value
+                    ? "bg-background text-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
               >
                 <tab.icon className="w-3.5 h-3.5" />
                 {tab.label}
@@ -97,138 +200,273 @@ export default function FriendsPage() {
                   <Badge
                     variant="secondary"
                     className={cn(
-                      "ml-1 h-5 px-1.5 text-[10px] rounded-full",
+                      "h-5 px-1.5 text-[10px] rounded-full",
                       tab.value === "requests" && activeTab !== tab.value
                         ? "bg-destructive text-destructive-foreground"
                         : activeTab === tab.value
-                          ? "bg-background/20 text-primary-foreground"
-                          : "bg-muted"
+                          ? "bg-primary/15 text-primary"
+                          : "bg-muted-foreground/15"
                     )}
                   >
                     {tab.count}
                   </Badge>
                 )}
-              </Button>
+              </button>
             ))}
           </div>
 
-          {/* Friends Tab */}
+          {/* ── Friends Tab ────────────────────────────────────── */}
           {activeTab === "friends" && (
-            <div className="space-y-2">
+            <div className="space-y-3">
+              {friends.length > 3 && (
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Filter friends..."
+                    value={friendsFilter}
+                    onChange={(e) => setFriendsFilter(e.target.value)}
+                    className="pl-10 h-10"
+                  />
+                </div>
+              )}
+
               {loading ? (
                 <div className="space-y-2">
-                  {[1, 2, 3].map(i => (
-                    <div key={i} className="h-16 bg-muted rounded-xl animate-pulse" />
+                  {[1, 2, 3].map((i) => (
+                    <div
+                      key={i}
+                      className="h-[68px] bg-muted rounded-xl animate-pulse"
+                    />
                   ))}
                 </div>
-              ) : friends.length === 0 ? (
-                <div className="text-center py-12">
-                  <Users className="w-10 h-10 text-muted-foreground/40 mx-auto mb-3" />
-                  <p className="text-sm text-muted-foreground">No friends yet</p>
-                  <Button variant="outline" size="sm" className="mt-3" onClick={() => setActiveTab("search")}>
-                    <Search className="w-3.5 h-3.5 mr-1.5" />
+              ) : filteredFriends.length === 0 ? (
+                <div className="text-center py-16">
+                  <div className="w-14 h-14 rounded-full bg-muted/50 flex items-center justify-center mx-auto mb-3">
+                    <Users className="w-7 h-7 text-muted-foreground" />
+                  </div>
+                  <p className="font-semibold text-sm mb-1">No friends yet</p>
+                  <p className="text-xs text-muted-foreground mb-4">
+                    Find players from the Find tab
+                  </p>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setActiveTab("search")}
+                    className="gap-1.5"
+                  >
+                    <Search className="w-3.5 h-3.5" />
                     Find players
                   </Button>
                 </div>
               ) : (
-                friends.map((f) => (
-                  <FriendCard
-                    key={f.id}
-                    userId={f.profile.user_id}
-                    name={f.profile.name}
-                    avatarUrl={f.profile.avatar_url}
-                    skillLevel={f.profile.skill_level}
-                    variant="friend"
-                    onRemove={() => removeFriend(f.id)}
-                  />
-                ))
+                <div className="space-y-1.5">
+                  {filteredFriends.map((f) => (
+                    <FriendCard
+                      key={f.id}
+                      userId={f.profile.user_id}
+                      name={f.profile.name}
+                      avatarUrl={f.profile.avatar_url}
+                      skillLevel={f.profile.skill_level}
+                      pdrRating={f.profile.pdr_rating}
+                      variant="friend"
+                      onRemove={() => removeFriend(f.id)}
+                    />
+                  ))}
+                </div>
               )}
             </div>
           )}
 
-          {/* Requests Tab */}
+          {/* ── Requests Tab ───────────────────────────────────── */}
           {activeTab === "requests" && (
-            <div className="space-y-4">
+            <div className="space-y-5">
               {incomingRequests.length > 0 && (
-                <div className="space-y-2">
-                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Incoming</p>
-                  {incomingRequests.map((f) => (
-                    <FriendCard
-                      key={f.id}
-                      userId={f.profile.user_id}
-                      name={f.profile.name}
-                      avatarUrl={f.profile.avatar_url}
-                      skillLevel={f.profile.skill_level}
-                      variant="incoming"
-                      onAccept={() => acceptRequest(f.id)}
-                      onReject={() => rejectRequest(f.id)}
-                    />
-                  ))}
+                <div>
+                  <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-2 px-1">
+                    Received
+                  </p>
+                  <div className="space-y-1.5">
+                    {incomingRequests.map((f) => (
+                      <FriendCard
+                        key={f.id}
+                        userId={f.profile.user_id}
+                        name={f.profile.name}
+                        avatarUrl={f.profile.avatar_url}
+                        skillLevel={f.profile.skill_level}
+                        pdrRating={f.profile.pdr_rating}
+                        variant="incoming"
+                        onAccept={() => acceptRequest(f.id)}
+                        onReject={() => rejectRequest(f.id)}
+                      />
+                    ))}
+                  </div>
                 </div>
               )}
+
               {outgoingRequests.length > 0 && (
-                <div className="space-y-2">
-                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Sent</p>
-                  {outgoingRequests.map((f) => (
-                    <FriendCard
-                      key={f.id}
-                      userId={f.profile.user_id}
-                      name={f.profile.name}
-                      avatarUrl={f.profile.avatar_url}
-                      skillLevel={f.profile.skill_level}
-                      variant="outgoing"
-                      onReject={() => rejectRequest(f.id)}
-                    />
-                  ))}
+                <div>
+                  <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-2 px-1">
+                    Sent
+                  </p>
+                  <div className="space-y-1.5">
+                    {outgoingRequests.map((f) => (
+                      <FriendCard
+                        key={f.id}
+                        userId={f.profile.user_id}
+                        name={f.profile.name}
+                        avatarUrl={f.profile.avatar_url}
+                        skillLevel={f.profile.skill_level}
+                        pdrRating={f.profile.pdr_rating}
+                        variant="outgoing"
+                        onReject={() => rejectRequest(f.id)}
+                      />
+                    ))}
+                  </div>
                 </div>
               )}
-              {incomingRequests.length === 0 && outgoingRequests.length === 0 && (
-                <div className="text-center py-12">
-                  <Clock className="w-10 h-10 text-muted-foreground/40 mx-auto mb-3" />
-                  <p className="text-sm text-muted-foreground">No pending requests</p>
-                </div>
-              )}
+
+              {incomingRequests.length === 0 &&
+                outgoingRequests.length === 0 && (
+                  <div className="text-center py-16">
+                    <div className="w-14 h-14 rounded-full bg-muted/50 flex items-center justify-center mx-auto mb-3">
+                      <Clock className="w-7 h-7 text-muted-foreground" />
+                    </div>
+                    <p className="font-semibold text-sm mb-1">
+                      No pending requests
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      Friend requests will appear here
+                    </p>
+                  </div>
+                )}
             </div>
           )}
 
-          {/* Search Tab */}
+          {/* ── Find Tab ───────────────────────────────────────── */}
           {activeTab === "search" && (
-            <div className="space-y-4">
+            <div className="space-y-5">
+              {/* Search bar */}
               <div className="flex gap-2">
                 <div className="relative flex-1">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                   <Input
-                    placeholder="Search by name or friend code..."
+                    placeholder="Search by name or player ID..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && handleSearch()}
                     className="pl-10 h-11"
+                    autoFocus
                   />
                 </div>
-                <Button variant="hero" onClick={handleSearch} disabled={searching} className="h-11">
+                <Button
+                  variant="hero"
+                  onClick={() => handleSearch()}
+                  disabled={searching || !searchQuery.trim()}
+                  className="h-11 px-5"
+                >
                   Search
                 </Button>
               </div>
 
-              <div className="space-y-2">
-                {searchResults.map((p) => (
-                  <FriendCard
-                    key={p.user_id}
-                    userId={p.user_id}
-                    name={p.name}
-                    avatarUrl={p.avatar_url}
-                    skillLevel={p.skill_level}
-                    variant="search"
-                    onAdd={() => {
-                      sendRequest(p.user_id);
-                      setSearchResults(prev => prev.filter(r => r.user_id !== p.user_id));
-                    }}
-                  />
-                ))}
-                {searchResults.length === 0 && searchQuery && !searching && (
-                  <p className="text-sm text-muted-foreground text-center py-8">No results found</p>
-                )}
-              </div>
+              {/* Search results */}
+              {searchQuery.trim() && (
+                <div className="space-y-1.5">
+                  {searching ? (
+                    <div className="space-y-2">
+                      {[1, 2].map((i) => (
+                        <div
+                          key={i}
+                          className="h-[68px] bg-muted rounded-xl animate-pulse"
+                        />
+                      ))}
+                    </div>
+                  ) : searchResults.length > 0 ? (
+                    searchResults.map((p) => (
+                      <FriendCard
+                        key={p.user_id}
+                        userId={p.user_id}
+                        name={p.name}
+                        avatarUrl={p.avatar_url}
+                        skillLevel={p.skill_level}
+                        pdrRating={p.pdr_rating}
+                        variant="search"
+                        onAdd={() => {
+                          sendRequest(p.user_id);
+                          setSearchResults((prev) =>
+                            prev.filter((r) => r.user_id !== p.user_id)
+                          );
+                        }}
+                      />
+                    ))
+                  ) : (
+                    <div className="text-center py-10">
+                      <p className="text-sm text-muted-foreground mb-1">
+                        No players found
+                      </p>
+                      <p className="text-xs text-muted-foreground/60">
+                        Try a different name or use their 6-character player ID
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Suggestions (when not searching) */}
+              {!searchQuery.trim() && (
+                <div>
+                  {suggestionsLoading ? (
+                    <div className="space-y-2">
+                      {[1, 2, 3].map((i) => (
+                        <div
+                          key={i}
+                          className="h-[68px] bg-muted rounded-xl animate-pulse"
+                        />
+                      ))}
+                    </div>
+                  ) : suggestions.length > 0 ? (
+                    <div>
+                      <div className="flex items-center gap-2 mb-3 px-1">
+                        <Sparkles className="w-3.5 h-3.5 text-primary" />
+                        <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
+                          Players you may know
+                        </p>
+                      </div>
+                      <div className="space-y-1.5">
+                        {suggestions.map((p) => (
+                          <FriendCard
+                            key={p.user_id}
+                            userId={p.user_id}
+                            name={p.name}
+                            avatarUrl={p.avatar_url}
+                            skillLevel={p.skill_level}
+                            pdrRating={p.pdr_rating}
+                            variant="search"
+                            subtitle="From your clubs"
+                            onAdd={() => {
+                              sendRequest(p.user_id);
+                              setSuggestions((prev) =>
+                                prev.filter((r) => r.user_id !== p.user_id)
+                              );
+                            }}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-center py-10">
+                      <div className="w-14 h-14 rounded-full bg-muted/50 flex items-center justify-center mx-auto mb-3">
+                        <UserPlus className="w-7 h-7 text-muted-foreground" />
+                      </div>
+                      <p className="font-semibold text-sm mb-1">
+                        Find new players
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        Search by name or their 6-character player ID
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           )}
         </motion.div>

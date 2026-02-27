@@ -3,14 +3,16 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 
-interface FriendProfile {
+export interface FriendProfile {
   user_id: string;
   name: string;
   avatar_url: string | null;
   skill_level: number;
+  pdr_rating: number | null;
+  friend_code: string | null;
 }
 
-interface Friendship {
+export interface Friendship {
   id: string;
   requester_id: string;
   addressee_id: string;
@@ -42,20 +44,18 @@ export function useFriends() {
     }
 
     const friendships = data || [];
-    
-    // Get all unique user IDs that aren't the current user
-    const otherUserIds = friendships.map(f => 
+
+    const otherUserIds = friendships.map(f =>
       f.requester_id === user.id ? f.addressee_id : f.requester_id
     );
 
-    // Fetch profiles for these users
     let profiles: FriendProfile[] = [];
     if (otherUserIds.length > 0) {
       const { data: profileData } = await supabase
         .from("profiles")
-        .select("user_id, name, avatar_url, skill_level")
+        .select("user_id, name, avatar_url, skill_level, pdr_rating, friend_code")
         .in("user_id", otherUserIds);
-      profiles = profileData || [];
+      profiles = (profileData || []) as FriendProfile[];
     }
 
     const profileMap = new Map(profiles.map(p => [p.user_id, p]));
@@ -64,7 +64,7 @@ export function useFriends() {
       const otherId = f.requester_id === user.id ? f.addressee_id : f.requester_id;
       return {
         ...f,
-        profile: profileMap.get(otherId) || { user_id: otherId, name: "Unknown", avatar_url: null, skill_level: 3 },
+        profile: profileMap.get(otherId) || { user_id: otherId, name: "Unknown", avatar_url: null, skill_level: 3, pdr_rating: null, friend_code: null },
       };
     });
 
@@ -151,5 +151,3 @@ export function useFriends() {
     refetch: fetchFriends,
   };
 }
-
-export type { FriendProfile, Friendship };
