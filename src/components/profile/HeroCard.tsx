@@ -91,7 +91,7 @@ export function HeroCard({
 
           {/* ID tight under name */}
           {friendCode && (
-            <div className="flex items-center gap-1.5 mt-1">
+            <div className="flex items-center gap-1.5 mt-0.5">
               <span className="text-[10px] text-white/30 uppercase tracking-wider">ID</span>
               <code className="text-[11px] font-mono text-white/40 tracking-wider">{friendCode}</code>
               <button
@@ -104,7 +104,7 @@ export function HeroCard({
           )}
 
           {/* Level + PDR tight under ID */}
-          <div className="flex items-center gap-2.5 mt-1.5">
+          <div className="flex items-center gap-2.5 mt-1">
             <button
               onClick={isSelf ? onLevelBadgeClick : undefined}
               className={isSelf ? "cursor-pointer" : "cursor-default"}
