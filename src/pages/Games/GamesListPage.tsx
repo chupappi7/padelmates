@@ -199,7 +199,7 @@ export default function GamesListPage() {
                 {selectedDate ? format(selectedDate, "EEEE, MMMM d, yyyy") : "All upcoming"}
               </p>
             </div>
-            {user && (
+            {user && !isMobile && (
               <Button
                 variant="hero"
                 size="sm"
