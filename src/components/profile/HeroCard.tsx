@@ -40,12 +40,12 @@ export function HeroCard({
   };
 
   return (
-    <div className="bg-gradient-to-br from-[#0D2137] via-[#142D4A] to-[#1A4060] rounded-2xl px-5 py-5 relative">
+    <div className="bg-gradient-to-br from-[#0D2137] via-[#142D4A] to-[#1A4060] rounded-2xl px-6 py-6 relative">
       {/* Edit icon top-right */}
       {isSelf && onEditClick && (
         <button
           onClick={onEditClick}
-          className="absolute top-4 right-4 text-white/30 hover:text-white/60 transition-colors"
+          className="absolute top-2.5 right-2.5 text-white/30 hover:text-white/60 transition-colors"
         >
           <Pencil className="w-4 h-4" />
         </button>
@@ -116,7 +116,7 @@ export function HeroCard({
       {friendCode && (
         <button
           onClick={handleCopyCode}
-          className="absolute bottom-4 right-4 flex items-center gap-1 text-white/30 hover:text-white/50 transition-colors"
+          className="absolute bottom-2.5 right-2.5 flex items-center gap-1 text-white/30 hover:text-white/50 transition-colors"
         >
           {copied ? (
             <>
