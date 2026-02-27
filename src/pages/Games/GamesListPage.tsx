@@ -16,7 +16,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Navbar } from "@/components/layout/Navbar";
 import { SkillRangePicker } from "@/components/games/SkillRangePicker";
 import { motion } from "framer-motion";
-import { Calendar } from "lucide-react";
+import { Calendar, Plus } from "lucide-react";
+import { HostTypeModal } from "@/components/games/HostTypeModal";
 import { useAuth } from "@/contexts/AuthContext";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useUserLocation, calculateDistance } from "@/hooks/useUserLocation";
@@ -62,6 +63,7 @@ export default function GamesListPage() {
   const { user } = useAuth();
   const isMobile = useIsMobile();
   const { location: userLocation } = useUserLocation();
+  const [showHostModal, setShowHostModal] = useState(false);
 
   useEffect(() => {
     fetchGames();
@@ -190,11 +192,23 @@ export default function GamesListPage() {
           animate={{ opacity: 1, y: 0 }}
           className="mb-4"
         >
-          <div className="mb-4">
-            <h1 className="font-display text-2xl sm:text-3xl font-bold mb-0.5">Matches</h1>
-            <p className="text-sm text-muted-foreground">
-              {selectedDate ? format(selectedDate, "EEEE, MMMM d, yyyy") : "All upcoming"}
-            </p>
+          <div className="mb-4 flex items-start justify-between">
+            <div>
+              <h1 className="font-display text-2xl sm:text-3xl font-bold mb-0.5">Matches</h1>
+              <p className="text-sm text-muted-foreground">
+                {selectedDate ? format(selectedDate, "EEEE, MMMM d, yyyy") : "All upcoming"}
+              </p>
+            </div>
+            {user && (
+              <Button
+                variant="hero"
+                size="sm"
+                onClick={() => setShowHostModal(true)}
+              >
+                <Plus className="w-4 h-4" />
+                Host
+              </Button>
+            )}
           </div>
 
           {/* Day Picker */}
@@ -383,6 +397,7 @@ export default function GamesListPage() {
           </motion.div>
         )}
       </div>
+      <HostTypeModal open={showHostModal} onOpenChange={setShowHostModal} />
     </div>
   );
 }

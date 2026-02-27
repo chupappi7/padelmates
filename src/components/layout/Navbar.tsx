@@ -29,7 +29,6 @@ export function Navbar() {
   };
 
   const desktopNavLinks = [
-    { href: "/", label: "Matches", icon: Home },
     { href: "/elo", label: "PDR", icon: Trophy },
     { href: "/my-matches", label: "My Matches", icon: CalendarCheck },
   ];
@@ -78,17 +77,6 @@ export function Navbar() {
                 </Link>
               );
             })}
-            {user && (
-              <Button
-                variant="hero"
-                size="sm"
-                className="ml-1"
-                onClick={() => setShowHostModal(true)}
-              >
-                <Plus className="w-4 h-4" />
-                Host
-              </Button>
-            )}
           </div>
 
           {/* Mobile right side */}
