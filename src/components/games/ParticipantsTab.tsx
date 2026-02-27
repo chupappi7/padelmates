@@ -4,7 +4,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { SkillBadge } from "./SkillBadge";
-import { Check, X, Users, Clock, ShieldCheck } from "lucide-react";
+import { Check, X, Users, Clock, ShieldCheck, RefreshCw } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface Profile {
@@ -51,6 +51,10 @@ interface ParticipantsTabProps {
   showJoinInSlot?: boolean;
   joinLabel?: string;
   onJoinFromSlot?: () => void;
+  /** Substitution support */
+  allowSubstitutions?: boolean;
+  showSubstituteJoin?: boolean;
+  onJoinAsSubstitute?: () => void;
 }
 
 type FilterType = "all" | "requests";
@@ -72,6 +76,9 @@ export function ParticipantsTab({
   showJoinInSlot,
   joinLabel,
   onJoinFromSlot,
+  allowSubstitutions,
+  showSubstituteJoin,
+  onJoinAsSubstitute,
 }: ParticipantsTabProps) {
   const [activeFilter, setActiveFilter] = useState<FilterType>("all");
 
@@ -298,6 +305,34 @@ export function ParticipantsTab({
           <Users className="w-10 h-10 text-muted-foreground/40 mx-auto mb-2" />
           <p className="text-sm text-muted-foreground">No players yet. Be the first to join!</p>
         </div>
+      )}
+
+      {/* Substitution Section */}
+      {allowSubstitutions && showConfirmed && (
+        <section>
+          <div className="flex items-center gap-2 mb-3">
+            <span className="text-base">🔄</span>
+            <h3 className="text-sm font-semibold">Substitutions</h3>
+          </div>
+          {emptySlots <= 0 && showSubstituteJoin && onJoinAsSubstitute ? (
+            <button
+              onClick={onJoinAsSubstitute}
+              className="flex items-center gap-3 px-3 py-2.5 rounded-xl border-2 border-dashed border-accent/40 bg-accent/5 hover:bg-accent/10 hover:border-accent/60 transition-colors w-full text-left"
+            >
+              <div className="h-8 w-8 rounded-full bg-accent/10 flex items-center justify-center shrink-0">
+                <RefreshCw className="h-3.5 w-3.5 text-accent-foreground" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-accent-foreground">Join as Substitute</p>
+                <p className="text-[11px] text-muted-foreground">Available if a player drops out</p>
+              </div>
+            </button>
+          ) : emptySlots > 0 ? (
+            <p className="text-xs text-muted-foreground px-1">Substitutions available once all spots are filled.</p>
+          ) : (
+            <p className="text-xs text-muted-foreground px-1">No substitution spots requested yet.</p>
+          )}
+        </section>
       )}
     </div>
   );

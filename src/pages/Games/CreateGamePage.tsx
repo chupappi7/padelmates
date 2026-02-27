@@ -26,9 +26,10 @@ import { ArrowLeft, Calendar, MapPin, Users, Trophy, Clock, DoorOpen, CreditCard
 // UserPlus and XIcon imported at top
 import { DurationChips } from "@/components/games/DurationChips";
 import { CourtPicker } from "@/components/games/CourtPicker";
+import { Switch } from "@/components/ui/switch";
 import type { HostType } from "@/components/games/HostTypeModal";
 
-const HOST_TYPE_CONFIG: Record<HostType, { title: string; subtitle: string; format: string; defaultMaxPlayers: number; defaultJoinMode: string }> = {
+const HOST_TYPE_CONFIG: Record<HostType, { title: string; subtitle: string; format: string; defaultMaxPlayers: number; defaultJoinMode: string; maxPlayerLimit?: number }> = {
   find_players: {
     title: "Find Players",
     subtitle: "Create a casual match and find players",
@@ -42,6 +43,7 @@ const HOST_TYPE_CONFIG: Record<HostType, { title: string; subtitle: string; form
     format: "americano",
     defaultMaxPlayers: 8,
     defaultJoinMode: "open",
+    maxPlayerLimit: 20,
   },
   sell_court: {
     title: "Sell / Give Away Court",
@@ -96,6 +98,8 @@ export default function CreateGamePage() {
              : "set_price") as "split_evenly" | "free" | "set_price",
   });
 
+  const [allowSubstitutions, setAllowSubstitutions] = useState(false);
+
   // Find Players: spotsNeeded is the primary control (how many more players do you need?)
   // Min court size is 4, so minimum spots = max(1, 4 - prefilled - (hostIsPlaying ? 1 : 0))
   const minSpotsNeeded = (hIsPlaying: boolean, pCount: number) =>
@@ -112,7 +116,8 @@ export default function CreateGamePage() {
 
   // Derived values for find_players mode
   const currentMin = minSpotsNeeded(formData.hostIsPlaying, prefilledCount);
-  const maxSpotsNeeded = Math.max(currentMin, 8 - prefilledCount - (formData.hostIsPlaying ? 1 : 0));
+  const playerLimit = config.maxPlayerLimit || 8;
+  const maxSpotsNeeded = Math.max(currentMin, playerLimit - prefilledCount - (formData.hostIsPlaying ? 1 : 0));
   const clampedSpotsNeeded = Math.min(Math.max(spotsNeeded, currentMin), maxSpotsNeeded);
 
   // effectiveLookingFor = spotsNeeded in find_players/americano, 1 for sell_spots, else legacy lookingFor
@@ -233,6 +238,7 @@ export default function CreateGamePage() {
       join_mode: (isSellCourt || hostType === "sell_spots") ? "open" : formData.joinMode,
       prefilled_players: prefilledPlayers.filter(p => getPlayerName(p).trim() !== ""),
       ...(isSellCourt && bookingScreenshotPath ? { booking_screenshot_url: bookingScreenshotPath } : {}),
+      ...(hostType === "americano" ? { allow_substitutions: allowSubstitutions } : {}),
     } as any).select().single();
 
     if (error) {
@@ -1308,7 +1314,23 @@ export default function CreateGamePage() {
                       </div>
                     </div>
 
-                    {/* Card 5: About (optional) */}
+                    {/* Card 5: Substitutions */}
+                    <div className="bg-card border border-border rounded-xl md:rounded-2xl p-4 md:p-6 space-y-4 md:space-y-5">
+                      <div className="flex items-center justify-between">
+                        <div className="space-y-0.5">
+                          <h2 className="font-display font-bold text-base md:text-lg flex items-center gap-2">
+                            🔄 Substitutions
+                          </h2>
+                          <p className="text-xs text-muted-foreground">Allow players to join as substitutes when all spots are filled</p>
+                        </div>
+                        <Switch
+                          checked={allowSubstitutions}
+                          onCheckedChange={setAllowSubstitutions}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Card 6: About (optional) */}
                     <div className="bg-card border border-border rounded-xl md:rounded-2xl p-4 md:p-6 space-y-4 md:space-y-5">
                       <h2 className="font-display font-bold text-base md:text-lg flex items-center gap-2">
                         <Users className="w-4 h-4 md:w-5 md:h-5 text-muted-foreground" />
