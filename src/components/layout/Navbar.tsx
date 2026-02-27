@@ -10,7 +10,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Home, Plus, Trophy, CalendarCheck, LogOut, User, Bell, MessageCircle, Building2 } from "lucide-react";
+import { Home, Plus, Trophy, CalendarCheck, LogOut, User, Bell, Inbox, Building2 } from "lucide-react";
 import { useNotifications } from "@/hooks/useNotifications";
 import { NotificationPanel } from "@/components/layout/NotificationPanel";
 import { HostTypeModal } from "@/components/games/HostTypeModal";
@@ -84,7 +84,7 @@ export function Navbar() {
           <div className="flex md:hidden items-center gap-1">
             {user ? (
               <>
-                <IconButton icon={MessageCircle} onClick={() => navigate("/messages")} />
+                <IconButton icon={Inbox} onClick={() => navigate("/messages")} />
                 <NotificationPanel>
                   <IconButton icon={Bell} badge={unreadCount} onClick={() => {}} />
                 </NotificationPanel>
@@ -123,7 +123,7 @@ export function Navbar() {
           <div className="hidden md:flex items-center gap-2">
             {user ? (
               <>
-                <IconButton icon={MessageCircle} onClick={() => navigate("/messages")} />
+                <IconButton icon={Inbox} onClick={() => navigate("/messages")} />
                 <NotificationPanel>
                   <IconButton icon={Bell} badge={unreadCount} onClick={() => {}} />
                 </NotificationPanel>
