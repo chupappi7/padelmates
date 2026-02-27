@@ -83,7 +83,7 @@ export function HeroCard({
         <div className="flex-1 min-w-0">
           {/* Big name */}
           <p
-            className="text-white text-lg font-bold truncate leading-tight"
+            className="text-white text-2xl font-bold truncate leading-tight"
             style={{ fontFamily: "'Space Grotesk', system-ui, sans-serif" }}
           >
             {name}
