@@ -10,7 +10,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Home, Plus, Trophy, CalendarCheck, LogOut, User, Bell, MessageCircle } from "lucide-react";
+import { Home, Plus, Trophy, CalendarCheck, LogOut, User, Bell, MessageCircle, Building2 } from "lucide-react";
 import { useNotifications } from "@/hooks/useNotifications";
 import { NotificationPanel } from "@/components/layout/NotificationPanel";
 import { HostTypeModal } from "@/components/games/HostTypeModal";
@@ -29,8 +29,9 @@ export function Navbar() {
   };
 
   const desktopNavLinks = [
-    { href: "/elo", label: "PDR", icon: Trophy },
+    { href: "/clubs", label: "Clubs", icon: Building2 },
     { href: "/my-matches", label: "My Matches", icon: CalendarCheck },
+    { href: "/elo", label: "PDR", icon: Trophy },
   ];
 
   const IconButton = ({ icon: Icon, badge, onClick }: { icon: any; badge?: number; onClick: () => void }) => (
