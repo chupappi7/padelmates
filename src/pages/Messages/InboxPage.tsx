@@ -209,7 +209,7 @@ function SwipeableRow({
           <div className="flex items-center gap-1.5 mb-0.5">
             {getTypeBadge(convo.type)}
             <p className={cn(
-              "text-sm truncate",
+              "text-sm line-clamp-1 break-all",
               convo.unreadCount > 0 && !isArchived ? "font-bold" : "font-medium"
             )}>
               {convo.title}
