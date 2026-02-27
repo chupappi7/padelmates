@@ -80,8 +80,8 @@ export function HeroCard({
         </div>
 
         {/* Right side: name, ID, level+PDR */}
-        <div className="flex-1 min-w-0 flex flex-col">
-          <div>
+        <div className="flex-1 min-w-0">
+          <div className="flex flex-col gap-0.5">
             {/* Name */}
             <p
               className="text-white text-[26px] font-bold truncate leading-none"
@@ -92,9 +92,9 @@ export function HeroCard({
 
             {/* ID tight under name */}
             {friendCode && (
-              <div className="flex items-center gap-1.5 mt-0.5">
+              <div className="flex items-center gap-1.5 leading-none">
                 <span className="text-[10px] text-white/30 uppercase tracking-wider">ID</span>
-                <code className="text-[11px] font-mono text-white/40 tracking-wider">{friendCode}</code>
+                <code className="text-[11px] font-mono text-white/40 tracking-wider leading-none">{friendCode}</code>
                 <button
                   onClick={handleCopyCode}
                   className="text-white/25 hover:text-white/50 transition-colors p-0.5"
@@ -103,25 +103,25 @@ export function HeroCard({
                 </button>
               </div>
             )}
-          </div>
 
-          {/* Level + PDR at bottom, aligned with avatar bottom */}
-          <div className="flex items-center gap-2.5 mt-1.5">
-            <button
-              onClick={isSelf ? onLevelBadgeClick : undefined}
-              className={isSelf ? "cursor-pointer" : "cursor-default"}
-              disabled={!isSelf}
-            >
-              <SkillBadge level={skillLevel} size="sm" />
-            </button>
-            <span className="text-white/15 text-sm">|</span>
-            <span className="text-[11px] text-white/40 uppercase tracking-wider font-medium">PDR</span>
-            <span
-              className="text-[24px] leading-none font-extrabold text-white tracking-tight"
-              style={{ fontFamily: "'Space Grotesk', system-ui, sans-serif" }}
-            >
-              {pdrRating != null ? pdrRating.toFixed(2) : "NR"}
-            </span>
+            {/* Level + PDR */}
+            <div className="flex items-center gap-2.5 mt-0.5 leading-none">
+              <button
+                onClick={isSelf ? onLevelBadgeClick : undefined}
+                className={isSelf ? "cursor-pointer" : "cursor-default"}
+                disabled={!isSelf}
+              >
+                <SkillBadge level={skillLevel} size="sm" />
+              </button>
+              <span className="text-white/15 text-sm">|</span>
+              <span className="text-[11px] text-white/40 uppercase tracking-wider font-medium">PDR</span>
+              <span
+                className="text-[24px] leading-none font-extrabold text-white tracking-tight"
+                style={{ fontFamily: "'Space Grotesk', system-ui, sans-serif" }}
+              >
+                {pdrRating != null ? pdrRating.toFixed(2) : "NR"}
+              </span>
+            </div>
           </div>
         </div>
       </div>
