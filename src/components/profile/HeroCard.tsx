@@ -91,7 +91,7 @@ export function HeroCard({
 
           {/* Small ID under name */}
           {friendCode && (
-            <div className="flex items-center gap-1.5 mt-0.5">
+            <div className="flex items-center gap-1.5 -mt-0.5">
               <span className="text-[9px] text-white/30 uppercase tracking-wider">ID</span>
               <code className="text-[10px] font-mono text-white/40 tracking-wider">{friendCode}</code>
               <button
