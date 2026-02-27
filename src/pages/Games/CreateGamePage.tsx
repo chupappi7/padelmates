@@ -1,8 +1,9 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { UserPlus, X as XIcon, Upload, ShieldCheck } from "lucide-react";
+import { UserPlus, X as XIcon, Upload, ShieldCheck, Building2 as Building2Icon } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { FriendPickerSheet, type PrefilledPlayer } from "@/components/friends/FriendPickerSheet";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
@@ -61,6 +62,12 @@ const HOST_TYPE_CONFIG: Record<HostType, { title: string; subtitle: string; form
   },
 };
 
+interface UserClub {
+  id: string;
+  name: string;
+  logo_url: string | null;
+}
+
 export default function CreateGamePage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -79,6 +86,25 @@ export default function CreateGamePage() {
 
   const [prefilledPlayers, setPrefilledPlayers] = useState<PrefilledPlayer[]>([]);
   const [showPlayerPicker, setShowPlayerPicker] = useState(false);
+
+  // Club hosting state
+  const [userClubs, setUserClubs] = useState<UserClub[]>([]);
+  const [hostingAs, setHostingAs] = useState<"personal" | string>("personal"); // "personal" or club id
+
+  useEffect(() => {
+    if (!user) return;
+    supabase
+      .from("clubs")
+      .select("id, name, logo_url")
+      .eq("owner_id", user.id)
+      .then(({ data }) => {
+        if (data) setUserClubs(data);
+      });
+  }, [user]);
+
+  const isClubAdmin = userClubs.length > 0;
+  const selectedClub = userClubs.find((c) => c.id === hostingAs);
+  const isHostingAsClub = hostingAs !== "personal" && !!selectedClub;
 
   const [formData, setFormData] = useState({
     title: "",
@@ -241,6 +267,7 @@ export default function CreateGamePage() {
       prefilled_players: prefilledPlayers.filter(p => getPlayerName(p).trim() !== ""),
       ...(isSellCourt && bookingScreenshotPath ? { booking_screenshot_url: bookingScreenshotPath } : {}),
       ...(hostType === "americano" ? { allow_substitutions: allowSubstitutions } : {}),
+      ...(isHostingAsClub && selectedClub ? { club_id: selectedClub.id } : {}),
     } as any).select().single();
 
     if (error) {
@@ -289,6 +316,114 @@ export default function CreateGamePage() {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-5 md:space-y-6">
+            {/* Host Selector + Visibility — always first */}
+            {isClubAdmin && (
+              <div className="bg-card border border-border rounded-xl md:rounded-2xl p-4 md:p-6 space-y-4 md:space-y-5">
+                <h2 className="font-display font-bold text-base md:text-lg flex items-center gap-2">
+                  <Building2 className="w-4 h-4 md:w-5 md:h-5 text-primary" />
+                  Who is hosting?
+                </h2>
+
+                {userClubs.length === 1 ? (
+                  /* Pill buttons: personal vs single club */
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setHostingAs("personal");
+                        if (formData.visibility === "club_only") handleChange("visibility", "public");
+                      }}
+                      className={`flex-1 h-11 rounded-xl border-2 text-sm font-medium transition-all flex items-center justify-center gap-2 ${
+                        hostingAs === "personal"
+                          ? "border-primary bg-primary/10 text-foreground"
+                          : "border-border text-muted-foreground hover:border-primary/40"
+                      }`}
+                    >
+                      👤 Personal
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setHostingAs(userClubs[0].id)}
+                      className={`flex-1 h-11 rounded-xl border-2 text-sm font-medium transition-all flex items-center justify-center gap-2 ${
+                        hostingAs === userClubs[0].id
+                          ? "border-primary bg-primary/10 text-foreground"
+                          : "border-border text-muted-foreground hover:border-primary/40"
+                      }`}
+                    >
+                      {userClubs[0].logo_url ? (
+                        <Avatar className="h-5 w-5">
+                          <AvatarImage src={userClubs[0].logo_url} />
+                          <AvatarFallback className="text-[8px]">{userClubs[0].name.charAt(0)}</AvatarFallback>
+                        </Avatar>
+                      ) : (
+                        <Building2Icon className="w-4 h-4" />
+                      )}
+                      {userClubs[0].name}
+                    </button>
+                  </div>
+                ) : (
+                  /* Dropdown for multiple clubs */
+                  <Select
+                    value={hostingAs}
+                    onValueChange={(v) => {
+                      setHostingAs(v);
+                      if (v === "personal" && formData.visibility === "club_only") handleChange("visibility", "public");
+                    }}
+                  >
+                    <SelectTrigger className="h-11">
+                      <SelectValue placeholder="Select host" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="personal">👤 Personal</SelectItem>
+                      {userClubs.map((club) => (
+                        <SelectItem key={club.id} value={club.id}>
+                          🏢 {club.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+
+                {/* Visibility */}
+                <div className="space-y-1.5">
+                  <Label htmlFor="visibility-top" className="text-sm">Visibility</Label>
+                  <Select
+                    value={formData.visibility}
+                    onValueChange={(v) => handleChange("visibility", v)}
+                  >
+                    <SelectTrigger className="h-11">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="public">🌍 Public - Anyone can find</SelectItem>
+                      {isHostingAsClub && (
+                        <SelectItem value="club_only">🏠 Club Members Only</SelectItem>
+                      )}
+                      <SelectItem value="private">🔗 Private - Link only</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            )}
+            {!isClubAdmin && (
+              <div className="bg-card border border-border rounded-xl md:rounded-2xl p-4 md:p-6 space-y-4 md:space-y-5">
+                <div className="space-y-1.5">
+                  <Label className="text-sm">Visibility</Label>
+                  <Select
+                    value={formData.visibility}
+                    onValueChange={(v) => handleChange("visibility", v)}
+                  >
+                    <SelectTrigger className="h-11">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="public">🌍 Public - Anyone can find</SelectItem>
+                      <SelectItem value="private">🔗 Private - Link only</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            )}
             {isSellCourt ? (
               /* ========== SELL / GIVE AWAY COURT — Simplified ========== */
               <div className="bg-card border border-border rounded-xl md:rounded-2xl p-4 md:p-6 space-y-4 md:space-y-5">
@@ -1002,22 +1137,6 @@ export default function CreateGamePage() {
                         )}
                       </div>
 
-                      <div className="space-y-1.5">
-                        <Label htmlFor="visibility" className="text-sm">Visibility</Label>
-                        <Select
-                          value={formData.visibility}
-                          onValueChange={(v) => handleChange("visibility", v)}
-                        >
-                          <SelectTrigger className="h-11">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="public">🌍 Public - Anyone can find</SelectItem>
-                            <SelectItem value="private">🔗 Private - Link only</SelectItem>
-                            <SelectItem value="club_only">🏠 Club Only</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
                     </div>
 
                     {/* Card 5: About This Game (optional) */}
@@ -1351,22 +1470,6 @@ export default function CreateGamePage() {
                         )}
                       </div>
 
-                      <div className="space-y-1.5">
-                        <Label className="text-sm">Visibility</Label>
-                        <Select
-                          value={formData.visibility}
-                          onValueChange={(v) => handleChange("visibility", v)}
-                        >
-                          <SelectTrigger className="h-11">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="public">🌍 Public - Anyone can find</SelectItem>
-                            <SelectItem value="private">🔗 Private - Link only</SelectItem>
-                            <SelectItem value="club_only">🏠 Club Only</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
                     </div>
 
                     {/* Card 6: About (optional) */}
