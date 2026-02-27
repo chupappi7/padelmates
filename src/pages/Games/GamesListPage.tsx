@@ -14,10 +14,9 @@ import { GameCard } from "@/components/games/GameCard";
 import { DayPicker } from "@/components/games/DayPicker";
 import { supabase } from "@/integrations/supabase/client";
 import { Navbar } from "@/components/layout/Navbar";
-import { MobileFilterSheet } from "@/components/games/MobileFilterSheet";
 import { SkillRangePicker } from "@/components/games/SkillRangePicker";
 import { motion } from "framer-motion";
-import { Plus, Calendar } from "lucide-react";
+import { Calendar } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useUserLocation, calculateDistance } from "@/hooks/useUserLocation";
@@ -191,19 +190,11 @@ export default function GamesListPage() {
           animate={{ opacity: 1, y: 0 }}
           className="mb-4"
         >
-          <div className="flex items-start justify-between gap-4 mb-4">
-            <div>
-              <h1 className="font-display text-2xl sm:text-3xl font-bold mb-0.5">Matches</h1>
-              <p className="text-sm text-muted-foreground">
-                {selectedDate ? format(selectedDate, "EEEE, MMMM d, yyyy") : "All upcoming"}
-              </p>
-            </div>
-            {user && !isMobile && (
-              <Button variant="hero" onClick={() => navigate("/games/create")}>
-                <Plus className="w-4 h-4" />
-                Host a Game
-              </Button>
-            )}
+          <div className="mb-4">
+            <h1 className="font-display text-2xl sm:text-3xl font-bold mb-0.5">Matches</h1>
+            <p className="text-sm text-muted-foreground">
+              {selectedDate ? format(selectedDate, "EEEE, MMMM d, yyyy") : "All upcoming"}
+            </p>
           </div>
 
           {/* Day Picker */}
@@ -257,13 +248,24 @@ export default function GamesListPage() {
                   <SelectItem value="backup">Backup</SelectItem>
                 </SelectContent>
               </Select>
-              <div className="flex items-center gap-1.5 border border-input rounded-md px-3 h-11 bg-background">
-                <SkillRangePicker
-                  min={skillMin}
-                  max={skillMax}
-                  onChange={setSkillRange}
-                />
-              </div>
+              <Select
+                value={skillMin !== null ? String(skillMin) : "all"}
+                onValueChange={(val) => {
+                  if (val === "all") setSkillRange(null, null);
+                  else { const n = Number(val); setSkillRange(n, n); }
+                }}
+              >
+                <SelectTrigger className="w-[140px] h-11 shrink-0">
+                  <SelectValue placeholder="Level" />
+                </SelectTrigger>
+                <SelectContent className="bg-popover z-50">
+                  <SelectItem value="all">All Levels</SelectItem>
+                  <SelectItem value="4">A</SelectItem>
+                  <SelectItem value="3">B</SelectItem>
+                  <SelectItem value="2">C</SelectItem>
+                  <SelectItem value="1">D</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           )}
         </motion.div>
@@ -378,12 +380,6 @@ export default function GamesListPage() {
                 ? "Try adjusting your filters"
                 : "Be the first to host a game!"}
             </p>
-            {user && !isMobile && (
-              <Button variant="hero" onClick={() => navigate("/games/create")}>
-                <Plus className="w-4 h-4" />
-                Host a Game
-              </Button>
-            )}
           </motion.div>
         )}
       </div>
