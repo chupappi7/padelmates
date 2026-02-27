@@ -51,12 +51,12 @@ export function HeroCard({
         </button>
       )}
 
-      <div className="flex items-start gap-5">
-        {/* Big avatar left-centered */}
+      <div className="flex items-start gap-4">
+        {/* Avatar */}
         <div className="relative shrink-0">
-          <Avatar className="w-24 h-24 border-2 border-white/15">
+          <Avatar className="w-20 h-20 border-2 border-white/15">
             <AvatarImage src={avatarUrl || undefined} />
-            <AvatarFallback className="text-3xl bg-white/10 text-white font-semibold">
+            <AvatarFallback className="text-2xl bg-white/10 text-white font-semibold">
               {name?.charAt(0).toUpperCase()}
             </AvatarFallback>
           </Avatar>
@@ -80,31 +80,33 @@ export function HeroCard({
         </div>
 
         {/* Right side: name, ID, level+PDR */}
-        <div className="flex-1 min-w-0 self-stretch flex flex-col">
-          {/* Big name */}
-          <p
-            className="text-white text-[28px] font-bold truncate leading-none"
-            style={{ fontFamily: "'Space Grotesk', system-ui, sans-serif" }}
-          >
-            {name}
-          </p>
+        <div className="flex-1 min-w-0 self-stretch flex flex-col justify-between">
+          <div>
+            {/* Name */}
+            <p
+              className="text-white text-[26px] font-bold truncate leading-none"
+              style={{ fontFamily: "'Space Grotesk', system-ui, sans-serif" }}
+            >
+              {name}
+            </p>
 
-          {/* ID tight under name - no margin */}
-          {friendCode && (
-            <div className="flex items-center gap-1.5 mt-px">
-              <span className="text-[10px] text-white/30 uppercase tracking-wider">ID</span>
-              <code className="text-[11px] font-mono text-white/40 tracking-wider">{friendCode}</code>
-              <button
-                onClick={handleCopyCode}
-                className="text-white/25 hover:text-white/50 transition-colors p-0.5"
-              >
-                {copied ? <Check className="w-2.5 h-2.5 text-primary" /> : <Copy className="w-2.5 h-2.5" />}
-              </button>
-            </div>
-          )}
+            {/* ID tight under name */}
+            {friendCode && (
+              <div className="flex items-center gap-1.5 mt-1">
+                <span className="text-[10px] text-white/30 uppercase tracking-wider">ID</span>
+                <code className="text-[11px] font-mono text-white/40 tracking-wider">{friendCode}</code>
+                <button
+                  onClick={handleCopyCode}
+                  className="text-white/25 hover:text-white/50 transition-colors p-0.5"
+                >
+                  {copied ? <Check className="w-2.5 h-2.5 text-primary" /> : <Copy className="w-2.5 h-2.5" />}
+                </button>
+              </div>
+            )}
+          </div>
 
-          {/* Level + PDR - ~1cm (≈10px/2.5) gap from name block */}
-          <div className="flex items-center gap-2.5 mt-2.5">
+          {/* Level + PDR at bottom, aligned with avatar bottom */}
+          <div className="flex items-center gap-2.5">
             <button
               onClick={isSelf ? onLevelBadgeClick : undefined}
               className={isSelf ? "cursor-pointer" : "cursor-default"}
@@ -115,7 +117,7 @@ export function HeroCard({
             <span className="text-white/15 text-sm">|</span>
             <span className="text-[11px] text-white/40 uppercase tracking-wider font-medium">PDR</span>
             <span
-              className="text-[28px] leading-none font-extrabold text-white tracking-tight"
+              className="text-[24px] leading-none font-extrabold text-white tracking-tight"
               style={{ fontFamily: "'Space Grotesk', system-ui, sans-serif" }}
             >
               {pdrRating != null ? pdrRating.toFixed(2) : "NR"}
