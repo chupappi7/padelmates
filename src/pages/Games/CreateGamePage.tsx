@@ -1162,7 +1162,7 @@ export default function CreateGamePage() {
                       <div className="h-px bg-border" />
 
                       <div className="space-y-3">
-                        <Label className="text-sm font-medium">How many players do you need? <span className="text-destructive">*</span></Label>
+                        <Label className="text-sm font-medium">How many players? <span className="text-destructive">*</span></Label>
                         <div className="flex items-center gap-4">
                           <button
                             type="button"
@@ -1204,7 +1204,23 @@ export default function CreateGamePage() {
                       </div>
                     </div>
 
-                    {/* Card 3: Skill Level */}
+                    {/* Card 3: Substitutions */}
+                    <div className="bg-card border border-border rounded-xl md:rounded-2xl p-4 md:p-6 space-y-4 md:space-y-5">
+                      <div className="flex items-center justify-between">
+                        <div className="space-y-0.5">
+                          <h2 className="font-display font-bold text-base md:text-lg flex items-center gap-2">
+                            🔄 Substitutions
+                          </h2>
+                          <p className="text-xs text-muted-foreground">Allow players to join as substitutes when all spots are filled</p>
+                        </div>
+                        <Switch
+                          checked={allowSubstitutions}
+                          onCheckedChange={setAllowSubstitutions}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Card 4: Skill Level */}
                     <div className="bg-card border border-border rounded-xl md:rounded-2xl p-4 md:p-6 space-y-4 md:space-y-5">
                       <h2 className="font-display font-bold text-base md:text-lg flex items-center gap-2">
                         <Trophy className="w-4 h-4 md:w-5 md:h-5 text-primary" />
@@ -1311,22 +1327,6 @@ export default function CreateGamePage() {
                             <SelectItem value="club_only">🏠 Club Only</SelectItem>
                           </SelectContent>
                         </Select>
-                      </div>
-                    </div>
-
-                    {/* Card 5: Substitutions */}
-                    <div className="bg-card border border-border rounded-xl md:rounded-2xl p-4 md:p-6 space-y-4 md:space-y-5">
-                      <div className="flex items-center justify-between">
-                        <div className="space-y-0.5">
-                          <h2 className="font-display font-bold text-base md:text-lg flex items-center gap-2">
-                            🔄 Substitutions
-                          </h2>
-                          <p className="text-xs text-muted-foreground">Allow players to join as substitutes when all spots are filled</p>
-                        </div>
-                        <Switch
-                          checked={allowSubstitutions}
-                          onCheckedChange={setAllowSubstitutions}
-                        />
                       </div>
                     </div>
 
