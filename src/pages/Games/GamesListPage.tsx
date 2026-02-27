@@ -61,6 +61,8 @@ export default function GamesListPage() {
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [joinedGameIds, setJoinedGameIds] = useState<Set<string>>(new Set());
   const [requestedGameIds, setRequestedGameIds] = useState<Set<string>>(new Set());
+  const [clubFilter, setClubFilter] = useState<string>("all");
+  const [userClubs, setUserClubs] = useState<{ id: string; name: string }[]>([]);
   const navigate = useNavigate();
   const { user } = useAuth();
   const isMobile = useIsMobile();
@@ -69,8 +71,27 @@ export default function GamesListPage() {
 
   useEffect(() => {
     fetchGames();
-    if (user) fetchUserGames();
+    if (user) {
+      fetchUserGames();
+      fetchUserClubs();
+    }
   }, [user]);
+
+  const fetchUserClubs = async () => {
+    if (!user) return;
+    const { data: follows } = await supabase
+      .from("club_followers")
+      .select("club_id")
+      .eq("user_id", user.id)
+      .eq("status", "active");
+    if (!follows || follows.length === 0) { setUserClubs([]); return; }
+    const clubIds = follows.map((f) => f.club_id);
+    const { data: clubs } = await supabase
+      .from("clubs")
+      .select("id, name")
+      .in("id", clubIds);
+    setUserClubs(clubs?.map((c) => ({ id: c.id, name: c.name })) || []);
+  };
 
   const fetchGames = async () => {
     const cutoffTime = new Date(Date.now() - 30 * 60 * 1000).toISOString();
@@ -194,9 +215,11 @@ export default function GamesListPage() {
     return undefined;
   };
 
+  const userClubIds = useMemo(() => new Set(userClubs.map((c) => c.id)), [userClubs]);
+
   const filteredGames = useMemo(() => {
     const now = new Date();
-    const cutoff = new Date(now.getTime() - 30 * 60 * 1000); // 30 min ago
+    const cutoff = new Date(now.getTime() - 30 * 60 * 1000);
     let result = games.filter((game) => {
       const gameDate = new Date(game.date_time);
       if (gameDate < cutoff) return false;
@@ -210,7 +233,10 @@ export default function GamesListPage() {
         (formatFilter === "backup" && game.payment_mode === "spot_selling") ||
         (formatFilter === "casual_match" && game.format === "casual_match" && game.payment_mode !== "court_sharing" && game.payment_mode !== "spot_selling") ||
         (formatFilter === "americano" && (game.format === "americano" || game.format === "team_americano"));
-      return matchesDay && matchesSkill && matchesFormat;
+      const matchesClub =
+        clubFilter === "all" ||
+        (clubFilter === "my_clubs" ? (game.club_id != null && userClubIds.has(game.club_id)) : game.club_id === clubFilter);
+      return matchesDay && matchesSkill && matchesFormat && matchesClub;
     });
 
     if (userLocation) {
@@ -230,7 +256,7 @@ export default function GamesListPage() {
     result.sort((a, b) => new Date(a.date_time).getTime() - new Date(b.date_time).getTime());
 
     return result;
-  }, [games, selectedDate, skillMin, skillMax, formatFilter, userLocation]);
+  }, [games, selectedDate, skillMin, skillMax, formatFilter, clubFilter, userClubIds, userLocation]);
 
   const isAllMode = selectedDate === null;
 
@@ -337,6 +363,48 @@ export default function GamesListPage() {
                   <SelectItem value="1">D</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+          )}
+
+          {/* Club chip bar */}
+          {user && userClubs.length > 0 && (
+            <div className="flex gap-2 mt-3 overflow-x-auto scrollbar-hide pb-1">
+              <button
+                onClick={() => setClubFilter("all")}
+                className={cn(
+                  "shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-colors",
+                  clubFilter === "all"
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-muted text-muted-foreground hover:bg-muted/80"
+                )}
+              >
+                All
+              </button>
+              <button
+                onClick={() => setClubFilter("my_clubs")}
+                className={cn(
+                  "shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-colors",
+                  clubFilter === "my_clubs"
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-muted text-muted-foreground hover:bg-muted/80"
+                )}
+              >
+                My Clubs
+              </button>
+              {userClubs.map((club) => (
+                <button
+                  key={club.id}
+                  onClick={() => setClubFilter(club.id)}
+                  className={cn(
+                    "shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-colors whitespace-nowrap",
+                    clubFilter === club.id
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-muted text-muted-foreground hover:bg-muted/80"
+                  )}
+                >
+                  {club.name}
+                </button>
+              ))}
             </div>
           )}
         </motion.div>
@@ -450,7 +518,7 @@ export default function GamesListPage() {
               {isAllMode ? "No upcoming matches" : "No matches on this day"}
             </h3>
             <p className="text-sm sm:text-base text-muted-foreground mb-6">
-              {skillMin !== null || formatFilter !== "all"
+              {skillMin !== null || formatFilter !== "all" || clubFilter !== "all"
                 ? "Try adjusting your filters"
                 : "Be the first to host a game!"}
             </p>
