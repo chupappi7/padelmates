@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { formatGameContext } from "@/lib/formatGameContext";
 
 export type ConversationType = "dm" | "court" | "match";
 
@@ -238,7 +239,7 @@ export function useConversations() {
             id: convoId,
             type: "match",
             title: game.title,
-            contextLabel: game.location,
+            contextLabel: formatGameContext(game.location, game.date_time),
             avatarUrl: null,
             lastMessage: lastMsg?.message || "",
             lastMessageAt: lastMsg?.created_at || "",

@@ -219,7 +219,7 @@ function SwipeableRow({
             )}
           </div>
           {convo.contextLabel && (
-            <p className="text-[10px] text-muted-foreground truncate -mt-0.5 mb-0.5">
+            <p className="text-[10px] text-muted-foreground -mt-0.5 mb-0.5 line-clamp-1">
               {convo.contextLabel}
             </p>
           )}
