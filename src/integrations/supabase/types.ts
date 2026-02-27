@@ -842,6 +842,7 @@ export type Database = {
           pdr_rd: number
           pdr_reliability: number
           pdr_sigma: number
+          region: string | null
           skill_level: number
           updated_at: string
           user_id: string
@@ -865,6 +866,7 @@ export type Database = {
           pdr_rd?: number
           pdr_reliability?: number
           pdr_sigma?: number
+          region?: string | null
           skill_level?: number
           updated_at?: string
           user_id: string
@@ -888,6 +890,7 @@ export type Database = {
           pdr_rd?: number
           pdr_reliability?: number
           pdr_sigma?: number
+          region?: string | null
           skill_level?: number
           updated_at?: string
           user_id?: string

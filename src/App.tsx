@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { BottomTabBar } from "@/components/layout/BottomTabBar";
+import { RegionPrompt } from "@/components/RegionPrompt";
 
 // Pages
 import LoginPage from "./pages/Auth/LoginPage";
@@ -59,6 +60,7 @@ const App = () => (
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
+          <RegionPrompt />
           <BottomTabBar />
         </BrowserRouter>
       </TooltipProvider>
