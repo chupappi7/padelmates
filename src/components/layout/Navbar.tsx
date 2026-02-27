@@ -10,7 +10,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Home, Plus, Trophy, CalendarCheck, LogOut, User, Bell, Inbox, Building2 } from "lucide-react";
+import { Home, Plus, Trophy, CalendarCheck, LogOut, User, Bell, Inbox, Building2, Users } from "lucide-react";
 import { useNotifications } from "@/hooks/useNotifications";
 import { NotificationPanel } from "@/components/layout/NotificationPanel";
 import { HostTypeModal } from "@/components/games/HostTypeModal";
@@ -84,10 +84,11 @@ export function Navbar() {
           <div className="flex md:hidden items-center gap-1">
             {user ? (
               <>
-                <IconButton icon={Inbox} onClick={() => navigate("/messages")} />
                 <NotificationPanel>
                   <IconButton icon={Bell} badge={unreadCount} onClick={() => {}} />
                 </NotificationPanel>
+                <IconButton icon={Users} onClick={() => navigate("/friends")} />
+                <IconButton icon={Inbox} onClick={() => navigate("/messages")} />
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" className="relative h-9 w-9 rounded-full p-0">
@@ -123,10 +124,11 @@ export function Navbar() {
           <div className="hidden md:flex items-center gap-2">
             {user ? (
               <>
-                <IconButton icon={Inbox} onClick={() => navigate("/messages")} />
                 <NotificationPanel>
                   <IconButton icon={Bell} badge={unreadCount} onClick={() => {}} />
                 </NotificationPanel>
+                <IconButton icon={Users} onClick={() => navigate("/friends")} />
+                <IconButton icon={Inbox} onClick={() => navigate("/messages")} />
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" className="relative h-10 w-10 rounded-full">
