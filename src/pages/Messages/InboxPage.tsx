@@ -18,7 +18,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Search, MessageCircle, ArrowLeft, Trophy, Archive, BellOff, Trash2, ArchiveRestore, VolumeX } from "lucide-react";
-import { formatDistanceToNow } from "date-fns";
+import { formatDistanceToNow, format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 
@@ -222,24 +222,15 @@ function SwipeableRow({
               {convo.contextLabel}
             </p>
           )}
-          <div className="flex items-center justify-between gap-2">
-            <p className={cn(
-              "text-xs truncate",
-              convo.unreadCount > 0 && !isArchived ? "text-foreground font-medium" : "text-muted-foreground"
-            )}>
-              {convo.lastMessageSenderName && `${convo.lastMessageSenderName}: `}
-              {convo.lastMessage || "No messages yet"}
+          {convo.gameDateTime && (
+            <p className="text-xs text-muted-foreground">
+              {format(new Date(convo.gameDateTime), "EEE, MMM d · HH:mm")}
             </p>
-          </div>
+          )}
         </div>
 
         {/* Right side */}
         <div className="flex flex-col items-end gap-1 shrink-0">
-          {convo.lastMessageAt && convo.lastMessage && (
-            <span className="text-[10px] text-muted-foreground">
-              {formatDistanceToNow(new Date(convo.lastMessageAt), { addSuffix: false })}
-            </span>
-          )}
           {convo.unreadCount > 0 && !isArchived && (
             <span className="min-w-[20px] h-5 rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center px-1.5">
               {convo.unreadCount}
