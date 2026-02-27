@@ -14,6 +14,7 @@ import CreateGamePage from "./pages/Games/CreateGamePage";
 import GameDetailPage from "./pages/Games/GameDetailPage";
 import EditGamePage from "./pages/Games/EditGamePage";
 import ClubsListPage from "./pages/Clubs/ClubsListPage";
+import CreateClubPage from "./pages/Clubs/CreateClubPage";
 import ProfilePage from "./pages/Profile/ProfilePage";
 import UserProfilePage from "./pages/Profile/UserProfilePage";
 import MyMatchesPage from "./pages/Games/MyMatchesPage";
@@ -43,6 +44,7 @@ const App = () => (
             <Route path="/games/:id" element={<GameDetailPage />} />
             <Route path="/games/:id/edit" element={<EditGamePage />} />
             <Route path="/clubs" element={<ClubsListPage />} />
+            <Route path="/clubs/create" element={<CreateClubPage />} />
             <Route path="/my-matches" element={<MyMatchesPage />} />
             <Route path="/friends" element={<FriendsPage />} />
             <Route path="/notifications" element={<NotificationsPage />} />
