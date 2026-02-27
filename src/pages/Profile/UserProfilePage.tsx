@@ -10,6 +10,7 @@ import { HeroCard } from "@/components/profile/HeroCard";
 import { PDRSection } from "@/components/profile/PDRSection";
 import { ProfileActionButtons } from "@/components/profile/ProfileActionButtons";
 import { PerformanceStats } from "@/components/profile/PerformanceStats";
+import { ProfileClubs } from "@/components/profile/ProfileClubs";
 
 
 interface PublicProfile {
@@ -198,6 +199,8 @@ export default function UserProfilePage() {
             winRate={winRate}
           />
 
+          {/* 6️⃣ Clubs */}
+          {userId && <ProfileClubs userId={userId} />}
 
 
         </motion.div>

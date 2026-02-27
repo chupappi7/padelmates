@@ -32,6 +32,7 @@ import { PDRSection } from "@/components/profile/PDRSection";
 import { PerformanceStats } from "@/components/profile/PerformanceStats";
 
 import { LevelSelectSheet } from "@/components/profile/LevelSelectSheet";
+import { ProfileClubs } from "@/components/profile/ProfileClubs";
 
 interface Profile {
   id: string;
@@ -334,6 +335,9 @@ export default function ProfilePage() {
             losses={losses}
             winRate={winRate}
           />
+
+          {/* 6️⃣ Clubs */}
+          {user && <ProfileClubs userId={user.id} />}
 
           {/* 7️⃣ Payment Info (Collapsible) */}
           <Collapsible open={paymentOpen} onOpenChange={setPaymentOpen}>
