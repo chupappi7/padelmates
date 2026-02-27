@@ -316,7 +316,7 @@ export default function CreateGamePage() {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-5 md:space-y-6">
-            {/* Host Selector + Visibility — always first */}
+            {/* Host Selector — only for club admins */}
             {isClubAdmin && (
               <div className="bg-card border border-border rounded-xl md:rounded-2xl p-4 md:p-6 space-y-4 md:space-y-5">
                 <h2 className="font-display font-bold text-base md:text-lg flex items-center gap-2">
@@ -325,7 +325,6 @@ export default function CreateGamePage() {
                 </h2>
 
                 {userClubs.length === 1 ? (
-                  /* Pill buttons: personal vs single club */
                   <div className="flex gap-2">
                     <button
                       type="button"
@@ -362,7 +361,6 @@ export default function CreateGamePage() {
                     </button>
                   </div>
                 ) : (
-                  /* Dropdown for multiple clubs */
                   <Select
                     value={hostingAs}
                     onValueChange={(v) => {
@@ -383,45 +381,6 @@ export default function CreateGamePage() {
                     </SelectContent>
                   </Select>
                 )}
-
-                {/* Visibility */}
-                <div className="space-y-1.5">
-                  <Label htmlFor="visibility-top" className="text-sm">Visibility</Label>
-                  <Select
-                    value={formData.visibility}
-                    onValueChange={(v) => handleChange("visibility", v)}
-                  >
-                    <SelectTrigger className="h-11">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="public">🌍 Public - Anyone can find</SelectItem>
-                      {isHostingAsClub && (
-                        <SelectItem value="club_only">🏠 Club Members Only</SelectItem>
-                      )}
-                      <SelectItem value="private">🔗 Private - Link only</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-            )}
-            {!isClubAdmin && (
-              <div className="bg-card border border-border rounded-xl md:rounded-2xl p-4 md:p-6 space-y-4 md:space-y-5">
-                <div className="space-y-1.5">
-                  <Label className="text-sm">Visibility</Label>
-                  <Select
-                    value={formData.visibility}
-                    onValueChange={(v) => handleChange("visibility", v)}
-                  >
-                    <SelectTrigger className="h-11">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="public">🌍 Public - Anyone can find</SelectItem>
-                      <SelectItem value="private">🔗 Private - Link only</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
               </div>
             )}
             {isSellCourt ? (
@@ -1137,6 +1096,24 @@ export default function CreateGamePage() {
                         )}
                       </div>
 
+                      <div className="space-y-1.5">
+                        <Label htmlFor="visibility" className="text-sm">Visibility</Label>
+                        <Select
+                          value={formData.visibility}
+                          onValueChange={(v) => handleChange("visibility", v)}
+                        >
+                          <SelectTrigger className="h-11">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="public">🌍 Public - Anyone can find</SelectItem>
+                            {isHostingAsClub && (
+                              <SelectItem value="club_only">🏠 Club Members Only</SelectItem>
+                            )}
+                            <SelectItem value="private">🔗 Private - Link only</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
                     </div>
 
                     {/* Card 5: About This Game (optional) */}
@@ -1470,6 +1447,24 @@ export default function CreateGamePage() {
                         )}
                       </div>
 
+                      <div className="space-y-1.5">
+                        <Label className="text-sm">Visibility</Label>
+                        <Select
+                          value={formData.visibility}
+                          onValueChange={(v) => handleChange("visibility", v)}
+                        >
+                          <SelectTrigger className="h-11">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="public">🌍 Public - Anyone can find</SelectItem>
+                            {isHostingAsClub && (
+                              <SelectItem value="club_only">🏠 Club Members Only</SelectItem>
+                            )}
+                            <SelectItem value="private">🔗 Private - Link only</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
                     </div>
 
                     {/* Card 6: About (optional) */}
