@@ -68,7 +68,9 @@ interface Game {
   scoreboard: unknown;
   court_taken_by: string | null;
   booking_screenshot_url: string | null;
+  club_id: string | null;
   profiles: { name: string; avatar_url: string | null; skill_level?: number } | null;
+  club?: { name: string; logo_url: string | null } | null;
 }
 
 interface Player {
@@ -194,12 +196,18 @@ export default function GameDetailPage() {
   const fetchGame = async () => {
     const { data } = await supabase.from("games").select("*").eq("id", id).single();
     if (data) {
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("name, avatar_url, skill_level")
-        .eq("user_id", data.host_id)
-        .single();
-      setGame({ ...data, profiles: profile, host_is_playing: data.host_is_playing ?? true } as Game);
+      const [profileRes, clubRes] = await Promise.all([
+        supabase.from("profiles").select("name, avatar_url, skill_level").eq("user_id", data.host_id).single(),
+        data.club_id
+          ? supabase.from("clubs").select("name, logo_url").eq("id", data.club_id).single()
+          : Promise.resolve({ data: null }),
+      ]);
+      setGame({
+        ...data,
+        profiles: profileRes.data,
+        club: clubRes.data,
+        host_is_playing: data.host_is_playing ?? true,
+      } as Game);
     }
     setLoading(false);
   };
@@ -757,20 +765,40 @@ export default function GameDetailPage() {
               {/* Host Info */}
               <div className="bg-card border border-border rounded-xl p-4">
                 <div className="flex items-center gap-3">
-                  <Avatar className="h-10 w-10">
-                    <AvatarImage src={game.profiles?.avatar_url || undefined} />
-                    <AvatarFallback className="bg-primary/10 text-primary font-semibold text-sm">
-                      {game.profiles?.name?.charAt(0).toUpperCase()}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs text-muted-foreground">Hosted by</p>
-                    <div className="flex items-center gap-2">
-                      <p className="text-sm font-semibold break-words">{game.profiles?.name}</p>
-                    </div>
-                  </div>
-                  {game.profiles?.skill_level && (
-                    <SkillBadge level={game.profiles.skill_level as number} size="sm" />
+                  {game.club ? (
+                    <>
+                      <Avatar className="h-10 w-10 rounded-xl">
+                        <AvatarImage src={game.club.logo_url || undefined} />
+                        <AvatarFallback className="bg-primary/10 text-primary font-semibold text-sm rounded-xl">
+                          {game.club.name.charAt(0)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs text-muted-foreground">Hosted by</p>
+                        <p
+                          className="text-sm font-semibold break-words text-primary cursor-pointer hover:underline"
+                          onClick={(e) => { e.stopPropagation(); navigate(`/clubs/${game.club_id}`); }}
+                        >
+                          {game.club.name}
+                        </p>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <Avatar className="h-10 w-10">
+                        <AvatarImage src={game.profiles?.avatar_url || undefined} />
+                        <AvatarFallback className="bg-primary/10 text-primary font-semibold text-sm">
+                          {game.profiles?.name?.charAt(0).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs text-muted-foreground">Hosted by</p>
+                        <p className="text-sm font-semibold break-words">{game.profiles?.name}</p>
+                      </div>
+                      {game.profiles?.skill_level && (
+                        <SkillBadge level={game.profiles.skill_level as number} size="sm" />
+                      )}
+                    </>
                   )}
                 </div>
               </div>
