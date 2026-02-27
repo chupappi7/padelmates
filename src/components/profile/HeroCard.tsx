@@ -107,7 +107,7 @@ export function HeroCard({
       {friendCode && (
         <button
           onClick={handleCopyCode}
-          className="absolute bottom-2.5 right-2.5 flex items-center gap-1 text-white/30 hover:text-white/50 transition-colors"
+          className="absolute bottom-2 right-2 flex items-center gap-1 text-white/30 hover:text-white/50 transition-colors"
         >
           {copied ? (
             <>
