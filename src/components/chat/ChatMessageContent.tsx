@@ -1,13 +1,13 @@
 import { useNavigate } from "react-router-dom";
 import { ChatImageMessage } from "./ChatImageMessage";
-import { ExternalLink } from "lucide-react";
+import { SharedGameCard } from "./SharedGameCard";
 
 interface ChatMessageContentProps {
   message: string;
   isMine: boolean;
 }
 
-const GAME_SHARE_REGEX = /^Check out this match: (.+)\n(https?:\/\/.+\/games\/[\w-]+)$/;
+const GAME_SHARE_REGEX = /^Check out this match: (.+)\n(https?:\/\/.+\/games\/([\w-]+))$/;
 const URL_REGEX = /(https?:\/\/[^\s]+)/g;
 
 export function ChatMessageContent({ message, isMine }: ChatMessageContentProps) {
@@ -22,22 +22,8 @@ export function ChatMessageContent({ message, isMine }: ChatMessageContentProps)
   const gameMatch = message.match(GAME_SHARE_REGEX);
   if (gameMatch) {
     const title = gameMatch[1];
-    const url = gameMatch[2];
-    const path = new URL(url).pathname;
-
-    return (
-      <button
-        onClick={() => navigate(path)}
-        className="w-full text-left rounded-lg border border-border/50 bg-accent/30 p-3 hover:bg-accent/50 transition-colors"
-      >
-        <p className="text-xs font-medium text-muted-foreground mb-1">Shared Match</p>
-        <p className="text-sm font-semibold line-clamp-2">{title}</p>
-        <div className="flex items-center gap-1 mt-1.5 text-xs text-primary font-medium">
-          <ExternalLink className="w-3 h-3" />
-          View Match
-        </div>
-      </button>
-    );
+    const gameId = gameMatch[3];
+    return <SharedGameCard gameId={gameId} title={title} />;
   }
 
   // Linkify URLs in regular messages
@@ -56,7 +42,6 @@ export function ChatMessageContent({ message, isMine }: ChatMessageContentProps)
             key={i}
             href={part}
             onClick={(e) => {
-              // Internal links: use navigate
               try {
                 const url = new URL(part);
                 if (url.origin === window.location.origin) {
@@ -64,7 +49,7 @@ export function ChatMessageContent({ message, isMine }: ChatMessageContentProps)
                   navigate(url.pathname);
                 }
               } catch {
-                // external link, let default behavior
+                // external link
               }
             }}
             className="underline underline-offset-2 text-primary break-all"
