@@ -21,6 +21,8 @@ import {
   Pencil,
   ChevronDown,
   ChevronUp,
+  ImagePlus,
+  X,
 } from "lucide-react";
 import {
   Collapsible,
@@ -42,6 +44,7 @@ interface Profile {
   bio: string | null;
   games_played: number;
   bank_details: string | null;
+  bank_qr_url: string | null;
   friend_code: string | null;
   pdr_rating: number | null;
 }
@@ -56,6 +59,8 @@ export default function ProfilePage() {
   const [editingPayment, setEditingPayment] = useState(false);
   const [savingPayment, setSavingPayment] = useState(false);
   const [bankDetailsForm, setBankDetailsForm] = useState("");
+  const [bankQrUrl, setBankQrUrl] = useState<string | null>(null);
+  const [uploadingQr, setUploadingQr] = useState(false);
   const [paymentOpen, setPaymentOpen] = useState(false);
   const [levelSheetOpen, setLevelSheetOpen] = useState(false);
   const [savingLevel, setSavingLevel] = useState(false);
@@ -89,6 +94,7 @@ export default function ProfilePage() {
         skill_level: data.skill_level,
       });
       setBankDetailsForm((data as any).bank_details || "");
+      setBankQrUrl((data as any).bank_qr_url || null);
     }
     setLoading(false);
   };
@@ -153,7 +159,7 @@ export default function ProfilePage() {
     setSavingPayment(true);
     const { error } = await supabase
       .from("profiles")
-      .update({ bank_details: bankDetailsForm } as any)
+      .update({ bank_details: bankDetailsForm, bank_qr_url: bankQrUrl } as any)
       .eq("user_id", user.id);
     if (error) {
       toast.error("Failed to save payment info");
@@ -163,6 +169,29 @@ export default function ProfilePage() {
       fetchProfile();
     }
     setSavingPayment(false);
+  };
+
+  const handleQrUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+    setUploadingQr(true);
+    const fileName = `${user.id}/qr-${Date.now()}-${file.name}`;
+    const { error: uploadError } = await supabase.storage
+      .from("avatars")
+      .upload(fileName, file);
+    if (uploadError) {
+      toast.error("Failed to upload QR code");
+      setUploadingQr(false);
+      return;
+    }
+    const { data: { publicUrl } } = supabase.storage.from("avatars").getPublicUrl(fileName);
+    setBankQrUrl(publicUrl);
+    setUploadingQr(false);
+    toast.success("QR code uploaded! Don't forget to save.");
+  };
+
+  const handleRemoveQr = () => {
+    setBankQrUrl(null);
   };
 
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -365,8 +394,8 @@ export default function ProfilePage() {
                   {editingPayment ? (
                     <>
                       <p className="text-xs text-muted-foreground">
-                        Add your account number, Revolut tag, or any payment
-                        link. This is shared with buyers during court listing
+                        Add your account number, Revolut tag, or upload a QR
+                        code. This is shared with buyers during court listing
                         chats.
                       </p>
                       <textarea
@@ -377,6 +406,40 @@ export default function ProfilePage() {
                         value={bankDetailsForm}
                         onChange={(e) => setBankDetailsForm(e.target.value)}
                       />
+
+                      {/* QR Code Upload */}
+                      <div className="space-y-2">
+                        <Label className="text-xs">Payment QR Code</Label>
+                        {bankQrUrl ? (
+                          <div className="relative inline-block">
+                            <img
+                              src={bankQrUrl}
+                              alt="Payment QR"
+                              className="w-32 h-32 object-contain rounded-lg border border-border bg-white"
+                            />
+                            <button
+                              type="button"
+                              onClick={handleRemoveQr}
+                              className="absolute -top-2 -right-2 w-5 h-5 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center"
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
+                          </div>
+                        ) : (
+                          <label className="flex items-center gap-2 cursor-pointer text-xs text-muted-foreground hover:text-foreground transition-colors border border-dashed border-border rounded-lg px-3 py-3 w-fit">
+                            <ImagePlus className="w-4 h-4" />
+                            {uploadingQr ? "Uploading..." : "Upload QR code"}
+                            <input
+                              type="file"
+                              accept="image/*"
+                              className="hidden"
+                              onChange={handleQrUpload}
+                              disabled={uploadingQr}
+                            />
+                          </label>
+                        )}
+                      </div>
+
                       <div className="flex gap-2">
                         <Button
                           variant="outline"
@@ -384,6 +447,7 @@ export default function ProfilePage() {
                           className="flex-1 text-xs"
                           onClick={() => {
                             setBankDetailsForm(profile?.bank_details || "");
+                            setBankQrUrl(profile?.bank_qr_url || null);
                             setEditingPayment(false);
                           }}
                         >
@@ -400,13 +464,22 @@ export default function ProfilePage() {
                         </Button>
                       </div>
                     </>
-                  ) : profile?.bank_details ? (
+                  ) : profile?.bank_details || profile?.bank_qr_url ? (
                     <div className="space-y-2">
-                      <div className="bg-muted/50 rounded-lg px-3 py-2.5">
-                        <pre className="text-xs text-foreground whitespace-pre-wrap font-sans leading-relaxed">
-                          {profile.bank_details}
-                        </pre>
-                      </div>
+                      {profile?.bank_details && (
+                        <div className="bg-muted/50 rounded-lg px-3 py-2.5">
+                          <pre className="text-xs text-foreground whitespace-pre-wrap font-sans leading-relaxed">
+                            {profile.bank_details}
+                          </pre>
+                        </div>
+                      )}
+                      {profile?.bank_qr_url && (
+                        <img
+                          src={profile.bank_qr_url}
+                          alt="Payment QR"
+                          className="w-32 h-32 object-contain rounded-lg border border-border bg-white"
+                        />
+                      )}
                       <Button
                         variant="ghost"
                         size="sm"

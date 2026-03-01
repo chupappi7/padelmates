@@ -142,6 +142,7 @@ export function CourtDMChat({
   const [sendLoading, setSendLoading] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [hostBankDetails, setHostBankDetails] = useState<string | null>(null);
+  const [hostBankQrUrl, setHostBankQrUrl] = useState<string | null>(null);
   const [copiedMsgId, setCopiedMsgId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
@@ -156,11 +157,14 @@ export function CourtDMChat({
     if (!hostId) return;
     supabase
       .from("profiles")
-      .select("bank_details")
+      .select("bank_details, bank_qr_url")
       .eq("user_id", hostId)
       .maybeSingle()
       .then(({ data }) => {
-        if (data) setHostBankDetails((data as any).bank_details || null);
+        if (data) {
+          setHostBankDetails((data as any).bank_details || null);
+          setHostBankQrUrl((data as any).bank_qr_url || null);
+        }
       });
   }, [hostId]);
 
@@ -363,16 +367,30 @@ export function CourtDMChat({
   // ── SEND BANK DETAILS (host) ─────────────────────────────────────────────
   const handleSendBankDetails = async () => {
     if (!activeChatId) return;
-    if (!hostBankDetails) {
-      toast.error("Add your bank details in Profile → Payment Info first");
+    if (!hostBankDetails && !hostBankQrUrl) {
+      toast.error("Add your bank details or QR code in Profile → Payment Info first");
       return;
     }
     setSendLoading(true);
-    await supabase.from("chat_messages").insert({
-      chat_id: activeChatId,
-      sender_id: currentUserId,
-      message: `💳 Payment Details:\n${hostBankDetails}`,
-    });
+
+    // Send text bank details if available
+    if (hostBankDetails) {
+      await supabase.from("chat_messages").insert({
+        chat_id: activeChatId,
+        sender_id: currentUserId,
+        message: `💳 Payment Details:\n${hostBankDetails}`,
+      });
+    }
+
+    // Send QR code image if available
+    if (hostBankQrUrl) {
+      await supabase.from("chat_messages").insert({
+        chat_id: activeChatId,
+        sender_id: currentUserId,
+        message: `[image]${hostBankQrUrl}`,
+      });
+    }
+
     fetchMessages(activeChatId);
     if (isHost) loadInterestedUsers();
     setSendLoading(false);
