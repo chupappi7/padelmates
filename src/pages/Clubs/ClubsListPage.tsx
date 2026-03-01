@@ -168,9 +168,9 @@ export default function ClubsListPage() {
                 {/* Body */}
                 <div className="p-4 -mt-6 relative">
                   <div className="flex items-end justify-between mb-2">
-                    <Avatar className="h-12 w-12 rounded-xl border-2 border-card shadow-sm">
+                    <Avatar className="h-12 w-12 rounded-full border-2 border-card shadow-sm">
                       <AvatarImage src={club.logo_url || undefined} />
-                      <AvatarFallback className="bg-primary/10 text-primary font-bold text-lg rounded-xl">
+                      <AvatarFallback className="bg-primary/10 text-primary font-bold text-lg rounded-full">
                         {club.name.charAt(0)}
                       </AvatarFallback>
                     </Avatar>
