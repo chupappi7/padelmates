@@ -52,10 +52,10 @@ export function SharedGameCard({ gameId, title }: SharedGameCardProps) {
     return (
       <button
         onClick={handleClick}
-        className="w-full text-left rounded-xl border border-border/50 bg-card p-3 hover:bg-accent/30 transition-colors"
+        className="w-full text-left rounded-xl border border-primary/20 bg-background p-3 hover:border-primary/40 transition-colors"
       >
-        <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">Shared Match</p>
-        <p className="text-sm font-semibold">{title}</p>
+        <p className="text-[10px] font-semibold uppercase tracking-wider text-primary/70 mb-1">Shared Match</p>
+        <p className="text-sm font-semibold text-foreground">{title}</p>
         <div className="flex items-center gap-1 mt-1.5 text-xs text-primary font-medium">
           <ChevronRight className="w-3 h-3" />
           View Match
@@ -73,13 +73,13 @@ export function SharedGameCard({ gameId, title }: SharedGameCardProps) {
   return (
     <button
       onClick={handleClick}
-      className="w-full text-left rounded-xl border border-border/50 bg-card p-3 hover:bg-accent/30 transition-colors space-y-2"
+      className="w-full text-left rounded-xl border border-primary/20 bg-background p-3 hover:border-primary/40 transition-colors space-y-2"
     >
       {/* Header */}
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0 flex-1">
-          <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-0.5">Shared Match</p>
-          <p className="text-sm font-bold line-clamp-2">{game.title}</p>
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-primary/70 mb-0.5">Shared Match</p>
+          <p className="text-sm font-bold line-clamp-2 text-foreground">{game.title}</p>
         </div>
         <SkillBadge level={game.skill_level} size="sm" />
       </div>
