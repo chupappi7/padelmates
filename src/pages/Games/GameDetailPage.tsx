@@ -42,6 +42,7 @@ import {
   Share2,
   Heart,
   CheckCircle2,
+  Trash2,
 } from "lucide-react";
 import { CourtDMChat } from "@/components/games/CourtDMChat";
 import { BookingProofTab } from "@/components/games/BookingProofTab";
@@ -146,6 +147,8 @@ export default function GameDetailPage() {
   const [showJoinConfirm, setShowJoinConfirm] = useState(false);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [joinLoading, setJoinLoading] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -336,6 +339,29 @@ export default function GameDetailPage() {
       notifyHost("game_leave", "Game Update", `${profile?.name || "Someone"} left "${game?.title}"${ctx}`);
     }
     setJoinLoading(false);
+  };
+
+  const handleDeleteGame = async () => {
+    if (!id) return;
+    setDeleteLoading(true);
+    try {
+      // Delete related data first
+      await supabase.from("game_messages").delete().eq("game_id", id);
+      await supabase.from("court_messages").delete().eq("game_id", id);
+      await supabase.from("join_requests").delete().eq("game_id", id);
+      await supabase.from("game_players").delete().eq("game_id", id);
+      await supabase.from("interests").delete().eq("listing_id", id);
+      await supabase.from("matches").delete().eq("game_id", id);
+      const { error } = await supabase.from("games").delete().eq("id", id);
+      if (error) throw error;
+      toast.success("Game deleted");
+      navigate("/games");
+    } catch (err: any) {
+      toast.error(err.message || "Failed to delete game");
+    } finally {
+      setDeleteLoading(false);
+      setShowDeleteConfirm(false);
+    }
   };
 
   const isHost = user?.id === game?.host_id;
@@ -566,6 +592,14 @@ export default function GameDetailPage() {
                 className="w-7 h-7 rounded-lg bg-muted flex items-center justify-center hover:bg-muted/80 transition-colors shrink-0"
               >
                 <Pencil className="w-3.5 h-3.5 text-muted-foreground" />
+              </button>
+            )}
+            {isHost && (
+              <button
+                onClick={() => setShowDeleteConfirm(true)}
+                className="w-7 h-7 rounded-lg bg-destructive/10 flex items-center justify-center hover:bg-destructive/20 transition-colors shrink-0"
+              >
+                <Trash2 className="w-3.5 h-3.5 text-destructive" />
               </button>
             )}
           </div>
@@ -1128,6 +1162,28 @@ export default function GameDetailPage() {
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={() => { setShowJoinConfirm(false); handleDirectJoin(); }}>
               {game?.payment_mode === "court_sharing" ? "Secure Court" : "Join Game"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Delete Confirmation */}
+      <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete this game?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. The game and all associated data (messages, requests, matches) will be permanently removed.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleteLoading}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={handleDeleteGame}
+              disabled={deleteLoading}
+            >
+              {deleteLoading ? "Deleting..." : "Delete Game"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
