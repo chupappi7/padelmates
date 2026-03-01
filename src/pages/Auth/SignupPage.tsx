@@ -22,9 +22,9 @@ type Step = "account" | "about" | "skill";
 const STEPS: Step[] = ["account", "about", "skill"];
 
 const SKILL_CARDS = [
-  { value: "4", label: "A", desc: "Tournament / competitive" },
-  { value: "3", label: "B", desc: "Regular player" },
-  { value: "2", label: "C", desc: "Casual / learning" },
+  { value: "4", label: "A", desc: "Advanced" },
+  { value: "3", label: "B", desc: "Intermediate" },
+  { value: "2", label: "C", desc: "Pre-intermediate" },
   { value: "1", label: "D", desc: "Beginner" },
 ];
 
@@ -120,7 +120,7 @@ export default function SignupPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4">
+    <div className="min-h-screen flex items-center justify-center p-4 overflow-y-auto">
       <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-secondary/5" />
 
       <motion.div
