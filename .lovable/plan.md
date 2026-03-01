@@ -1,47 +1,39 @@
 
-# Share Modal for Match Detail Page
 
-## Overview
-Replace the current "copy link" share button with a bottom sheet that offers two sharing options:
-1. **Copy Link** - Same as current behavior
-2. **Send to Friend** - Pick a friend from your list and send the event link as a DM message
+## Club Detail Page UI/UX Improvements
 
-## UI Design
-- Tapping the Share icon opens a **bottom Sheet** (consistent with other sheets in the app like FriendPickerSheet)
-- Two-step flow:
-  - **Step 1**: Show share options (Copy Link, Send to Friend)
-  - **Step 2**: If "Send to Friend" is selected, show a searchable friends list to pick a recipient
+### Issues to Fix
 
-## Implementation
+**1. Stats bar horizontal scrolling**
+The three stat pills (Members, Matches, Upcoming) shift sideways on smaller screens. Fix by making them `flex-wrap` or switching to a grid layout so they stay in place and never scroll horizontally.
 
-### New Component: `ShareGameSheet.tsx`
-Located at `src/components/games/ShareGameSheet.tsx`
+**2. Avatar fallback transparency**
+The club logo fallback uses `bg-primary/10` which appears nearly transparent on the dark theme. Change to a solid background color (e.g., `bg-card` or `bg-[hsl(220,25%,18%)]`) so the letter is always visible on a solid surface.
 
-- Props: `open`, `onOpenChange`, `gameId`, `gameTitle`
-- **Step 1 view**: Two option rows:
-  - Copy Link row with Link icon - copies URL and shows toast
-  - Send to Friend row with Send icon - transitions to step 2
-- **Step 2 view**: Friends list (reusing `useFriends` hook)
-  - Search input to filter friends
-  - Tapping a friend sends the game link as a DM message (finds or creates a chat, then inserts a `chat_messages` row with the event URL and title)
-  - Shows success toast: "Link sent to [name]!"
-  - Auto-closes the sheet
+**3. Add Edit button for admins/owners**
+Place a small "Edit" or pencil icon button near the club name or in the action bar that opens the existing Admin Panel directly to the Settings tab. Only visible to admins/owners.
 
-### DM Send Logic
-Reuses the existing pattern from `ProfileActionButtons.tsx`:
-1. Check for existing DM chat between current user and selected friend
-2. If none exists, create one via `chats` table insert
-3. Insert a `chat_messages` row with a formatted message like: "Check out this match: [title] - [url]"
+**4. Show "Owned by" info on the main page**
+Below the club name and location, add a small clickable row showing the owner's avatar and name (e.g., "Owned by John"). Tapping navigates to their profile. This gives immediate context about who runs the club.
 
-### Changes to `GameDetailPage.tsx`
-- Import and render `ShareGameSheet`
-- Replace the inline `onClick` copy logic on the Share2 button with opening the sheet
+**5. General UX polish**
+- Add a short description snippet (1-2 lines) below the owner row on the main header, so users get context without switching to the About tab.
+- Make stats bar use compact `text-xs` sizing so all three fit comfortably on mobile.
 
-## Technical Details
+---
 
-| File | Change |
-|------|--------|
-| `src/components/games/ShareGameSheet.tsx` | New component |
-| `src/pages/Games/GameDetailPage.tsx` | Wire up sheet to existing share button |
+### Technical Details
 
-No database changes required - uses existing `chats` and `chat_messages` tables.
+**File: `src/pages/Clubs/ClubDetailPage.tsx`**
+
+- Fetch owner profile (name, avatar_url) alongside the club data in `fetchClub()`.
+- Stats bar: change container from `flex gap-3` to `flex flex-wrap gap-2` and reduce pill padding (`px-2.5 py-1 text-xs`).
+- Avatar: change fallback from `bg-primary/10` to `bg-card border border-border` for a solid, non-transparent look.
+- Add owner row: a small `div` with avatar + "Owned by {name}" after the location, clickable to `/user/{owner_id}`.
+- Add description preview: if `club.description` exists, show 2-line clamp below the owner row.
+- Add Edit button: next to the Settings gear (or replace it), an edit pencil icon that opens admin panel. Only shown for `isAdmin`.
+
+**File: `src/components/clubs/ClubFeedTab.tsx`** - No changes needed.
+
+**File: `src/components/clubs/ClubAboutTab.tsx`** - No changes needed.
+
