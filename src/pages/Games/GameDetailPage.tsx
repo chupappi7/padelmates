@@ -47,6 +47,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { CourtDMChat } from "@/components/games/CourtDMChat";
+import { ShareGameSheet } from "@/components/games/ShareGameSheet";
 import { BookingProofTab } from "@/components/games/BookingProofTab";
 import { ALL_COURTS } from "@/components/games/CourtPicker";
 import { ShieldCheck } from "lucide-react";
@@ -151,6 +152,7 @@ export default function GameDetailPage() {
   const [joinLoading, setJoinLoading] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
+  const [showShareSheet, setShowShareSheet] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -579,11 +581,7 @@ export default function GameDetailPage() {
               )}
             </div>
             <button
-              onClick={() => {
-                const url = `${window.location.origin}/games/${id}`;
-                navigator.clipboard.writeText(url);
-                toast.success("Invite link copied!");
-              }}
+              onClick={() => setShowShareSheet(true)}
               className="w-7 h-7 rounded-lg bg-muted flex items-center justify-center hover:bg-muted/80 transition-colors shrink-0"
             >
               <Share2 className="w-3.5 h-3.5 text-muted-foreground" />
@@ -1253,6 +1251,14 @@ export default function GameDetailPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Share Sheet */}
+      <ShareGameSheet
+        open={showShareSheet}
+        onOpenChange={setShowShareSheet}
+        gameId={id || ""}
+        gameTitle={game?.title || ""}
+      />
     </div>
   );
 }
