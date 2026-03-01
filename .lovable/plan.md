@@ -1,50 +1,47 @@
 
-
-# Signup Page Redesign — 3-Step Grouped Wizard
+# Share Modal for Match Detail Page
 
 ## Overview
-Transform the signup from a basic form into a polished 3-step wizard with a progress indicator, smooth animations, and two new profile fields (sex, age).
+Replace the current "copy link" share button with a bottom sheet that offers two sharing options:
+1. **Copy Link** - Same as current behavior
+2. **Send to Friend** - Pick a friend from your list and send the event link as a DM message
 
-## Database Migration
-Add two new columns to the `profiles` table:
-- `sex` (text, nullable) — values: `"male"`, `"female"`, `"other"`
-- `birth_year` (integer, nullable) — storing birth year instead of age so it doesn't go stale over time
+## UI Design
+- Tapping the Share icon opens a **bottom Sheet** (consistent with other sheets in the app like FriendPickerSheet)
+- Two-step flow:
+  - **Step 1**: Show share options (Copy Link, Send to Friend)
+  - **Step 2**: If "Send to Friend" is selected, show a searchable friends list to pick a recipient
 
-## Signup Steps
+## Implementation
 
-### Step 1: "Create your account"
-- Full Name (required)
-- Email (required)
-- Password with show/hide toggle (required, min 6 chars)
-- Button: "Continue"
+### New Component: `ShareGameSheet.tsx`
+Located at `src/components/games/ShareGameSheet.tsx`
 
-### Step 2: "About you"
-- Sex — 3 pill-style toggle buttons: Male / Female / Other (required)
-- Age (optional) — number input, placeholder "e.g. 28"
-- Region — dropdown with 14 Czech regions (required, no "skip")
-- Button: "Continue"
+- Props: `open`, `onOpenChange`, `gameId`, `gameTitle`
+- **Step 1 view**: Two option rows:
+  - Copy Link row with Link icon - copies URL and shows toast
+  - Send to Friend row with Send icon - transitions to step 2
+- **Step 2 view**: Friends list (reusing `useFriends` hook)
+  - Search input to filter friends
+  - Tapping a friend sends the game link as a DM message (finds or creates a chat, then inserts a `chat_messages` row with the event URL and title)
+  - Shows success toast: "Link sent to [name]!"
+  - Auto-closes the sheet
 
-### Step 3: "Your padel level"
-- Self-rank — large tappable cards for A / B / C / D with brief descriptions (e.g. A: "Tournament / competitive", B: "Regular player", C: "Casual / learning", D: "Beginner")
-- Button: "Create Account"
+### DM Send Logic
+Reuses the existing pattern from `ProfileActionButtons.tsx`:
+1. Check for existing DM chat between current user and selected friend
+2. If none exists, create one via `chats` table insert
+3. Insert a `chat_messages` row with a formatted message like: "Check out this match: [title] - [url]"
 
-## UI Details
-- **Progress bar** at top of card: 3 dots/segments showing current step, filled with primary color
-- **Back arrow** on steps 2 and 3 to go to previous step
-- **AnimatePresence** slide transitions between steps (same pattern as current)
-- Account creation happens on Step 1 submit (email + password + name sent to auth)
-- Steps 2 and 3 update the profile record after account is created
-- "Already have an account? Sign in" link shown on Step 1 only
+### Changes to `GameDetailPage.tsx`
+- Import and render `ShareGameSheet`
+- Replace the inline `onClick` copy logic on the Share2 button with opening the sheet
 
 ## Technical Details
-- Rewrite `SignupPage.tsx` with 3 steps instead of 2
-- Step type: `"account" | "about" | "skill"`
-- After Step 1: call `signUp()`, then update `skill_level` in Step 3
-- After Step 2: update `sex`, `birth_year`, `region` on profiles
-- After Step 3: update `skill_level`, show success toast, navigate to `/games`
-- Store birth year as `new Date().getFullYear() - age` when user enters age
 
-## Files Changed
-1. **New migration** — add `sex` and `birth_year` columns to profiles
-2. **`src/pages/Auth/SignupPage.tsx`** — full rewrite with 3-step wizard
+| File | Change |
+|------|--------|
+| `src/components/games/ShareGameSheet.tsx` | New component |
+| `src/pages/Games/GameDetailPage.tsx` | Wire up sheet to existing share button |
 
+No database changes required - uses existing `chats` and `chat_messages` tables.
