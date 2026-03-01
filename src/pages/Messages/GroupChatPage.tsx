@@ -5,6 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, MapPin, Calendar } from "lucide-react";
+import { Navbar } from "@/components/layout/Navbar";
 import { cn } from "@/lib/utils";
 import { format, isToday, isYesterday } from "date-fns";
 import { ChatInputWithUpload } from "@/components/chat/ChatInputWithUpload";
@@ -156,7 +157,8 @@ export default function GroupChatPage() {
 
   return (
     <div className="flex flex-col h-screen bg-background">
-      {/* Header */}
+      <Navbar />
+      {/* Game info sub-header */}
       <div className="sticky top-0 z-50 glass-card border-b border-border/50 px-3 py-2.5">
         <div className="flex items-center gap-3">
           <Button variant="ghost" size="icon" className="h-9 w-9 shrink-0" onClick={() => navigate("/messages")}>
