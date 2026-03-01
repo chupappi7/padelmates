@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Navbar } from "@/components/layout/Navbar";
 import { Input } from "@/components/ui/input";
@@ -77,6 +77,22 @@ export default function PlayersPage() {
     if (activeTab !== "players" || !user) return;
     fetchDiscovery();
   }, [activeTab, user?.id, regionFilter, myProfile?.region]);
+
+  // Live search as user types (debounced)
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    if (!searchQuery.trim()) {
+      setSearchResults([]);
+      return;
+    }
+    debounceRef.current = setTimeout(() => {
+      handleSearch(searchQuery);
+    }, 300);
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, [searchQuery]);
 
   const getEffectiveRegion = () => {
     if (regionFilter === "__mine__") return myProfile?.region || null;
@@ -374,26 +390,15 @@ export default function PlayersPage() {
           {activeTab === "players" && (
             <div className="space-y-5">
               {/* Search bar */}
-              <div className="flex gap-2">
-                <div className="relative flex-1">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Search by name or player ID..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-                    className="pl-10 h-11"
-                    autoFocus
-                  />
-                </div>
-                <Button
-                  variant="hero"
-                  onClick={() => handleSearch()}
-                  disabled={searching || !searchQuery.trim()}
-                  className="h-11 px-5"
-                >
-                  Search
-                </Button>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search by name or player ID..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10 h-11"
+                  autoFocus
+                />
               </div>
 
               {/* Filters row */}
