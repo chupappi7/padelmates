@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Home, Plus, Trophy, CalendarCheck, LogOut, User, Bell, Inbox, Building2, Users } from "lucide-react";
 import { useNotifications } from "@/hooks/useNotifications";
+import { useConversations } from "@/hooks/useConversations";
 import { NotificationPanel } from "@/components/layout/NotificationPanel";
 import { HostTypeModal } from "@/components/games/HostTypeModal";
 import { cn } from "@/lib/utils";
@@ -21,6 +22,7 @@ export function Navbar() {
   const navigate = useNavigate();
   const location = useLocation();
   const { unreadCount } = useNotifications();
+  const { totalUnread: unreadMessages } = useConversations();
   const [showHostModal, setShowHostModal] = useState(false);
 
   const handleSignOut = async () => {
@@ -38,7 +40,7 @@ export function Navbar() {
     <Button variant="ghost" size="icon" className="relative h-9 w-9 rounded-full" onClick={onClick}>
       <Icon className="w-5 h-5 text-muted-foreground" />
       {badge !== undefined && badge > 0 && (
-        <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center px-1">
+        <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold flex items-center justify-center px-1">
           {badge > 9 ? "9+" : badge}
         </span>
       )}
@@ -85,7 +87,7 @@ export function Navbar() {
             {user ? (
               <>
                 <IconButton icon={Users} onClick={() => navigate("/friends")} />
-                <IconButton icon={Inbox} onClick={() => navigate("/messages")} />
+                <IconButton icon={Inbox} badge={unreadMessages} onClick={() => navigate("/messages")} />
                 <NotificationPanel>
                   <IconButton icon={Bell} badge={unreadCount} onClick={() => {}} />
                 </NotificationPanel>
@@ -125,7 +127,7 @@ export function Navbar() {
             {user ? (
               <>
                 <IconButton icon={Users} onClick={() => navigate("/friends")} />
-                <IconButton icon={Inbox} onClick={() => navigate("/messages")} />
+                <IconButton icon={Inbox} badge={unreadMessages} onClick={() => navigate("/messages")} />
                 <NotificationPanel>
                   <IconButton icon={Bell} badge={unreadCount} onClick={() => {}} />
                 </NotificationPanel>
