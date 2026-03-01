@@ -26,6 +26,8 @@ import { motion } from "framer-motion";
 import { format, isToday, isYesterday } from "date-fns";
 import { cn } from "@/lib/utils";
 import { formatGameContext } from "@/lib/formatGameContext";
+import { ChatInputWithUpload } from "@/components/chat/ChatInputWithUpload";
+import { ChatMessageContent } from "@/components/chat/ChatMessageContent";
 import {
   ArrowLeft,
   Calendar,
@@ -1025,7 +1027,7 @@ export default function GameDetailPage() {
                                         : "bg-muted rounded-2xl rounded-bl-md"
                                     )}
                                   >
-                                    <p className="whitespace-pre-wrap break-words">{msg.message}</p>
+                                    <ChatMessageContent message={msg.message} isMine={msg.user_id === user?.id} />
                                     <p className={cn(
                                       "text-[10px] mt-0.5 text-right",
                                       isMine ? "text-primary-foreground/60" : "text-muted-foreground"
@@ -1049,17 +1051,22 @@ export default function GameDetailPage() {
                   )}
                   <div ref={messagesEndRef} />
                 </div>
-                <div className="flex gap-2 p-3 border-t border-border">
-                  <Input
-                    placeholder="Message..."
+                <div className="p-3 border-t border-border">
+                  <ChatInputWithUpload
                     value={newMessage}
-                    onChange={(e) => setNewMessage(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && handleSendMessage()}
-                    className="flex-1 rounded-full bg-muted/50 border-0 focus-visible:ring-1 h-10"
+                    onChange={setNewMessage}
+                    onSend={handleSendMessage}
+                    onImageSent={async (path) => {
+                      if (!user || !id) return;
+                      await supabase.from("game_messages").insert({
+                        game_id: id,
+                        user_id: user.id,
+                        message: `[image]${path}`,
+                      });
+                      fetchMessages();
+                    }}
+                    userId={user?.id}
                   />
-                  <Button onClick={handleSendMessage} size="icon" className="h-10 w-10 rounded-full shrink-0">
-                    <Send className="w-4 h-4" />
-                  </Button>
                 </div>
               </div>
             </motion.div>
