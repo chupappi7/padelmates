@@ -794,7 +794,7 @@ export function CourtDMChat({
           <Button
             variant="outline"
             size="sm"
-            className="w-full h-7 text-xs gap-1 border-warning/50 text-warning hover:bg-warning/10"
+            className="w-full h-7 text-xs gap-1 border-primary bg-primary/10 text-primary font-semibold hover:bg-primary/20 transition-colors"
             onClick={handleSendBankDetails}
             disabled={sendLoading}
           >
