@@ -823,7 +823,10 @@ export default function GameDetailPage() {
                       </div>
                     </>
                   ) : (
-                    <>
+                    <div
+                      className="flex items-center gap-3 flex-1 cursor-pointer"
+                      onClick={() => navigate(`/user/${game.host_id}`)}
+                    >
                       <Avatar className="h-10 w-10">
                         <AvatarImage src={game.profiles?.avatar_url || undefined} />
                         <AvatarFallback className="bg-primary/10 text-primary font-semibold text-sm">
@@ -832,12 +835,12 @@ export default function GameDetailPage() {
                       </Avatar>
                       <div className="flex-1 min-w-0">
                         <p className="text-xs text-muted-foreground">Hosted by</p>
-                        <p className="text-sm font-semibold break-words">{game.profiles?.name}</p>
+                        <p className="text-sm font-semibold break-words text-primary hover:underline">{game.profiles?.name}</p>
                       </div>
                       {game.profiles?.skill_level && (
                         <SkillBadge level={game.profiles.skill_level as number} size="sm" />
                       )}
-                    </>
+                    </div>
                   )}
                 </div>
               </div>
