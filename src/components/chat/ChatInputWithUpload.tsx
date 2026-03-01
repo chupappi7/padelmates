@@ -78,22 +78,22 @@ export function ChatInputWithUpload({
         type="button"
         onClick={() => fileRef.current?.click()}
         disabled={uploading}
-        className="h-10 w-10 rounded-full bg-muted/50 flex items-center justify-center shrink-0 hover:bg-muted transition-colors disabled:opacity-50"
+        className="h-11 w-11 rounded-full bg-muted/50 flex items-center justify-center shrink-0 hover:bg-muted transition-colors disabled:opacity-50"
       >
-        <ImagePlus className="w-4.5 h-4.5 text-muted-foreground" />
+        <ImagePlus className="w-5 h-5 text-muted-foreground" />
       </button>
       <Input
         ref={inputRef}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={uploading ? "Uploading..." : placeholder}
-        className="flex-1 rounded-full bg-muted/50 border-0 focus-visible:ring-1 h-10"
+        className="flex-1 rounded-full bg-muted/50 border-0 focus-visible:ring-1 h-11 text-base"
         disabled={uploading}
       />
       <Button
         type="submit"
         size="icon"
-        className="h-10 w-10 rounded-full shrink-0"
+        className="h-11 w-11 rounded-full shrink-0"
         disabled={!value.trim() || disabled || uploading}
       >
         <Send className="w-4 h-4" />
