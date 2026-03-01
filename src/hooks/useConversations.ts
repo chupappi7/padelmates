@@ -23,13 +23,10 @@ export interface UnifiedConversation {
   unreadCount: number;
   chatId?: string;
   gameId?: string;
-  // Auto-archive metadata
   gameDateTime?: string;
   gameEndDateTime?: string | null;
   courtTakenBy?: string | null;
-  // Preferences
   prefs: ConversationPrefs;
-  // Auto-archive computed
   autoArchived: boolean;
 }
 
@@ -42,7 +39,6 @@ function computeAutoArchive(convo: {
   const now = new Date();
 
   if (convo.type === "match") {
-    // Archive match chats 24h after game end
     const endTime = convo.gameEndDateTime || convo.gameDateTime;
     if (endTime) {
       const end = new Date(endTime);
@@ -52,20 +48,13 @@ function computeAutoArchive(convo: {
   }
 
   if (convo.type === "court") {
-    // If court is sold/taken, archive after 48h
-    if (convo.courtTakenBy) {
-      // We don't have the exact sold time, so we use game date as proxy
-      // In practice this would need a sold_at timestamp
-      return true; // simplified: sold = archived
-    }
-    // If listing date passed without being sold
+    if (convo.courtTakenBy) return true;
     if (convo.gameDateTime) {
       const gameDate = new Date(convo.gameDateTime);
       if (now > gameDate && !convo.courtTakenBy) return true;
     }
   }
 
-  // DMs: never auto-archive
   return false;
 }
 
@@ -84,14 +73,30 @@ export function useConversations() {
 
     const results: UnifiedConversation[] = [];
 
-    // Fetch user preferences
-    const { data: prefsData } = await supabase
-      .from("conversation_preferences")
-      .select("conversation_id, archived, muted, deleted")
-      .eq("user_id", user.id);
+    // Fetch preferences + chats + player games + hosted games in parallel
+    const [prefsRes, chatsRes, playerGamesRes, hostedGamesRes] = await Promise.all([
+      supabase
+        .from("conversation_preferences")
+        .select("conversation_id, archived, muted, deleted")
+        .eq("user_id", user.id),
+      supabase
+        .from("chats")
+        .select("*")
+        .or(`user_1_id.eq.${user.id},user_2_id.eq.${user.id}`)
+        .order("created_at", { ascending: false }),
+      supabase
+        .from("game_players")
+        .select("game_id")
+        .eq("user_id", user.id),
+      supabase
+        .from("games")
+        .select("id")
+        .eq("host_id", user.id)
+        .neq("payment_mode", "court_sharing"),
+    ]);
 
     const prefsMap: Record<string, ConversationPrefs> = {};
-    prefsData?.forEach((p) => {
+    prefsRes.data?.forEach((p) => {
       prefsMap[p.conversation_id] = {
         archived: p.archived,
         muted: p.muted,
@@ -102,32 +107,36 @@ export function useConversations() {
     const getPrefs = (id: string): ConversationPrefs =>
       prefsMap[id] || { archived: false, muted: false, deleted: false };
 
-    // ── 1. FETCH CHATS (DMs + Court threads) ────────────────────────────
-    const { data: chats } = await supabase
-      .from("chats")
-      .select("*")
-      .or(`user_1_id.eq.${user.id},user_2_id.eq.${user.id}`)
-      .order("created_at", { ascending: false });
-
-    if (chats && chats.length > 0) {
-      const otherUserIds = chats.map((c) =>
+    // ── 1. PROCESS CHATS (DMs + Court threads) ──────────────────────────
+    const chats = chatsRes.data || [];
+    if (chats.length > 0) {
+      const otherUserIds = [...new Set(chats.map((c) =>
         c.user_1_id === user.id ? c.user_2_id : c.user_1_id
-      );
-      const listingIds = chats
-        .filter((c) => c.listing_id)
-        .map((c) => c.listing_id!);
+      ))];
+      const listingIds = [...new Set(chats.filter((c) => c.listing_id).map((c) => c.listing_id!))];
+      const chatIds = chats.filter((c) => !getPrefs(c.id).deleted).map((c) => c.id);
 
-      const [profilesRes, gamesRes] = await Promise.all([
+      // Batch fetch profiles, games, and ALL last messages in parallel
+      const [profilesRes, gamesRes, allChatMsgsRes] = await Promise.all([
         supabase
           .from("profiles")
           .select("user_id, name, avatar_url")
-          .in("user_id", [...new Set(otherUserIds)]),
+          .in("user_id", otherUserIds),
         listingIds.length > 0
           ? supabase
               .from("games")
               .select("id, title, location, court_number, date_time, end_date_time, court_taken_by")
-              .in("id", [...new Set(listingIds)])
-          : Promise.resolve({ data: [] }),
+              .in("id", listingIds)
+          : Promise.resolve({ data: [] as any[] }),
+        // Fetch recent messages for all chats at once (get last few per chat)
+        chatIds.length > 0
+          ? supabase
+              .from("chat_messages")
+              .select("chat_id, message, created_at, sender_id")
+              .in("chat_id", chatIds)
+              .order("created_at", { ascending: false })
+              .limit(chatIds.length * 2) // Get enough to cover 1 per chat
+          : Promise.resolve({ data: [] as any[] }),
       ]);
 
       const profileMap: Record<string, { name: string; avatar_url: string | null }> = {};
@@ -136,24 +145,25 @@ export function useConversations() {
       });
 
       const gameMap: Record<string, { title: string; location: string; court_number: string | null; date_time: string; end_date_time: string | null; court_taken_by: string | null }> = {};
-      gamesRes.data?.forEach((g: any) => {
+      (gamesRes.data || []).forEach((g: any) => {
         gameMap[g.id] = { title: g.title, location: g.location, court_number: g.court_number, date_time: g.date_time, end_date_time: g.end_date_time, court_taken_by: g.court_taken_by };
+      });
+
+      // Build last message map (first occurrence per chat_id since ordered desc)
+      const lastChatMsgMap: Record<string, { message: string; created_at: string; sender_id: string }> = {};
+      (allChatMsgsRes.data || []).forEach((m: any) => {
+        if (!lastChatMsgMap[m.chat_id]) {
+          lastChatMsgMap[m.chat_id] = { message: m.message, created_at: m.created_at, sender_id: m.sender_id };
+        }
       });
 
       for (const chat of chats) {
         const prefs = getPrefs(chat.id);
         if (prefs.deleted) continue;
 
-        const { data: msgs } = await supabase
-          .from("chat_messages")
-          .select("message, created_at, sender_id")
-          .eq("chat_id", chat.id)
-          .order("created_at", { ascending: false })
-          .limit(1);
-
         const otherUserId = chat.user_1_id === user.id ? chat.user_2_id : chat.user_1_id;
         const profile = profileMap[otherUserId];
-        const lastMsg = msgs?.[0];
+        const lastMsg = lastChatMsgMap[chat.id];
         const isCourt = !!chat.listing_id;
         const game = chat.listing_id ? gameMap[chat.listing_id] : null;
 
@@ -184,76 +194,87 @@ export function useConversations() {
       }
     }
 
-    // ── 2. FETCH MATCH GROUP CHATS ──────────────────────────────────────
-    const { data: playerGames } = await supabase
-      .from("game_players")
-      .select("game_id")
-      .eq("user_id", user.id);
-
-    const { data: hostedGames } = await supabase
-      .from("games")
-      .select("id")
-      .eq("host_id", user.id)
-      .neq("payment_mode", "court_sharing");
-
-    const playerGameIds = new Set(playerGames?.map((p) => p.game_id) || []);
-    const hostedGameIds = new Set(hostedGames?.map((g) => g.id) || []);
+    // ── 2. PROCESS MATCH GROUP CHATS ────────────────────────────────────
+    const playerGameIds = new Set(playerGamesRes.data?.map((p) => p.game_id) || []);
+    const hostedGameIds = new Set(hostedGamesRes.data?.map((g) => g.id) || []);
     const allMatchGameIds = [...new Set([...playerGameIds, ...hostedGameIds])];
 
     if (allMatchGameIds.length > 0) {
-      const { data: matchGames } = await supabase
-        .from("games")
-        .select("id, title, location, payment_mode, host_id, date_time, end_date_time")
-        .in("id", allMatchGameIds)
-        .neq("payment_mode", "court_sharing");
+      // Fetch match games and their last messages in parallel
+      const [matchGamesRes, allGameMsgsRes] = await Promise.all([
+        supabase
+          .from("games")
+          .select("id, title, location, payment_mode, host_id, date_time, end_date_time")
+          .in("id", allMatchGameIds)
+          .neq("payment_mode", "court_sharing"),
+        supabase
+          .from("game_messages")
+          .select("game_id, message, created_at, user_id")
+          .in("game_id", allMatchGameIds)
+          .order("created_at", { ascending: false })
+          .limit(allMatchGameIds.length * 2),
+      ]);
 
-      if (matchGames && matchGames.length > 0) {
-        for (const game of matchGames) {
-          const convoId = `game-${game.id}`;
-          const prefs = getPrefs(convoId);
-          if (prefs.deleted) continue;
+      const matchGames = matchGamesRes.data || [];
 
-          const { data: msgs } = await supabase
-            .from("game_messages")
-            .select("message, created_at, user_id")
-            .eq("game_id", game.id)
-            .order("created_at", { ascending: false })
-            .limit(1);
-
-          const lastMsg = msgs?.[0];
-          let senderName: string | undefined;
-          if (lastMsg) {
-            if (lastMsg.user_id === user.id) {
-              senderName = "You";
-            } else {
-              const { data: senderProfile } = await supabase
-                .from("profiles")
-                .select("name")
-                .eq("user_id", lastMsg.user_id)
-                .maybeSingle();
-              senderName = senderProfile?.name || "Unknown";
-            }
-          }
-
-          const convo: UnifiedConversation = {
-            id: convoId,
-            type: "match",
-            title: game.title,
-            contextLabel: formatGameContext(game.location, game.date_time),
-            avatarUrl: null,
-            lastMessage: lastMsg?.message || "",
-            lastMessageAt: lastMsg?.created_at || "",
-            lastMessageSenderName: senderName,
-            unreadCount: 0,
-            gameId: game.id,
-            gameDateTime: game.date_time,
-            gameEndDateTime: game.end_date_time,
-            prefs,
-            autoArchived: false,
-          };
-          convo.autoArchived = computeAutoArchive(convo);
-          results.push(convo);
+      // Build last game message map
+      const lastGameMsgMap: Record<string, { message: string; created_at: string; user_id: string }> = {};
+      (allGameMsgsRes.data || []).forEach((m: any) => {
+        if (!lastGameMsgMap[m.game_id]) {
+          lastGameMsgMap[m.game_id] = { message: m.message, created_at: m.created_at, user_id: m.user_id };
         }
+      });
+
+      // Collect all sender user_ids we need to resolve names for
+      const senderIdsToResolve = new Set<string>();
+      for (const game of matchGames) {
+        const lastMsg = lastGameMsgMap[game.id];
+        if (lastMsg && lastMsg.user_id !== user.id) {
+          senderIdsToResolve.add(lastMsg.user_id);
+        }
+      }
+
+      // Batch fetch all sender profiles at once
+      const senderProfileMap: Record<string, string> = {};
+      if (senderIdsToResolve.size > 0) {
+        const { data: senderProfiles } = await supabase
+          .from("profiles")
+          .select("user_id, name")
+          .in("user_id", Array.from(senderIdsToResolve));
+        senderProfiles?.forEach((p) => {
+          senderProfileMap[p.user_id] = p.name;
+        });
+      }
+
+      for (const game of matchGames) {
+        const convoId = `game-${game.id}`;
+        const prefs = getPrefs(convoId);
+        if (prefs.deleted) continue;
+
+        const lastMsg = lastGameMsgMap[game.id];
+        let senderName: string | undefined;
+        if (lastMsg) {
+          senderName = lastMsg.user_id === user.id ? "You" : senderProfileMap[lastMsg.user_id] || "Unknown";
+        }
+
+        const convo: UnifiedConversation = {
+          id: convoId,
+          type: "match",
+          title: game.title,
+          contextLabel: formatGameContext(game.location, game.date_time),
+          avatarUrl: null,
+          lastMessage: lastMsg?.message || "",
+          lastMessageAt: lastMsg?.created_at || "",
+          lastMessageSenderName: senderName,
+          unreadCount: 0,
+          gameId: game.id,
+          gameDateTime: game.date_time,
+          gameEndDateTime: game.end_date_time,
+          prefs,
+          autoArchived: false,
+        };
+        convo.autoArchived = computeAutoArchive(convo);
+        results.push(convo);
       }
     }
 
@@ -264,7 +285,6 @@ export function useConversations() {
     );
 
     setConversations(results);
-    // Only count unread from active (non-archived, non-muted, non-deleted)
     setTotalUnread(
       results
         .filter((c) => !c.prefs.archived && !c.autoArchived && !c.prefs.muted && !c.prefs.deleted)
