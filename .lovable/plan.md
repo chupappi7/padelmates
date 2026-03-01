@@ -1,48 +1,50 @@
 
 
-# Add Club Filter -- Scrollable Chip Bar
+# Signup Page Redesign — 3-Step Grouped Wizard
 
-## Problem
-Three side-by-side dropdowns won't fit on mobile. We need a space-efficient way to add club filtering.
+## Overview
+Transform the signup from a basic form into a polished 3-step wizard with a progress indicator, smooth animations, and two new profile fields (sex, age).
 
-## Approach: Horizontal Chip/Pill Bar
+## Database Migration
+Add two new columns to the `profiles` table:
+- `sex` (text, nullable) — values: `"male"`, `"female"`, `"other"`
+- `birth_year` (integer, nullable) — storing birth year instead of age so it doesn't go stale over time
 
-Instead of a third dropdown, add a **horizontally scrollable chip bar** below the existing Type + Level filters. This only appears when the user is logged in and has joined at least one club.
+## Signup Steps
 
-```text
-[ Type v ] [ Level v ]
-[ All ] [ My Clubs ] [ PadelKings ] [ Smash FC ] ...
-          ^^^ scrollable chip row ^^^
-```
+### Step 1: "Create your account"
+- Full Name (required)
+- Email (required)
+- Password with show/hide toggle (required, min 6 chars)
+- Button: "Continue"
 
-- Chips are small pill buttons (like the DayPicker style)
-- "All" is selected by default (no club filtering)
-- "My Clubs" filters to any game from a joined club
-- Individual club names let you drill into one specific club
-- The row scrolls horizontally with `overflow-x-auto` and hidden scrollbar
-- When no user is logged in or user has no clubs, this row is hidden entirely
+### Step 2: "About you"
+- Sex — 3 pill-style toggle buttons: Male / Female / Other (required)
+- Age (optional) — number input, placeholder "e.g. 28"
+- Region — dropdown with 14 Czech regions (required, no "skip")
+- Button: "Continue"
 
-## Technical Changes
+### Step 3: "Your padel level"
+- Self-rank — large tappable cards for A / B / C / D with brief descriptions (e.g. A: "Tournament / competitive", B: "Regular player", C: "Casual / learning", D: "Beginner")
+- Button: "Create Account"
 
-### 1. GamesListPage.tsx
+## UI Details
+- **Progress bar** at top of card: 3 dots/segments showing current step, filled with primary color
+- **Back arrow** on steps 2 and 3 to go to previous step
+- **AnimatePresence** slide transitions between steps (same pattern as current)
+- Account creation happens on Step 1 submit (email + password + name sent to auth)
+- Steps 2 and 3 update the profile record after account is created
+- "Already have an account? Sign in" link shown on Step 1 only
 
-**New state:**
-- `clubFilter`: string -- `"all"`, `"my_clubs"`, or a specific club ID
-- `userClubs`: array of `{ id: string; name: string }` -- fetched from `club_followers` joined with `clubs`
+## Technical Details
+- Rewrite `SignupPage.tsx` with 3 steps instead of 2
+- Step type: `"account" | "about" | "skill"`
+- After Step 1: call `signUp()`, then update `skill_level` in Step 3
+- After Step 2: update `sex`, `birth_year`, `region` on profiles
+- After Step 3: update `skill_level`, show success toast, navigate to `/games`
+- Store birth year as `new Date().getFullYear() - age` when user enters age
 
-**New data fetch (inside existing `useEffect`):**
-- When `user` exists, query `club_followers` (status = active) for user's clubs, then batch-fetch club names from `clubs` table
-
-**Filter logic update in `filteredGames`:**
-- `"all"` -- no club filter applied
-- `"my_clubs"` -- `game.club_id` must be in `userClubs` IDs
-- specific ID -- `game.club_id === clubFilter`
-
-**UI addition:**
-- After the Type + Level filter row, render a scrollable `div` with chip buttons
-- Each chip uses conditional styling (filled primary when active, outline when inactive)
-- Same layout for both mobile and desktop -- chips naturally adapt
-
-### Files Modified
-- `src/pages/Games/GamesListPage.tsx` -- add club chip bar, state, fetch, and filter logic
+## Files Changed
+1. **New migration** — add `sex` and `birth_year` columns to profiles
+2. **`src/pages/Auth/SignupPage.tsx`** — full rewrite with 3-step wizard
 
