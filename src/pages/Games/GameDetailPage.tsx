@@ -23,7 +23,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
-import { format } from "date-fns";
+import { format, isToday, isYesterday } from "date-fns";
 import { cn } from "@/lib/utils";
 import { formatGameContext } from "@/lib/formatGameContext";
 import {
@@ -955,33 +955,91 @@ export default function GameDetailPage() {
           )}
           {activeTab === "chat" && !isCourtSharing && canAccessChat && (
             <motion.div key="chat" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col flex-1 min-h-0">
-              <div className="bg-card border border-border rounded-xl flex flex-col flex-1 overflow-hidden">
-                <div ref={messagesContainerRef} className="flex-1 overflow-y-auto p-4 space-y-3">
+              <div className="flex flex-col flex-1 overflow-hidden">
+                <div ref={messagesContainerRef} className="flex-1 overflow-y-auto px-3 py-4">
                   {messages.length > 0 ? (
-                    messages.map((msg) => (
-                      <div key={msg.id} className={cn("flex gap-2.5", msg.user_id === user?.id && "flex-row-reverse")}>
-                        <Avatar className="h-7 w-7 shrink-0">
-                          <AvatarImage src={msg.profiles?.avatar_url || undefined} />
-                          <AvatarFallback className="text-[10px]">
-                            {msg.profiles?.name?.charAt(0)}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div className={cn("max-w-[75%]", msg.user_id === user?.id && "text-right")}>
-                          <p className="text-[11px] text-muted-foreground mb-0.5">
-                            <span className="font-medium">{msg.profiles?.name}</span>
-                            <span className="ml-1.5">{format(new Date(msg.created_at), "HH:mm")}</span>
-                          </p>
-                          <div className={cn(
-                            "inline-block px-3 py-2 rounded-2xl text-sm",
-                            msg.user_id === user?.id
-                              ? "bg-primary text-primary-foreground rounded-tr-sm"
-                              : "bg-muted rounded-tl-sm"
-                          )}>
-                            {msg.message}
+                    (() => {
+                      const grouped: { date: string; messages: Message[] }[] = [];
+                      messages.forEach((msg) => {
+                        const dateKey = format(new Date(msg.created_at), "yyyy-MM-dd");
+                        const existing = grouped.find((g) => g.date === dateKey);
+                        if (existing) existing.messages.push(msg);
+                        else grouped.push({ date: dateKey, messages: [msg] });
+                      });
+
+                      const formatDateSep = (dateStr: string) => {
+                        const date = new Date(dateStr);
+                        if (isToday(date)) return "Today";
+                        if (isYesterday(date)) return "Yesterday";
+                        return format(date, "MMM d, yyyy");
+                      };
+
+                      return grouped.map((group) => (
+                        <div key={group.date}>
+                          <div className="flex justify-center my-4">
+                            <span className="text-[11px] text-muted-foreground bg-muted/50 px-3 py-1 rounded-full">
+                              {formatDateSep(group.messages[0].created_at)}
+                            </span>
                           </div>
+                          {group.messages.map((msg, i) => {
+                            const isMine = msg.user_id === user?.id;
+                            const showAvatar =
+                              !isMine &&
+                              (i === 0 || group.messages[i - 1]?.user_id !== msg.user_id);
+                            const showTail =
+                              i === group.messages.length - 1 ||
+                              group.messages[i + 1]?.user_id !== msg.user_id;
+
+                            return (
+                              <div
+                                key={msg.id}
+                                className={cn(
+                                  "flex gap-2 mb-0.5",
+                                  isMine ? "justify-end" : "justify-start",
+                                  showTail && "mb-2"
+                                )}
+                              >
+                                {!isMine && (
+                                  <div className="w-7 shrink-0">
+                                    {showAvatar && (
+                                      <Avatar className="h-7 w-7">
+                                        <AvatarImage src={msg.profiles?.avatar_url || undefined} />
+                                        <AvatarFallback className="text-[10px] bg-primary/10 text-primary">
+                                          {msg.profiles?.name?.charAt(0).toUpperCase()}
+                                        </AvatarFallback>
+                                      </Avatar>
+                                    )}
+                                  </div>
+                                )}
+                                <div className={cn("max-w-[75%]")}>
+                                  {showAvatar && !isMine && (
+                                    <p className="text-[10px] text-muted-foreground mb-0.5 ml-1 font-medium">
+                                      {msg.profiles?.name}
+                                    </p>
+                                  )}
+                                  <div
+                                    className={cn(
+                                      "px-3.5 py-2 text-sm",
+                                      isMine
+                                        ? "bg-primary text-primary-foreground rounded-2xl rounded-br-md"
+                                        : "bg-muted rounded-2xl rounded-bl-md"
+                                    )}
+                                  >
+                                    <p className="whitespace-pre-wrap break-words">{msg.message}</p>
+                                    <p className={cn(
+                                      "text-[10px] mt-0.5 text-right",
+                                      isMine ? "text-primary-foreground/60" : "text-muted-foreground"
+                                    )}>
+                                      {format(new Date(msg.created_at), "HH:mm")}
+                                    </p>
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })}
                         </div>
-                      </div>
-                    ))
+                      ));
+                    })()
                   ) : (
                     <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
                       <MessageCircle className="w-8 h-8 mb-2" />
@@ -993,13 +1051,13 @@ export default function GameDetailPage() {
                 </div>
                 <div className="flex gap-2 p-3 border-t border-border">
                   <Input
-                    placeholder="Type a message..."
+                    placeholder="Message..."
                     value={newMessage}
                     onChange={(e) => setNewMessage(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && handleSendMessage()}
-                    className="text-sm h-10"
+                    className="flex-1 rounded-full bg-muted/50 border-0 focus-visible:ring-1 h-10"
                   />
-                  <Button onClick={handleSendMessage} size="icon" className="h-10 w-10 shrink-0">
+                  <Button onClick={handleSendMessage} size="icon" className="h-10 w-10 rounded-full shrink-0">
                     <Send className="w-4 h-4" />
                   </Button>
                 </div>
