@@ -138,7 +138,7 @@ export default function CreateClubPage() {
             <div className="relative cursor-pointer group" onClick={() => logoRef.current?.click()}>
               <Avatar className="h-20 w-20 rounded-xl border-4 border-background shadow-md">
                 <AvatarImage src={logoPreview || undefined} />
-                <AvatarFallback className="bg-primary/10 text-primary font-bold text-2xl rounded-xl">
+                <AvatarFallback className="bg-card border border-border text-primary font-bold text-2xl rounded-xl">
                   {form.name ? form.name.charAt(0).toUpperCase() : "C"}
                 </AvatarFallback>
               </Avatar>
@@ -172,10 +172,6 @@ export default function CreateClubPage() {
               </div>
             </div>
 
-            <div className="space-y-1.5">
-              <Label>Number of Courts</Label>
-              <Input type="number" placeholder="e.g. 4" value={form.num_courts} onChange={e => handleChange("num_courts", e.target.value)} className="h-11" />
-            </div>
 
             <div className="flex items-center justify-between py-2">
               <div>
