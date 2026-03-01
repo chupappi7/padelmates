@@ -178,9 +178,7 @@ export default function PlayersPage() {
 
     const { data } = await dbQuery;
 
-    setSearchResults(
-      ((data || []) as PlayerResult[]).filter((p) => !existingIds.has(p.user_id))
-    );
+    setSearchResults((data || []) as PlayerResult[]);
     setSearching(false);
   };
 
@@ -432,24 +430,33 @@ export default function PlayersPage() {
                       ))}
                     </div>
                   ) : searchResults.length > 0 ? (
-                    searchResults.map((p) => (
-                      <FriendCard
-                        key={p.user_id}
-                        userId={p.user_id}
-                        name={p.name}
-                        avatarUrl={p.avatar_url}
-                        skillLevel={p.skill_level}
-                        pdrRating={p.pdr_rating}
-                        region={p.region}
-                        variant="search"
-                        onAdd={() => {
-                          sendRequest(p.user_id);
-                          setSearchResults((prev) =>
-                            prev.filter((r) => r.user_id !== p.user_id)
-                          );
-                        }}
-                      />
-                    ))
+                    searchResults.map((p) => {
+                      const isSelf = p.user_id === user?.id;
+                      const isFriend = friends.some((f) => f.profile.user_id === p.user_id);
+                      const isPendingOut = outgoingRequests.some((f) => f.profile.user_id === p.user_id);
+                      const isPendingIn = incomingRequests.some((f) => f.profile.user_id === p.user_id);
+
+                      if (isSelf) return null;
+
+                      return (
+                        <FriendCard
+                          key={p.user_id}
+                          userId={p.user_id}
+                          name={p.name}
+                          avatarUrl={p.avatar_url}
+                          skillLevel={p.skill_level}
+                          pdrRating={p.pdr_rating}
+                          region={p.region}
+                          variant={isFriend ? "friend" : isPendingOut ? "outgoing" : isPendingIn ? "incoming" : "search"}
+                          onAdd={!isFriend && !isPendingOut && !isPendingIn ? () => {
+                            sendRequest(p.user_id);
+                          } : undefined}
+                          onRemove={isFriend ? () => removeFriend(friends.find(f => f.profile.user_id === p.user_id)!.id) : undefined}
+                          onAccept={isPendingIn ? () => acceptRequest(incomingRequests.find(f => f.profile.user_id === p.user_id)!.id) : undefined}
+                          onReject={isPendingIn || isPendingOut ? () => rejectRequest((incomingRequests.find(f => f.profile.user_id === p.user_id) || outgoingRequests.find(f => f.profile.user_id === p.user_id))!.id) : undefined}
+                        />
+                      );
+                    })
                   ) : (
                     <div className="text-center py-10">
                       <p className="text-sm text-muted-foreground mb-1">No players found</p>
