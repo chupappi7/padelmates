@@ -827,6 +827,7 @@ export type Database = {
           avatar_url: string | null
           bank_details: string | null
           bio: string | null
+          birth_year: number | null
           created_at: string
           elo_rating: number
           friend_code: string | null
@@ -843,6 +844,7 @@ export type Database = {
           pdr_reliability: number
           pdr_sigma: number
           region: string | null
+          sex: string | null
           skill_level: number
           updated_at: string
           user_id: string
@@ -851,6 +853,7 @@ export type Database = {
           avatar_url?: string | null
           bank_details?: string | null
           bio?: string | null
+          birth_year?: number | null
           created_at?: string
           elo_rating?: number
           friend_code?: string | null
@@ -867,6 +870,7 @@ export type Database = {
           pdr_reliability?: number
           pdr_sigma?: number
           region?: string | null
+          sex?: string | null
           skill_level?: number
           updated_at?: string
           user_id: string
@@ -875,6 +879,7 @@ export type Database = {
           avatar_url?: string | null
           bank_details?: string | null
           bio?: string | null
+          birth_year?: number | null
           created_at?: string
           elo_rating?: number
           friend_code?: string | null
@@ -891,6 +896,7 @@ export type Database = {
           pdr_reliability?: number
           pdr_sigma?: number
           region?: string | null
+          sex?: string | null
           skill_level?: number
           updated_at?: string
           user_id?: string
