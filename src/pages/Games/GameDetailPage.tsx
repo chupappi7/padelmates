@@ -837,9 +837,6 @@ export default function GameDetailPage() {
                         <p className="text-xs text-muted-foreground">Hosted by</p>
                         <p className="text-sm font-semibold break-words text-primary hover:underline">{game.profiles?.name}</p>
                       </div>
-                      {game.profiles?.skill_level && (
-                        <SkillBadge level={game.profiles.skill_level as number} size="sm" />
-                      )}
                     </div>
                   )}
                 </div>
