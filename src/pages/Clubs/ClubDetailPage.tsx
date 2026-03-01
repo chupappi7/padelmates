@@ -8,7 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 import {
-  Users, Calendar, CalendarDays, MoreVertical, Settings,
+  Users, Calendar, CalendarDays, MoreVertical, Pencil,
   UserPlus, Check, Lock, MapPin, LogOut, Flag
 } from "lucide-react";
 import {
@@ -63,6 +63,7 @@ export default function ClubDetailPage() {
   const [activeTab, setActiveTab] = useState<TabId>("feed");
   const [actionLoading, setActionLoading] = useState(false);
   const [adminOpen, setAdminOpen] = useState(false);
+  const [ownerProfile, setOwnerProfile] = useState<{ name: string; avatar_url: string | null } | null>(null);
 
   useEffect(() => {
     if (id) fetchClub();
@@ -104,6 +105,14 @@ export default function ClubDetailPage() {
       setMemberStatus("none");
       setMemberRole(null);
     }
+
+    // Fetch owner profile
+    const { data: ownerData } = await supabase
+      .from("profiles")
+      .select("name, avatar_url")
+      .eq("user_id", data.owner_id)
+      .single();
+    if (ownerData) setOwnerProfile(ownerData);
 
     setLoading(false);
   };
@@ -192,7 +201,7 @@ export default function ClubDetailPage() {
               className="bg-black/30 text-white hover:bg-black/50 rounded-full h-9 w-9"
               onClick={() => setAdminOpen(true)}
             >
-              <Settings className="w-4 h-4" />
+              <Pencil className="w-4 h-4" />
             </Button>
           )}
           <DropdownMenu>
@@ -249,7 +258,7 @@ export default function ClubDetailPage() {
           <div className="flex items-end gap-3 mb-3">
             <Avatar className="h-20 w-20 rounded-xl border-4 border-background shadow-md">
               <AvatarImage src={club.logo_url || undefined} className="object-cover" />
-              <AvatarFallback className="bg-primary/10 text-primary font-bold text-2xl rounded-xl">
+              <AvatarFallback className="bg-card border border-border text-primary font-bold text-2xl rounded-xl">
                 {club.name.charAt(0)}
               </AvatarFallback>
             </Avatar>
@@ -266,20 +275,41 @@ export default function ClubDetailPage() {
             </div>
           )}
 
+          {/* Owner row */}
+          {ownerProfile && (
+            <div
+              className="flex items-center gap-2 mt-2 cursor-pointer group"
+              onClick={() => navigate(`/user/${club.owner_id}`)}
+            >
+              <Avatar className="h-5 w-5">
+                <AvatarImage src={ownerProfile.avatar_url || undefined} className="object-cover" />
+                <AvatarFallback className="bg-muted text-[10px]">{ownerProfile.name.charAt(0)}</AvatarFallback>
+              </Avatar>
+              <span className="text-xs text-muted-foreground group-hover:text-foreground transition-colors">
+                Owned by <span className="font-semibold text-foreground">{ownerProfile.name}</span>
+              </span>
+            </div>
+          )}
+
+          {/* Description preview */}
+          {club.description && (
+            <p className="text-sm text-muted-foreground mt-2 line-clamp-2">{club.description}</p>
+          )}
+
           {/* Stats Bar */}
-          <div className="flex items-center gap-3 mt-4">
-            <div className="flex items-center gap-1.5 bg-card border border-border rounded-full px-3.5 py-1.5 text-sm">
-              <Users className="w-3.5 h-3.5 text-muted-foreground" />
+          <div className="flex flex-wrap items-center gap-2 mt-4">
+            <div className="flex items-center gap-1.5 bg-card border border-border rounded-full px-2.5 py-1 text-xs">
+              <Users className="w-3 h-3 text-muted-foreground" />
               <span className="font-semibold">{membersCount}</span>
               <span className="text-muted-foreground">Members</span>
             </div>
-            <div className="flex items-center gap-1.5 bg-card border border-border rounded-full px-3.5 py-1.5 text-sm">
-              <Calendar className="w-3.5 h-3.5 text-muted-foreground" />
+            <div className="flex items-center gap-1.5 bg-card border border-border rounded-full px-2.5 py-1 text-xs">
+              <Calendar className="w-3 h-3 text-muted-foreground" />
               <span className="font-semibold">{gamesCount}</span>
               <span className="text-muted-foreground">Matches</span>
             </div>
-            <div className="flex items-center gap-1.5 bg-card border border-border rounded-full px-3.5 py-1.5 text-sm">
-              <CalendarDays className="w-3.5 h-3.5 text-muted-foreground" />
+            <div className="flex items-center gap-1.5 bg-card border border-border rounded-full px-2.5 py-1 text-xs">
+              <CalendarDays className="w-3 h-3 text-muted-foreground" />
               <span className="font-semibold">{upcomingCount}</span>
               <span className="text-muted-foreground">Upcoming</span>
             </div>
