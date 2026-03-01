@@ -4,7 +4,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { SkillBadge } from "./SkillBadge";
-import { Check, X, Users, Clock, ShieldCheck, RefreshCw } from "lucide-react";
+import { Check, X, Users, Clock, ShieldCheck, RefreshCw, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface Profile {
@@ -47,14 +47,14 @@ interface ParticipantsTabProps {
   onRejectRequest: (requestId: string) => void;
   onToggleRole: (playerId: string, currentRole: string) => void;
   loadingAction?: string | null;
-  /** Show a join/request button in the first empty slot */
   showJoinInSlot?: boolean;
   joinLabel?: string;
   onJoinFromSlot?: () => void;
-  /** Substitution support */
   allowSubstitutions?: boolean;
   showSubstituteJoin?: boolean;
   onJoinAsSubstitute?: () => void;
+  /** Callback to add a new admin (e.g. open a friend picker) */
+  onAddAdmin?: () => void;
 }
 
 type FilterType = "all" | "requests";
@@ -79,12 +79,28 @@ export function ParticipantsTab({
   allowSubstitutions,
   showSubstituteJoin,
   onJoinAsSubstitute,
+  onAddAdmin,
 }: ParticipantsTabProps) {
   const [activeFilter, setActiveFilter] = useState<FilterType>("all");
 
   // Merge accepted requests and direct players (dedup by user_id)
   const acceptedUserIds = new Set(requests.filter(r => r.status === "accepted").map(r => r.user_id));
   const directPlayers = players.filter(p => !acceptedUserIds.has(p.user_id) && p.user_id !== (hostProfile ? undefined : undefined));
+  
+  // Organizers: host + admins
+  const adminPlayers = players.filter(p => p.role === "admin");
+  const adminFromRequests = requests.filter(r => r.status === "accepted" && players.find(p => p.user_id === r.user_id && p.role === "admin"));
+  const organizers: { name: string; avatarUrl: string | null; userId?: string; isHost?: boolean }[] = [];
+  if (hostProfile) {
+    organizers.push({ name: hostProfile.name, avatarUrl: hostProfile.avatar_url, userId: hostUserId, isHost: true });
+  }
+  adminPlayers.forEach(ap => {
+    const req = requests.find(r => r.user_id === ap.user_id && r.status === "accepted");
+    const prof = req?.profiles || ap.profiles;
+    if (prof && ap.user_id !== hostUserId) {
+      organizers.push({ name: prof.name, avatarUrl: prof.avatar_url, userId: ap.user_id });
+    }
+  });
   
   const confirmedFromRequests = requests.filter((r) => r.status === "accepted");
   const pendingRequests = requests.filter((r) => r.status === "pending");
@@ -137,6 +153,38 @@ export function ParticipantsTab({
           </Button>
         )}
       </div>
+
+      {/* Organizers Section */}
+      {showConfirmed && organizers.length > 0 && (
+        <section>
+          <div className="flex items-center gap-2 mb-3">
+            <span className="text-base">🛡️</span>
+            <h3 className="text-sm font-semibold">Organizers</h3>
+          </div>
+          <div className="flex items-start gap-4 flex-wrap">
+            {organizers.map((org, i) => (
+              <OrganizerAvatar
+                key={org.userId || i}
+                name={org.name}
+                avatarUrl={org.avatarUrl}
+                userId={org.userId}
+                isHost={org.isHost}
+              />
+            ))}
+            {isHost && onAddAdmin && (
+              <button
+                onClick={onAddAdmin}
+                className="flex flex-col items-center gap-1.5 group"
+              >
+                <div className="h-12 w-12 rounded-full border-2 border-dashed border-border group-hover:border-primary/50 flex items-center justify-center transition-colors">
+                  <Plus className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" />
+                </div>
+                <span className="text-[11px] text-muted-foreground group-hover:text-foreground transition-colors">Add</span>
+              </button>
+            )}
+          </div>
+        </section>
+      )}
 
       {/* Confirmed Players Section */}
       {showConfirmed && (
@@ -421,5 +469,49 @@ function PlayerCard({
         </div>
       )}
     </div>
+  );
+}
+
+// Organizer avatar displayed side-by-side
+function OrganizerAvatar({
+  name,
+  avatarUrl,
+  userId,
+  isHost,
+}: {
+  name: string;
+  avatarUrl: string | null;
+  userId?: string;
+  isHost?: boolean;
+}) {
+  const navigate = useNavigate();
+
+  return (
+    <button
+      onClick={userId ? () => navigate(`/user/${userId}`) : undefined}
+      className="flex flex-col items-center gap-1.5 group"
+    >
+      <div className="relative">
+        <Avatar className="h-12 w-12">
+          <AvatarImage src={avatarUrl || undefined} />
+          <AvatarFallback className="bg-primary/10 text-primary font-semibold text-sm">
+            {name?.charAt(0).toUpperCase()}
+          </AvatarFallback>
+        </Avatar>
+        {isHost && (
+          <div className="absolute -bottom-0.5 -right-0.5 bg-primary text-primary-foreground rounded-full p-0.5">
+            <Check className="w-2.5 h-2.5" />
+          </div>
+        )}
+        {!isHost && (
+          <div className="absolute -bottom-0.5 -right-0.5 bg-accent text-accent-foreground rounded-full p-0.5">
+            <ShieldCheck className="w-2.5 h-2.5" />
+          </div>
+        )}
+      </div>
+      <span className="text-[11px] text-muted-foreground group-hover:text-foreground transition-colors max-w-[60px] truncate">
+        {name.split(" ")[0]}
+      </span>
+    </button>
   );
 }
