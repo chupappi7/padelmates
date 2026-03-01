@@ -162,25 +162,28 @@ export default function GamesListPage() {
         clubs?.forEach((c) => { clubMap[c.id] = { name: c.name, logo_url: c.logo_url }; });
       }
 
-      const gamesWithProfiles = await Promise.all(
-        allGames.map(async (game) => {
-          let interest_count = 0;
-          if (game.payment_mode === "court_sharing") {
-            const { count } = await supabase
-              .from("join_requests")
-              .select("id", { count: "exact", head: true })
-              .eq("game_id", game.id)
-              .eq("status", "pending");
-            interest_count = count || 0;
-          }
-          return {
-            ...game,
-            profiles: profileMap[game.host_id] || null,
-            club: game.club_id ? clubMap[game.club_id] || null : null,
-            interest_count,
-          };
-        })
-      );
+      // Batch-fetch interest counts for court_sharing games
+      const courtSharingIds = allGames
+        .filter((g) => g.payment_mode === "court_sharing")
+        .map((g) => g.id);
+      const interestMap: Record<string, number> = {};
+      if (courtSharingIds.length > 0) {
+        const { data: interests } = await supabase
+          .from("join_requests")
+          .select("game_id")
+          .in("game_id", courtSharingIds)
+          .eq("status", "pending");
+        interests?.forEach((r) => {
+          interestMap[r.game_id] = (interestMap[r.game_id] || 0) + 1;
+        });
+      }
+
+      const gamesWithProfiles = allGames.map((game) => ({
+        ...game,
+        profiles: profileMap[game.host_id] || null,
+        club: game.club_id ? clubMap[game.club_id] || null : null,
+        interest_count: interestMap[game.id] || 0,
+      }));
       setGames(gamesWithProfiles as Game[]);
     }
     setLoading(false);
