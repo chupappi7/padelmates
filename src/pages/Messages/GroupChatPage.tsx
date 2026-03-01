@@ -4,11 +4,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Send, Trophy, MapPin, Calendar } from "lucide-react";
+import { ArrowLeft, MapPin, Calendar } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format, isToday, isYesterday } from "date-fns";
+import { ChatInputWithUpload } from "@/components/chat/ChatInputWithUpload";
+import { ChatMessageContent } from "@/components/chat/ChatMessageContent";
 
 interface GameMessage {
   id: string;
@@ -244,7 +244,7 @@ export default function GroupChatPage() {
                             : "bg-muted rounded-2xl rounded-bl-md"
                         )}
                       >
-                        <p className="whitespace-pre-wrap break-words">{msg.message}</p>
+                        <ChatMessageContent message={msg.message} isMine={isMine} />
                         <p className={cn(
                           "text-[10px] mt-0.5 text-right",
                           isMine ? "text-primary-foreground/60" : "text-muted-foreground"
@@ -267,29 +267,21 @@ export default function GroupChatPage() {
         className="sticky bottom-0 glass-card border-t border-border/50 px-3 py-2.5"
         style={{ paddingBottom: "calc(0.625rem + env(safe-area-inset-bottom))" }}
       >
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            sendMessage();
+        <ChatInputWithUpload
+          value={newMessage}
+          onChange={setNewMessage}
+          onSend={sendMessage}
+          onImageSent={async (path) => {
+            if (!user || !gameId) return;
+            await supabase.from("game_messages").insert({
+              game_id: gameId,
+              user_id: user.id,
+              message: `[image]${path}`,
+            });
           }}
-          className="flex items-center gap-2"
-        >
-          <Input
-            ref={inputRef}
-            value={newMessage}
-            onChange={(e) => setNewMessage(e.target.value)}
-            placeholder="Message..."
-            className="flex-1 rounded-full bg-muted/50 border-0 focus-visible:ring-1 h-10"
-          />
-          <Button
-            type="submit"
-            size="icon"
-            className="h-10 w-10 rounded-full shrink-0"
-            disabled={!newMessage.trim() || sending}
-          >
-            <Send className="w-4 h-4" />
-          </Button>
-        </form>
+          disabled={sending}
+          userId={user?.id}
+        />
       </div>
     </div>
   );
