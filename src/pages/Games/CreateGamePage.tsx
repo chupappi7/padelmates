@@ -672,7 +672,7 @@ export default function CreateGamePage() {
                             key={opt.value}
                             type="button"
                             onClick={() => setGameType(opt.value)}
-                            className={`flex-1 h-10 rounded-xl border-2 text-sm font-medium transition-all ${
+                            className={`flex-1 h-10 rounded-xl border-2 text-xs sm:text-sm font-medium transition-all whitespace-nowrap px-2 ${
                               gameType === opt.value
                                 ? "border-primary bg-primary/10 text-foreground"
                                 : "border-border text-muted-foreground hover:border-primary/40"
