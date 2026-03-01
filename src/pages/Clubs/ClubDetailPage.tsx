@@ -256,9 +256,9 @@ export default function ClubDetailPage() {
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
           {/* Logo + Name */}
           <div className="flex items-end gap-3 mb-3">
-            <Avatar className="h-20 w-20 rounded-xl border-4 border-background shadow-md bg-background">
+            <Avatar className="h-20 w-20 rounded-full border-4 border-background shadow-md bg-background">
               <AvatarImage src={club.logo_url || undefined} className="object-cover" />
-              <AvatarFallback className="bg-card text-primary font-bold text-2xl rounded-xl">
+              <AvatarFallback className="bg-card text-primary font-bold text-2xl rounded-full">
                 {club.name.charAt(0)}
               </AvatarFallback>
             </Avatar>

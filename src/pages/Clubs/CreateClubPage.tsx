@@ -136,13 +136,13 @@ export default function CreateClubPage() {
           {/* Logo */}
           <div className="flex flex-col items-center mb-6 -mt-10 relative z-10">
             <div className="relative cursor-pointer group" onClick={() => logoRef.current?.click()}>
-              <Avatar className="h-20 w-20 rounded-xl border-4 border-background shadow-md bg-background">
+              <Avatar className="h-20 w-20 rounded-full border-4 border-background shadow-md bg-background">
                 <AvatarImage src={logoPreview || undefined} className="object-cover" />
-                <AvatarFallback className="bg-card text-primary font-bold text-2xl rounded-xl">
+                <AvatarFallback className="bg-card text-primary font-bold text-2xl rounded-full">
                   {form.name ? form.name.charAt(0).toUpperCase() : "C"}
                 </AvatarFallback>
               </Avatar>
-              <div className="absolute inset-0 bg-black/40 rounded-xl flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+              <div className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                 <Camera className="w-5 h-5 text-white" />
               </div>
             </div>
