@@ -52,7 +52,7 @@ export default function LoginPage() {
 
         <div className="bg-card border border-border rounded-2xl p-8 shadow-lg">
           <div className="text-center mb-8">
-            <img src={logoIcon} alt="PadelMates" className="w-16 h-16 rounded-xl mx-auto mb-4" />
+            <img src={logoIcon} alt="PadelMates" className="w-80 h-80 rounded-xl mx-auto mb-4" />
             <h1 className="font-display text-2xl font-bold">Welcome back</h1>
             <p className="text-muted-foreground mt-1">Sign in to your <span className="font-semibold text-foreground">Padel<span className="text-primary">Mates</span></span> account</p>
           </div>
