@@ -277,6 +277,7 @@ export type Database = {
           created_at: string
           deleted: boolean
           id: string
+          last_read_at: string | null
           muted: boolean
           updated_at: string
           user_id: string
@@ -287,6 +288,7 @@ export type Database = {
           created_at?: string
           deleted?: boolean
           id?: string
+          last_read_at?: string | null
           muted?: boolean
           updated_at?: string
           user_id: string
@@ -297,6 +299,7 @@ export type Database = {
           created_at?: string
           deleted?: boolean
           id?: string
+          last_read_at?: string | null
           muted?: boolean
           updated_at?: string
           user_id?: string

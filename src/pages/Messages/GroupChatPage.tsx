@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { useConversations } from "@/hooks/useConversations";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, MapPin, Calendar } from "lucide-react";
@@ -31,6 +32,7 @@ export default function GroupChatPage() {
   const { gameId } = useParams<{ gameId: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { markAsRead } = useConversations();
   const [messages, setMessages] = useState<GameMessage[]>([]);
   const [gameInfo, setGameInfo] = useState<GameInfo | null>(null);
   const [newMessage, setNewMessage] = useState("");
@@ -67,6 +69,9 @@ export default function GroupChatPage() {
       // Fetch messages with profiles
       await fetchMessages();
       setLoading(false);
+
+      // Mark conversation as read
+      markAsRead(`game-${gameId}`);
     };
 
     fetchData();
