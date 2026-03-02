@@ -1,37 +1,70 @@
 
 
-# Generate PadelMates Logo and Integrate
+# Request, Pay, and Confirm Flow
 
 ## Overview
-Use the Lovable AI image generation to create a modern PadelMates logo, then integrate it as the app icon (favicon) and navbar/footer logo.
 
-## Steps
+When a host selects "Request & Pay" join mode, the player journey adds a payment step between acceptance and full confirmation. The flow uses the existing event group chat for payment coordination (QR codes, proof screenshots, etc.).
 
-### 1. Generate logo via backend function
-Create an edge function `generate-logo` that calls the Gemini image model with the user's detailed brief. Generate three variants:
-- Square app icon on white background
-- Square app icon on dark background
-- Horizontal logo with wordmark
+## Player Journey
 
-### 2. Store generated images
-Upload the generated images to a `branding` storage bucket so they persist and can be referenced by URL.
+```text
+Player requests to join
+       |
+  [Status: Pending / Requested]
+       |
+  Host accepts (confirms space available)
+       |
+  [Status: Accepted, Payment: "awaiting_payment"]
+  Player sees banner: "Pay to confirm your spot"
+       |
+  Player sends payment proof in event chat
+  (host shares QR/bank details in chat too)
+       |
+  Host clicks "Confirm Payment" on player card
+       |
+  [Payment: "confirmed"]
+  Player fully confirmed
+```
 
-### 3. Update the app to use the new logo
-- **`index.html`**: Replace the default favicon with the new app icon
-- **`src/components/layout/Navbar.tsx`**: Replace the emoji `🎾` square with an `<img>` tag pointing to the new logo
-- **`src/pages/LandingPage.tsx`**: Replace the emoji in the footer and hero badge with the logo image
+## What Changes
 
-### 4. Storage bucket setup
-Create a `branding` public bucket (no RLS needed -- public assets) via migration to store the logo files.
+### 1. Update accept logic for "request_and_pay" games
+In `GameDetailPage.tsx`, when `join_mode === "request_and_pay"` and the host accepts a request:
+- Set `payment_status` to `"awaiting_payment"` (instead of leaving it as `"not_required"`)
+- Set `payment_due_at` to now + `payment_deadline_hours` (default 48h)
+- Still add player to `game_players` so they get chat access
+- Send notification: "You've been accepted! Please send payment to confirm your spot."
+
+### 2. Add "Awaiting Payment" row in ParticipantsTab
+Add a new section between "Confirmed Players" and "Join Requests" called "Awaiting Payment" that shows accepted players whose `payment_status === "awaiting_payment"`:
+- Shows player card with a yellow "Awaiting Payment" badge
+- Host sees a "Confirm Payment" button on each card
+- When host clicks "Confirm Payment", update `payment_status` to `"confirmed"` and notify the player
+
+### 3. Update status banners in GameDetailPage
+Add new banner states for the joining player:
+- "Accepted -- Send payment in the chat to confirm your spot" (with link to chat tab)
+- "Payment confirmed -- You're in!" (green success banner)
+
+### 4. Update JoinRequestModal for request_and_pay
+When `join_mode === "request_and_pay"`, show the price info in the modal:
+- Display price per player
+- Brief explanation: "Request first, then pay after host accepts"
+
+### 5. Update join mode label in Details tab
+Show "Request & Pay" instead of just "Request" when `join_mode === "request_and_pay"`.
 
 ## Technical Details
 
-- **Edge function**: `supabase/functions/generate-logo/index.ts` -- calls `google/gemini-2.5-flash-image` with the user's style brief, uploads result to storage, returns public URL
-- **Model**: `google/gemini-2.5-flash-image` for the initial generation (fast). Can retry with `google/gemini-3-pro-image-preview` if quality is insufficient.
-- **Storage bucket**: `branding` (public, no auth required for reads)
-- **Files modified**: `index.html`, `Navbar.tsx`, `LandingPage.tsx`
-- **Files created**: `supabase/functions/generate-logo/index.ts`
+### Files to modify:
+- **`src/pages/Games/GameDetailPage.tsx`** -- Update `handleAcceptRequest` to set payment fields for request_and_pay games; add new status banners for awaiting_payment state
+- **`src/components/games/ParticipantsTab.tsx`** -- Add "Awaiting Payment" section with player cards showing payment status badges; add "Confirm Payment" button for host; add new `onConfirmPayment` callback prop
+- **`src/components/games/JoinRequestModal.tsx`** -- Accept new props (`joinMode`, `pricePerPlayer`) and show price info when applicable
 
-## Prompt Strategy
-The image generation prompt will be crafted from the user's brief: minimal, sporty-but-friendly, abstract padel racket/ball, two connected shapes for "mates", deep green or electric blue primary, clean sans-serif typography, works at 64x64.
+### No database changes needed
+All columns already exist: `payment_status`, `payment_due_at` on `join_requests`, and `payment_instructions`, `price_per_player`, `payment_deadline_hours`, `join_mode` on `games`. The RLS policies already allow hosts/admins and the user themselves to update join_requests.
+
+### Chat-based payment coordination
+No new upload flow needed -- players and hosts use the existing event group chat to share bank details, QR codes, and payment screenshots (image sharing is already supported).
 
