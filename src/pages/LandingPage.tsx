@@ -142,7 +142,7 @@ export default function LandingPage() {
                 Ready to play?
               </h2>
               <p className="text-primary-foreground/80 text-lg mb-8 max-w-xl mx-auto">
-                Join thousands of padel enthusiasts already using PadelHub to find games and grow their community.
+                Join thousands of padel enthusiasts already using PadelMates to find games and grow their community.
               </p>
               <Button
                 variant="secondary"
@@ -165,10 +165,10 @@ export default function LandingPage() {
             <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center">
               <span className="text-primary-foreground text-sm">🎾</span>
             </div>
-            <span className="font-display font-bold">PadelHub</span>
+            <span className="font-display font-bold">PadelMates</span>
           </div>
           <p className="text-sm text-muted-foreground">
-            © 2026 PadelHub. All rights reserved.
+            © 2026 PadelMates. All rights reserved.
           </p>
         </div>
       </footer>

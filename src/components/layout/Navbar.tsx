@@ -55,7 +55,7 @@ export function Navbar() {
             <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center">
               <span className="text-primary-foreground font-bold text-base sm:text-lg">🎾</span>
             </div>
-            <span className="font-display font-bold text-lg sm:text-xl text-foreground">Padel<span className="text-primary">Hub</span></span>
+            <span className="font-display font-bold text-lg sm:text-xl text-foreground">Padel<span className="text-primary">Mates</span></span>
           </Link>
 
           {/* Desktop Navigation — mirrors mobile bottom tab bar */}
