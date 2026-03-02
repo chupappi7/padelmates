@@ -35,6 +35,7 @@ export default function ChatPage() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [otherUser, setOtherUser] = useState<{ name: string; avatar_url: string | null; user_id: string } | null>(null);
+  const [myProfile, setMyProfile] = useState<{ name: string; avatar_url: string | null } | null>(null);
   const [courtContext, setCourtContext] = useState<CourtContext | null>(null);
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
@@ -74,6 +75,14 @@ export default function ChatPage() {
         .single();
 
       setOtherUser(profile || { name: "Unknown", avatar_url: null, user_id: otherUserId });
+
+      // Fetch own profile for avatar
+      const { data: ownProfile } = await supabase
+        .from("profiles")
+        .select("name, avatar_url")
+        .eq("user_id", user.id)
+        .single();
+      if (ownProfile) setMyProfile(ownProfile);
 
       // If this chat has a listing_id, fetch court context
       if (chat.listing_id) {
@@ -263,6 +272,7 @@ export default function ChatPage() {
                         )}
                       </div>
                     )}
+                    {isMine && <div className="flex-1" />}
                     <div
                       className={cn(
                         "max-w-[75%] px-3.5 py-2 text-sm",
@@ -279,6 +289,18 @@ export default function ChatPage() {
                         {formatMessageTime(msg.created_at)}
                       </p>
                     </div>
+                    {isMine && (
+                      <div className="w-7 shrink-0 self-end">
+                        {showAvatar && myProfile && (
+                          <Avatar className="h-7 w-7">
+                            <AvatarImage src={myProfile.avatar_url || undefined} />
+                            <AvatarFallback className="text-[10px] bg-primary/10 text-primary">
+                              {myProfile.name.charAt(0).toUpperCase()}
+                            </AvatarFallback>
+                          </Avatar>
+                        )}
+                      </div>
+                    )}
                   </div>
                 );
               })}
