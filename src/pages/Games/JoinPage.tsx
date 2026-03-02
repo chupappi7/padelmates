@@ -112,10 +112,11 @@ export default function JoinPage() {
       el.setAttribute("content", content);
     };
 
-    setMeta("og:title", `Padel match at ${game.location}`);
+    setMeta("og:title", `🎾 Padel match at ${game.location}`);
     setMeta("og:description", `${dateStr} · ${spotsLeft} spots left · Hosted by ${hostName}`);
     setMeta("og:image", "https://padelmates.app/og-image.png");
     setMeta("og:url", `https://padelmates.app/join/${game.id}`);
+    setMeta("og:type", "website");
 
     return () => { document.title = "Padelmates"; };
   }, [game, players]);
