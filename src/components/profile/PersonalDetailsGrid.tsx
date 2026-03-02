@@ -127,6 +127,59 @@ export function PersonalDetailsGrid({
       ),
     },
     {
+      key: "birth_year",
+      icon: Cake,
+      label: "Age",
+      value: age ? String(age) : null,
+      editContent: (
+        <Input
+          type="number"
+          min={10}
+          max={99}
+          placeholder="e.g. 25"
+          className="h-9 text-xs"
+          defaultValue={age || ""}
+          onBlur={(e) => {
+            const val = parseInt(e.target.value);
+            updateField(
+              "birth_year",
+              val ? new Date().getFullYear() - val : null
+            );
+          }}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              const val = parseInt((e.target as HTMLInputElement).value);
+              updateField(
+                "birth_year",
+                val ? new Date().getFullYear() - val : null
+              );
+            }
+          }}
+        />
+      ),
+    },
+    {
+      key: "sex",
+      icon: Users,
+      label: "Gender",
+      value: genderLabel(editState.sex),
+      editContent: (
+        <Select
+          value={editState.sex || ""}
+          onValueChange={(v) => updateField("sex", v)}
+        >
+          <SelectTrigger className="h-9 text-xs">
+            <SelectValue placeholder="Select gender" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="male" className="text-xs">Male</SelectItem>
+            <SelectItem value="female" className="text-xs">Female</SelectItem>
+            <SelectItem value="other" className="text-xs">Prefer not to say</SelectItem>
+          </SelectContent>
+        </Select>
+      ),
+    },
+    {
       key: "preferred_position",
       icon: Target,
       label: "Position",
@@ -176,59 +229,6 @@ export function PersonalDetailsGrid({
             </button>
           ))}
         </div>
-      ),
-    },
-    {
-      key: "sex",
-      icon: Users,
-      label: "Gender",
-      value: genderLabel(editState.sex),
-      editContent: (
-        <Select
-          value={editState.sex || ""}
-          onValueChange={(v) => updateField("sex", v)}
-        >
-          <SelectTrigger className="h-9 text-xs">
-            <SelectValue placeholder="Select gender" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="male" className="text-xs">Male</SelectItem>
-            <SelectItem value="female" className="text-xs">Female</SelectItem>
-            <SelectItem value="other" className="text-xs">Prefer not to say</SelectItem>
-          </SelectContent>
-        </Select>
-      ),
-    },
-    {
-      key: "birth_year",
-      icon: Cake,
-      label: "Age",
-      value: age ? String(age) : null,
-      editContent: (
-        <Input
-          type="number"
-          min={10}
-          max={99}
-          placeholder="e.g. 25"
-          className="h-9 text-xs"
-          defaultValue={age || ""}
-          onBlur={(e) => {
-            const val = parseInt(e.target.value);
-            updateField(
-              "birth_year",
-              val ? new Date().getFullYear() - val : null
-            );
-          }}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") {
-              const val = parseInt((e.target as HTMLInputElement).value);
-              updateField(
-                "birth_year",
-                val ? new Date().getFullYear() - val : null
-              );
-            }
-          }}
-        />
       ),
     },
   ];
