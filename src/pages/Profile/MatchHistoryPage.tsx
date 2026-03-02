@@ -10,7 +10,7 @@ import { format } from "date-fns";
 
 const PAGE_SIZE = 20;
 
-function MatchCard({ match, isSelf, formatMatchType }: { match: MatchRow; isSelf: boolean; formatMatchType: (t: string) => string }) {
+function MatchCard({ match, isSelf, formatMatchType, navigate, allPlayers }: { match: MatchRow; isSelf: boolean; formatMatchType: (t: string) => string; navigate: (path: string) => void; allPlayers: Map<string, string> }) {
   const winColor = "text-foreground";
   const loseColor = "text-muted-foreground";
 
@@ -31,8 +31,8 @@ function MatchCard({ match, isSelf, formatMatchType }: { match: MatchRow; isSelf
           {match.won ? <Trophy className="w-3 h-3" /> : <XIcon className="w-3 h-3" />}
         </div>
         <div className={`flex-1 min-w-0 ${match.won ? winColor : loseColor}`}>
-          <p className="text-sm font-medium truncate">{match.userName}</p>
-          {match.partnerName && <p className="text-xs truncate">{match.partnerName}</p>}
+          <p className="text-sm font-bold truncate cursor-pointer hover:underline" onClick={() => match.userId && navigate(`/user/${match.userId}`)}>{match.userName}</p>
+          {match.partnerName && <p className="text-xs font-semibold truncate cursor-pointer hover:underline" onClick={() => match.partnerId && navigate(`/user/${match.partnerId}`)}>{match.partnerName}</p>}
         </div>
         {isSelf && (
           <span className={`text-lg font-bold tabular-nums ${match.won ? winColor : loseColor}`}>{match.myScore}</span>
@@ -53,7 +53,7 @@ function MatchCard({ match, isSelf, formatMatchType }: { match: MatchRow; isSelf
         </div>
         <div className={`flex-1 min-w-0 ${!match.won ? winColor : loseColor}`}>
           {match.opponentNames.map((name, i) => (
-            <p key={i} className={`${i === 0 ? "text-sm font-medium" : "text-xs"} truncate`}>{name}</p>
+            <p key={i} className={`${i === 0 ? "text-sm font-bold" : "text-xs font-semibold"} truncate cursor-pointer hover:underline`} onClick={() => match.opponentIds[i] && navigate(`/user/${match.opponentIds[i]}`)}>{name}</p>
           ))}
         </div>
         {isSelf && (
@@ -64,11 +64,12 @@ function MatchCard({ match, isSelf, formatMatchType }: { match: MatchRow; isSelf
   );
 }
 
-function DayGroupedMatches({ matches, isSelf, formatMatchType, lastElementRef }: {
+function DayGroupedMatches({ matches, isSelf, formatMatchType, lastElementRef, navigate }: {
   matches: MatchRow[];
   isSelf: boolean;
   formatMatchType: (t: string) => string;
   lastElementRef: (node: HTMLDivElement | null) => void;
+  navigate: (path: string) => void;
 }) {
   const [expandedDays, setExpandedDays] = useState<Set<string>>(new Set());
 
@@ -135,7 +136,7 @@ function DayGroupedMatches({ matches, isSelf, formatMatchType, lastElementRef }:
                     key={`${match.matchId}-${match.setIndex}`}
                     ref={match === lastMatch ? lastElementRef : undefined}
                   >
-                    <MatchCard match={match} isSelf={isSelf} formatMatchType={formatMatchType} />
+                    <MatchCard match={match} isSelf={isSelf} formatMatchType={formatMatchType} navigate={navigate} allPlayers={new Map()} />
                   </div>
                 ))}
               </div>
@@ -151,8 +152,11 @@ interface MatchRow {
   matchId: string;
   setIndex: number;
   date: string;
+  userId: string;
   userName: string;
+  partnerId: string | null;
   partnerName: string | null;
+  opponentIds: string[];
   opponentNames: string[];
   won: boolean;
   myScore: number;
@@ -264,9 +268,10 @@ export default function MatchHistoryPage() {
       const partnerName = partner ? profileMap.get(partner.user_id) || "Unknown" : null;
 
       // Opponents = other team
-      const opponents = (allPlayers || [])
-        .filter((p) => p.match_id === m.id && p.team !== myTeam)
-        .map((p) => profileMap.get(p.user_id) || "Unknown");
+      const opponentPlayers = (allPlayers || [])
+        .filter((p) => p.match_id === m.id && p.team !== myTeam);
+      const opponents = opponentPlayers.map((p) => profileMap.get(p.user_id) || "Unknown");
+      const opponentIds = opponentPlayers.map((p) => p.user_id);
 
       const userName = profileMap.get(targetUserId!) || playerName || "You";
       const matchType = gameMap.get(m.game_id) || "casual_match";
@@ -281,8 +286,11 @@ export default function MatchHistoryPage() {
             matchId: m.id,
             setIndex: i,
             date: m.created_at,
+            userId: targetUserId!,
             userName,
+            partnerId: partner?.user_id || null,
             partnerName,
+            opponentIds: opponentIds.length > 0 ? opponentIds : [],
             opponentNames: opponents.length > 0 ? opponents : ["Unknown"],
             won: myScore > oppScore,
             myScore,
@@ -298,8 +306,11 @@ export default function MatchHistoryPage() {
           matchId: m.id,
           setIndex: 0,
           date: m.created_at,
+          userId: targetUserId!,
           userName,
+          partnerId: partner?.user_id || null,
           partnerName,
+          opponentIds: opponentIds.length > 0 ? opponentIds : [],
           opponentNames: opponents.length > 0 ? opponents : ["Unknown"],
           won: myScore > oppScore,
           myScore,
@@ -383,7 +394,7 @@ export default function MatchHistoryPage() {
             </div>
           )}
 
-          <DayGroupedMatches matches={matches} isSelf={isSelf} formatMatchType={formatMatchType} lastElementRef={lastElementRef} />
+          <DayGroupedMatches matches={matches} isSelf={isSelf} formatMatchType={formatMatchType} lastElementRef={lastElementRef} navigate={navigate} />
 
           {loading && (
             <div className="space-y-2">
