@@ -3,21 +3,41 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Link2, Send, Search, ArrowLeft, Loader2, Check } from "lucide-react";
+import { Link2, Send, Search, ArrowLeft, Loader2, Check, MessageCircle } from "lucide-react";
 import { useFriends } from "@/hooks/useFriends";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { format } from "date-fns";
 
 interface ShareGameSheetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   gameId: string;
   gameTitle: string;
+  gameLocation?: string;
+  gameDateTime?: string;
+  gameFormat?: string;
+  gameMaxPlayers?: number;
+  currentPlayersCount?: number;
+  hostName?: string;
 }
 
-export function ShareGameSheet({ open, onOpenChange, gameId, gameTitle }: ShareGameSheetProps) {
+const formatLabel = (f: string) => {
+  switch (f) {
+    case "casual_match": return "Casual Match";
+    case "americano": return "Americano";
+    case "team_americano": return "Team Americano";
+    default: return f;
+  }
+};
+
+export function ShareGameSheet({
+  open, onOpenChange, gameId, gameTitle,
+  gameLocation, gameDateTime, gameFormat,
+  gameMaxPlayers, currentPlayersCount, hostName,
+}: ShareGameSheetProps) {
   const { user } = useAuth();
   const { friends } = useFriends();
   const [step, setStep] = useState<"options" | "friends">("options");
@@ -25,15 +45,38 @@ export function ShareGameSheet({ open, onOpenChange, gameId, gameTitle }: ShareG
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [sending, setSending] = useState(false);
 
-  const gameUrl = `${window.location.origin}/games/${gameId}`;
+  const gameUrl = `https://padelmates.app/join/${gameId}`;
 
   const filteredFriends = friends.filter((f) =>
     !search || f.profile.name.toLowerCase().includes(search.toLowerCase())
   );
 
+  const buildWhatsAppMessage = () => {
+    const dateStr = gameDateTime
+      ? format(new Date(gameDateTime), "EEE d MMM · HH:mm")
+      : "";
+    const spotsLeft = gameMaxPlayers && currentPlayersCount !== undefined
+      ? gameMaxPlayers - currentPlayersCount
+      : null;
+
+    let msg = `🎾 ${hostName || "Someone"} invited you to a padel match!\n\n`;
+    if (gameLocation) msg += `📍 ${gameLocation}\n`;
+    if (dateStr) msg += `🗓 ${dateStr}\n`;
+    if (spotsLeft !== null) msg += `👥 ${spotsLeft} spots left\n`;
+    if (gameFormat) msg += `🎯 ${formatLabel(gameFormat)}\n`;
+    msg += `\nJoin here: ${gameUrl}`;
+    return msg;
+  };
+
   const handleCopyLink = () => {
     navigator.clipboard.writeText(gameUrl);
     toast.success("Invite link copied!");
+    onOpenChange(false);
+  };
+
+  const handleWhatsApp = () => {
+    const encoded = encodeURIComponent(buildWhatsAppMessage());
+    window.open(`https://api.whatsapp.com/send?text=${encoded}`, "_blank");
     onOpenChange(false);
   };
 
@@ -144,6 +187,19 @@ export function ShareGameSheet({ open, onOpenChange, gameId, gameTitle }: ShareG
               </button>
 
               <button
+                onClick={handleWhatsApp}
+                className="w-full flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-accent/50 transition-colors"
+              >
+                <div className="w-9 h-9 rounded-full bg-[#25D366]/10 flex items-center justify-center shrink-0">
+                  <MessageCircle className="w-4 h-4 text-[#25D366]" />
+                </div>
+                <div className="text-left">
+                  <p className="text-sm font-medium">Share to WhatsApp</p>
+                  <p className="text-xs text-muted-foreground">Send match invite via WhatsApp</p>
+                </div>
+              </button>
+
+              <button
                 onClick={() => setStep("friends")}
                 className="w-full flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-accent/50 transition-colors"
               >
@@ -212,7 +268,6 @@ export function ShareGameSheet({ open, onOpenChange, gameId, gameTitle }: ShareG
           )}
         </div>
 
-        {/* Send button - only visible in friends step with selections */}
         {step === "friends" && selected.size > 0 && (
           <div className="px-5 pb-2">
             <Button

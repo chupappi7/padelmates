@@ -1335,6 +1335,12 @@ export default function GameDetailPage() {
         onOpenChange={setShowShareSheet}
         gameId={id || ""}
         gameTitle={game?.title || ""}
+        gameLocation={game?.location}
+        gameDateTime={game?.date_time}
+        gameFormat={game?.format}
+        gameMaxPlayers={game?.max_players}
+        currentPlayersCount={players.length}
+        hostName={game?.profiles?.name || undefined}
       />
     </div>
   );
