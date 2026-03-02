@@ -386,32 +386,28 @@ export default function ProfilePage() {
           {!editing && (
             <div className="bg-card border border-border rounded-xl p-4 space-y-2">
               <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Personal Details</h3>
-              {profile?.region && (
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Location</span>
-                  <span className="text-foreground">{profile.region}</span>
-                </div>
-              )}
-              {profile?.preferred_position && (
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Position</span>
-                  <span className="text-foreground capitalize">{profile.preferred_position} side</span>
-                </div>
-              )}
-              {profile?.sex && (
-                <div className="flex justify-between items-center text-sm">
-                  <span className="text-muted-foreground">Sex</span>
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">Location</span>
+                <span className="text-foreground">{profile?.region || "Not set"}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">Position</span>
+                <span className="text-foreground capitalize">{profile?.preferred_position ? `${profile.preferred_position} side` : "Not set"}</span>
+              </div>
+              <div className="flex justify-between items-center text-sm">
+                <span className="text-muted-foreground">Sex</span>
+                {profile?.sex ? (
                   <span className={`font-semibold ${profile.sex === "female" ? "text-[hsl(330,70%,60%)]" : "text-[hsl(210,70%,55%)]"}`}>
                     {profile.sex === "female" ? "F" : profile.sex === "male" ? "M" : profile.sex.charAt(0).toUpperCase()}
                   </span>
-                </div>
-              )}
-              {age && (
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Age</span>
-                  <span className="text-foreground">{age}</span>
-                </div>
-              )}
+                ) : (
+                  <span className="text-foreground">Not set</span>
+                )}
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">Age</span>
+                <span className="text-foreground">{age || "Not set"}</span>
+              </div>
             </div>
           )}
 
