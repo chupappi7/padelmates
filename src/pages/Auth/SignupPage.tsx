@@ -15,6 +15,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import { Eye, EyeOff, ArrowLeft, User, Trophy } from "lucide-react";
+import { PasswordRequirements, isPasswordValid } from "@/components/auth/PasswordRequirements";
 import { CZECH_REGIONS } from "@/lib/regions";
 import { cn } from "@/lib/utils";
 
@@ -180,13 +181,14 @@ export default function SignupPage() {
                   <div className="space-y-2">
                     <Label htmlFor="password">Password</Label>
                     <div className="relative">
-                      <Input id="password" type={showPassword ? "text" : "password"} placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} className="h-12 pr-12" />
+                      <Input id="password" type={showPassword ? "text" : "password"} placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={8} className="h-12 pr-12" />
                       <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
                         {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                       </button>
                     </div>
+                    <PasswordRequirements password={password} />
                   </div>
-                  <Button type="submit" variant="hero" className="w-full" size="lg" disabled={loading}>
+                  <Button type="submit" variant="hero" className="w-full" size="lg" disabled={loading || !isPasswordValid(password)}>
                     {loading ? "Creating account..." : "Continue"}
                   </Button>
                 </form>
