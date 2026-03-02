@@ -209,12 +209,12 @@ export default function SignupPage() {
                 exit="exit"
                 transition={{ duration: 0.25 }}
               >
-                <div className="text-center mb-8">
-                  <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center mx-auto mb-4">
-                    <User className="w-7 h-7 text-primary-foreground" />
+                <div className="text-center mb-5">
+                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center mx-auto mb-3">
+                    <User className="w-6 h-6 text-primary-foreground" />
                   </div>
-                  <h1 className="font-display text-2xl font-bold">About you</h1>
-                  <p className="text-muted-foreground mt-1">Tell us a bit more about yourself</p>
+                  <h1 className="font-display text-xl font-bold">About you</h1>
+                  <p className="text-muted-foreground text-sm mt-1">Tell us a bit more about yourself</p>
                 </div>
 
                 <div className="space-y-5">
@@ -288,29 +288,29 @@ export default function SignupPage() {
                 exit="exit"
                 transition={{ duration: 0.25 }}
               >
-                <div className="text-center mb-8">
-                  <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center mx-auto mb-4">
-                    <Trophy className="w-7 h-7 text-primary-foreground" />
+                <div className="text-center mb-5">
+                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center mx-auto mb-3">
+                    <Trophy className="w-6 h-6 text-primary-foreground" />
                   </div>
-                  <h1 className="font-display text-2xl font-bold">Your padel level</h1>
-                  <p className="text-muted-foreground mt-1">How would you rate yourself?</p>
+                  <h1 className="font-display text-xl font-bold">Your padel level</h1>
+                  <p className="text-muted-foreground text-sm mt-1">How would you rate yourself?</p>
                 </div>
 
-                <div className="space-y-3 mb-6">
+                <div className="space-y-2 mb-5">
                   {SKILL_CARDS.map((card) => (
                     <button
                       key={card.value}
                       type="button"
                       onClick={() => setSkillLevel(card.value)}
                       className={cn(
-                        "w-full flex items-center gap-4 p-4 rounded-xl border transition-all text-left",
+                        "w-full flex items-center gap-3 p-3 rounded-xl border transition-all text-left",
                         skillLevel === card.value
                           ? "border-primary bg-primary/10 ring-1 ring-primary/30"
                           : "border-border bg-background hover:border-primary/50"
                       )}
                     >
                       <span className={cn(
-                        "w-10 h-10 rounded-lg flex items-center justify-center text-lg font-bold shrink-0",
+                        "w-9 h-9 rounded-lg flex items-center justify-center text-base font-bold shrink-0",
                         skillLevel === card.value
                           ? "bg-primary text-primary-foreground"
                           : "bg-muted text-muted-foreground"
