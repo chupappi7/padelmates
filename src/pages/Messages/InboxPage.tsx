@@ -174,7 +174,7 @@ function SwipeableRow({
       {/* Main row content */}
       <div
         className={cn(
-          "relative z-10 flex items-center gap-3 w-full px-3 py-3 transition-transform bg-background text-left",
+          "relative z-10 flex items-center gap-3 w-full px-3 py-3 transition-transform bg-background text-left overflow-hidden",
           convo.unreadCount > 0 && !isArchived && "bg-muted/30",
           isArchived && "opacity-70"
         )}
