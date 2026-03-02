@@ -38,6 +38,7 @@ export default function GroupChatPage() {
   const [newMessage, setNewMessage] = useState("");
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
+  const [myProfile, setMyProfile] = useState<{ name: string; avatar_url: string | null } | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -65,6 +66,14 @@ export default function GroupChatPage() {
         return;
       }
       setGameInfo(game);
+
+      // Fetch own profile for avatar
+      const { data: ownProfile } = await supabase
+        .from("profiles")
+        .select("name, avatar_url")
+        .eq("user_id", user.id)
+        .single();
+      if (ownProfile) setMyProfile(ownProfile);
 
       // Fetch messages with profiles
       await fetchMessages();
@@ -237,6 +246,7 @@ export default function GroupChatPage() {
                                     )}
                                   </div>
                                 )}
+                                {isMine && <div className="flex-1" />}
                                 <div className={cn("max-w-[75%]")}>
                                   {isFirstInSeries && (
                                     <p className={cn(
@@ -263,6 +273,18 @@ export default function GroupChatPage() {
                         </p>
                       </div>
                     </div>
+                                {isMine && (
+                                  <div className="w-7 shrink-0 self-end">
+                                    {showAvatar && myProfile && (
+                                      <Avatar className="h-7 w-7">
+                                        <AvatarImage src={myProfile.avatar_url || undefined} />
+                                        <AvatarFallback className="text-[10px] bg-primary/10 text-primary">
+                                          {myProfile.name.charAt(0).toUpperCase()}
+                                        </AvatarFallback>
+                                      </Avatar>
+                                    )}
+                                  </div>
+                                )}
                   </div>
                 );
               })}
