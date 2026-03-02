@@ -55,6 +55,22 @@ export function useNotifications() {
 
   useEffect(() => {
     fetchNotifications();
+
+    if (!user) return;
+
+    // Subscribe to realtime changes so badge updates when notifications are read/inserted
+    const channel = supabase
+      .channel(`notifications-${user.id}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "notifications", filter: `user_id=eq.${user.id}` },
+        () => fetchNotifications()
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [user]);
 
   const markAsRead = useCallback(async (notification: AppNotification) => {
