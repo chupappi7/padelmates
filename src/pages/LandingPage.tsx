@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Calendar, Users, Trophy, MapPin, ArrowRight, Check } from "lucide-react";
+import logoIcon from "@/assets/logo-icon.png";
 
 const features = [
   {
@@ -52,7 +53,7 @@ export default function LandingPage() {
             className="max-w-3xl mx-auto text-center"
           >
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary font-medium text-sm mb-6">
-              <span className="animate-pulse-slow">🎾</span>
+              <img src={logoIcon} alt="" className="w-5 h-5 rounded" />
               The #1 app for padel players
             </div>
             
@@ -162,9 +163,7 @@ export default function LandingPage() {
       <footer className="border-t border-border py-8">
         <div className="container flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center">
-              <span className="text-primary-foreground text-sm">🎾</span>
-            </div>
+            <img src={logoIcon} alt="PadelMates" className="w-8 h-8 rounded-lg" />
             <span className="font-display font-bold">PadelMates</span>
           </div>
           <p className="text-sm text-muted-foreground">
