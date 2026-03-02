@@ -12,14 +12,14 @@ const PAGE_SIZE = 20;
 
 interface MatchRow {
   matchId: string;
+  setIndex: number;
   date: string;
   userName: string;
   partnerName: string | null;
   opponentNames: string[];
   won: boolean;
-  myTeamScore: number | null;
-  oppTeamScore: number | null;
-  setScores: { myScore: number; oppScore: number }[];
+  myScore: number;
+  oppScore: number;
   matchType: string;
 }
 
@@ -115,13 +115,10 @@ export default function MatchHistoryPage() {
       .in("user_id", allPlayerIds);
     const profileMap = new Map(profiles?.map((p) => [p.user_id, p.name]) || []);
 
-    const rows: MatchRow[] = matchesData.map((m) => {
+    const rows: MatchRow[] = [];
+    matchesData.forEach((m) => {
       const myPlayer = playerRows.find((p) => p.match_id === m.id);
       const myTeam = myPlayer?.team ?? 1;
-      const won =
-        myTeam === 1
-          ? (m.team1_score ?? 0) > (m.team2_score ?? 0)
-          : (m.team2_score ?? 0) > (m.team1_score ?? 0);
 
       // Partner = same team, different user
       const partner = (allPlayers || []).find(
@@ -134,29 +131,45 @@ export default function MatchHistoryPage() {
         .filter((p) => p.match_id === m.id && p.team !== myTeam)
         .map((p) => profileMap.get(p.user_id) || "Unknown");
 
-      // Scores oriented to user's team
-      const myTeamScore = myTeam === 1 ? m.team1_score : m.team2_score;
-      const oppTeamScore = myTeam === 1 ? m.team2_score : m.team1_score;
+      const userName = profileMap.get(targetUserId!) || playerName || "You";
+      const matchType = gameMap.get(m.game_id) || "casual_match";
 
-      // Set scores oriented to user's team
+      // Set scores oriented to user's team — one card per set
       const rawSets = Array.isArray(m.set_scores) ? m.set_scores : [];
-      const setScores = rawSets.map((s: any) => ({
-        myScore: myTeam === 1 ? (s.team1 ?? s.score1 ?? 0) : (s.team2 ?? s.score2 ?? 0),
-        oppScore: myTeam === 1 ? (s.team2 ?? s.score2 ?? 0) : (s.team1 ?? s.score1 ?? 0),
-      }));
-
-      return {
-        matchId: m.id,
-        date: m.created_at,
-        userName: profileMap.get(targetUserId!) || playerName || "You",
-        partnerName,
-        opponentNames: opponents.length > 0 ? opponents : ["Unknown"],
-        won,
-        myTeamScore,
-        oppTeamScore,
-        setScores,
-        matchType: gameMap.get(m.game_id) || "casual_match",
-      };
+      if (rawSets.length > 0) {
+        rawSets.forEach((s: any, i: number) => {
+          const myScore = myTeam === 1 ? (s.team1 ?? s.score1 ?? 0) : (s.team2 ?? s.score2 ?? 0);
+          const oppScore = myTeam === 1 ? (s.team2 ?? s.score2 ?? 0) : (s.team1 ?? s.score1 ?? 0);
+          rows.push({
+            matchId: m.id,
+            setIndex: i,
+            date: m.created_at,
+            userName,
+            partnerName,
+            opponentNames: opponents.length > 0 ? opponents : ["Unknown"],
+            won: myScore > oppScore,
+            myScore,
+            oppScore,
+            matchType,
+          });
+        });
+      } else {
+        // No set data — show match-level score
+        const myScore = myTeam === 1 ? (m.team1_score ?? 0) : (m.team2_score ?? 0);
+        const oppScore = myTeam === 1 ? (m.team2_score ?? 0) : (m.team1_score ?? 0);
+        rows.push({
+          matchId: m.id,
+          setIndex: 0,
+          date: m.created_at,
+          userName,
+          partnerName,
+          opponentNames: opponents.length > 0 ? opponents : ["Unknown"],
+          won: myScore > oppScore,
+          myScore,
+          oppScore,
+          matchType,
+        });
+      }
     });
 
     offsetRef.current += matchesData.length;
@@ -240,7 +253,7 @@ export default function MatchHistoryPage() {
 
               return (
                 <div
-                  key={match.matchId}
+                  key={`${match.matchId}-${match.setIndex}`}
                   className="bg-white rounded-xl p-4 shadow-sm"
                   ref={index === matches.length - 1 ? lastElementRef : undefined}
                 >
@@ -277,14 +290,10 @@ export default function MatchHistoryPage() {
                         <p className="text-xs truncate">{match.partnerName}</p>
                       )}
                     </div>
-                    {isSelf && match.setScores.length > 0 && (
-                      <div className="flex gap-2 shrink-0">
-                        {match.setScores.map((set, i) => (
-                          <span key={i} className={`text-sm font-bold tabular-nums ${match.won ? winColor : loseColor}`}>
-                            {set.myScore}:{set.oppScore}
-                          </span>
-                        ))}
-                      </div>
+                    {isSelf && (
+                      <span className={`text-lg font-bold tabular-nums ${match.won ? winColor : loseColor}`}>
+                        {match.myScore}
+                      </span>
                     )}
                   </div>
 
@@ -317,14 +326,10 @@ export default function MatchHistoryPage() {
                         </p>
                       ))}
                     </div>
-                    {isSelf && match.setScores.length > 0 && (
-                      <div className="flex gap-2 shrink-0">
-                        {match.setScores.map((set, i) => (
-                          <span key={i} className={`text-sm font-bold tabular-nums ${!match.won ? winColor : loseColor}`}>
-                            {set.oppScore}:{set.myScore}
-                          </span>
-                        ))}
-                      </div>
+                    {isSelf && (
+                      <span className={`text-lg font-bold tabular-nums ${!match.won ? winColor : loseColor}`}>
+                        {match.oppScore}
+                      </span>
                     )}
                   </div>
                 </div>
