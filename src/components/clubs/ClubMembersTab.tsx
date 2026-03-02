@@ -1,11 +1,17 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Search, ChevronDown, ChevronUp } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Search, ChevronDown, ChevronUp, MoreVertical, Shield, ShieldOff, UserX } from "lucide-react";
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger
+} from "@/components/ui/dropdown-menu";
 import { format } from "date-fns";
+import { toast } from "sonner";
 
 interface Member {
   user_id: string;
@@ -22,6 +28,12 @@ export default function ClubMembersTab({ clubId, ownerId }: { clubId: string; ow
   const [search, setSearch] = useState("");
   const [adminsOpen, setAdminsOpen] = useState(true);
   const navigate = useNavigate();
+  const { user } = useAuth();
+
+  const currentUserId = user?.id;
+  const isOwner = currentUserId === ownerId;
+  const isAdmin = members.some(m => m.user_id === currentUserId && (m.role === "admin" || m.role === "owner"));
+  const canManage = isOwner || isAdmin;
 
   useEffect(() => {
     fetchMembers();
@@ -61,6 +73,18 @@ export default function ClubMembersTab({ clubId, ownerId }: { clubId: string; ow
     setLoading(false);
   };
 
+  const updateRole = async (userId: string, role: string) => {
+    const { error } = await supabase.from("club_followers").update({ role }).eq("club_id", clubId).eq("user_id", userId);
+    if (error) toast.error("Failed to update role");
+    else { toast.success("Role updated"); fetchMembers(); }
+  };
+
+  const removeMember = async (userId: string) => {
+    const { error } = await supabase.from("club_followers").delete().eq("club_id", clubId).eq("user_id", userId);
+    if (error) toast.error("Failed to remove member");
+    else { toast.success("Member removed"); fetchMembers(); }
+  };
+
   const admins = members.filter(m => m.role === "owner" || m.role === "admin");
   const regularMembers = members.filter(m => m.role === "member");
 
@@ -69,30 +93,60 @@ export default function ClubMembersTab({ clubId, ownerId }: { clubId: string; ow
   );
 
   const MemberRow = ({ member }: { member: Member }) => (
-    <div
-      onClick={() => navigate(`/user/${member.user_id}`)}
-      className="flex items-center gap-3 p-3 rounded-xl hover:bg-muted/50 cursor-pointer transition-colors"
-    >
-      <Avatar className="h-10 w-10 rounded-xl">
-        <AvatarImage src={member.avatar_url || undefined} />
-        <AvatarFallback className="bg-primary/10 text-primary font-bold rounded-xl">
-          {member.name.charAt(0)}
-        </AvatarFallback>
-      </Avatar>
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2">
-          <span className="font-semibold text-sm truncate">{member.name}</span>
-          {member.user_id === ownerId && (
-            <Badge className="text-[10px] bg-[hsl(220,25%,10%)] text-white border-0 rounded px-1.5 py-0">Owner</Badge>
-          )}
-          {member.role === "admin" && member.user_id !== ownerId && (
-            <Badge className="text-[10px] bg-primary text-primary-foreground border-0 rounded px-1.5 py-0">Admin</Badge>
-          )}
+    <div className="flex items-center gap-3 p-3 rounded-xl hover:bg-muted/50 transition-colors">
+      <div
+        onClick={() => navigate(`/user/${member.user_id}`)}
+        className="flex items-center gap-3 flex-1 min-w-0 cursor-pointer"
+      >
+        <Avatar className="h-10 w-10 rounded-xl">
+          <AvatarImage src={member.avatar_url || undefined} />
+          <AvatarFallback className="bg-primary/10 text-primary font-bold rounded-xl">
+            {member.name.charAt(0)}
+          </AvatarFallback>
+        </Avatar>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2">
+            <span className="font-semibold text-sm truncate">{member.name}</span>
+            {member.user_id === ownerId && (
+              <Badge className="text-[10px] bg-[hsl(220,25%,10%)] text-white border-0 rounded px-1.5 py-0">Owner</Badge>
+            )}
+            {member.role === "admin" && member.user_id !== ownerId && (
+              <Badge className="text-[10px] bg-primary text-primary-foreground border-0 rounded px-1.5 py-0">Admin</Badge>
+            )}
+          </div>
+          <span className="text-xs text-muted-foreground">
+            {member.pdr_rating != null ? `PDR ${member.pdr_rating.toFixed(1)}` : "NR"} · Joined {format(new Date(member.created_at), "MMM d")}
+          </span>
         </div>
-        <span className="text-xs text-muted-foreground">
-          {member.pdr_rating != null ? `PDR ${member.pdr_rating.toFixed(1)}` : "NR"} · Joined {format(new Date(member.created_at), "MMM d")}
-        </span>
       </div>
+
+      {/* Role management menu */}
+      {canManage && member.user_id !== ownerId && member.user_id !== currentUserId && (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0">
+              <MoreVertical className="w-4 h-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            {isOwner && member.role === "member" && (
+              <DropdownMenuItem onClick={() => updateRole(member.user_id, "admin")}>
+                <Shield className="w-4 h-4 mr-2" /> Make Admin
+              </DropdownMenuItem>
+            )}
+            {isOwner && member.role === "admin" && (
+              <DropdownMenuItem onClick={() => updateRole(member.user_id, "member")}>
+                <ShieldOff className="w-4 h-4 mr-2" /> Remove Admin
+              </DropdownMenuItem>
+            )}
+            {(isOwner || member.role === "member") && (
+              <DropdownMenuItem onClick={() => removeMember(member.user_id)} className="text-destructive">
+                <UserX className="w-4 h-4 mr-2" /> Remove
+              </DropdownMenuItem>
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      )}
     </div>
   );
 

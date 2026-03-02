@@ -313,19 +313,21 @@ function MembersTab({ clubId, club, isOwner }: { clubId: string; club: Club; isO
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
-                    {m.role === "member" && (
+                    {isOwner && m.role === "member" && (
                       <DropdownMenuItem onClick={() => updateRole(m.user_id, "admin")}>
                         <Shield className="w-4 h-4 mr-2" /> Make Admin
                       </DropdownMenuItem>
                     )}
-                    {m.role === "admin" && (
+                    {isOwner && m.role === "admin" && (
                       <DropdownMenuItem onClick={() => updateRole(m.user_id, "member")}>
                         <ShieldOff className="w-4 h-4 mr-2" /> Remove Admin
                       </DropdownMenuItem>
                     )}
-                    <DropdownMenuItem onClick={() => removeMember(m.user_id)} className="text-destructive">
-                      <UserX className="w-4 h-4 mr-2" /> Remove from Club
-                    </DropdownMenuItem>
+                    {(isOwner || m.role === "member") && (
+                      <DropdownMenuItem onClick={() => removeMember(m.user_id)} className="text-destructive">
+                        <UserX className="w-4 h-4 mr-2" /> Remove from Club
+                      </DropdownMenuItem>
+                    )}
                   </DropdownMenuContent>
                 </DropdownMenu>
               )}
