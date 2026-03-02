@@ -77,7 +77,7 @@ export function useConversations() {
     const [prefsRes, chatsRes, playerGamesRes, hostedGamesRes] = await Promise.all([
       supabase
         .from("conversation_preferences")
-        .select("conversation_id, archived, muted, deleted")
+        .select("conversation_id, archived, muted, deleted, last_read_at")
         .eq("user_id", user.id),
       supabase
         .from("chats")
@@ -95,17 +95,21 @@ export function useConversations() {
         .neq("payment_mode", "court_sharing"),
     ]);
 
-    const prefsMap: Record<string, ConversationPrefs> = {};
-    prefsRes.data?.forEach((p) => {
+    const prefsMap: Record<string, ConversationPrefs & { last_read_at: string | null }> = {};
+    prefsRes.data?.forEach((p: any) => {
       prefsMap[p.conversation_id] = {
         archived: p.archived,
         muted: p.muted,
         deleted: p.deleted,
+        last_read_at: p.last_read_at,
       };
     });
 
     const getPrefs = (id: string): ConversationPrefs =>
       prefsMap[id] || { archived: false, muted: false, deleted: false };
+
+    const getLastReadAt = (id: string): string | null =>
+      prefsMap[id]?.last_read_at || null;
 
     // ── 1. PROCESS CHATS (DMs + Court threads) ──────────────────────────
     const chats = chatsRes.data || [];
@@ -117,7 +121,7 @@ export function useConversations() {
       const chatIds = chats.filter((c) => !getPrefs(c.id).deleted).map((c) => c.id);
 
       // Batch fetch profiles, games, and ALL last messages in parallel
-      const [profilesRes, gamesRes, allChatMsgsRes] = await Promise.all([
+      const [profilesRes, gamesRes, allChatMsgsRes, chatUnreadCounts] = await Promise.all([
         supabase
           .from("profiles")
           .select("user_id, name, avatar_url")
@@ -135,8 +139,30 @@ export function useConversations() {
               .select("chat_id, message, created_at, sender_id")
               .in("chat_id", chatIds)
               .order("created_at", { ascending: false })
-              .limit(chatIds.length * 2) // Get enough to cover 1 per chat
+              .limit(chatIds.length * 2)
           : Promise.resolve({ data: [] as any[] }),
+        // Fetch unread counts: messages from others after last_read_at
+        chatIds.length > 0
+          ? (async () => {
+              const counts: Record<string, number> = {};
+              await Promise.all(
+                chatIds.map(async (cid) => {
+                  const lastRead = getLastReadAt(cid);
+                  let query = supabase
+                    .from("chat_messages")
+                    .select("id", { count: "exact", head: true })
+                    .eq("chat_id", cid)
+                    .neq("sender_id", user.id);
+                  if (lastRead) {
+                    query = query.gt("created_at", lastRead);
+                  }
+                  const { count } = await query;
+                  counts[cid] = count || 0;
+                })
+              );
+              return counts;
+            })()
+          : Promise.resolve({} as Record<string, number>),
       ]);
 
       const profileMap: Record<string, { name: string; avatar_url: string | null }> = {};
@@ -180,7 +206,7 @@ export function useConversations() {
           lastMessage: lastMsg?.message || "",
           lastMessageAt: lastMsg?.created_at || chat.created_at,
           lastMessageSenderName: lastMsg ? senderName : undefined,
-          unreadCount: 0,
+          unreadCount: (chatUnreadCounts as Record<string, number>)[chat.id] || 0,
           chatId: chat.id,
           gameId: chat.listing_id || undefined,
           gameDateTime: game?.date_time,
@@ -201,7 +227,7 @@ export function useConversations() {
 
     if (allMatchGameIds.length > 0) {
       // Fetch match games and their last messages in parallel
-      const [matchGamesRes, allGameMsgsRes] = await Promise.all([
+      const [matchGamesRes, allGameMsgsRes, gameUnreadCounts] = await Promise.all([
         supabase
           .from("games")
           .select("id, title, location, payment_mode, host_id, date_time, end_date_time")
@@ -213,6 +239,26 @@ export function useConversations() {
           .in("game_id", allMatchGameIds)
           .order("created_at", { ascending: false })
           .limit(allMatchGameIds.length * 2),
+        (async () => {
+          const counts: Record<string, number> = {};
+          await Promise.all(
+            allMatchGameIds.map(async (gid) => {
+              const convoId = `game-${gid}`;
+              const lastRead = getLastReadAt(convoId);
+              let query = supabase
+                .from("game_messages")
+                .select("id", { count: "exact", head: true })
+                .eq("game_id", gid)
+                .neq("user_id", user.id);
+              if (lastRead) {
+                query = query.gt("created_at", lastRead);
+              }
+              const { count } = await query;
+              counts[gid] = count || 0;
+            })
+          );
+          return counts;
+        })(),
       ]);
 
       const matchGames = matchGamesRes.data || [];
@@ -266,7 +312,7 @@ export function useConversations() {
           lastMessage: lastMsg?.message || "",
           lastMessageAt: lastMsg?.created_at || "",
           lastMessageSenderName: senderName,
-          unreadCount: 0,
+          unreadCount: (gameUnreadCounts as Record<string, number>)[game.id] || 0,
           gameId: game.id,
           gameDateTime: game.date_time,
           gameEndDateTime: game.end_date_time,
@@ -331,6 +377,47 @@ export function useConversations() {
     [user?.id]
   );
 
+  const markAsRead = useCallback(
+    async (conversationId: string) => {
+      if (!user) return;
+
+      const now = new Date().toISOString();
+      const { data: existing } = await supabase
+        .from("conversation_preferences")
+        .select("id")
+        .eq("user_id", user.id)
+        .eq("conversation_id", conversationId)
+        .maybeSingle();
+
+      if (existing) {
+        await supabase
+          .from("conversation_preferences")
+          .update({ last_read_at: now })
+          .eq("id", existing.id);
+      } else {
+        await supabase.from("conversation_preferences").insert({
+          user_id: user.id,
+          conversation_id: conversationId,
+          last_read_at: now,
+        });
+      }
+
+      // Optimistic update
+      setConversations((prev) => {
+        const updated = prev.map((c) =>
+          c.id === conversationId ? { ...c, unreadCount: 0 } : c
+        );
+        setTotalUnread(
+          updated
+            .filter((c) => !c.prefs.archived && !c.autoArchived && !c.prefs.muted && !c.prefs.deleted)
+            .reduce((sum, c) => sum + c.unreadCount, 0)
+        );
+        return updated;
+      });
+    },
+    [user?.id]
+  );
+
   useEffect(() => {
     fetchConversations();
 
@@ -348,5 +435,5 @@ export function useConversations() {
     };
   }, [user?.id, fetchConversations]);
 
-  return { conversations, loading, totalUnread, refetch: fetchConversations, updatePreference };
+  return { conversations, loading, totalUnread, refetch: fetchConversations, updatePreference, markAsRead };
 }
