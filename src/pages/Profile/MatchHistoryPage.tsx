@@ -204,7 +204,7 @@ export default function MatchHistoryPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen" style={{ background: "#F5F5F5" }}>
       <Navbar />
       <div className="container py-6 max-w-2xl px-4 pb-32 md:pb-8">
         <motion.div
@@ -241,7 +241,7 @@ export default function MatchHistoryPage() {
               return (
                 <div
                   key={match.matchId}
-                  className="bg-card border border-border rounded-xl p-4"
+                  className="bg-white rounded-xl p-4 shadow-sm"
                   ref={index === matches.length - 1 ? lastElementRef : undefined}
                 >
                   {/* Header: date + type */}
@@ -256,64 +256,74 @@ export default function MatchHistoryPage() {
                     )}
                   </div>
 
-                  {/* Teams + Scores */}
-                  <div className="space-y-2">
-                    {/* User's team (winners row or losers row) */}
-                    <div className="flex items-center gap-3">
-                      <div
-                        className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 ${
-                          match.won
-                            ? "bg-emerald-500/15 text-emerald-500"
-                            : "bg-red-500/15 text-red-500"
-                        }`}
-                      >
-                        {match.won ? (
-                          <Trophy className="w-3 h-3" />
-                        ) : (
-                          <XIcon className="w-3 h-3" />
-                        )}
-                      </div>
-                      <div className={`flex-1 min-w-0 ${match.won ? winColor : loseColor}`}>
-                        <p className="text-sm font-medium truncate">{match.userName}</p>
-                        {match.partnerName && (
-                          <p className="text-xs truncate">{match.partnerName}</p>
-                        )}
-                      </div>
-                      {isSelf && match.myTeamScore != null && (
+                  {/* User's team */}
+                  <div className="flex items-center gap-3">
+                    <div
+                      className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 ${
+                        match.won
+                          ? "bg-emerald-500/15 text-emerald-500"
+                          : "bg-red-500/15 text-red-500"
+                      }`}
+                    >
+                      {match.won ? (
+                        <Trophy className="w-3 h-3" />
+                      ) : (
+                        <XIcon className="w-3 h-3" />
+                      )}
+                    </div>
+                    <div className={`flex-1 min-w-0 ${match.won ? winColor : loseColor}`}>
+                      <p className="text-sm font-medium truncate">{match.userName}</p>
+                      {match.partnerName && (
+                        <p className="text-xs truncate">{match.partnerName}</p>
+                      )}
+                    </div>
+                    {isSelf && match.myTeamScore != null && (
+                      <div className="flex items-baseline gap-1">
                         <span className={`text-lg font-bold tabular-nums ${match.won ? winColor : loseColor}`}>
                           {match.myTeamScore}
                         </span>
+                        <span className="text-[10px] text-muted-foreground">sets</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* VS divider */}
+                  <div className="flex items-center gap-2 my-2 ml-9">
+                    <div className="flex-1 h-px bg-border" />
+                    <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">vs</span>
+                    <div className="flex-1 h-px bg-border" />
+                  </div>
+
+                  {/* Opponents */}
+                  <div className="flex items-center gap-3">
+                    <div
+                      className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 ${
+                        !match.won
+                          ? "bg-emerald-500/15 text-emerald-500"
+                          : "bg-red-500/15 text-red-500"
+                      }`}
+                    >
+                      {!match.won ? (
+                        <Trophy className="w-3 h-3" />
+                      ) : (
+                        <XIcon className="w-3 h-3" />
                       )}
                     </div>
-
-                    {/* Opponents */}
-                    <div className="flex items-center gap-3">
-                      <div
-                        className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 ${
-                          !match.won
-                            ? "bg-emerald-500/15 text-emerald-500"
-                            : "bg-red-500/15 text-red-500"
-                        }`}
-                      >
-                        {!match.won ? (
-                          <Trophy className="w-3 h-3" />
-                        ) : (
-                          <XIcon className="w-3 h-3" />
-                        )}
-                      </div>
-                      <div className={`flex-1 min-w-0 ${!match.won ? winColor : loseColor}`}>
-                        {match.opponentNames.map((name, i) => (
-                          <p key={i} className={`text-${i === 0 ? "sm font-medium" : "xs"} truncate`}>
-                            {name}
-                          </p>
-                        ))}
-                      </div>
-                      {isSelf && match.oppTeamScore != null && (
+                    <div className={`flex-1 min-w-0 ${!match.won ? winColor : loseColor}`}>
+                      {match.opponentNames.map((name, i) => (
+                        <p key={i} className={`${i === 0 ? "text-sm font-medium" : "text-xs"} truncate`}>
+                          {name}
+                        </p>
+                      ))}
+                    </div>
+                    {isSelf && match.oppTeamScore != null && (
+                      <div className="flex items-baseline gap-1">
                         <span className={`text-lg font-bold tabular-nums ${!match.won ? winColor : loseColor}`}>
                           {match.oppTeamScore}
                         </span>
-                      )}
-                    </div>
+                        <span className="text-[10px] text-muted-foreground">sets</span>
+                      </div>
+                    )}
                   </div>
 
                   {/* Set scores */}
