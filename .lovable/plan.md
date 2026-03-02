@@ -1,37 +1,25 @@
 
 
-## Add Password Strength Requirements (No Special Character)
+# Rebrand: PadelHub to PadelMates
 
-### What Changes
-Add real-time password validation feedback on the signup form. The "Continue" button stays disabled until all rules pass.
+Rename the app from "PadelHub" to "PadelMates" across the entire codebase.
 
-### Password Rules
-- Minimum 8 characters
-- At least one uppercase letter
-- At least one lowercase letter
-- At least one number
+## Changes
 
-### Implementation
+### 1. `index.html` -- Page title and meta tags
+- Title: "Lovable App" -> "PadelMates"
+- Description: "Lovable Generated Project" -> "Find your next padel game. Host matches, join local games, and connect with players."
+- OG title/description updated to match
+- Remove TODO comments
 
-**1. Create `src/components/auth/PasswordRequirements.tsx`**
-- Accepts `password` string prop
-- Renders a compact checklist below the password input
-- Each rule shows a green check icon when met, gray dot when not
-- Exports an `isPasswordValid(password: string): boolean` helper
+### 2. `src/components/layout/Navbar.tsx` -- Logo text
+- `Padel<span>Hub</span>` -> `Padel<span>Mates</span>`
 
-**2. Update `src/pages/Auth/SignupPage.tsx`**
-- Import `PasswordRequirements` and `isPasswordValid`
-- Render the component below the password input field
-- Change `minLength` from 6 to 8
-- Disable "Continue" button when `!isPasswordValid(password)` (in addition to existing `loading` check)
+### 3. `src/pages/LandingPage.tsx` -- Landing page references (3 occurrences)
+- CTA paragraph: "...using PadelHub..." -> "...using PadelMates..."
+- Footer logo text: "PadelHub" -> "PadelMates"
+- Footer copyright: "PadelHub" -> "PadelMates"
 
-### Validation Logic
-```text
-password.length >= 8        -- 8+ characters
-/[A-Z]/.test(password)      -- uppercase letter
-/[a-z]/.test(password)      -- lowercase letter
-/[0-9]/.test(password)      -- at least one number
-```
-
-No special character requirement per user request.
-
+### Summary
+- 3 files modified
+- All user-visible "PadelHub" / "Lovable App" references replaced with "PadelMates"
