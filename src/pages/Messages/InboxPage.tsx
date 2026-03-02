@@ -231,7 +231,7 @@ function SwipeableRow({
 
         {/* Right side */}
         <div className="flex flex-col items-end gap-1 shrink-0">
-          {convo.unreadCount > 0 && !isArchived && (
+          {convo.unreadCount > 0 && !isArchived && swipeOffset === 0 && (
             <span className="min-w-[20px] h-5 rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center px-1.5">
               {convo.unreadCount}
             </span>
