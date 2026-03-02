@@ -358,6 +358,37 @@ export default function ProfilePage() {
             </div>
           )}
 
+          {/* Personal Details */}
+          {!editing && (
+            <div className="bg-card border border-border rounded-xl p-4 space-y-2">
+              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Personal Details</h3>
+              {user?.email && (
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Email</span>
+                  <span className="text-foreground">{user.email}</span>
+                </div>
+              )}
+              {(profile as any)?.region && (
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Region</span>
+                  <span className="text-foreground">{(profile as any).region}</span>
+                </div>
+              )}
+              {(profile as any)?.sex && (
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Sex</span>
+                  <span className="text-foreground">{(profile as any).sex.charAt(0).toUpperCase() + (profile as any).sex.slice(1)}</span>
+                </div>
+              )}
+              {(profile as any)?.birth_year && (
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Age</span>
+                  <span className="text-foreground">{new Date().getFullYear() - (profile as any).birth_year}</span>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* 5️⃣ Performance Stats */}
           <PerformanceStats
             matches={matchStats.played || profile?.games_played || 0}
