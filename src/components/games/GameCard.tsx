@@ -223,7 +223,7 @@ export function GameCard({
                     {interestCount} interested
                   </span>
                 )}
-                {!isCourtSharing && paymentMode !== "spot_selling" && (() => {
+                {!isCourtSharing && (() => {
                   const isFull = spotsLeft <= 0;
                   return (
                     <span className={`inline-flex items-center gap-0.5 rounded-full border px-1.5 py-0.5 text-[9px] sm:text-[10px] font-semibold ${spotsColor}`}>
