@@ -277,12 +277,13 @@ export default function MatchHistoryPage() {
                         <p className="text-xs truncate">{match.partnerName}</p>
                       )}
                     </div>
-                    {isSelf && match.myTeamScore != null && (
-                      <div className="flex items-baseline gap-1">
-                        <span className={`text-lg font-bold tabular-nums ${match.won ? winColor : loseColor}`}>
-                          {match.myTeamScore}
-                        </span>
-                        <span className="text-[10px] text-muted-foreground">sets</span>
+                    {isSelf && match.setScores.length > 0 && (
+                      <div className="flex gap-2 shrink-0">
+                        {match.setScores.map((set, i) => (
+                          <span key={i} className={`text-sm font-bold tabular-nums ${match.won ? winColor : loseColor}`}>
+                            {set.myScore}:{set.oppScore}
+                          </span>
+                        ))}
                       </div>
                     )}
                   </div>
@@ -316,37 +317,16 @@ export default function MatchHistoryPage() {
                         </p>
                       ))}
                     </div>
-                    {isSelf && match.oppTeamScore != null && (
-                      <div className="flex items-baseline gap-1">
-                        <span className={`text-lg font-bold tabular-nums ${!match.won ? winColor : loseColor}`}>
-                          {match.oppTeamScore}
-                        </span>
-                        <span className="text-[10px] text-muted-foreground">sets</span>
+                    {isSelf && match.setScores.length > 0 && (
+                      <div className="flex gap-2 shrink-0">
+                        {match.setScores.map((set, i) => (
+                          <span key={i} className={`text-sm font-bold tabular-nums ${!match.won ? winColor : loseColor}`}>
+                            {set.oppScore}:{set.myScore}
+                          </span>
+                        ))}
                       </div>
                     )}
                   </div>
-
-                  {/* Set scores */}
-                  {isSelf && match.setScores.length > 0 && (
-                    <div className="flex gap-2 mt-3 pt-3 border-t border-border">
-                      {match.setScores.map((set, i) => {
-                        const userWonSet = set.myScore > set.oppScore;
-                        return (
-                          <div
-                            key={i}
-                            className="bg-muted/50 rounded-lg px-3 py-1.5 text-center"
-                          >
-                            <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-0.5">Set {i + 1}</p>
-                            <p className="text-sm font-semibold tabular-nums">
-                              <span className={userWonSet ? "text-emerald-500" : loseColor}>{set.myScore}</span>
-                              <span className="text-muted-foreground mx-1">–</span>
-                              <span className={!userWonSet ? "text-emerald-500" : loseColor}>{set.oppScore}</span>
-                            </p>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
                 </div>
               );
             })}
