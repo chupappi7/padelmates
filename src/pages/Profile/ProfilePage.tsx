@@ -241,7 +241,7 @@ export default function ProfilePage() {
                     )}
                   </div>
                   <span className="text-[11px] text-muted-foreground/70 pl-6">
-                    Shared with players when you host court-sharing games
+                    Send to players & receive payment for court bookings
                   </span>
                 </div>
                 {paymentOpen ? (
