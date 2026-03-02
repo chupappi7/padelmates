@@ -375,9 +375,11 @@ export default function ProfilePage() {
                 </div>
               )}
               {(profile as any)?.sex && (
-                <div className="flex justify-between text-sm">
+                <div className="flex justify-between items-center text-sm">
                   <span className="text-muted-foreground">Sex</span>
-                  <span className="text-foreground">{(profile as any).sex.charAt(0).toUpperCase() + (profile as any).sex.slice(1)}</span>
+                  <span className={`font-semibold ${(profile as any).sex === "female" ? "text-[hsl(330,70%,60%)]" : "text-[hsl(210,70%,55%)]"}`}>
+                    {(profile as any).sex === "female" ? "F" : (profile as any).sex === "male" ? "M" : (profile as any).sex.charAt(0).toUpperCase()}
+                  </span>
                 </div>
               )}
               {(profile as any)?.birth_year && (
