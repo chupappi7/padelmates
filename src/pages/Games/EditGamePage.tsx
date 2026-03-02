@@ -149,9 +149,8 @@ export default function EditGamePage() {
     e.preventDefault();
     if (!user || !id) return;
     if (!selectedDate) { toast.error("Please select a date"); return; }
-    if (formData.joinMode === "request_and_pay" && (!formData.totalPrice || Number(formData.totalPrice) <= 0)) {
-      toast.error("Price is required for 'Request & Pay' mode"); return;
-    }
+
+
 
     const [hours, minutes] = selectedTime.split(":").map(Number);
     const dateTime = new Date(selectedDate);
@@ -789,7 +788,7 @@ export default function EditGamePage() {
                       {[
                         { value: "open", icon: DoorOpen, label: "Open", desc: "Anyone can join directly" },
                         { value: "request", icon: ShieldCheck, label: "Request to Join", desc: "You approve each player" },
-                        { value: "request_and_pay", icon: CreditCard, label: "Request & Pay", desc: "Players request and pay to confirm" },
+                        
                       ].map((mode) => (
                         <button key={mode.value} type="button" onClick={() => handleChange("joinMode", mode.value)}
                           className={`w-full flex items-center gap-3 p-3 rounded-xl border-2 transition-all text-left ${formData.joinMode === mode.value ? "border-primary bg-primary/5" : "border-border hover:border-primary/50"}`}>
