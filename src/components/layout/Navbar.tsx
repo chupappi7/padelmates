@@ -52,8 +52,8 @@ export function Navbar() {
     <>
       <nav className="sticky top-0 z-50 glass-card border-b border-border/50">
         <div className="container flex items-center justify-between h-14 md:h-16">
-          <Link to="/" className="flex items-center -gap-1">
-            <img src={logoIcon} alt="PadelMates" className="w-14 h-14 sm:w-16 sm:h-16 rounded-xl -mr-1" />
+          <Link to="/" className="flex items-center gap-0.5">
+            <img src={logoIcon} alt="PadelMates" className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl" />
             <span className="font-display font-bold text-lg sm:text-xl text-foreground">Padel<span className="text-primary">Mates</span></span>
           </Link>
 
