@@ -144,8 +144,8 @@ export function ParticipantsTab({
               className={cn(
                 "ml-1 h-5 px-1.5 text-[10px] rounded-full",
                 activeFilter === "requests"
-                  ? "bg-background/20 text-primary-foreground"
-                  : "bg-muted"
+                  ? "bg-destructive/80 text-destructive-foreground"
+                  : "bg-destructive text-destructive-foreground"
               )}
             >
               {pendingRequests.length}

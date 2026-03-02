@@ -667,7 +667,7 @@ export default function GameDetailPage() {
                   <tab.icon className="w-3.5 h-3.5" />
                   <span>{isCourtSharing && tab.key === "chat" ? "Messages" : tab.label}</span>
                   {showBadge && (
-                    <span className="w-4 h-4 rounded-full bg-secondary text-secondary-foreground text-[9px] font-bold flex items-center justify-center">
+                    <span className="w-4 h-4 rounded-full bg-destructive text-destructive-foreground text-[9px] font-bold flex items-center justify-center">
                       {pendingCount}
                     </span>
                   )}
