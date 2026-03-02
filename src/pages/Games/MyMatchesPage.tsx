@@ -195,10 +195,10 @@ export default function MyMatchesPage() {
         </motion.div>
 
         <Tabs defaultValue="upcoming" className="mt-4">
-          <TabsList className="w-full grid grid-cols-3">
-            <TabsTrigger value="upcoming">Upcoming ({upcoming.length})</TabsTrigger>
-            <TabsTrigger value="past">Past ({past.length})</TabsTrigger>
-            <TabsTrigger value="listings">Listings ({listings.length})</TabsTrigger>
+          <TabsList className="w-full grid grid-cols-3 h-12">
+            <TabsTrigger value="upcoming" className="text-sm">Upcoming ({upcoming.length})</TabsTrigger>
+            <TabsTrigger value="past" className="text-sm">Past ({past.length})</TabsTrigger>
+            <TabsTrigger value="listings" className="text-sm">Listings ({listings.length})</TabsTrigger>
           </TabsList>
 
           <TabsContent value="upcoming" className="mt-4">
