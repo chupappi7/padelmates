@@ -123,15 +123,34 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { submission_id } = await req.json();
-    if (!submission_id) {
-      return new Response(JSON.stringify({ error: "submission_id required" }), { status: 400, headers: corsHeaders });
+    // --- Auth check: require valid user or service role ---
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: corsHeaders });
     }
 
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
+
+    // Verify caller identity (allow service role or authenticated user)
+    const anonClient = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_ANON_KEY")!,
+      { global: { headers: { Authorization: authHeader } } }
+    );
+    const { data: claimsData, error: claimsErr } = await anonClient.auth.getClaims(authHeader.replace("Bearer ", ""));
+    const callerRole = claimsData?.claims?.role;
+    const callerId = claimsData?.claims?.sub as string | undefined;
+
+    // Service role calls (from nightly recalibration) are always allowed
+    const isServiceRole = callerRole === "service_role";
+
+    const { submission_id } = await req.json();
+    if (!submission_id) {
+      return new Response(JSON.stringify({ error: "submission_id required" }), { status: 400, headers: corsHeaders });
+    }
 
     // Fetch submission
     const { data: sub, error: subErr } = await supabase
@@ -148,6 +167,13 @@ Deno.serve(async (req) => {
     }
 
     const playerIds = [sub.team_a_player1, sub.team_a_player2, sub.team_b_player1, sub.team_b_player2];
+
+    // Verify caller is a participant (unless service role)
+    if (!isServiceRole) {
+      if (!callerId || !playerIds.includes(callerId)) {
+        return new Response(JSON.stringify({ error: "Forbidden: only match participants can trigger processing" }), { status: 403, headers: corsHeaders });
+      }
+    }
 
     // Fetch profiles
     const { data: profiles } = await supabase

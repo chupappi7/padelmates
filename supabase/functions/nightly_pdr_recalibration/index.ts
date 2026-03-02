@@ -111,6 +111,24 @@ Deno.serve(async (req) => {
   }
 
   try {
+    // --- Auth check: only allow service role (scheduled/internal calls) ---
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: corsHeaders });
+    }
+
+    const anonClient = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_ANON_KEY")!,
+      { global: { headers: { Authorization: authHeader } } }
+    );
+    const { data: claimsData, error: claimsErr } = await anonClient.auth.getClaims(authHeader.replace("Bearer ", ""));
+    const callerRole = claimsData?.claims?.role;
+
+    if (claimsErr || callerRole !== "service_role") {
+      return new Response(JSON.stringify({ error: "Forbidden: service role required" }), { status: 403, headers: corsHeaders });
+    }
+
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
