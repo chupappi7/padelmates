@@ -71,7 +71,7 @@ export default function ProfilePage() {
     name: "",
     bio: "",
     skill_level: 2 as number,
-    preferred_position: "" as string,
+    preferred_position: "left" as string,
     sex: "" as string,
     birth_year: null as number | null,
   });
