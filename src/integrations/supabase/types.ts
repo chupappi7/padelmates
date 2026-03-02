@@ -650,6 +650,44 @@ export type Database = {
           },
         ]
       }
+      match_invites: {
+        Row: {
+          created_at: string | null
+          created_by: string
+          expires_at: string | null
+          game_id: string
+          id: string
+          token: string
+          use_count: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by: string
+          expires_at?: string | null
+          game_id: string
+          id?: string
+          token?: string
+          use_count?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string
+          expires_at?: string | null
+          game_id?: string
+          id?: string
+          token?: string
+          use_count?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "match_invites_game_id_fkey"
+            columns: ["game_id"]
+            isOneToOne: false
+            referencedRelation: "games"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       match_players: {
         Row: {
           created_at: string
