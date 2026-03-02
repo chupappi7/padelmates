@@ -5,13 +5,10 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Navbar } from "@/components/layout/Navbar";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, History } from "lucide-react";
 import { HeroCard } from "@/components/profile/HeroCard";
-import { PDRSection } from "@/components/profile/PDRSection";
 import { ProfileActionButtons } from "@/components/profile/ProfileActionButtons";
-import { PerformanceStats } from "@/components/profile/PerformanceStats";
 import { ProfileClubs } from "@/components/profile/ProfileClubs";
-
 
 interface PublicProfile {
   name: string;
@@ -21,6 +18,10 @@ interface PublicProfile {
   games_played: number | null;
   friend_code: string | null;
   pdr_rating: number | null;
+  region: string | null;
+  sex: string | null;
+  birth_year: number | null;
+  preferred_position: string | null;
 }
 
 export default function UserProfilePage() {
@@ -29,7 +30,6 @@ export default function UserProfilePage() {
   const navigate = useNavigate();
   const [profile, setProfile] = useState<PublicProfile | null>(null);
   const [loading, setLoading] = useState(true);
-  const [matchStats, setMatchStats] = useState({ played: 0, wins: 0 });
   const [friendshipStatus, setFriendshipStatus] = useState<
     "none" | "pending_sent" | "pending_received" | "accepted"
   >("none");
@@ -45,47 +45,17 @@ export default function UserProfilePage() {
   useEffect(() => {
     if (!userId) return;
     fetchProfile();
-    fetchMatchStats();
     if (user) fetchFriendshipStatus();
   }, [userId, user]);
 
   const fetchProfile = async () => {
     const { data } = await supabase
       .from("profiles")
-      .select("name, avatar_url, skill_level, bio, games_played, friend_code, pdr_rating")
+      .select("name, avatar_url, skill_level, bio, games_played, friend_code, pdr_rating, region, sex, birth_year, preferred_position")
       .eq("user_id", userId!)
       .single();
-    setProfile(data);
+    setProfile(data as unknown as PublicProfile);
     setLoading(false);
-  };
-
-  const fetchMatchStats = async () => {
-    const { data: playerRows } = await supabase
-      .from("match_players")
-      .select("match_id, team")
-      .eq("user_id", userId!);
-    if (!playerRows || playerRows.length === 0) return;
-
-    const matchIds = playerRows.map((mp) => mp.match_id);
-    const { data: matchesData } = await supabase
-      .from("matches")
-      .select("id, team1_score, team2_score, status")
-      .in("id", matchIds)
-      .eq("status", "completed");
-    if (!matchesData) return;
-
-    let wins = 0;
-    matchesData.forEach((m) => {
-      const mp = playerRows.find((p) => p.match_id === m.id);
-      if (!mp) return;
-      if (
-        (mp.team === 1 && (m.team1_score ?? 0) > (m.team2_score ?? 0)) ||
-        (mp.team === 2 && (m.team2_score ?? 0) > (m.team1_score ?? 0))
-      ) {
-        wins++;
-      }
-    });
-    setMatchStats({ played: matchesData.length, wins });
   };
 
   const fetchFriendshipStatus = async () => {
@@ -141,11 +111,7 @@ export default function UserProfilePage() {
     );
   }
 
-  const losses = matchStats.played - matchStats.wins;
-  const winRate =
-    matchStats.played > 0
-      ? Math.round((matchStats.wins / matchStats.played) * 100)
-      : 0;
+  const age = profile.birth_year ? new Date().getFullYear() - profile.birth_year : null;
 
   return (
     <div className="min-h-screen bg-background">
@@ -164,7 +130,7 @@ export default function UserProfilePage() {
             Back
           </button>
 
-          {/* 1️⃣ Hero Card */}
+          {/* Hero Card */}
           <HeroCard
             name={profile.name}
             avatarUrl={profile.avatar_url}
@@ -174,7 +140,7 @@ export default function UserProfilePage() {
             isSelf={false}
           />
 
-          {/* 3️⃣ Action Buttons */}
+          {/* Action Buttons */}
           {user && userId && (
             <ProfileActionButtons
               currentUserId={user.id}
@@ -191,18 +157,49 @@ export default function UserProfilePage() {
             />
           )}
 
-          {/* 5️⃣ Performance Stats */}
-          <PerformanceStats
-            matches={matchStats.played || profile.games_played || 0}
-            wins={matchStats.wins}
-            losses={losses}
-            winRate={winRate}
-          />
+          {/* Personal Details */}
+          <div className="bg-card border border-border rounded-xl p-4 space-y-2">
+            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Personal Details</h3>
+            {profile.region && (
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">Location</span>
+                <span className="text-foreground">{profile.region}</span>
+              </div>
+            )}
+            {profile.preferred_position && (
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">Position</span>
+                <span className="text-foreground capitalize">{profile.preferred_position} side</span>
+              </div>
+            )}
+            {profile.sex && (
+              <div className="flex justify-between items-center text-sm">
+                <span className="text-muted-foreground">Sex</span>
+                <span className={`font-semibold ${profile.sex === "female" ? "text-[hsl(330,70%,60%)]" : "text-[hsl(210,70%,55%)]"}`}>
+                  {profile.sex === "female" ? "F" : profile.sex === "male" ? "M" : profile.sex.charAt(0).toUpperCase()}
+                </span>
+              </div>
+            )}
+            {age && (
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">Age</span>
+                <span className="text-foreground">{age}</span>
+              </div>
+            )}
+          </div>
 
-          {/* 6️⃣ Clubs */}
+          {/* Match History Button */}
+          <Button
+            variant="outline"
+            className="w-full gap-2"
+            onClick={() => navigate(`/match-history/${userId}`)}
+          >
+            <History className="w-4 h-4" />
+            Match History
+          </Button>
+
+          {/* Clubs */}
           {userId && <ProfileClubs userId={userId} />}
-
-
         </motion.div>
       </div>
     </div>

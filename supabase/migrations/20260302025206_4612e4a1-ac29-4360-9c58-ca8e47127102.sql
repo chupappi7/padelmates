@@ -1,0 +1,1 @@
+ALTER TABLE public.profiles ADD COLUMN preferred_position text;

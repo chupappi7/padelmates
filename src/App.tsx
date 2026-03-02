@@ -26,6 +26,7 @@ import InboxPage from "./pages/Messages/InboxPage";
 import ChatPage from "./pages/Messages/ChatPage";
 import GroupChatPage from "./pages/Messages/GroupChatPage";
 import EloPage from "./pages/Elo/EloPage";
+import MatchHistoryPage from "./pages/Profile/MatchHistoryPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -56,6 +57,8 @@ const App = () => (
             <Route path="/messages/:chatId" element={<ChatPage />} />
             <Route path="/elo" element={<EloPage />} />
             <Route path="/profile" element={<ProfilePage />} />
+            <Route path="/match-history" element={<MatchHistoryPage />} />
+            <Route path="/match-history/:userId" element={<MatchHistoryPage />} />
             <Route path="/user/:userId" element={<UserProfilePage />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />

@@ -844,6 +844,7 @@ export type Database = {
           pdr_rd: number
           pdr_reliability: number
           pdr_sigma: number
+          preferred_position: string | null
           region: string | null
           sex: string | null
           skill_level: number
@@ -871,6 +872,7 @@ export type Database = {
           pdr_rd?: number
           pdr_reliability?: number
           pdr_sigma?: number
+          preferred_position?: string | null
           region?: string | null
           sex?: string | null
           skill_level?: number
@@ -898,6 +900,7 @@ export type Database = {
           pdr_rd?: number
           pdr_reliability?: number
           pdr_sigma?: number
+          preferred_position?: string | null
           region?: string | null
           sex?: string | null
           skill_level?: number

@@ -23,6 +23,7 @@ import {
   ChevronUp,
   ImagePlus,
   X,
+  History,
 } from "lucide-react";
 import {
   Collapsible,
@@ -30,9 +31,6 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { HeroCard } from "@/components/profile/HeroCard";
-import { PDRSection } from "@/components/profile/PDRSection";
-import { PerformanceStats } from "@/components/profile/PerformanceStats";
-
 import { LevelSelectSheet } from "@/components/profile/LevelSelectSheet";
 import { ProfileClubs } from "@/components/profile/ProfileClubs";
 
@@ -47,6 +45,10 @@ interface Profile {
   bank_qr_url: string | null;
   friend_code: string | null;
   pdr_rating: number | null;
+  region: string | null;
+  sex: string | null;
+  birth_year: number | null;
+  preferred_position: string | null;
 }
 
 export default function ProfilePage() {
@@ -64,18 +66,17 @@ export default function ProfilePage() {
   const [paymentOpen, setPaymentOpen] = useState(false);
   const [levelSheetOpen, setLevelSheetOpen] = useState(false);
   const [savingLevel, setSavingLevel] = useState(false);
-  const [matchStats, setMatchStats] = useState({ played: 0, wins: 0 });
 
   const [formData, setFormData] = useState({
     name: "",
     bio: "",
     skill_level: 2 as number,
+    preferred_position: "" as string,
   });
 
   useEffect(() => {
     if (user) {
       fetchProfile();
-      fetchMatchStats();
     }
   }, [user]);
 
@@ -87,49 +88,17 @@ export default function ProfilePage() {
       .single();
 
     if (data) {
-      setProfile(data as Profile);
+      setProfile(data as unknown as Profile);
       setFormData({
         name: data.name,
         bio: data.bio || "",
         skill_level: data.skill_level,
+        preferred_position: (data as any).preferred_position || "",
       });
       setBankDetailsForm((data as any).bank_details || "");
       setBankQrUrl((data as any).bank_qr_url || null);
     }
     setLoading(false);
-  };
-
-  const fetchMatchStats = async () => {
-    if (!user) return;
-    const { data: myMatchPlayers } = await supabase
-      .from("match_players")
-      .select("match_id, team")
-      .eq("user_id", user.id);
-
-    if (!myMatchPlayers || myMatchPlayers.length === 0) return;
-
-    const matchIds = myMatchPlayers.map((mp) => mp.match_id);
-    const { data: matchesData } = await supabase
-      .from("matches")
-      .select("id, team1_score, team2_score, status")
-      .in("id", matchIds)
-      .eq("status", "completed");
-
-    if (!matchesData) return;
-
-    let wins = 0;
-    matchesData.forEach((m) => {
-      const mp = myMatchPlayers.find((p) => p.match_id === m.id);
-      if (!mp) return;
-      if (
-        (mp.team === 1 && (m.team1_score ?? 0) > (m.team2_score ?? 0)) ||
-        (mp.team === 2 && (m.team2_score ?? 0) > (m.team1_score ?? 0))
-      ) {
-        wins++;
-      }
-    });
-
-    setMatchStats({ played: matchesData.length, wins });
   };
 
   const handleSave = async () => {
@@ -141,7 +110,8 @@ export default function ProfilePage() {
         name: formData.name,
         bio: formData.bio,
         skill_level: formData.skill_level,
-      })
+        preferred_position: formData.preferred_position || null,
+      } as any)
       .eq("user_id", user.id);
 
     if (error) {
@@ -259,11 +229,7 @@ export default function ProfilePage() {
     );
   }
 
-  const losses = matchStats.played - matchStats.wins;
-  const winRate =
-    matchStats.played > 0
-      ? Math.round((matchStats.wins / matchStats.played) * 100)
-      : 0;
+  const age = profile?.birth_year ? new Date().getFullYear() - profile.birth_year : null;
 
   return (
     <div className="min-h-screen bg-background">
@@ -329,6 +295,23 @@ export default function ProfilePage() {
                 </Select>
               </div>
               <div className="space-y-2">
+                <Label>Preferred Position</Label>
+                <Select
+                  value={formData.preferred_position}
+                  onValueChange={(v) =>
+                    setFormData((prev) => ({ ...prev, preferred_position: v }))
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Not set" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="left">Left side</SelectItem>
+                    <SelectItem value="right">Right side</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
                 <Label>Bio</Label>
                 <Textarea
                   value={formData.bio}
@@ -362,47 +345,51 @@ export default function ProfilePage() {
           {!editing && (
             <div className="bg-card border border-border rounded-xl p-4 space-y-2">
               <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Personal Details</h3>
-              {user?.email && (
+              {profile?.region && (
                 <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Email</span>
-                  <span className="text-foreground">{user.email}</span>
+                  <span className="text-muted-foreground">Location</span>
+                  <span className="text-foreground">{profile.region}</span>
                 </div>
               )}
-              {(profile as any)?.region && (
+              {profile?.preferred_position && (
                 <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Region</span>
-                  <span className="text-foreground">{(profile as any).region}</span>
+                  <span className="text-muted-foreground">Position</span>
+                  <span className="text-foreground capitalize">{profile.preferred_position} side</span>
                 </div>
               )}
-              {(profile as any)?.sex && (
+              {profile?.sex && (
                 <div className="flex justify-between items-center text-sm">
                   <span className="text-muted-foreground">Sex</span>
-                  <span className={`font-semibold ${(profile as any).sex === "female" ? "text-[hsl(330,70%,60%)]" : "text-[hsl(210,70%,55%)]"}`}>
-                    {(profile as any).sex === "female" ? "F" : (profile as any).sex === "male" ? "M" : (profile as any).sex.charAt(0).toUpperCase()}
+                  <span className={`font-semibold ${profile.sex === "female" ? "text-[hsl(330,70%,60%)]" : "text-[hsl(210,70%,55%)]"}`}>
+                    {profile.sex === "female" ? "F" : profile.sex === "male" ? "M" : profile.sex.charAt(0).toUpperCase()}
                   </span>
                 </div>
               )}
-              {(profile as any)?.birth_year && (
+              {age && (
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Age</span>
-                  <span className="text-foreground">{new Date().getFullYear() - (profile as any).birth_year}</span>
+                  <span className="text-foreground">{age}</span>
                 </div>
               )}
             </div>
           )}
 
-          {/* 5️⃣ Performance Stats */}
-          <PerformanceStats
-            matches={matchStats.played || profile?.games_played || 0}
-            wins={matchStats.wins}
-            losses={losses}
-            winRate={winRate}
-          />
+          {/* Match History Button */}
+          {!editing && (
+            <Button
+              variant="outline"
+              className="w-full gap-2"
+              onClick={() => navigate("/match-history")}
+            >
+              <History className="w-4 h-4" />
+              Match History
+            </Button>
+          )}
 
-          {/* 6️⃣ Clubs */}
+          {/* Clubs */}
           {user && <ProfileClubs userId={user.id} />}
 
-          {/* 7️⃣ Payment Info (Collapsible) */}
+          {/* Payment Info (Collapsible) */}
           <Collapsible open={paymentOpen} onOpenChange={setPaymentOpen}>
             <div className="bg-card border border-border rounded-xl overflow-hidden">
               <CollapsibleTrigger className="w-full flex items-center justify-between px-4 py-3 hover:bg-muted/30 transition-colors">
