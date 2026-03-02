@@ -122,7 +122,7 @@ export default function SignupPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-start justify-center p-4 overflow-y-auto py-8">
+    <div className="min-h-screen flex items-center justify-center p-4 overflow-y-auto pb-24">
       <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-secondary/5" />
 
       <motion.div
