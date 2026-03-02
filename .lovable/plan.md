@@ -1,41 +1,36 @@
 
+# Add Club Admin Role Management
 
-# Add Personal Details to Profile Page
+The club admin system is mostly already built but has some gaps. Here's what needs to be fixed and improved:
 
-Display the user's email, region, sex, and age on the profile page below the hero card.
+## Current State
+- The Admin Panel already has a Members tab with "Make Admin" / "Remove Admin" buttons
+- The `is_club_admin()` database function already checks both owner and admin roles
+- RLS on `club_followers` allows admins to update member records
+- However, announcements and club settings RLS only allow **owners**, not admins -- the UI doesn't restrict this, causing silent failures for admins
 
 ## Changes
 
-### 1. Update ProfilePage to fetch and pass extra data
+### 1. Update RLS policies for admin access (database migration)
+- **club_announcements INSERT**: Allow club admins (not just owners) to create announcements
+- **club_announcements DELETE**: Add a DELETE policy for club admins
+- **clubs UPDATE**: Allow club admins (not just owners) to update club settings
 
-- Fetch `user.email` from the auth context (already available via `useAuth`)
-- Fetch `region`, `sex`, and `birth_year` from the profile query (already fetched with `select("*")`)
-- Compute age from `birth_year` using current year
-- Pass these to a new info section component
+### 2. Restrict dangerous admin panel actions to owners only
+- In `ClubAdminPanel` Settings tab: hide the "Danger Zone" (delete club) section for non-owner admins (already done)
+- In `ClubAdminPanel` Members tab: prevent admins from promoting/demoting other admins -- only owners should manage admin roles. Admins should only be able to remove regular members.
 
-### 2. Add a Personal Details section
+### 3. Show admin role management in the public Members tab
+- In `ClubMembersTab`: if the current user is the club owner or admin, show a "..." menu on member rows with "Make Admin" option (for regular members) and "Remove Admin" (for admin members, owner only)
+- This gives admins quick access to role management without opening the full admin panel
 
-Add a new card between the Hero Card and Performance Stats with a clean row layout:
+## Technical Details
 
-```
-PERSONAL DETAILS
-Email        thinh@example.com
-Region       Prague
-Sex          Male
-Age          28
-```
-
-- Uses the same card styling as Performance Stats (bg-card, border, rounded-xl)
-- Each row is a label + value pair
-- Only shows rows where data exists (skip nulls)
-- Region maps from the stored value, sex is capitalized
-- Age is calculated as `currentYear - birth_year`
-
-### Technical Details
+**Database migration (3 SQL statements):**
+- Update `club_announcements` INSERT policy to use `is_club_admin(auth.uid(), club_id)`
+- Add `club_announcements` DELETE policy using `is_club_admin(auth.uid(), club_id)`
+- Update `clubs` UPDATE policy to use `is_club_admin(auth.uid(), id)`
 
 **Files to modify:**
-- `src/pages/Profile/ProfilePage.tsx` -- add the personal details section between hero card and performance stats, using data already available from the `select("*")` query and `user.email`
-
-**No new components needed** -- the section is simple enough to inline, keeping it consistent with how PerformanceStats is rendered.
-
-**No database changes needed** -- all fields already exist in the profiles table and auth context.
+- `src/components/clubs/ClubMembersTab.tsx` -- add role management actions for owners/admins viewing the public members list
+- `src/components/clubs/ClubAdminPanel.tsx` -- restrict admin-on-admin actions to owner only in the Members tab
