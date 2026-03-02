@@ -138,8 +138,8 @@ export default function MatchHistoryPage() {
       const rawSets = Array.isArray(m.set_scores) ? m.set_scores : [];
       if (rawSets.length > 0) {
         rawSets.forEach((s: any, i: number) => {
-          const myScore = myTeam === 1 ? (s.team1 ?? s.score1 ?? 0) : (s.team2 ?? s.score2 ?? 0);
-          const oppScore = myTeam === 1 ? (s.team2 ?? s.score2 ?? 0) : (s.team1 ?? s.score1 ?? 0);
+          const myScore = myTeam === 1 ? (s.t1 ?? s.team1 ?? s.score1 ?? 0) : (s.t2 ?? s.team2 ?? s.score2 ?? 0);
+          const oppScore = myTeam === 1 ? (s.t2 ?? s.team2 ?? s.score2 ?? 0) : (s.t1 ?? s.team1 ?? s.score1 ?? 0);
           rows.push({
             matchId: m.id,
             setIndex: i,
