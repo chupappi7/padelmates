@@ -227,22 +227,27 @@ export default function ProfilePage() {
 
           <Collapsible open={paymentOpen} onOpenChange={setPaymentOpen}>
             <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
-              <CollapsibleTrigger className="w-full flex items-center justify-between px-4 py-3 hover:bg-muted/30 transition-colors">
-                <div className="flex items-center gap-2">
-                  <CreditCard className="w-4 h-4 text-muted-foreground" />
-                  <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-[0.1em]">
-                    Payment Info
-                  </span>
-                  {profile?.bank_details && (
-                    <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded-full font-medium">
-                      Set
+              <CollapsibleTrigger className="w-full flex items-center justify-between px-4 py-3.5 hover:bg-muted/30 transition-colors">
+                <div className="flex flex-col items-start gap-0.5">
+                  <div className="flex items-center gap-2">
+                    <CreditCard className="w-4 h-4 text-muted-foreground" />
+                    <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-[0.1em]">
+                      Payment Info
                     </span>
-                  )}
+                    {profile?.bank_details && (
+                      <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded-full font-medium">
+                        Set
+                      </span>
+                    )}
+                  </div>
+                  <span className="text-[11px] text-muted-foreground/70 pl-6">
+                    Shared with players when you host court-sharing games
+                  </span>
                 </div>
                 {paymentOpen ? (
-                  <ChevronUp className="w-4 h-4 text-muted-foreground" />
+                  <ChevronUp className="w-4 h-4 text-muted-foreground shrink-0" />
                 ) : (
-                  <ChevronDown className="w-4 h-4 text-muted-foreground" />
+                  <ChevronDown className="w-4 h-4 text-muted-foreground shrink-0" />
                 )}
               </CollapsibleTrigger>
 
