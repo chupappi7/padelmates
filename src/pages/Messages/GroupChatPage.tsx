@@ -203,41 +203,44 @@ export default function GroupChatPage() {
                 </span>
               </div>
               {group.messages.map((msg, i) => {
-                const isMine = msg.user_id === user?.id;
-                const showAvatar =
-                  !isMine &&
-                  (i === 0 || group.messages[i - 1]?.user_id !== msg.user_id);
-                const showTail =
-                  i === group.messages.length - 1 ||
-                  group.messages[i + 1]?.user_id !== msg.user_id;
+                            const isMine = msg.user_id === user?.id;
+                            const isFirstInSeries =
+                              i === 0 || group.messages[i - 1]?.user_id !== msg.user_id;
+                            const showAvatar = !isMine && isFirstInSeries;
+                            const showTail =
+                              i === group.messages.length - 1 ||
+                              group.messages[i + 1]?.user_id !== msg.user_id;
 
-                return (
-                  <div
-                    key={msg.id}
-                    className={cn(
-                      "flex gap-2 mb-0.5",
-                      isMine ? "justify-end" : "justify-start",
-                      showTail && "mb-2"
-                    )}
-                  >
-                    {!isMine && (
-                      <div className="w-7 shrink-0">
-                        {showAvatar && (
-                          <Avatar className="h-7 w-7">
-                            <AvatarImage src={msg.profiles?.avatar_url || undefined} />
-                            <AvatarFallback className="text-[10px] bg-primary/10 text-primary">
-                              {msg.profiles?.name?.charAt(0).toUpperCase()}
-                            </AvatarFallback>
-                          </Avatar>
-                        )}
-                      </div>
-                    )}
-                    <div className={cn("max-w-[75%]")}>
-                      {showAvatar && !isMine && (
-                        <p className="text-[10px] text-muted-foreground mb-0.5 ml-1 font-medium">
-                          {msg.profiles?.name}
-                        </p>
-                      )}
+                            return (
+                              <div
+                                key={msg.id}
+                                className={cn(
+                                  "flex gap-2 mb-0.5",
+                                  isMine ? "justify-end" : "justify-start",
+                                  showTail && "mb-2"
+                                )}
+                              >
+                                {!isMine && (
+                                  <div className="w-7 shrink-0">
+                                    {showAvatar && (
+                                      <Avatar className="h-7 w-7">
+                                        <AvatarImage src={msg.profiles?.avatar_url || undefined} />
+                                        <AvatarFallback className="text-[10px] bg-primary/10 text-primary">
+                                          {msg.profiles?.name?.charAt(0).toUpperCase()}
+                                        </AvatarFallback>
+                                      </Avatar>
+                                    )}
+                                  </div>
+                                )}
+                                <div className={cn("max-w-[75%]")}>
+                                  {isFirstInSeries && (
+                                    <p className={cn(
+                                      "text-[10px] mb-0.5 font-medium",
+                                      isMine ? "text-right mr-1 text-muted-foreground" : "ml-1 text-muted-foreground"
+                                    )}>
+                                      {isMine ? "You" : msg.profiles?.name}
+                                    </p>
+                                  )}
                       <div
                         className={cn(
                           "px-3.5 py-2 text-sm",

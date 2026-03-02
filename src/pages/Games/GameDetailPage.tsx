@@ -983,9 +983,9 @@ export default function GameDetailPage() {
                           </div>
                           {group.messages.map((msg, i) => {
                             const isMine = msg.user_id === user?.id;
-                            const showAvatar =
-                              !isMine &&
-                              (i === 0 || group.messages[i - 1]?.user_id !== msg.user_id);
+                            const isFirstInSeries =
+                              i === 0 || group.messages[i - 1]?.user_id !== msg.user_id;
+                            const showAvatar = !isMine && isFirstInSeries;
                             const showTail =
                               i === group.messages.length - 1 ||
                               group.messages[i + 1]?.user_id !== msg.user_id;
@@ -1012,9 +1012,12 @@ export default function GameDetailPage() {
                                   </div>
                                 )}
                                 <div className={cn("max-w-[75%]")}>
-                                  {showAvatar && !isMine && (
-                                    <p className="text-[10px] text-muted-foreground mb-0.5 ml-1 font-medium">
-                                      {msg.profiles?.name}
+                                  {isFirstInSeries && (
+                                    <p className={cn(
+                                      "text-[10px] mb-0.5 font-medium",
+                                      isMine ? "text-right mr-1 text-muted-foreground" : "ml-1 text-muted-foreground"
+                                    )}>
+                                      {isMine ? "You" : msg.profiles?.name}
                                     </p>
                                   )}
                                   <div
