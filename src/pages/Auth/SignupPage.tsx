@@ -15,6 +15,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import { Eye, EyeOff, ArrowLeft, User, Trophy } from "lucide-react";
+import logoIcon from "@/assets/logo-icon.png";
 import { PasswordRequirements, isPasswordValid } from "@/components/auth/PasswordRequirements";
 import { CZECH_REGIONS } from "@/lib/regions";
 import { cn } from "@/lib/utils";
@@ -162,11 +163,9 @@ export default function SignupPage() {
                 transition={{ duration: 0.25 }}
               >
                 <div className="text-center mb-8">
-                  <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center mx-auto mb-4">
-                    <span className="text-2xl">🎾</span>
-                  </div>
+                  <img src={logoIcon} alt="PadelMates" className="w-16 h-16 rounded-xl mx-auto mb-4" />
                   <h1 className="font-display text-2xl font-bold">Create your account</h1>
-                  <p className="text-muted-foreground mt-1">Start playing padel today</p>
+                  <p className="text-muted-foreground mt-1">Join <span className="font-semibold text-foreground">Padel<span className="text-primary">Mates</span></span> today</p>
                 </div>
 
                 <form onSubmit={handleAccountSubmit} className="space-y-4">
