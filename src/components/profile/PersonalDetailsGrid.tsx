@@ -248,6 +248,8 @@ export function PersonalDetailsGrid({
             <div
               key={card.key}
               className={`rounded-xl border p-3 transition-all cursor-pointer ${
+                card.key === "region" ? "col-span-2" : ""
+              } ${
                 isEditing
                   ? "border-primary/30 bg-primary/5"
                   : "border-border hover:border-primary/20 hover:bg-muted/30"
