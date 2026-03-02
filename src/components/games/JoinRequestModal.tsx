@@ -14,6 +14,8 @@ interface JoinRequestModalProps {
   gameTitle?: string;
   gameLocation?: string;
   gameDateTime?: string;
+  joinMode?: string;
+  pricePerPlayer?: number;
   onSuccess: () => void;
 }
 
@@ -26,6 +28,8 @@ export function JoinRequestModal({
   gameTitle,
   gameLocation,
   gameDateTime,
+  joinMode,
+  pricePerPlayer,
   onSuccess,
 }: JoinRequestModalProps) {
   const [submitting, setSubmitting] = useState(false);
@@ -70,7 +74,14 @@ export function JoinRequestModal({
         <DialogHeader>
           <DialogTitle className="font-display text-xl">Request to Join</DialogTitle>
           <DialogDescription>
-            Send a join request to the host. You'll be notified once they respond.
+            {joinMode === "request_and_pay" ? (
+              <>
+                Send a join request to the host. Once accepted, you'll need to send payment
+                {pricePerPlayer && pricePerPlayer > 0 ? ` (${pricePerPlayer} Kč per player)` : ""} in the event chat to confirm your spot.
+              </>
+            ) : (
+              "Send a join request to the host. You'll be notified once they respond."
+            )}
           </DialogDescription>
         </DialogHeader>
 

@@ -4,7 +4,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { SkillBadge } from "./SkillBadge";
-import { Check, X, Users, Clock, ShieldCheck, RefreshCw, Plus } from "lucide-react";
+import { Check, X, Users, Clock, ShieldCheck, RefreshCw, Plus, DollarSign } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface Profile {
@@ -55,6 +55,10 @@ interface ParticipantsTabProps {
   onJoinAsSubstitute?: () => void;
   /** Callback to add a new admin (e.g. open a friend picker) */
   onAddAdmin?: () => void;
+  /** Whether this is a request_and_pay game */
+  isRequestAndPay?: boolean;
+  /** Callback when host confirms a player's payment */
+  onConfirmPayment?: (requestId: string) => void;
 }
 
 type FilterType = "all" | "requests";
@@ -80,6 +84,8 @@ export function ParticipantsTab({
   showSubstituteJoin,
   onJoinAsSubstitute,
   onAddAdmin,
+  isRequestAndPay,
+  onConfirmPayment,
 }: ParticipantsTabProps) {
   const [activeFilter, setActiveFilter] = useState<FilterType>("all");
 
@@ -103,6 +109,12 @@ export function ParticipantsTab({
   });
   
   const confirmedFromRequests = requests.filter((r) => r.status === "accepted");
+  const awaitingPayment = isRequestAndPay
+    ? confirmedFromRequests.filter(r => r.payment_status === "awaiting_payment")
+    : [];
+  const paymentConfirmed = isRequestAndPay
+    ? confirmedFromRequests.filter(r => r.payment_status === "confirmed" || r.payment_status === "not_required")
+    : confirmedFromRequests;
   const pendingRequests = requests.filter((r) => r.status === "pending");
 
   const prefilledCount = prefilledPlayers.filter(p => {
@@ -110,8 +122,8 @@ export function ParticipantsTab({
     return name.trim();
   }).length;
   const hostCount = hostIsPlaying ? 1 : 0;
-  const totalConfirmed = confirmedFromRequests.length + directPlayers.length + hostCount + prefilledCount;
-  const emptySlots = Math.max(0, maxPlayers - totalConfirmed);
+  const totalConfirmed = (isRequestAndPay ? paymentConfirmed.length : confirmedFromRequests.length) + directPlayers.length + hostCount + prefilledCount;
+  const emptySlots = Math.max(0, maxPlayers - totalConfirmed - awaitingPayment.length);
 
   const showConfirmed = activeFilter === "all";
   const showRequests = activeFilter === "all" || activeFilter === "requests";
@@ -210,7 +222,7 @@ export function ParticipantsTab({
             )}
 
             {/* Confirmed players from requests */}
-            {confirmedFromRequests.map((request) => {
+            {paymentConfirmed.map((request) => {
               const matchingPlayer = players.find(p => p.user_id === request.user_id);
               return (
                 <PlayerCard
@@ -282,6 +294,60 @@ export function ParticipantsTab({
                   <p className="text-sm text-muted-foreground/50">Open spot</p>
                 </div>
               )
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* Awaiting Payment Section (Request & Pay only) */}
+      {showConfirmed && isRequestAndPay && awaitingPayment.length > 0 && (
+        <section>
+          <div className="flex items-center gap-2 mb-3">
+            <span className="text-base">💰</span>
+            <h3 className="text-sm font-semibold">Awaiting Payment</h3>
+            <Badge variant="outline" className="rounded-full text-xs ml-auto bg-warning/10 text-warning border-warning/20">
+              {awaitingPayment.length}
+            </Badge>
+          </div>
+
+          <div className="space-y-2">
+            {awaitingPayment.map((request) => (
+              <div
+                key={request.id}
+                className="flex items-center gap-3 p-3 bg-card border border-warning/20 rounded-xl"
+              >
+                <Avatar className="h-10 w-10">
+                  <AvatarImage src={request.profiles?.avatar_url || undefined} />
+                  <AvatarFallback className="bg-warning/10 text-warning font-semibold text-sm">
+                    {request.profiles?.name?.charAt(0).toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm font-medium truncate">{request.profiles?.name}</p>
+                    <Badge variant="outline" className="rounded-full text-[9px] px-1.5 py-0 bg-warning/10 text-warning border-warning/20 shrink-0">
+                      Awaiting Payment
+                    </Badge>
+                  </div>
+                  {request.payment_due_at && (
+                    <p className="text-[10px] text-muted-foreground mt-0.5">
+                      Due by {new Date(request.payment_due_at).toLocaleDateString()}
+                    </p>
+                  )}
+                </div>
+                {canManage && onConfirmPayment && (
+                  <Button
+                    size="sm"
+                    variant="hero"
+                    onClick={() => onConfirmPayment(request.id)}
+                    disabled={loadingAction === request.id}
+                    className="h-8"
+                  >
+                    <DollarSign className="w-3.5 h-3.5 mr-1" />
+                    Confirm
+                  </Button>
+                )}
+              </div>
             ))}
           </div>
         </section>

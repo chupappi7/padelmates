@@ -276,17 +276,72 @@ export default function GameDetailPage() {
     fetchMessages();
   };
 
+  const isRequestAndPay = game?.join_mode === "request_and_pay";
+
   const handleAcceptRequest = async (requestId: string) => {
     setActionLoading(requestId);
     const request = requests.find((r) => r.id === requestId);
     if (!request) return;
-    const { error } = await supabase.from("join_requests").update({ status: "accepted" }).eq("id", requestId);
-    if (error) { toast.error("Failed to accept request"); }
+
+    if (isRequestAndPay) {
+      // Request & Pay: move to "awaiting_payment" instead of fully accepting
+      const deadlineHours = (game as any)?.payment_deadline_hours || 48;
+      const paymentDueAt = new Date(Date.now() + deadlineHours * 60 * 60 * 1000).toISOString();
+      const { error } = await supabase.from("join_requests").update({
+        status: "accepted",
+        payment_status: "awaiting_payment",
+        payment_due_at: paymentDueAt,
+      }).eq("id", requestId);
+      if (error) { toast.error("Failed to accept request"); }
+      else {
+        // Add to game_players so they get chat access
+        await supabase.from("game_players").insert({ game_id: id, user_id: request.user_id });
+        // Notify player to pay
+        const { data: profile } = await supabase.from("profiles").select("name").eq("user_id", request.user_id).single();
+        await supabase.from("notifications").insert({
+          user_id: request.user_id,
+          type: "payment_required",
+          title: "Accepted – Payment Required",
+          message: `You've been accepted to "${game?.title}". Send payment in the event chat to confirm your spot.`,
+          link: `/games/${game?.id}`,
+        });
+        toast.success("Player accepted – awaiting payment");
+        fetchRequests();
+        fetchPlayers();
+        if (user) fetchMyRequest();
+      }
+    } else {
+      const { error } = await supabase.from("join_requests").update({ status: "accepted" }).eq("id", requestId);
+      if (error) { toast.error("Failed to accept request"); }
+      else {
+        await supabase.from("game_players").insert({ game_id: id, user_id: request.user_id });
+        toast.success("Player accepted!");
+        fetchRequests();
+        fetchPlayers();
+      }
+    }
+    setActionLoading(null);
+  };
+
+  const handleConfirmPayment = async (requestId: string) => {
+    setActionLoading(requestId);
+    const request = requests.find((r) => r.id === requestId);
+    if (!request) { setActionLoading(null); return; }
+    const { error } = await supabase.from("join_requests").update({
+      payment_status: "confirmed",
+    }).eq("id", requestId);
+    if (error) { toast.error("Failed to confirm payment"); }
     else {
-      await supabase.from("game_players").insert({ game_id: id, user_id: request.user_id });
-      toast.success("Player accepted!");
+      await supabase.from("notifications").insert({
+        user_id: request.user_id,
+        type: "payment_confirmed",
+        title: "Payment Confirmed",
+        message: `Your payment for "${game?.title}" has been confirmed. You're in! 🎉`,
+        link: `/games/${game?.id}`,
+      });
+      toast.success("Payment confirmed!");
       fetchRequests();
-      fetchPlayers();
+      if (user) fetchMyRequest();
     }
     setActionLoading(null);
   };
@@ -629,6 +684,21 @@ export default function GameDetailPage() {
               <p className="text-xs font-semibold">Pending · Waiting for host</p>
             </div>
           )}
+          {!isCourtSharing && myRequest && myRequest.status === "accepted" && myRequest.payment_status === "awaiting_payment" && (
+            <button
+              onClick={() => setActiveTab("chat")}
+              className="flex items-center gap-2 px-3 py-2 rounded-lg border bg-warning/10 text-warning border-warning/20 mb-2 w-full text-left hover:bg-warning/15 transition-colors"
+            >
+              <DollarSign className="w-3.5 h-3.5 shrink-0" />
+              <p className="text-xs font-semibold">Accepted – Send payment in chat to confirm your spot</p>
+            </button>
+          )}
+          {!isCourtSharing && myRequest && myRequest.status === "accepted" && myRequest.payment_status === "confirmed" && (
+            <div className="flex items-center gap-2 px-3 py-2 rounded-lg border bg-success/10 text-success border-success/20 mb-2">
+              <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
+              <p className="text-xs font-semibold">Payment confirmed – You're in! 🎉</p>
+            </div>
+          )}
           {!isCourtSharing && myRequest && myRequest.status === "rejected" && (
             <div className="flex items-center gap-2 px-3 py-2 rounded-lg border bg-destructive/10 text-destructive border-destructive/20 mb-2">
               <Clock className="w-3.5 h-3.5 shrink-0" />
@@ -755,7 +825,7 @@ export default function GameDetailPage() {
                       <div className="min-w-0">
                         <p className="text-[11px] text-muted-foreground">Join Mode</p>
                         <p className="text-sm font-medium">
-                          {isOpenJoin ? "Open" : "Request"}
+                          {isOpenJoin ? "Open" : game?.join_mode === "request_and_pay" ? "Request & Pay" : "Request"}
                         </p>
                       </div>
                     </div>
@@ -916,6 +986,8 @@ export default function GameDetailPage() {
                 allowSubstitutions={!!(game as any).allow_substitutions}
                 showSubstituteJoin={!!user && !isHost && !isPlayer && !myRequest && spotsLeft <= 0}
                 onJoinAsSubstitute={() => isOpenJoin ? setShowJoinConfirm(true) : setShowJoinModal(true)}
+                isRequestAndPay={isRequestAndPay}
+                onConfirmPayment={handleConfirmPayment}
               />
             </motion.div>
           )}
@@ -1186,6 +1258,8 @@ export default function GameDetailPage() {
           gameTitle={game.title}
           gameLocation={game.location}
           gameDateTime={game.date_time}
+          joinMode={game.join_mode}
+          pricePerPlayer={game.price_per_player}
           onSuccess={fetchMyRequest}
         />
       )}
