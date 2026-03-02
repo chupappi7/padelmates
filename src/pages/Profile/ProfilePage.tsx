@@ -72,6 +72,8 @@ export default function ProfilePage() {
     bio: "",
     skill_level: 2 as number,
     preferred_position: "" as string,
+    sex: "" as string,
+    birth_year: null as number | null,
   });
 
   useEffect(() => {
@@ -94,6 +96,8 @@ export default function ProfilePage() {
         bio: data.bio || "",
         skill_level: data.skill_level,
         preferred_position: (data as any).preferred_position || "",
+        sex: (data as any).sex || "",
+        birth_year: (data as any).birth_year || null,
       });
       setBankDetailsForm((data as any).bank_details || "");
       setBankQrUrl((data as any).bank_qr_url || null);
@@ -111,6 +115,8 @@ export default function ProfilePage() {
         bio: formData.bio,
         skill_level: formData.skill_level,
         preferred_position: formData.preferred_position || null,
+        sex: formData.sex || null,
+        birth_year: formData.birth_year || null,
       } as any)
       .eq("user_id", user.id);
 
@@ -319,6 +325,41 @@ export default function ProfilePage() {
                     setFormData((prev) => ({ ...prev, bio: e.target.value }))
                   }
                   placeholder="Tell others about yourself..."
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Sex</Label>
+                <Select
+                  value={formData.sex}
+                  onValueChange={(v) =>
+                    setFormData((prev) => ({ ...prev, sex: v }))
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Not set" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="male">Male</SelectItem>
+                    <SelectItem value="female">Female</SelectItem>
+                    <SelectItem value="other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Age</Label>
+                <Input
+                  type="number"
+                  min={10}
+                  max={99}
+                  placeholder="e.g. 25"
+                  value={formData.birth_year ? new Date().getFullYear() - formData.birth_year : ""}
+                  onChange={(e) => {
+                    const age = parseInt(e.target.value);
+                    setFormData((prev) => ({
+                      ...prev,
+                      birth_year: age ? new Date().getFullYear() - age : null,
+                    }));
+                  }}
                 />
               </div>
               <div className="flex gap-3">
