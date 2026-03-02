@@ -18,11 +18,9 @@ function MatchCard({ match, isSelf, formatMatchType, navigate, allPlayers }: { m
     <div className="bg-white rounded-xl p-4 shadow-sm">
       {/* Header: type badge */}
       <div className="flex items-center justify-end mb-2">
-        {isSelf && (
-          <Badge variant="secondary" className="text-[10px]">
-            {formatMatchType(match.matchType)}
-          </Badge>
-        )}
+        <Badge variant="secondary" className="text-[10px]">
+          {formatMatchType(match.matchType)}
+        </Badge>
       </div>
 
       {/* User's team */}
@@ -34,9 +32,7 @@ function MatchCard({ match, isSelf, formatMatchType, navigate, allPlayers }: { m
           <p className="text-sm font-bold truncate cursor-pointer hover:underline" onClick={() => match.userId && navigate(`/user/${match.userId}`)}>{match.userName}</p>
           {match.partnerName && <p className="text-xs font-semibold truncate cursor-pointer hover:underline" onClick={() => match.partnerId && navigate(`/user/${match.partnerId}`)}>{match.partnerName}</p>}
         </div>
-        {isSelf && (
-          <span className={`text-lg font-bold tabular-nums ${match.won ? winColor : loseColor}`}>{match.myScore}</span>
-        )}
+        <span className={`text-lg font-bold tabular-nums ${match.won ? winColor : loseColor}`}>{match.myScore}</span>
       </div>
 
       {/* VS divider */}
@@ -56,9 +52,7 @@ function MatchCard({ match, isSelf, formatMatchType, navigate, allPlayers }: { m
             <p key={i} className={`${i === 0 ? "text-sm font-bold" : "text-xs font-semibold"} truncate cursor-pointer hover:underline`} onClick={() => match.opponentIds[i] && navigate(`/user/${match.opponentIds[i]}`)}>{name}</p>
           ))}
         </div>
-        {isSelf && (
-          <span className={`text-lg font-bold tabular-nums ${!match.won ? winColor : loseColor}`}>{match.oppScore}</span>
-        )}
+        <span className={`text-lg font-bold tabular-nums ${!match.won ? winColor : loseColor}`}>{match.oppScore}</span>
       </div>
     </div>
   );
@@ -125,7 +119,7 @@ function DayGroupedMatches({ matches, isSelf, formatMatchType, lastElementRef, n
               </span>
               <span className="text-xs text-muted-foreground ml-auto">
                 {dayMatches.length} set{dayMatches.length !== 1 ? "s" : ""}
-                {isSelf && ` · ${wins}W ${losses}L`}
+                {` · ${wins}W ${losses}L`}
               </span>
             </button>
 
