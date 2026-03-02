@@ -71,21 +71,23 @@ export function ProfileClubs({ userId }: ProfileClubsProps) {
   if (clubs.length === 0) return null;
 
   return (
-    <div className="bg-card border border-border rounded-xl overflow-hidden">
-      <div className="flex items-center gap-2 px-4 pt-3.5 pb-2">
+    <div className="bg-white rounded-2xl shadow-sm overflow-hidden p-4">
+      <div className="flex items-center gap-2 mb-3">
         <Users className="w-4 h-4 text-muted-foreground" />
-        <span className="text-sm font-semibold">Clubs</span>
+        <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-[0.1em]">
+          Clubs
+        </span>
         <span className="text-[11px] text-muted-foreground ml-auto">{clubs.length}</span>
       </div>
 
-      <div className="px-2 pb-2">
+      <div className="space-y-1.5">
         {clubs.map((club) => (
           <button
             key={club.id}
             onClick={() => navigate(`/clubs/${club.id}`)}
-            className="w-full flex items-center gap-3 px-2 py-2 rounded-lg hover:bg-muted/50 transition-colors group"
+            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl border border-border hover:border-primary/20 hover:bg-muted/30 transition-colors group"
           >
-            <Avatar className="h-8 w-8 rounded-lg border border-border">
+            <Avatar className="h-9 w-9 rounded-lg border border-border">
               <AvatarImage src={club.logo_url || undefined} />
               <AvatarFallback className="bg-primary/10 text-primary font-bold text-xs rounded-lg">
                 {club.name.charAt(0)}
@@ -95,7 +97,7 @@ export function ProfileClubs({ userId }: ProfileClubsProps) {
               <p className="text-sm font-medium truncate">{club.name}</p>
             </div>
             {(club.role === "owner" || club.role === "admin") && (
-              <span className="text-[10px] font-semibold uppercase tracking-wider text-primary bg-primary/10 px-1.5 py-0.5 rounded-full">
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-white bg-[hsl(160,60%,45%)] px-2 py-0.5 rounded-full">
                 {club.role}
               </span>
             )}

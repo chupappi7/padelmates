@@ -23,7 +23,7 @@ import {
   ChevronUp,
   ImagePlus,
   X,
-  History,
+  Volleyball,
 } from "lucide-react";
 import {
   Collapsible,
@@ -33,6 +33,7 @@ import {
 import { HeroCard } from "@/components/profile/HeroCard";
 import { LevelSelectSheet } from "@/components/profile/LevelSelectSheet";
 import { ProfileClubs } from "@/components/profile/ProfileClubs";
+import { PersonalDetailsGrid } from "@/components/profile/PersonalDetailsGrid";
 
 interface Profile {
   id: string;
@@ -49,6 +50,7 @@ interface Profile {
   sex: string | null;
   birth_year: number | null;
   preferred_position: string | null;
+  preferred_hand: string | null;
 }
 
 export default function ProfilePage() {
@@ -56,8 +58,6 @@ export default function ProfilePage() {
   const navigate = useNavigate();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [editing, setEditing] = useState(false);
   const [editingPayment, setEditingPayment] = useState(false);
   const [savingPayment, setSavingPayment] = useState(false);
   const [bankDetailsForm, setBankDetailsForm] = useState("");
@@ -67,19 +67,8 @@ export default function ProfilePage() {
   const [levelSheetOpen, setLevelSheetOpen] = useState(false);
   const [savingLevel, setSavingLevel] = useState(false);
 
-  const [formData, setFormData] = useState({
-    name: "",
-    bio: "",
-    skill_level: 2 as number,
-    preferred_position: "left" as string,
-    sex: "" as string,
-    birth_year: null as number | null,
-  });
-
   useEffect(() => {
-    if (user) {
-      fetchProfile();
-    }
+    if (user) fetchProfile();
   }, [user]);
 
   const fetchProfile = async () => {
@@ -91,43 +80,10 @@ export default function ProfilePage() {
 
     if (data) {
       setProfile(data as unknown as Profile);
-      setFormData({
-        name: data.name,
-        bio: data.bio || "",
-        skill_level: data.skill_level,
-        preferred_position: (data as any).preferred_position || "",
-        sex: (data as any).sex || "",
-        birth_year: (data as any).birth_year || null,
-      });
       setBankDetailsForm((data as any).bank_details || "");
       setBankQrUrl((data as any).bank_qr_url || null);
     }
     setLoading(false);
-  };
-
-  const handleSave = async () => {
-    if (!user) return;
-    setSaving(true);
-    const { error } = await supabase
-      .from("profiles")
-      .update({
-        name: formData.name,
-        bio: formData.bio,
-        skill_level: formData.skill_level,
-        preferred_position: formData.preferred_position || null,
-        sex: formData.sex || null,
-        birth_year: formData.birth_year || null,
-      } as any)
-      .eq("user_id", user.id);
-
-    if (error) {
-      toast.error("Failed to update profile");
-    } else {
-      toast.success("Profile updated!");
-      setEditing(false);
-      fetchProfile();
-    }
-    setSaving(false);
   };
 
   const handleSavePayment = async () => {
@@ -173,26 +129,16 @@ export default function ProfilePage() {
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !user) return;
-
     const fileName = `${user.id}/${Date.now()}-${file.name}`;
     const { error: uploadError } = await supabase.storage
       .from("avatars")
       .upload(fileName, file);
-
     if (uploadError) {
       toast.error("Failed to upload avatar");
       return;
     }
-
-    const {
-      data: { publicUrl },
-    } = supabase.storage.from("avatars").getPublicUrl(fileName);
-
-    await supabase
-      .from("profiles")
-      .update({ avatar_url: publicUrl })
-      .eq("user_id", user.id);
-
+    const { data: { publicUrl } } = supabase.storage.from("avatars").getPublicUrl(fileName);
+    await supabase.from("profiles").update({ avatar_url: publicUrl }).eq("user_id", user.id);
     toast.success("Avatar updated!");
     fetchProfile();
   };
@@ -204,7 +150,6 @@ export default function ProfilePage() {
       .from("profiles")
       .update({ skill_level: level })
       .eq("user_id", user.id);
-
     if (error) {
       toast.error("Failed to update level");
     } else {
@@ -222,23 +167,21 @@ export default function ProfilePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen bg-[#F5F5F5]">
         <Navbar />
         <div className="container py-8">
           <div className="animate-pulse space-y-4">
-            <div className="h-32 bg-muted rounded-xl" />
-            <div className="h-16 bg-muted rounded-xl" />
-            <div className="h-24 bg-muted rounded-xl" />
+            <div className="h-32 bg-muted rounded-2xl" />
+            <div className="h-16 bg-muted rounded-2xl" />
+            <div className="h-24 bg-muted rounded-2xl" />
           </div>
         </div>
       </div>
     );
   }
 
-  const age = profile?.birth_year ? new Date().getFullYear() - profile.birth_year : null;
-
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-[#F5F5F5]">
       <Navbar />
 
       <div className="container py-6 max-w-2xl px-4 pb-32 md:pb-8">
@@ -247,192 +190,49 @@ export default function ProfilePage() {
           animate={{ opacity: 1, y: 0 }}
           className="space-y-3"
         >
-          {/* 1️⃣ Hero Card / Edit Form */}
-          {!editing ? (
-            <HeroCard
-              name={profile?.name || ""}
-              avatarUrl={profile?.avatar_url || null}
-              skillLevel={profile?.skill_level || 2}
-              friendCode={profile?.friend_code || null}
-              pdrRating={profile?.pdr_rating ?? null}
-              isSelf
-              onEditClick={() => setEditing(true)}
-              onAvatarUpload={handleAvatarUpload}
-              onLevelBadgeClick={() => setLevelSheetOpen(true)}
-              onPdrClick={() => navigate("/elo")}
+          <HeroCard
+            name={profile?.name || ""}
+            avatarUrl={profile?.avatar_url || null}
+            skillLevel={profile?.skill_level || 2}
+            friendCode={profile?.friend_code || null}
+            pdrRating={profile?.pdr_rating ?? null}
+            isSelf
+            onEditClick={() => {}}
+            onAvatarUpload={handleAvatarUpload}
+            onLevelBadgeClick={() => setLevelSheetOpen(true)}
+            onPdrClick={() => navigate("/elo")}
+          />
+
+          {user && (
+            <PersonalDetailsGrid
+              userId={user.id}
+              region={profile?.region || null}
+              preferredPosition={profile?.preferred_position || null}
+              preferredHand={profile?.preferred_hand || null}
+              sex={profile?.sex || null}
+              birthYear={profile?.birth_year || null}
+              onSaved={fetchProfile}
             />
-          ) : (
-            <div className="bg-card border border-border rounded-2xl p-5 space-y-4">
-              <h2
-                className="font-semibold text-sm"
-                style={{ fontFamily: "'Space Grotesk', system-ui, sans-serif" }}
-              >
-                Edit Profile
-              </h2>
-              <div className="space-y-2">
-                <Label>Name</Label>
-                <Input
-                  value={formData.name}
-                  onChange={(e) =>
-                    setFormData((prev) => ({ ...prev, name: e.target.value }))
-                  }
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Skill Level</Label>
-                <Select
-                  value={String(formData.skill_level)}
-                  onValueChange={(v) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      skill_level: parseInt(v),
-                    }))
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="4">A</SelectItem>
-                    <SelectItem value="3">B</SelectItem>
-                    <SelectItem value="2">C</SelectItem>
-                    <SelectItem value="1">D</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label>Preferred Position</Label>
-                <Select
-                  value={formData.preferred_position}
-                  onValueChange={(v) =>
-                    setFormData((prev) => ({ ...prev, preferred_position: v }))
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Not set" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="left">Left side</SelectItem>
-                    <SelectItem value="right">Right side</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label>Bio</Label>
-                <Textarea
-                  value={formData.bio}
-                  onChange={(e) =>
-                    setFormData((prev) => ({ ...prev, bio: e.target.value }))
-                  }
-                  placeholder="Tell others about yourself..."
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Sex</Label>
-                <Select
-                  value={formData.sex}
-                  onValueChange={(v) =>
-                    setFormData((prev) => ({ ...prev, sex: v }))
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Not set" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="male">Male</SelectItem>
-                    <SelectItem value="female">Female</SelectItem>
-                    <SelectItem value="other">Other</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label>Age</Label>
-                <Input
-                  type="number"
-                  min={10}
-                  max={99}
-                  placeholder="e.g. 25"
-                  value={formData.birth_year ? new Date().getFullYear() - formData.birth_year : ""}
-                  onChange={(e) => {
-                    const age = parseInt(e.target.value);
-                    setFormData((prev) => ({
-                      ...prev,
-                      birth_year: age ? new Date().getFullYear() - age : null,
-                    }));
-                  }}
-                />
-              </div>
-              <div className="flex gap-3">
-                <Button
-                  variant="outline"
-                  className="flex-1"
-                  onClick={() => setEditing(false)}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  variant="hero"
-                  className="flex-1"
-                  onClick={handleSave}
-                  disabled={saving}
-                >
-                  {saving ? "Saving..." : "Save Changes"}
-                </Button>
-              </div>
-            </div>
           )}
 
-          {/* Personal Details */}
-          {!editing && (
-            <div className="bg-card border border-border rounded-xl p-4 space-y-2">
-              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Personal Details</h3>
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Location</span>
-                <span className="text-foreground">{profile?.region || "Not set"}</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Position</span>
-                <span className="text-foreground capitalize">{profile?.preferred_position ? `${profile.preferred_position} side` : "Not set"}</span>
-              </div>
-              <div className="flex justify-between items-center text-sm">
-                <span className="text-muted-foreground">Sex</span>
-                {profile?.sex ? (
-                  <span className={`font-semibold ${profile.sex === "female" ? "text-[hsl(330,70%,60%)]" : "text-[hsl(210,70%,55%)]"}`}>
-                    {profile.sex === "female" ? "F" : profile.sex === "male" ? "M" : profile.sex.charAt(0).toUpperCase()}
-                  </span>
-                ) : (
-                  <span className="text-foreground">Not set</span>
-                )}
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Age</span>
-                <span className="text-foreground">{age || "Not set"}</span>
-              </div>
-            </div>
-          )}
+          <Button
+            className="w-full gap-2 bg-[hsl(160,60%,45%)] hover:bg-[hsl(160,60%,40%)] text-white font-semibold h-12 rounded-2xl shadow-sm"
+            onClick={() => navigate("/match-history")}
+          >
+            <Volleyball className="w-5 h-5" />
+            Match History
+          </Button>
 
-          {/* Match History Button */}
-          {!editing && (
-            <Button
-              variant="outline"
-              className="w-full gap-2"
-              onClick={() => navigate("/match-history")}
-            >
-              <History className="w-4 h-4" />
-              Match History
-            </Button>
-          )}
-
-          {/* Clubs */}
           {user && <ProfileClubs userId={user.id} />}
 
-          {/* Payment Info (Collapsible) */}
           <Collapsible open={paymentOpen} onOpenChange={setPaymentOpen}>
-            <div className="bg-card border border-border rounded-xl overflow-hidden">
+            <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
               <CollapsibleTrigger className="w-full flex items-center justify-between px-4 py-3 hover:bg-muted/30 transition-colors">
                 <div className="flex items-center gap-2">
                   <CreditCard className="w-4 h-4 text-muted-foreground" />
-                  <span className="text-sm font-medium">Payment Info</span>
+                  <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-[0.1em]">
+                    Payment Info
+                  </span>
                   {profile?.bank_details && (
                     <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded-full font-medium">
                       Set
@@ -463,8 +263,6 @@ export default function ProfilePage() {
                         value={bankDetailsForm}
                         onChange={(e) => setBankDetailsForm(e.target.value)}
                       />
-
-                      {/* QR Code Upload */}
                       <div className="space-y-2">
                         <Label className="text-xs">Payment QR Code</Label>
                         {bankQrUrl ? (
@@ -496,7 +294,6 @@ export default function ProfilePage() {
                           </label>
                         )}
                       </div>
-
                       <div className="flex gap-2">
                         <Button
                           variant="outline"
@@ -569,7 +366,6 @@ export default function ProfilePage() {
         </motion.div>
       </div>
 
-      {/* Level Select Sheet */}
       <LevelSelectSheet
         open={levelSheetOpen}
         onOpenChange={setLevelSheetOpen}
