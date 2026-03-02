@@ -9,6 +9,7 @@ export interface ConversationPrefs {
   archived: boolean;
   muted: boolean;
   deleted: boolean;
+  pinned: boolean;
 }
 
 export interface UnifiedConversation {
@@ -77,7 +78,7 @@ export function useConversations() {
     const [prefsRes, chatsRes, playerGamesRes, hostedGamesRes] = await Promise.all([
       supabase
         .from("conversation_preferences")
-        .select("conversation_id, archived, muted, deleted, last_read_at")
+        .select("conversation_id, archived, muted, deleted, pinned, last_read_at")
         .eq("user_id", user.id),
       supabase
         .from("chats")
@@ -101,12 +102,13 @@ export function useConversations() {
         archived: p.archived,
         muted: p.muted,
         deleted: p.deleted,
+        pinned: p.pinned ?? false,
         last_read_at: p.last_read_at,
       };
     });
 
     const getPrefs = (id: string): ConversationPrefs =>
-      prefsMap[id] || { archived: false, muted: false, deleted: false };
+      prefsMap[id] || { archived: false, muted: false, deleted: false, pinned: false };
 
     const getLastReadAt = (id: string): string | null =>
       prefsMap[id]?.last_read_at || null;
@@ -324,11 +326,12 @@ export function useConversations() {
       }
     }
 
-    results.sort(
-      (a, b) =>
-        new Date(b.lastMessageAt || 0).getTime() -
-        new Date(a.lastMessageAt || 0).getTime()
-    );
+    results.sort((a, b) => {
+      // Pinned first
+      if (a.prefs.pinned && !b.prefs.pinned) return -1;
+      if (!a.prefs.pinned && b.prefs.pinned) return 1;
+      return new Date(b.lastMessageAt || 0).getTime() - new Date(a.lastMessageAt || 0).getTime();
+    });
 
     setConversations(results);
     setTotalUnread(
@@ -362,6 +365,7 @@ export function useConversations() {
           archived: updates.archived ?? false,
           muted: updates.muted ?? false,
           deleted: updates.deleted ?? false,
+          pinned: updates.pinned ?? false,
         });
       }
 

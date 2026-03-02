@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Navbar } from "@/components/layout/Navbar";
 import { useAuth } from "@/contexts/AuthContext";
@@ -17,8 +17,14 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Search, MessageCircle, ArrowLeft, Trophy, Archive, BellOff, Trash2, ArchiveRestore, VolumeX } from "lucide-react";
-import { formatDistanceToNow, format } from "date-fns";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Search, MessageCircle, ArrowLeft, Trophy, Archive, BellOff, Trash2, ArchiveRestore, MoreVertical, Pin, PinOff, VolumeX } from "lucide-react";
+import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 
@@ -32,164 +38,38 @@ const filterTabs: { key: FilterTab; label: string }[] = [
   { key: "dm", label: "DMs" },
 ];
 
-// ── Swipeable Conversation Row ──────────────────────────────────────────
-function SwipeableRow({
+// ── Conversation Row ────────────────────────────────────────────────────
+function ConversationRow({
   convo,
   inboxTab,
-  isOpen,
-  onSwipeOpen,
   onClick,
   onArchive,
+  onUnarchive,
   onMute,
   onDelete,
-  onUnarchive,
+  onPin,
 }: {
   convo: UnifiedConversation;
   inboxTab: InboxTab;
-  isOpen: boolean;
-  onSwipeOpen: () => void;
   onClick: () => void;
   onArchive: () => void;
+  onUnarchive: () => void;
   onMute: () => void;
   onDelete: () => void;
-  onUnarchive: () => void;
+  onPin: () => void;
 }) {
-  const touchStartX = useRef(0);
-  const [swipeOffset, setSwipeOffset] = useState(0);
-  const maxOffset = inboxTab === "active" ? 200 : 140;
-
-  // Sync with parent close
-  const prevOpen = useRef(isOpen);
-  if (!isOpen && prevOpen.current) {
-    if (swipeOffset !== 0) setSwipeOffset(0);
-  }
-  prevOpen.current = isOpen;
-
-  const handleTouchStart = (e: React.TouchEvent) => {
-    touchStartX.current = e.touches[0].clientX;
-  };
-
-  const handleTouchMove = (e: React.TouchEvent) => {
-    const diff = touchStartX.current - e.touches[0].clientX;
-    if (diff > 10) {
-      setSwipeOffset(Math.min(diff, maxOffset));
-    } else if (diff < -10) {
-      setSwipeOffset(Math.max(0, (isOpen ? maxOffset : 0) + diff));
-    }
-  };
-
-  const handleTouchEnd = () => {
-    const threshold = maxOffset * 0.4;
-    if (swipeOffset > threshold) {
-      onSwipeOpen();
-      setSwipeOffset(maxOffset);
-    } else {
-      setSwipeOffset(0);
-    }
-  };
-
-  const closeSwipe = () => {
-    setSwipeOffset(0);
-  };
-
-  const getTypeBadge = (type: ConversationType) => {
-    switch (type) {
-      case "match":
-        return (
-          <Badge className="text-[9px] h-4 px-1.5 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20 border shrink-0 font-semibold">
-            Match
-          </Badge>
-        );
-      case "court":
-        return (
-          <Badge className="text-[9px] h-4 px-1.5 bg-orange-500/10 text-orange-600 dark:text-orange-400 border-orange-500/20 border shrink-0 font-semibold">
-            Court
-          </Badge>
-        );
-      default:
-        return null;
-    }
-  };
-
   const isArchived = inboxTab === "archived";
 
   return (
-    <div className="relative overflow-hidden rounded-xl">
-      {/* Swipe action buttons */}
-      <div className="absolute right-0 top-0 bottom-0 flex items-stretch z-0">
-        {isArchived ? (
-          <>
-            <button
-              onClick={() => { onUnarchive(); closeSwipe(); }}
-              className="flex items-center justify-center w-[70px] bg-emerald-500 text-white"
-            >
-              <div className="flex flex-col items-center gap-0.5">
-                <ArchiveRestore className="w-4 h-4" />
-                <span className="text-[10px] font-medium">Restore</span>
-              </div>
-            </button>
-            <button
-              onClick={() => { onDelete(); closeSwipe(); }}
-              className="flex items-center justify-center w-[70px] bg-destructive text-destructive-foreground"
-            >
-              <div className="flex flex-col items-center gap-0.5">
-                <Trash2 className="w-4 h-4" />
-                <span className="text-[10px] font-medium">Delete</span>
-              </div>
-            </button>
-          </>
-        ) : (
-          <>
-            <button
-              onClick={() => { onArchive(); closeSwipe(); }}
-              className="flex items-center justify-center w-[66px] bg-amber-500 text-white"
-            >
-              <div className="flex flex-col items-center gap-0.5">
-                <Archive className="w-4 h-4" />
-                <span className="text-[10px] font-medium">Archive</span>
-              </div>
-            </button>
-            <button
-              onClick={() => { onMute(); closeSwipe(); }}
-              className="flex items-center justify-center w-[66px] bg-muted text-muted-foreground"
-            >
-              <div className="flex flex-col items-center gap-0.5">
-                <BellOff className="w-4 h-4" />
-                <span className="text-[10px] font-medium">{convo.prefs.muted ? "Unmute" : "Mute"}</span>
-              </div>
-            </button>
-            <button
-              onClick={() => { onDelete(); closeSwipe(); }}
-              className="flex items-center justify-center w-[66px] bg-destructive text-destructive-foreground"
-            >
-              <div className="flex flex-col items-center gap-0.5">
-                <Trash2 className="w-4 h-4" />
-                <span className="text-[10px] font-medium">Delete</span>
-              </div>
-            </button>
-          </>
-        )}
-      </div>
-
-      {/* Main row content */}
-      <div
-        className={cn(
-          "relative z-10 flex items-center gap-3 w-full px-3 py-3 transition-transform bg-background text-left overflow-hidden",
-          convo.unreadCount > 0 && !isArchived && "bg-muted/30",
-          isArchived && "opacity-70"
-        )}
-        style={{ transform: `translateX(-${swipeOffset}px)` }}
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
-        onClick={() => {
-          if (isOpen) {
-            closeSwipe();
-          } else {
-            onClick();
-          }
-        }}
-      >
+    <div
+      className={cn(
+        "flex items-center gap-3 w-full px-3 py-3 rounded-xl transition-colors text-left",
+        convo.unreadCount > 0 && !isArchived && "bg-muted/30",
+        isArchived && "opacity-70"
+      )}
+    >
+      {/* Clickable area */}
+      <button className="flex items-center gap-3 flex-1 min-w-0 text-left" onClick={onClick}>
         {/* Avatar */}
         {convo.type === "match" ? (
           <div className="h-12 w-12 rounded-full bg-emerald-500/10 flex items-center justify-center shrink-0">
@@ -207,6 +87,9 @@ function SwipeableRow({
         {/* Content */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5 mb-0.5">
+            {convo.prefs.pinned && (
+              <Pin className="w-3 h-3 text-primary shrink-0 -rotate-45" />
+            )}
             <p className={cn(
               "text-sm line-clamp-2",
               convo.unreadCount > 0 && !isArchived ? "font-bold" : "font-medium"
@@ -228,56 +111,58 @@ function SwipeableRow({
             </p>
           )}
         </div>
+      </button>
 
-        {/* Right side */}
-        <div className="flex flex-col items-end gap-1 shrink-0">
-          {convo.unreadCount > 0 && !isArchived && swipeOffset === 0 && (
-            <span className="min-w-[20px] h-5 rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center px-1.5">
-              {convo.unreadCount}
-            </span>
-          )}
-        </div>
+      {/* Right side: unread badge + menu */}
+      <div className="flex items-center gap-1 shrink-0">
+        {convo.unreadCount > 0 && !isArchived && (
+          <span className="min-w-[20px] h-5 rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center px-1.5">
+            {convo.unreadCount}
+          </span>
+        )}
+
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full">
+              <MoreVertical className="w-4 h-4 text-muted-foreground" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-44">
+            <DropdownMenuItem onClick={onPin}>
+              {convo.prefs.pinned ? (
+                <>
+                  <PinOff className="mr-2 h-4 w-4" />
+                  Unpin
+                </>
+              ) : (
+                <>
+                  <Pin className="mr-2 h-4 w-4" />
+                  Pin
+                </>
+              )}
+            </DropdownMenuItem>
+            {isArchived ? (
+              <DropdownMenuItem onClick={onUnarchive}>
+                <ArchiveRestore className="mr-2 h-4 w-4" />
+                Restore
+              </DropdownMenuItem>
+            ) : (
+              <DropdownMenuItem onClick={onArchive}>
+                <Archive className="mr-2 h-4 w-4" />
+                Archive
+              </DropdownMenuItem>
+            )}
+            <DropdownMenuItem onClick={onMute}>
+              <BellOff className="mr-2 h-4 w-4" />
+              {convo.prefs.muted ? "Unmute" : "Mute"}
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={onDelete} className="text-destructive focus:text-destructive">
+              <Trash2 className="mr-2 h-4 w-4" />
+              Delete
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
-    </div>
-  );
-}
-
-// ── Swipeable List (only one row open at a time) ────────────────────────
-function SwipeableList({
-  conversations,
-  inboxTab,
-  onConversationClick,
-  onArchive,
-  onMute,
-  onDelete,
-  onUnarchive,
-}: {
-  conversations: UnifiedConversation[];
-  inboxTab: InboxTab;
-  onConversationClick: (c: UnifiedConversation) => void;
-  onArchive: (id: string) => void;
-  onMute: (id: string, currentMuted: boolean) => void;
-  onDelete: (id: string) => void;
-  onUnarchive: (id: string) => void;
-}) {
-  const [openId, setOpenId] = useState<string | null>(null);
-
-  return (
-    <div className="space-y-0.5">
-      {conversations.map((convo) => (
-        <SwipeableRow
-          key={convo.id}
-          convo={convo}
-          inboxTab={inboxTab}
-          isOpen={openId === convo.id}
-          onSwipeOpen={() => setOpenId(convo.id)}
-          onClick={() => { setOpenId(null); onConversationClick(convo); }}
-          onArchive={() => { setOpenId(null); onArchive(convo.id); }}
-          onMute={() => { setOpenId(null); onMute(convo.id, convo.prefs.muted); }}
-          onDelete={() => { setOpenId(null); onDelete(convo.id); }}
-          onUnarchive={() => { setOpenId(null); onUnarchive(convo.id); }}
-        />
-      ))}
     </div>
   );
 }
@@ -528,15 +413,21 @@ export default function InboxPage() {
               </p>
             </div>
           ) : (
-            <SwipeableList
-              conversations={visibleConversations}
-              inboxTab={inboxTab}
-              onConversationClick={handleConversationClick}
-              onArchive={(id) => updatePreference(id, { archived: true })}
-              onMute={(id, muted) => updatePreference(id, { muted: !muted })}
-              onDelete={handleDelete}
-              onUnarchive={(id) => updatePreference(id, { archived: false })}
-            />
+            <div className="space-y-0.5">
+              {visibleConversations.map((convo) => (
+                <ConversationRow
+                  key={convo.id}
+                  convo={convo}
+                  inboxTab={inboxTab}
+                  onClick={() => handleConversationClick(convo)}
+                  onArchive={() => updatePreference(convo.id, { archived: true })}
+                  onUnarchive={() => updatePreference(convo.id, { archived: false })}
+                  onMute={() => updatePreference(convo.id, { muted: !convo.prefs.muted })}
+                  onDelete={() => handleDelete(convo.id)}
+                  onPin={() => updatePreference(convo.id, { pinned: !convo.prefs.pinned })}
+                />
+              ))}
+            </div>
           )}
         </div>
       </div>
