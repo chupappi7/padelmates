@@ -26,7 +26,7 @@ export function BottomTabBar() {
 
   return (
     <>
-      <nav className="fixed bottom-0 left-0 right-0 z-50 md:hidden bg-background/95 backdrop-blur-lg border-t border-border">
+      <nav className="fixed bottom-0 left-0 right-0 z-50 md:hidden bg-white/5 backdrop-blur-xl border-t border-white/10">
         <div
           className="grid grid-cols-5 items-end"
           style={{ paddingBottom: "calc(0.5rem + env(safe-area-inset-bottom))" }}

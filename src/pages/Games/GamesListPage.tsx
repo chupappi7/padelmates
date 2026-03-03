@@ -267,7 +267,7 @@ export default function GamesListPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background pb-24 md:pb-0">
+    <div className="min-h-screen pb-24 md:pb-0">
       <Navbar />
 
       <div className="container py-4 sm:py-8">
