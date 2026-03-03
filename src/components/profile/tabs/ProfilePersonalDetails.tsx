@@ -60,23 +60,23 @@ export function ProfilePersonalDetails({ userId, region, preferredPosition, pref
 
   const fields = [
     { key: "region", icon: MapPin, label: "Location", value: editState.region ? getRegionLabel(editState.region) : null, full: true,
-      edit: <Select value={editState.region || ""} onValueChange={v => updateField("region", v)}><SelectTrigger className="h-9 text-xs bg-white/10 border-white/20 text-white"><SelectValue placeholder="Select" /></SelectTrigger><SelectContent>{CZECH_REGIONS.map(r => <SelectItem key={r.value} value={r.value} className="text-xs">{r.label}</SelectItem>)}</SelectContent></Select> },
+      edit: <Select value={editState.region || ""} onValueChange={v => updateField("region", v)}><SelectTrigger className="h-9 text-xs bg-[#F8FAFC] border-[#E2E8F0] text-[#0F172A]"><SelectValue placeholder="Select" /></SelectTrigger><SelectContent>{CZECH_REGIONS.map(r => <SelectItem key={r.value} value={r.value} className="text-xs">{r.label}</SelectItem>)}</SelectContent></Select> },
     { key: "birth_year", icon: Cake, label: "Age", value: age ? String(age) : null,
-      edit: <Input type="number" min={10} max={99} placeholder="e.g. 25" className="h-9 text-xs bg-white/10 border-white/20 text-white" defaultValue={age || ""} onBlur={e => { const v = parseInt(e.target.value); updateField("birth_year", v ? new Date().getFullYear() - v : null); }} /> },
+      edit: <Input type="number" min={10} max={99} placeholder="e.g. 25" className="h-9 text-xs bg-[#F8FAFC] border-[#E2E8F0] text-[#0F172A]" defaultValue={age || ""} onBlur={e => { const v = parseInt(e.target.value); updateField("birth_year", v ? new Date().getFullYear() - v : null); }} /> },
     { key: "sex", icon: Users, label: "Gender", value: genderLabel(editState.sex),
-      edit: <Select value={editState.sex || ""} onValueChange={v => updateField("sex", v)}><SelectTrigger className="h-9 text-xs bg-white/10 border-white/20 text-white"><SelectValue placeholder="Select" /></SelectTrigger><SelectContent><SelectItem value="male" className="text-xs">Male</SelectItem><SelectItem value="female" className="text-xs">Female</SelectItem><SelectItem value="other" className="text-xs">Other</SelectItem></SelectContent></Select> },
+      edit: <Select value={editState.sex || ""} onValueChange={v => updateField("sex", v)}><SelectTrigger className="h-9 text-xs bg-[#F8FAFC] border-[#E2E8F0] text-[#0F172A]"><SelectValue placeholder="Select" /></SelectTrigger><SelectContent><SelectItem value="male" className="text-xs">Male</SelectItem><SelectItem value="female" className="text-xs">Female</SelectItem><SelectItem value="other" className="text-xs">Other</SelectItem></SelectContent></Select> },
     { key: "preferred_position", icon: Target, label: "Position", value: editState.preferred_position ? `${editState.preferred_position === "left" ? "Left" : "Right"} Side` : null,
-      edit: <div className="flex gap-1">{["left", "right"].map(s => <button key={s} onClick={() => updateField("preferred_position", s)} className={`flex-1 py-1.5 rounded-lg text-xs font-medium transition-colors ${editState.preferred_position === s ? "bg-[#14b8a6] text-white" : "bg-white/10 text-white/60"}`}>{s === "left" ? "Left" : "Right"}</button>)}</div> },
+      edit: <div className="flex gap-1">{["left", "right"].map(s => <button key={s} onClick={() => updateField("preferred_position", s)} className={`flex-1 py-1.5 rounded-lg text-xs font-medium transition-colors ${editState.preferred_position === s ? "bg-[#14b8a6] text-white" : "bg-[#F1F5F9] text-[#64748B]"}`}>{s === "left" ? "Left" : "Right"}</button>)}</div> },
     { key: "preferred_hand", icon: Hand, label: "Hand", value: editState.preferred_hand ? (editState.preferred_hand === "left" ? "Left" : "Right") : null,
-      edit: <div className="flex gap-1">{["left", "right"].map(h => <button key={h} onClick={() => updateField("preferred_hand", h)} className={`flex-1 py-1.5 rounded-lg text-xs font-medium transition-colors ${editState.preferred_hand === h ? "bg-[#14b8a6] text-white" : "bg-white/10 text-white/60"}`}>{h === "left" ? "Left" : "Right"}</button>)}</div> },
+      edit: <div className="flex gap-1">{["left", "right"].map(h => <button key={h} onClick={() => updateField("preferred_hand", h)} className={`flex-1 py-1.5 rounded-lg text-xs font-medium transition-colors ${editState.preferred_hand === h ? "bg-[#14b8a6] text-white" : "bg-[#F1F5F9] text-[#64748B]"}`}>{h === "left" ? "Left" : "Right"}</button>)}</div> },
   ];
 
   return (
     <Collapsible open={open} onOpenChange={setOpen}>
-      <div className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl overflow-hidden">
+      <div className="bg-white shadow-sm border border-[#E2E8F0] rounded-2xl overflow-hidden">
         <CollapsibleTrigger className="w-full flex items-center justify-between px-4 py-3.5">
-          <span className="text-[11px] font-semibold text-white/50 uppercase tracking-[0.1em]">Personal Details</span>
-          {open ? <ChevronUp className="w-4 h-4 text-white/30" /> : <ChevronDown className="w-4 h-4 text-white/30" />}
+          <span className="text-[11px] font-semibold text-[#94A3B8] uppercase tracking-[0.1em]">Personal Details</span>
+          {open ? <ChevronUp className="w-4 h-4 text-[#CBD5E1]" /> : <ChevronDown className="w-4 h-4 text-[#CBD5E1]" />}
         </CollapsibleTrigger>
         <CollapsibleContent>
           <div className="px-4 pb-4 space-y-2">
@@ -87,15 +87,15 @@ export function ProfilePersonalDetails({ userId, region, preferredPosition, pref
                 return (
                   <div
                     key={f.key}
-                    className={`rounded-xl border border-white/10 p-3 cursor-pointer transition-all ${(f as any).full ? "col-span-2" : ""} ${isEditing ? "border-[#14b8a6]/30 bg-[#14b8a6]/5" : "hover:border-white/20"}`}
+                    className={`rounded-xl border border-[#E2E8F0] p-3 cursor-pointer transition-all ${(f as any).full ? "col-span-2" : ""} ${isEditing ? "border-[#14b8a6]/30 bg-[#14b8a6]/5" : "hover:border-[#CBD5E1]"}`}
                     onClick={() => { if (!isEditing) setEditing(f.key); }}
                   >
                     <div className="flex items-center gap-1.5 mb-1.5">
-                      <Icon className="w-3.5 h-3.5 text-white/40" />
-                      <span className="text-[10px] font-medium text-white/40 uppercase tracking-wider">{f.label}</span>
+                      <Icon className="w-3.5 h-3.5 text-[#94A3B8]" />
+                      <span className="text-[10px] font-medium text-[#94A3B8] uppercase tracking-wider">{f.label}</span>
                     </div>
                     {isEditing ? <div onClick={e => e.stopPropagation()}>{f.edit}</div> : (
-                      <p className={`text-sm font-medium truncate ${f.value ? "text-white" : "text-white/25"}`}>{f.value || "Tap to set"}</p>
+                      <p className={`text-sm font-medium truncate ${f.value ? "text-[#0F172A]" : "text-[#CBD5E1]"}`}>{f.value || "Tap to set"}</p>
                     )}
                   </div>
                 );
