@@ -1,1 +1,4 @@
 project_id = "aiexygrtvqxbqdnbympg"
+
+[functions.join-preview]
+verify_jwt = false
