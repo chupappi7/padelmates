@@ -135,7 +135,7 @@ export function ShareGameSheet({
     }
 
     // Send game link as message
-    const msg = `Check out this match! ${shareUrl}`;
+    const msg = `[game:${gameId}]`;
     await supabase.from("chat_messages").insert({
       chat_id: chatId,
       sender_id: user.id,

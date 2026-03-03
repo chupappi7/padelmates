@@ -7,7 +7,7 @@ interface ChatMessageContentProps {
   isMine: boolean;
 }
 
-const GAME_SHARE_REGEX = /^Check out this match: (.+)\n(https?:\/\/.+\/games\/([\w-]+))$/;
+const GAME_TAG_REGEX = /^\[game:([\w-]+)\]$/;
 const URL_REGEX = /(https?:\/\/[^\s]+)/g;
 
 export function ChatMessageContent({ message, isMine }: ChatMessageContentProps) {
@@ -19,11 +19,10 @@ export function ChatMessageContent({ message, isMine }: ChatMessageContentProps)
   }
 
   // Shared game card
-  const gameMatch = message.match(GAME_SHARE_REGEX);
+  const gameMatch = message.match(GAME_TAG_REGEX);
   if (gameMatch) {
-    const title = gameMatch[1];
-    const gameId = gameMatch[3];
-    return <SharedGameCard gameId={gameId} title={title} />;
+    const gameId = gameMatch[1];
+    return <SharedGameCard gameId={gameId} title="Shared Match" />;
   }
 
   // Linkify URLs in regular messages
