@@ -19,6 +19,7 @@ interface GamePreview {
   skill_level: number;
   max_players: number;
   format: string;
+  prefilled_players: unknown;
 }
 
 export function SharedGameCard({ gameId, title }: SharedGameCardProps) {
@@ -31,7 +32,7 @@ export function SharedGameCard({ gameId, title }: SharedGameCardProps) {
       const [{ data }, { count }] = await Promise.all([
         supabase
           .from("games")
-          .select("title, location, court_number, date_time, end_date_time, skill_level, max_players, format")
+          .select("title, location, court_number, date_time, end_date_time, skill_level, max_players, format, prefilled_players")
           .eq("id", gameId)
           .single(),
         supabase
@@ -70,6 +71,19 @@ export function SharedGameCard({ gameId, title }: SharedGameCardProps) {
   const endTime = game.end_date_time ? format(new Date(game.end_date_time), "HH:mm") : null;
   const locationStr = game.court_number ? `${game.location} · Court ${game.court_number}` : game.location;
 
+  // Calculate total players including prefilled
+  const prefilledCount = Array.isArray(game.prefilled_players) ? game.prefilled_players.length : 0;
+  const totalPlayers = playerCount + prefilledCount;
+  const spotsLeft = game.max_players - totalPlayers;
+
+  const spotsColor = spotsLeft <= 0
+    ? "bg-destructive/15 text-destructive border-destructive/20"
+    : spotsLeft <= 2
+      ? "bg-warning/15 text-warning border-warning/20"
+      : "bg-success/15 text-success border-success/20";
+
+  const isFull = spotsLeft <= 0;
+
   return (
     <button
       onClick={handleClick}
@@ -88,15 +102,18 @@ export function SharedGameCard({ gameId, title }: SharedGameCardProps) {
       <div className="space-y-1">
         <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
           <MapPin className="w-3 h-3 shrink-0" />
-          <span className="truncate">{locationStr}</span>
+          <span className="break-words line-clamp-2">{locationStr}</span>
         </div>
         <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
           <Calendar className="w-3 h-3 shrink-0" />
           <span>{dateStr} · {startTime}{endTime ? ` – ${endTime}` : ""}</span>
         </div>
-        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-          <Users className="w-3 h-3 shrink-0" />
-          <span>{playerCount}/{game.max_players} players</span>
+        <div className="flex items-center gap-1.5">
+          <span className={`inline-flex items-center gap-0.5 rounded-full border px-1.5 py-0.5 text-[10px] font-semibold ${spotsColor}`}>
+            <Users className="w-3 h-3" />
+            {totalPlayers}/{game.max_players}
+            {isFull ? " Full" : ` · ${spotsLeft} left`}
+          </span>
         </div>
       </div>
 
