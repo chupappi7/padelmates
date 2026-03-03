@@ -138,7 +138,9 @@ export default function SignupPage() {
           {step === "account" && (
             <motion.div key="account" custom={dir} variants={slideVariants} initial="enter" animate="center" exit="exit" transition={{ duration: 0.25 }}>
               <h1 className="text-3xl font-bold text-white text-center mb-1">Create your account</h1>
-              <p className="text-center text-[#94A3B8] mb-8">Join PadelMates today</p>
+              <p className="text-center text-[#94A3B8] mb-8">
+                Join <span className="text-white font-semibold">Padel</span><span className="text-primary font-semibold">Mates</span> today
+              </p>
 
               <form onSubmit={handleAccountSubmit} noValidate className="flex flex-col gap-4">
                 <div>
