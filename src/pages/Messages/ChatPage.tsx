@@ -252,57 +252,75 @@ export default function ChatPage() {
                 const showTail =
                   i === group.messages.length - 1 ||
                   group.messages[i + 1]?.sender_id !== msg.sender_id;
+                const isGameCard = /^\[game:[\w-]+\]$/.test(msg.message);
 
                 return (
-                  <div
-                    key={msg.id}
-                    className={cn(
-                      "flex gap-2 mb-0.5",
-                      isMine ? "justify-end" : "justify-start",
-                      showTail && "mb-2"
+                  <div key={msg.id}>
+                    {/* Sender name */}
+                    {showAvatar && !isMine && otherUser && (
+                      <p className="text-[11px] text-muted-foreground ml-9 mb-0.5">{otherUser.name}</p>
                     )}
-                  >
-                    {!isMine && (
-                      <div className="w-7 shrink-0">
-                        {showAvatar && otherUser && (
-                          <Avatar className="h-7 w-7">
-                            <AvatarImage src={otherUser.avatar_url || undefined} />
-                            <AvatarFallback className="text-[10px] bg-primary/10 text-primary">
-                              {otherUser.name.charAt(0).toUpperCase()}
-                            </AvatarFallback>
-                          </Avatar>
-                        )}
-                      </div>
-                    )}
-                    {isMine && <div className="flex-1" />}
                     <div
                       className={cn(
-                        "max-w-[75%] px-3.5 py-2 text-sm",
-                        isMine
-                          ? "bg-primary text-primary-foreground rounded-2xl rounded-br-md"
-                          : "bg-muted rounded-2xl rounded-bl-md"
+                        "flex gap-2 mb-0.5",
+                        isMine ? "justify-end" : "justify-start",
+                        showTail && "mb-2"
                       )}
                     >
-                      <ChatMessageContent message={msg.message} isMine={isMine} />
-                      <p className={cn(
-                        "text-[10px] mt-0.5 text-right",
-                        isMine ? "text-primary-foreground/60" : "text-muted-foreground"
-                      )}>
-                        {formatMessageTime(msg.created_at)}
-                      </p>
+                      {!isMine && (
+                        <div className="w-7 shrink-0 self-end">
+                          {showAvatar && otherUser && (
+                            <Avatar className="h-7 w-7">
+                              <AvatarImage src={otherUser.avatar_url || undefined} />
+                              <AvatarFallback className="text-[10px] bg-primary/10 text-primary">
+                                {otherUser.name.charAt(0).toUpperCase()}
+                              </AvatarFallback>
+                            </Avatar>
+                          )}
+                        </div>
+                      )}
+                      {isMine && <div className="flex-1" />}
+                      {isGameCard ? (
+                        <div className="max-w-[75%]">
+                          <ChatMessageContent message={msg.message} isMine={isMine} />
+                          <p className={cn(
+                            "text-[10px] mt-0.5 text-right",
+                            "text-muted-foreground"
+                          )}>
+                            {formatMessageTime(msg.created_at)}
+                          </p>
+                        </div>
+                      ) : (
+                        <div
+                          className={cn(
+                            "max-w-[75%] px-3.5 py-2 text-sm",
+                            isMine
+                              ? "bg-primary text-primary-foreground rounded-2xl rounded-br-md"
+                              : "bg-muted rounded-2xl rounded-bl-md"
+                          )}
+                        >
+                          <ChatMessageContent message={msg.message} isMine={isMine} />
+                          <p className={cn(
+                            "text-[10px] mt-0.5 text-right",
+                            isMine ? "text-primary-foreground/60" : "text-muted-foreground"
+                          )}>
+                            {formatMessageTime(msg.created_at)}
+                          </p>
+                        </div>
+                      )}
+                      {isMine && (
+                        <div className="w-7 shrink-0 self-end">
+                          {showAvatar && myProfile && (
+                            <Avatar className="h-7 w-7">
+                              <AvatarImage src={myProfile.avatar_url || undefined} />
+                              <AvatarFallback className="text-[10px] bg-primary/10 text-primary">
+                                {myProfile.name.charAt(0).toUpperCase()}
+                              </AvatarFallback>
+                            </Avatar>
+                          )}
+                        </div>
+                      )}
                     </div>
-                    {isMine && (
-                      <div className="w-7 shrink-0 self-end">
-                        {showAvatar && myProfile && (
-                          <Avatar className="h-7 w-7">
-                            <AvatarImage src={myProfile.avatar_url || undefined} />
-                            <AvatarFallback className="text-[10px] bg-primary/10 text-primary">
-                              {myProfile.name.charAt(0).toUpperCase()}
-                            </AvatarFallback>
-                          </Avatar>
-                        )}
-                      </div>
-                    )}
                   </div>
                 );
               })}
