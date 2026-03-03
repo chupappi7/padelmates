@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import { Eye, EyeOff, User, Trophy } from "lucide-react";
-import logoIcon from "@/assets/logo-icon.png";
+import logoIcon from "@/assets/logo-icon-dark.png";
 import { PasswordRequirements, isPasswordValid } from "@/components/auth/PasswordRequirements";
 import { CZECH_REGIONS } from "@/lib/regions";
 import { cn } from "@/lib/utils";
@@ -127,7 +127,7 @@ export default function SignupPage() {
       >
         {/* Logo — always visible, always same size */}
         <div className="flex flex-col items-center mb-10">
-          <img src={logoIcon} alt="PadelMates" className="w-12 h-12 rounded-xl mb-3" />
+          <img src={logoIcon} alt="PadelMates" className="w-14 h-14 mb-3" />
           <span className="text-2xl font-bold text-white">
             Padel<span className="text-primary">Mates</span>
           </span>
