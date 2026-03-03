@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
-import { Settings, Camera, ChevronDown, ChevronUp, CreditCard, Pencil, ImagePlus, X } from "lucide-react";
+import { LogOut, Camera, ChevronDown, ChevronUp, CreditCard, Pencil, ImagePlus, X } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -46,7 +46,7 @@ interface Profile {
 }
 
 export default function ProfilePage() {
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
   const navigate = useNavigate();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
@@ -118,11 +118,11 @@ export default function ProfilePage() {
       {/* Header */}
       <div className="bg-gradient-to-b from-teal-50 to-white px-4 pt-4 pb-2">
         <div className="flex items-center justify-between">
-          <button onClick={() => navigate("/settings")} className="w-9 h-9 rounded-full bg-[#F1F5F9] flex items-center justify-center">
-            <Settings className="w-4.5 h-4.5 text-[#64748B]" />
-          </button>
-          <h1 className="text-[#0F172A] font-bold text-lg" style={{ fontFamily: SPACE }}>Profile</h1>
           <div className="w-9" />
+          <h1 className="text-[#0F172A] font-bold text-lg" style={{ fontFamily: SPACE }}>Profile</h1>
+          <button onClick={async () => { await signOut(); navigate("/login"); }} className="w-9 h-9 rounded-full bg-red-50 flex items-center justify-center">
+            <LogOut className="w-4 h-4 text-red-500" />
+          </button>
         </div>
 
         {/* Avatar + Name */}
