@@ -31,8 +31,10 @@ export function ShareGameSheet({
   gameSlug, gameLocation, gameDateTime, gameFormat,
   gameMaxPlayers, currentPlayersCount, hostName,
 }: ShareGameSheetProps) {
-  const joinPath = gameSlug || gameId;
-  const gameUrl = `https://padelmates.app/join/${joinPath}`;
+  const edgeFnBase = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/join-preview`;
+  const gameUrl = gameSlug
+    ? `${edgeFnBase}?slug=${gameSlug}`
+    : `${edgeFnBase}?game_id=${gameId}`;
 
   const handleCopyLink = () => {
     navigator.clipboard.writeText(gameUrl);
