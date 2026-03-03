@@ -1339,10 +1339,13 @@ export default function GameDetailPage() {
         gameSlug={game?.slug || undefined}
         gameLocation={game?.location}
         gameDateTime={game?.date_time}
+        endDateTime={game?.end_date_time || undefined}
         gameFormat={game?.format}
         gameMaxPlayers={game?.max_players}
         currentPlayersCount={players.length}
         hostName={game?.profiles?.name || undefined}
+        skillLevel={game?.skill_level}
+        pricePerPlayer={game?.price_per_player}
       />
     </div>
   );

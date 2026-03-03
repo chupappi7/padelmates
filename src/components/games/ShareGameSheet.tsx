@@ -2,6 +2,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { Link2, MessageCircle } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import { getSkillLabel } from "@/components/games/SkillBadge";
 
 interface ShareGameSheetProps {
   open: boolean;
@@ -11,10 +12,13 @@ interface ShareGameSheetProps {
   gameSlug?: string;
   gameLocation?: string;
   gameDateTime?: string;
+  endDateTime?: string;
   gameFormat?: string;
   gameMaxPlayers?: number;
   currentPlayersCount?: number;
   hostName?: string;
+  skillLevel?: number;
+  pricePerPlayer?: number;
 }
 
 const formatLabel = (f: string) => {
@@ -28,35 +32,64 @@ const formatLabel = (f: string) => {
 
 export function ShareGameSheet({
   open, onOpenChange, gameId,
-  gameSlug, gameLocation, gameDateTime, gameFormat,
-  gameMaxPlayers, currentPlayersCount, hostName,
+  gameSlug, gameLocation, gameDateTime, endDateTime, gameFormat,
+  gameMaxPlayers, currentPlayersCount, hostName, skillLevel, pricePerPlayer,
 }: ShareGameSheetProps) {
-  const edgeFnBase = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/join-preview`;
-  const gameUrl = gameSlug
-    ? `${edgeFnBase}?slug=${gameSlug}`
-    : `${edgeFnBase}?game_id=${gameId}`;
+  const joinPath = gameSlug || gameId;
+  const shareUrl = `https://padelmates.app/join/${joinPath}`;
+
+  const buildMessage = () => {
+    const lines: string[] = [];
+
+    lines.push("🎾 Join us for a padel match!");
+    lines.push("");
+
+    if (gameLocation) lines.push(`📍 ${gameLocation}`);
+
+    if (gameDateTime) {
+      const start = new Date(gameDateTime);
+      const dateStr = format(start, "EEEE, d MMMM yyyy");
+      const startTime = format(start, "HH:mm");
+      lines.push(`📅 ${dateStr}`);
+
+      if (endDateTime) {
+        const endTime = format(new Date(endDateTime), "HH:mm");
+        lines.push(`⏰ ${startTime} – ${endTime}`);
+      } else {
+        lines.push(`⏰ ${startTime}`);
+      }
+    }
+
+    if (gameMaxPlayers) {
+      const filled = currentPlayersCount ?? 0;
+      const left = gameMaxPlayers - filled;
+      lines.push(`👥 ${filled}/${gameMaxPlayers} players · ${left} spot${left !== 1 ? "s" : ""} left`);
+    }
+
+    if (gameFormat) lines.push(`🎯 ${formatLabel(gameFormat)}`);
+
+    if (skillLevel) lines.push(`🏅 Level ${getSkillLabel(skillLevel)}`);
+
+    if (pricePerPlayer && pricePerPlayer > 0) {
+      lines.push(`💰 ${pricePerPlayer} Kč per player`);
+    } else {
+      lines.push(`💰 Free`);
+    }
+
+    lines.push("");
+    lines.push(`👉 ${shareUrl}`);
+
+    return lines.join("\n");
+  };
 
   const handleCopyLink = () => {
-    navigator.clipboard.writeText(gameUrl);
-    toast.success("Link copied to clipboard!");
+    navigator.clipboard.writeText(buildMessage());
+    toast.success("✅ Copied! Paste it in your WhatsApp group");
     onOpenChange(false);
   };
 
   const handleWhatsApp = () => {
-    const dateStr = gameDateTime
-      ? format(new Date(gameDateTime), "EEE d MMM · HH:mm")
-      : "";
-    const spotsLeft = gameMaxPlayers && currentPlayersCount !== undefined
-      ? gameMaxPlayers - currentPlayersCount
-      : null;
-
-    let msg = `🎾 ${hostName || "Someone"} invited you to a padel match!\n\n`;
-    if (gameLocation) msg += `📍 ${gameLocation}\n`;
-    if (dateStr) msg += `🗓 ${dateStr}\n`;
-    if (spotsLeft !== null) msg += `👥 ${spotsLeft} spots left\n`;
-    if (gameFormat) msg += `🎯 ${formatLabel(gameFormat)}\n`;
-    msg += `\nJoin here: ${gameUrl}`;
-
+    const msg = buildMessage();
     window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`, "_blank");
     onOpenChange(false);
   };
@@ -79,8 +112,8 @@ export function ShareGameSheet({
               <Link2 className="w-4 h-4 text-primary" />
             </div>
             <div className="text-left">
-              <p className="text-sm font-medium">Copy invite link</p>
-              <p className="text-xs text-muted-foreground">Copy link to clipboard</p>
+              <p className="text-sm font-medium">Copy invite message</p>
+              <p className="text-xs text-muted-foreground">Copy full invite to clipboard</p>
             </div>
           </button>
 
