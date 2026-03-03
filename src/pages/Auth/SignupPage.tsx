@@ -148,7 +148,7 @@ export default function SignupPage() {
           </button>
         )}
 
-        <div className="bg-card border border-border rounded-2xl p-8 shadow-lg">
+        <div className="bg-card border border-border rounded-2xl p-6 shadow-lg">
           <StepIndicator current={step} />
 
           <AnimatePresence mode="wait" custom={dir}>
@@ -162,9 +162,9 @@ export default function SignupPage() {
                 exit="exit"
                 transition={{ duration: 0.25 }}
               >
-                <div className="text-center mb-8">
-                  <img src={logoIcon} alt="PadelMates" className="w-16 h-16 rounded-xl mx-auto mb-4" />
-                  <h1 className="font-display text-2xl font-bold">Create your account</h1>
+                <div className="text-center mb-5">
+                  <img src={logoIcon} alt="PadelMates" className="w-14 h-14 rounded-xl mx-auto mb-3" />
+                  <h1 className="font-display text-xl font-bold">Create your account</h1>
                   <p className="text-muted-foreground mt-1">Join <span className="font-semibold text-foreground">Padel<span className="text-primary">Mates</span></span> today</p>
                 </div>
 

@@ -50,11 +50,11 @@ export default function LoginPage() {
           Back to home
         </Link>
 
-        <div className="bg-card border border-border rounded-2xl p-8 shadow-lg">
-          <div className="text-center mb-8">
-            <img src={logoIcon} alt="PadelMates" className="w-80 h-80 rounded-xl mx-auto mb-4" />
-            <h1 className="font-display text-2xl font-bold">Welcome back</h1>
-            <p className="text-muted-foreground mt-1">Sign in to your <span className="font-semibold text-foreground">Padel<span className="text-primary">Mates</span></span> account</p>
+        <div className="bg-card border border-border rounded-2xl p-6 shadow-lg">
+          <div className="text-center mb-5">
+            <img src={logoIcon} alt="PadelMates" className="w-28 h-28 rounded-xl mx-auto mb-3" />
+            <h1 className="font-display text-xl font-bold">Welcome back</h1>
+            <p className="text-muted-foreground text-sm mt-1">Sign in to your <span className="font-semibold text-foreground">Padel<span className="text-primary">Mates</span></span> account</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
