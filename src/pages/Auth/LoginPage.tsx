@@ -57,8 +57,8 @@ export default function LoginPage() {
         className="w-full max-w-md relative z-10"
       >
         {/* Logo */}
-        <div className="flex flex-col items-center mb-10">
-          <img src={logoIcon} alt="PadelMates" className="w-14 h-14 mb-3 rounded-xl" />
+        <div className="flex items-center gap-3 justify-center mb-10">
+          <img src={logoIcon} alt="PadelMates" className="w-10 h-10 rounded-lg" />
           <span className="text-2xl font-bold text-white">
             Padel<span className="text-primary">Mates</span>
           </span>
