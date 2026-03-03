@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Home, Plus, Building2, CalendarCheck, Trophy } from "lucide-react";
+import { Home, Plus, Building2, CalendarCheck, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { HostTypeModal } from "@/components/games/HostTypeModal";
@@ -10,7 +10,7 @@ const tabs = [
   { path: "/clubs", label: "Clubs", icon: Building2 },
   { path: "__host__", label: "Host", icon: Plus, isFab: true },
   { path: "/my-matches", label: "My Matches", icon: CalendarCheck },
-  { path: "/elo", label: "PDR", icon: Trophy },
+  { path: "/profile", label: "Profile", icon: User },
 ];
 
 export function BottomTabBar() {
