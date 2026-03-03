@@ -86,8 +86,6 @@ export function ShareGameSheet({
 
     if (pricePerPlayer && pricePerPlayer > 0) {
       lines.push(`💰 ${pricePerPlayer} Kč per player`);
-    } else {
-      lines.push(`💰 Free`);
     }
 
     lines.push("");
