@@ -127,7 +127,7 @@ export default function SignupPage() {
       >
         {/* Logo — always visible, always same size */}
         <div className="flex flex-col items-center mb-10">
-          <img src={logoIcon} alt="PadelMates" className="w-14 h-14 mb-3 rounded-full" />
+          <img src={logoIcon} alt="PadelMates" className="w-14 h-14 mb-3 rounded-xl" />
           <span className="text-2xl font-bold text-white">
             Padel<span className="text-primary">Mates</span>
           </span>
