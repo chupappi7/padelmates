@@ -30,7 +30,7 @@ export function ShareGameSheet({
   gameLocation, gameDateTime, gameFormat,
   gameMaxPlayers, currentPlayersCount, hostName,
 }: ShareGameSheetProps) {
-  const gameUrl = `https://padelmates.app/join/${gameId}`;
+  const gameUrl = `https://aiexygrtvqxbqdnbympg.supabase.co/functions/v1/join-preview?game_id=${gameId}`;
 
   const handleCopyLink = () => {
     navigator.clipboard.writeText(gameUrl);
