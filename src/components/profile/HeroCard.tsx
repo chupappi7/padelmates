@@ -1,7 +1,6 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { SkillBadge } from "@/components/games/SkillBadge";
-import { Copy, Check, Camera, Pencil } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Copy, Check, Camera } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -19,6 +18,8 @@ interface HeroCardProps {
   onPdrClick?: () => void;
 }
 
+const SPACE = "'Space Grotesk', system-ui, sans-serif";
+
 export function HeroCard({
   name,
   avatarUrl,
@@ -26,7 +27,6 @@ export function HeroCard({
   friendCode,
   pdrRating,
   isSelf,
-  onEditClick,
   onAvatarUpload,
   onLevelBadgeClick,
   onPdrClick,
@@ -42,49 +42,79 @@ export function HeroCard({
   };
 
   return (
-    <div className="bg-gradient-to-br from-[#0D2137] via-[#142D4A] to-[#1A4060] rounded-2xl px-7 py-7 relative">
+    <div className="relative overflow-hidden rounded-2xl">
+      {/* Background with brand teal gradient */}
+      <div
+        className="absolute inset-0"
+        style={{
+          background:
+            "linear-gradient(135deg, hsl(175 84% 28%) 0%, hsl(180 70% 32%) 40%, hsl(190 75% 38%) 100%)",
+        }}
+      />
+      {/* Subtle pattern overlay */}
+      <div
+        className="absolute inset-0 opacity-[0.06]"
+        style={{
+          backgroundImage:
+            "radial-gradient(circle at 20% 80%, white 1px, transparent 1px), radial-gradient(circle at 80% 20%, white 1px, transparent 1px)",
+          backgroundSize: "40px 40px",
+        }}
+      />
+      {/* Glow accent */}
+      <div className="absolute -top-12 -right-12 w-40 h-40 rounded-full bg-white/[0.07] blur-2xl" />
 
-      <div className="flex items-start gap-4">
-        {/* Avatar */}
-        <div className="relative shrink-0">
-          <Avatar className="w-20 h-20 border-2 border-white/15">
-            <AvatarImage src={avatarUrl || undefined} />
-            <AvatarFallback className="text-2xl bg-white/10 text-white font-semibold">
-              {name?.charAt(0).toUpperCase()}
-            </AvatarFallback>
-          </Avatar>
-          {isSelf && onAvatarUpload && (
-            <>
-              <label
-                htmlFor="avatar-upload"
-                className="absolute -bottom-0.5 -right-0.5 w-6 h-6 bg-primary text-primary-foreground rounded-full flex items-center justify-center cursor-pointer hover:bg-primary/90 transition-colors"
+      <div className="relative px-6 pt-6 pb-5">
+        {/* Top row: Avatar + Info */}
+        <div className="flex items-center gap-4">
+          {/* Avatar */}
+          <div className="relative shrink-0">
+            <Avatar className="w-[72px] h-[72px] ring-2 ring-white/20 ring-offset-2 ring-offset-transparent">
+              <AvatarImage src={avatarUrl || undefined} className="object-cover" />
+              <AvatarFallback
+                className="text-xl font-bold"
+                style={{
+                  background: "hsl(175 60% 22%)",
+                  color: "hsl(175 80% 80%)",
+                  fontFamily: SPACE,
+                }}
               >
-                <Camera className="w-3 h-3" />
-              </label>
-              <Input
-                type="file"
-                id="avatar-upload"
-                accept="image/*"
-                className="hidden"
-                onChange={onAvatarUpload}
-              />
-            </>
-          )}
-        </div>
+                {name?.charAt(0).toUpperCase()}
+              </AvatarFallback>
+            </Avatar>
+            {isSelf && onAvatarUpload && (
+              <>
+                <label
+                  htmlFor="avatar-upload"
+                  className="absolute -bottom-0.5 -right-0.5 w-6 h-6 rounded-full flex items-center justify-center cursor-pointer transition-colors"
+                  style={{
+                    background: "hsl(175 84% 32%)",
+                    color: "white",
+                    boxShadow: "0 2px 8px hsl(175 84% 32% / 0.5)",
+                  }}
+                >
+                  <Camera className="w-3 h-3" />
+                </label>
+                <Input
+                  type="file"
+                  id="avatar-upload"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={onAvatarUpload}
+                />
+              </>
+            )}
+          </div>
 
-        {/* Right side: name, level+PDR */}
-        <div className="flex-1 min-w-0">
-          <div className="flex flex-col gap-1">
-            {/* Name */}
+          {/* Name + badges */}
+          <div className="flex-1 min-w-0">
             <p
-              className="text-white text-[26px] font-bold truncate leading-none"
-              style={{ fontFamily: "'Space Grotesk', system-ui, sans-serif" }}
+              className="text-white text-[22px] font-bold truncate leading-tight"
+              style={{ fontFamily: SPACE }}
             >
               {name}
             </p>
 
-            {/* Level + PDR */}
-            <div className="flex items-center gap-2.5 leading-none">
+            <div className="flex items-center gap-2 mt-1.5">
               <button
                 onClick={isSelf ? onLevelBadgeClick : undefined}
                 className={isSelf ? "cursor-pointer" : "cursor-default"}
@@ -92,43 +122,65 @@ export function HeroCard({
               >
                 <SkillBadge level={skillLevel} size="sm" />
               </button>
-              <span className="text-white/15 text-sm">|</span>
-              <button
-                onClick={onPdrClick}
-                className={onPdrClick ? "flex items-center gap-2.5 cursor-pointer hover:opacity-80 transition-opacity" : "flex items-center gap-2.5 cursor-default"}
-              >
-                <span className="text-[11px] text-white/40 uppercase tracking-wider font-medium">PDR</span>
-                <span
-                  className="text-[24px] leading-none font-extrabold text-white tracking-tight"
-                  style={{ fontFamily: "'Space Grotesk', system-ui, sans-serif" }}
-                >
-                  {pdrRating != null ? pdrRating.toFixed(2) : "NR"}
-                </span>
-              </button>
+
+              {friendCode && (
+                <>
+                  <span className="text-white/20 text-xs">·</span>
+                  <button
+                    onClick={handleCopyCode}
+                    className="flex items-center gap-1 group"
+                  >
+                    {copied ? (
+                      <Check className="w-3 h-3 text-white/70" />
+                    ) : (
+                      <Copy className="w-3 h-3 text-white/40 group-hover:text-white/60 transition-colors" />
+                    )}
+                    <span
+                      className={`text-[11px] font-mono tracking-wider ${
+                        copied ? "text-white/70" : "text-white/40 group-hover:text-white/60"
+                      } transition-colors`}
+                    >
+                      {friendCode}
+                    </span>
+                  </button>
+                </>
+              )}
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Copy ID - bottom right */}
-      {friendCode && (
+        {/* PDR Rating strip */}
         <button
-          onClick={handleCopyCode}
-          className="absolute bottom-2 right-2 flex items-center gap-1 text-white/30 hover:text-white/50 transition-colors"
+          onClick={onPdrClick}
+          className="mt-4 w-full flex items-center justify-between rounded-xl px-4 py-2.5 transition-colors"
+          style={{
+            background: "hsl(175 60% 22% / 0.6)",
+            backdropFilter: "blur(8px)",
+          }}
         >
-          {copied ? (
-            <>
-              <Check className="w-3 h-3 text-primary" />
-              <span className="text-[10px] uppercase tracking-wider font-medium text-primary">Copied</span>
-            </>
-          ) : (
-            <>
-              <Copy className="w-3 h-3" />
-              <span className="text-[10px] uppercase tracking-wider font-medium">Copy ID</span>
-            </>
-          )}
+          <div className="flex items-center gap-2">
+            <div
+              className="w-7 h-7 rounded-lg flex items-center justify-center text-[10px] font-bold uppercase"
+              style={{
+                background: "hsl(175 80% 45% / 0.3)",
+                color: "hsl(175 80% 80%)",
+                fontFamily: SPACE,
+              }}
+            >
+              PDR
+            </div>
+            <span className="text-[11px] text-white/50 font-medium uppercase tracking-wider">
+              Rating
+            </span>
+          </div>
+          <span
+            className="text-[28px] font-extrabold text-white tracking-tight leading-none"
+            style={{ fontFamily: SPACE }}
+          >
+            {pdrRating != null ? pdrRating.toFixed(2) : "NR"}
+          </span>
         </button>
-      )}
+      </div>
     </div>
   );
 }
