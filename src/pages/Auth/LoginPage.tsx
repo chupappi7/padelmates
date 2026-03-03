@@ -4,7 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { Eye, EyeOff } from "lucide-react";
-import logoIcon from "@/assets/logo-icon.png";
+import logoIcon from "@/assets/logo-icon-dark.png";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -58,7 +58,7 @@ export default function LoginPage() {
       >
         {/* Logo */}
         <div className="flex flex-col items-center mb-10">
-          <img src={logoIcon} alt="PadelMates" className="w-12 h-12 rounded-xl mb-3" />
+          <img src={logoIcon} alt="PadelMates" className="w-14 h-14 mb-3" />
           <span className="text-2xl font-bold text-white">
             Padel<span className="text-primary">Mates</span>
           </span>
