@@ -10,7 +10,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Home, Plus, Trophy, CalendarCheck, LogOut, User, Bell, Inbox, Building2, Users } from "lucide-react";
+import { Home, Plus, Trophy, CalendarCheck, LogOut, User, Bell, Inbox, Building2, Users, Search } from "lucide-react";
 import { useNotifications } from "@/hooks/useNotifications";
 import { useConversations } from "@/hooks/useConversations";
 import { NotificationPanel } from "@/components/layout/NotificationPanel";
@@ -32,6 +32,7 @@ export function Navbar() {
   };
 
   const desktopNavLinks = [
+    { href: "/games", label: "Matches", icon: Search },
     { href: "/clubs", label: "Clubs", icon: Building2 },
     { href: "/my-matches", label: "My Matches", icon: CalendarCheck },
     { href: "/elo", label: "PDR", icon: Trophy },
