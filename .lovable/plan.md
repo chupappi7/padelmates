@@ -1,28 +1,45 @@
 
 
-## Plan: Add Chat Actions Menu
+## Plan: Enhanced Profile Page with Performance Analytics
+
+### Overview
+Add a **Performance & Analytics** section to the profile page that fetches real match data and displays rich stats. Restructure the page layout for better information density while maintaining the existing dark-navy hero + white-card design system.
 
 ### Changes
 
-**1. Three-dot menu in chat header bar (next to user name)**
+**1. New component: `src/components/profile/ProfilePerformanceCard.tsx`**
 
-Add a `DropdownMenu` with `MoreVertical` icon button to the right side of the chat header, pushed to the far right with `ml-auto`. Options:
-- **Mute** -- toggles muted state via `conversation_preferences` table
-- **Block** -- placeholder action with toast (blocking logic can be expanded later)
-- **Delete Chat** -- sets `deleted: true` in `conversation_preferences` and navigates back to `/messages`
+A white card section titled "PERFORMANCE" that fetches data from `match_players`, `matches`, and `match_submissions` tables for the current user. Displays:
 
-**2. Long-press / context menu on individual chat bubbles**
+- **Top stats row** (4 items in a grid): Matches Played, Wins, Losses, Win Rate %
+- **Secondary stats row**: Current Win Streak, Best Win Streak, Games Hosted (from `games` table where `host_id = user_id`), Games Joined (from `game_players`)
+- **Form indicator**: Last 5 matches shown as a row of small W/L colored dots (green/red) — like a recent form strip
+- **Monthly activity**: A simple text line like "12 matches this month" with a small bar chart using recharts (already installed) showing matches per month for the last 3 months
 
-Wrap each message bubble in a `ContextMenu` (from existing `@radix-ui/react-context-menu`). On mobile this triggers on long-press. Options:
-- **Copy** -- copies message text to clipboard
-- **Delete** -- deletes the message from `chat_messages` table (only for own messages)
+Data fetching:
+- Query `match_players` joined with `matches` (status = completed) to get W/L counts
+- Query `games` where `host_id = user_id` for hosted count
+- Query `game_players` for joined count
+- All in a single `useEffect`
 
-### Files to Change
+Styling: White card with `rounded-2xl shadow-sm`, consistent with PersonalDetailsGrid. Stats use Space Grotesk font for numbers, `text-[11px] uppercase tracking` for labels.
 
-- `src/pages/Messages/ChatPage.tsx`
-  - Import `DropdownMenu` components, `MoreVertical`, `Copy`, `Trash2`, `BellOff` icons, `ContextMenu` components
-  - Add state for `muted`
-  - Add `DropdownMenu` button after the user name/avatar section in header (line ~209, before closing `</div>`)
-  - Wrap each message bubble in `ContextMenu` with Copy + Delete (own messages only) options
-  - Add handler functions: `handleDeleteChat`, `handleMuteChat`, `handleDeleteMessage`, `handleCopyMessage`
+**2. Update `src/pages/Profile/ProfilePage.tsx`**
+
+- Import and render `ProfilePerformanceCard` between HeroCard and PersonalDetailsGrid
+- Pass `userId` as prop
+- Remove the standalone "Match History" button and integrate it as a link row at the bottom of the performance card ("View Full Match History →")
+
+### Layout Order (top to bottom)
+1. HeroCard (unchanged)
+2. **ProfilePerformanceCard** (new)
+3. PersonalDetailsGrid (unchanged)
+4. ProfileClubs (unchanged)
+5. Payment Info collapsible (unchanged)
+
+### Files to Create
+- `src/components/profile/ProfilePerformanceCard.tsx`
+
+### Files to Modify
+- `src/pages/Profile/ProfilePage.tsx` — add import, render new component, remove standalone Match History button
 
