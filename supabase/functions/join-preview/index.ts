@@ -3,9 +3,10 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 Deno.serve(async (req) => {
   const url = new URL(req.url)
   const gameId = url.searchParams.get('game_id')
+  const slug = url.searchParams.get('slug')
 
-  if (!gameId) {
-    return new Response('Missing game_id', { status: 400 })
+  if (!gameId && !slug) {
+    return new Response('Missing game_id or slug', { status: 400 })
   }
 
   const supabase = createClient(
@@ -13,11 +14,17 @@ Deno.serve(async (req) => {
     Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
   )
 
-  const { data: game } = await supabase
+  let query = supabase
     .from('games')
-    .select('title, location, date_time, max_players, host_id, format')
-    .eq('id', gameId)
-    .single()
+    .select('id, title, location, date_time, max_players, host_id, format, slug')
+
+  if (slug) {
+    query = query.eq('slug', slug)
+  } else {
+    query = query.eq('id', gameId!)
+  }
+
+  const { data: game } = await query.single()
 
   if (!game) {
     return new Response('Game not found', { status: 404 })
@@ -32,7 +39,7 @@ Deno.serve(async (req) => {
   const { count } = await supabase
     .from('game_players')
     .select('*', { count: 'exact', head: true })
-    .eq('game_id', gameId)
+    .eq('game_id', game.id)
 
   const spotsLeft = game.max_players - (count || 0)
   const date = new Date(game.date_time).toLocaleDateString('en-GB', {
@@ -42,7 +49,8 @@ Deno.serve(async (req) => {
 
   const title = `🎾 ${game.title}`
   const description = `📍 ${game.location} · 🗓 ${date} · 👥 ${spotsLeft} spots left · Hosted by ${host?.name || 'Someone'}`
-  const appUrl = `https://padelmates.app/join/${gameId}`
+  const joinPath = game.slug || game.id
+  const appUrl = `https://padelmates.app/join/${joinPath}`
   const image = `https://padelmates.app/og-image.png`
 
   const html = `<!DOCTYPE html>
