@@ -167,7 +167,7 @@ export default function ProfilePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#F5F5F5]">
+      <div className="min-h-screen bg-background">
         <Navbar />
         <div className="container py-8">
           <div className="animate-pulse space-y-4">
@@ -181,7 +181,7 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F5F5F5]">
+    <div className="min-h-screen bg-background">
       <Navbar />
 
       <div className="container py-6 max-w-2xl px-4 pb-32 md:pb-8">
@@ -220,7 +220,7 @@ export default function ProfilePage() {
           {user && <ProfileClubs userId={user.id} />}
 
           <Collapsible open={paymentOpen} onOpenChange={setPaymentOpen}>
-            <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
+            <div className="bg-card rounded-2xl shadow-sm overflow-hidden">
               <CollapsibleTrigger className="w-full flex items-center justify-between px-4 py-3.5 hover:bg-muted/30 transition-colors">
                 <div className="flex flex-col items-start gap-0.5">
                   <div className="flex items-center gap-2">

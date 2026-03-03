@@ -234,7 +234,7 @@ export function PersonalDetailsGrid({
   ];
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm p-4 space-y-3">
+    <div className="bg-card rounded-2xl shadow-sm p-4 space-y-3">
       <h3 className="text-[11px] font-semibold text-muted-foreground uppercase tracking-[0.1em]">
         Personal Details
       </h3>
