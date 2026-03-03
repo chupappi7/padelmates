@@ -43,49 +43,60 @@ export default function JoinPage() {
   const [players, setPlayers] = useState<PlayerProfile[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Determine if gameId is a UUID or slug
+  const isUUID = gameId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(gameId);
+
   useEffect(() => {
     if (!gameId) return;
 
     const fetchData = async () => {
-      const [gameRes, playersRes] = await Promise.all([
-        supabase
-          .from("games")
-          .select("id, title, location, date_time, format, skill_level, max_players, host_id")
-          .eq("id", gameId)
-          .maybeSingle(),
-        supabase
-          .from("game_players")
-          .select("user_id")
-          .eq("game_id", gameId),
-      ]);
+      let gameQuery = supabase
+        .from("games")
+        .select("id, title, location, date_time, format, skill_level, max_players, host_id");
+      
+      if (isUUID) {
+        gameQuery = gameQuery.eq("id", gameId);
+      } else {
+        gameQuery = gameQuery.eq("slug", gameId);
+      }
+
+      const gameRes = await gameQuery.maybeSingle();
 
       if (gameRes.data) {
-        // Fetch host profile separately
-        const { data: hostProfile } = await supabase
-          .from("profiles")
-          .select("name, avatar_url")
-          .eq("user_id", gameRes.data.host_id)
-          .maybeSingle();
+        const realGameId = gameRes.data.id;
+
+        const [hostProfileRes, playersRes] = await Promise.all([
+          supabase
+            .from("profiles")
+            .select("name, avatar_url")
+            .eq("user_id", gameRes.data.host_id)
+            .maybeSingle(),
+          supabase
+            .from("game_players")
+            .select("user_id")
+            .eq("game_id", realGameId),
+        ]);
 
         setGame({
           ...gameRes.data,
-          profiles: hostProfile,
+          profiles: hostProfileRes.data,
         } as GameData);
-      }
-      if (playersRes.data && playersRes.data.length > 0) {
-        const playerIds = playersRes.data.map((p: any) => p.user_id);
-        const { data: playerProfiles } = await supabase
-          .from("profiles")
-          .select("user_id, name, avatar_url")
-          .in("user_id", playerIds);
-        
-        setPlayers(
-          (playerProfiles || []).map((p) => ({
-            user_id: p.user_id,
-            name: p.name || "Player",
-            avatar_url: p.avatar_url,
-          }))
-        );
+
+        if (playersRes.data && playersRes.data.length > 0) {
+          const playerIds = playersRes.data.map((p: any) => p.user_id);
+          const { data: playerProfiles } = await supabase
+            .from("profiles")
+            .select("user_id, name, avatar_url")
+            .in("user_id", playerIds);
+          
+          setPlayers(
+            (playerProfiles || []).map((p) => ({
+              user_id: p.user_id,
+              name: p.name || "Player",
+              avatar_url: p.avatar_url,
+            }))
+          );
+        }
       }
       setLoading(false);
     };
@@ -122,12 +133,8 @@ export default function JoinPage() {
   }, [game, players]);
 
   const handleJoin = () => {
-    if (user) {
-      navigate(`/games/${gameId}`);
-    } else {
-      // Placeholder: in the future, deep link or app store
-      navigate(`/games/${gameId}`);
-    }
+    const realId = game?.id || gameId;
+    navigate(`/games/${realId}`);
   };
 
   if (loading) {

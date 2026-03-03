@@ -8,6 +8,7 @@ interface ShareGameSheetProps {
   onOpenChange: (open: boolean) => void;
   gameId: string;
   gameTitle: string;
+  gameSlug?: string;
   gameLocation?: string;
   gameDateTime?: string;
   gameFormat?: string;
@@ -27,10 +28,12 @@ const formatLabel = (f: string) => {
 
 export function ShareGameSheet({
   open, onOpenChange, gameId,
-  gameLocation, gameDateTime, gameFormat,
+  gameSlug, gameLocation, gameDateTime, gameFormat,
   gameMaxPlayers, currentPlayersCount, hostName,
 }: ShareGameSheetProps) {
-  const gameUrl = `https://aiexygrtvqxbqdnbympg.supabase.co/functions/v1/join-preview?game_id=${gameId}`;
+  const gameUrl = gameSlug
+    ? `https://aiexygrtvqxbqdnbympg.supabase.co/functions/v1/join-preview?slug=${gameSlug}`
+    : `https://aiexygrtvqxbqdnbympg.supabase.co/functions/v1/join-preview?game_id=${gameId}`;
 
   const handleCopyLink = () => {
     navigator.clipboard.writeText(gameUrl);

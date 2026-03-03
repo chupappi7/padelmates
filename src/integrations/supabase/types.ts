@@ -496,6 +496,7 @@ export type Database = {
           price_per_player: number
           scoreboard: Json | null
           skill_level: number
+          slug: string | null
           title: string
           updated_at: string
           visibility: Database["public"]["Enums"]["visibility_type"]
@@ -525,6 +526,7 @@ export type Database = {
           price_per_player?: number
           scoreboard?: Json | null
           skill_level?: number
+          slug?: string | null
           title: string
           updated_at?: string
           visibility?: Database["public"]["Enums"]["visibility_type"]
@@ -554,6 +556,7 @@ export type Database = {
           price_per_player?: number
           scoreboard?: Json | null
           skill_level?: number
+          slug?: string | null
           title?: string
           updated_at?: string
           visibility?: Database["public"]["Enums"]["visibility_type"]

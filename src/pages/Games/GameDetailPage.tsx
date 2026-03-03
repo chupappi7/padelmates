@@ -72,6 +72,7 @@ interface Game {
   scoreboard: unknown;
   court_taken_by: string | null;
   booking_screenshot_url: string | null;
+  slug?: string;
   club_id: string | null;
   profiles: { name: string; avatar_url: string | null; skill_level?: number } | null;
   club?: { name: string; logo_url: string | null } | null;
@@ -1335,6 +1336,7 @@ export default function GameDetailPage() {
         onOpenChange={setShowShareSheet}
         gameId={id || ""}
         gameTitle={game?.title || ""}
+        gameSlug={game?.slug || undefined}
         gameLocation={game?.location}
         gameDateTime={game?.date_time}
         gameFormat={game?.format}
