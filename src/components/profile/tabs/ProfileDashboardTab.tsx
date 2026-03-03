@@ -70,7 +70,7 @@ export function ProfileDashboardTab({ userId, profile }: Props) {
       setMemberSince(new Date(profileData.created_at).toLocaleDateString("en", { month: "short", year: "numeric" }));
     }
 
-    // Top partner - find who they played with most
+    // Top partner
     if (mpData && mpData.length > 0) {
       const matchIds = (mpData as any[]).filter(mp => mp.matches.status === "completed").map(mp => mp.match_id);
       if (matchIds.length > 0) {
@@ -114,7 +114,6 @@ export function ProfileDashboardTab({ userId, profile }: Props) {
 
   const totalMatches = results.length;
   const wins = results.filter(r => r.won).length;
-  const winRate = totalMatches > 0 ? Math.round((wins / totalMatches) * 100) : 0;
 
   // Streaks
   let currentStreak = 0;
@@ -146,7 +145,7 @@ export function ProfileDashboardTab({ userId, profile }: Props) {
     return (
       <div className="space-y-3">
         {[1, 2, 3].map(i => (
-          <div key={i} className="h-20 bg-white/5 rounded-2xl animate-pulse" />
+          <div key={i} className="h-20 bg-[#E2E8F0] rounded-2xl animate-pulse" />
         ))}
       </div>
     );
@@ -155,16 +154,16 @@ export function ProfileDashboardTab({ userId, profile }: Props) {
   return (
     <div className="space-y-3">
       {/* Welcome card */}
-      <div className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl p-4">
+      <div className="bg-white shadow-sm border border-[#E2E8F0] rounded-2xl p-4">
         <div className="flex items-start gap-3">
-          <div className="w-10 h-10 rounded-xl bg-[#14b8a6]/20 flex items-center justify-center shrink-0">
+          <div className="w-10 h-10 rounded-xl bg-[#14b8a6]/10 flex items-center justify-center shrink-0">
             <span className="text-lg">👋</span>
           </div>
           <div>
-            <p className="text-white font-semibold text-sm" style={{ fontFamily: SPACE }}>
+            <p className="text-[#0F172A] font-semibold text-sm" style={{ fontFamily: SPACE }}>
               Hi {profile.name.split(" ")[0]}!
             </p>
-            <p className="text-white/50 text-xs mt-0.5">
+            <p className="text-[#64748B] text-xs mt-0.5">
               You've played <span className="text-[#14b8a6] font-semibold">{thisMonthCount}</span> matches this month
             </p>
           </div>
@@ -174,35 +173,35 @@ export function ProfileDashboardTab({ userId, profile }: Props) {
       {/* PDR Card */}
       <button
         onClick={() => navigate("/elo")}
-        className="w-full bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl p-4 text-left transition-colors hover:bg-white/[0.12]"
+        className="w-full bg-white shadow-sm border border-[#E2E8F0] rounded-2xl p-4 text-left transition-colors hover:bg-[#F8FAFC]"
       >
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-lg bg-[#14b8a6]/20 flex items-center justify-center text-[10px] font-bold text-[#5eead4]" style={{ fontFamily: SPACE }}>
+            <div className="w-7 h-7 rounded-lg bg-[#14b8a6]/10 flex items-center justify-center text-[10px] font-bold text-[#14b8a6]" style={{ fontFamily: SPACE }}>
               PDR
             </div>
-            <span className="text-[11px] text-white/40 font-medium uppercase tracking-wider">Rating</span>
+            <span className="text-[11px] text-[#94A3B8] font-medium uppercase tracking-wider">Rating</span>
           </div>
-          <span className="text-[10px] bg-white/10 text-white/50 px-2 py-0.5 rounded-full font-medium capitalize">
+          <span className="text-[10px] bg-[#F1F5F9] text-[#64748B] px-2 py-0.5 rounded-full font-medium capitalize">
             {profile.pdr_phase}
           </span>
         </div>
         <div className="mt-3 flex items-end justify-between">
-          <span className="text-[36px] font-extrabold text-white leading-none tabular-nums" style={{ fontFamily: SPACE }}>
+          <span className="text-[36px] font-extrabold text-[#0F172A] leading-none tabular-nums" style={{ fontFamily: SPACE }}>
             {profile.pdr_rating != null ? profile.pdr_rating.toFixed(2) : "NR"}
           </span>
-          <ChevronRight className="w-4 h-4 text-white/30 mb-1" />
+          <ChevronRight className="w-4 h-4 text-[#CBD5E1] mb-1" />
         </div>
         {/* Progress bar */}
-        <div className="mt-3 h-1.5 bg-white/10 rounded-full overflow-hidden">
+        <div className="mt-3 h-1.5 bg-[#F1F5F9] rounded-full overflow-hidden">
           <div
             className="h-full bg-gradient-to-r from-[#14b8a6] to-[#5eead4] rounded-full transition-all"
             style={{ width: `${Math.min(((profile.pdr_rating ?? 0) / 7) * 100, 100)}%` }}
           />
         </div>
         <div className="flex justify-between mt-1">
-          <span className="text-[9px] text-white/30">1.0</span>
-          <span className="text-[9px] text-white/30">7.0</span>
+          <span className="text-[9px] text-[#CBD5E1]">1.0</span>
+          <span className="text-[9px] text-[#CBD5E1]">7.0</span>
         </div>
       </button>
 
@@ -213,28 +212,28 @@ export function ProfileDashboardTab({ userId, profile }: Props) {
           { icon: Flame, label: "Streak", value: currentStreak },
           { icon: CalendarDays, label: "Since", value: memberSince || "—" },
         ].map(s => (
-          <div key={s.label} className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl p-3 text-center">
+          <div key={s.label} className="bg-white shadow-sm border border-[#E2E8F0] rounded-2xl p-3 text-center">
             <s.icon className="w-4 h-4 text-[#14b8a6] mx-auto mb-1" />
-            <p className="text-white font-bold text-lg tabular-nums leading-none" style={{ fontFamily: SPACE }}>
+            <p className="text-[#0F172A] font-bold text-lg tabular-nums leading-none" style={{ fontFamily: SPACE }}>
               {s.value}
             </p>
-            <p className="text-white/40 text-[10px] font-medium uppercase tracking-wider mt-1">{s.label}</p>
+            <p className="text-[#94A3B8] text-[10px] font-medium uppercase tracking-wider mt-1">{s.label}</p>
           </div>
         ))}
       </div>
 
       {/* Recent form strip */}
       {recentForm.length > 0 && (
-        <div className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl p-4">
-          <p className="text-[10px] text-white/40 font-medium uppercase tracking-wider mb-2">Recent Form</p>
+        <div className="bg-white shadow-sm border border-[#E2E8F0] rounded-2xl p-4">
+          <p className="text-[10px] text-[#94A3B8] font-medium uppercase tracking-wider mb-2">Recent Form</p>
           <div className="flex gap-2">
             {recentForm.map((r, i) => (
               <div
                 key={i}
                 className={`w-8 h-8 rounded-xl flex items-center justify-center text-xs font-bold ${
                   r.won
-                    ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
-                    : "bg-red-500/20 text-red-400 border border-red-500/30"
+                    ? "bg-emerald-50 text-emerald-600 border border-emerald-200"
+                    : "bg-red-50 text-red-500 border border-red-200"
                 }`}
                 style={{ fontFamily: SPACE }}
               >
@@ -246,15 +245,15 @@ export function ProfileDashboardTab({ userId, profile }: Props) {
       )}
 
       {/* Activity chart */}
-      <div className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl p-4">
-        <p className="text-[10px] text-white/40 font-medium uppercase tracking-wider mb-3">Activity</p>
+      <div className="bg-white shadow-sm border border-[#E2E8F0] rounded-2xl p-4">
+        <p className="text-[10px] text-[#94A3B8] font-medium uppercase tracking-wider mb-3">Activity</p>
         <div className="h-28">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={monthlyData} barCategoryGap="25%">
-              <XAxis dataKey="label" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: "rgba(255,255,255,0.4)" }} />
+              <XAxis dataKey="label" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: "#94A3B8" }} />
               <Bar dataKey="count" radius={[6, 6, 0, 0]}>
                 {monthlyData.map((_, i) => (
-                  <Cell key={i} fill={i === monthlyData.length - 1 ? "#14b8a6" : "rgba(255,255,255,0.15)"} />
+                  <Cell key={i} fill={i === monthlyData.length - 1 ? "#14b8a6" : "#E2E8F0"} />
                 ))}
               </Bar>
             </BarChart>
@@ -264,10 +263,10 @@ export function ProfileDashboardTab({ userId, profile }: Props) {
 
       {/* Top Partner */}
       {topPartner && (
-        <div className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl p-4">
-          <p className="text-[10px] text-white/40 font-medium uppercase tracking-wider mb-2">Top Partner</p>
+        <div className="bg-white shadow-sm border border-[#E2E8F0] rounded-2xl p-4">
+          <p className="text-[10px] text-[#94A3B8] font-medium uppercase tracking-wider mb-2">Top Partner</p>
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-white font-bold text-sm overflow-hidden">
+            <div className="w-10 h-10 rounded-full bg-[#F1F5F9] flex items-center justify-center text-[#0F172A] font-bold text-sm overflow-hidden">
               {topPartner.avatarUrl ? (
                 <img src={topPartner.avatarUrl} alt="" className="w-full h-full object-cover" />
               ) : (
@@ -275,8 +274,8 @@ export function ProfileDashboardTab({ userId, profile }: Props) {
               )}
             </div>
             <div className="flex-1">
-              <p className="text-white text-sm font-semibold">{topPartner.name}</p>
-              <p className="text-white/40 text-xs">{topPartner.count} matches together</p>
+              <p className="text-[#0F172A] text-sm font-semibold">{topPartner.name}</p>
+              <p className="text-[#94A3B8] text-xs">{topPartner.count} matches together</p>
             </div>
           </div>
         </div>
@@ -285,10 +284,10 @@ export function ProfileDashboardTab({ userId, profile }: Props) {
       {/* Match History link */}
       <button
         onClick={() => navigate("/match-history")}
-        className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-3 flex items-center justify-between hover:bg-white/10 transition-colors"
+        className="w-full bg-white shadow-sm border border-[#E2E8F0] rounded-2xl px-4 py-3 flex items-center justify-between hover:bg-[#F8FAFC] transition-colors"
       >
-        <span className="text-white/60 text-xs font-medium">View Full Match History</span>
-        <ChevronRight className="w-4 h-4 text-white/30" />
+        <span className="text-[#64748B] text-xs font-medium">View Full Match History</span>
+        <ChevronRight className="w-4 h-4 text-[#CBD5E1]" />
       </button>
     </div>
   );

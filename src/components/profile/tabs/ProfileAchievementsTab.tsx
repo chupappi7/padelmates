@@ -21,7 +21,6 @@ export function ProfileAchievementsTab({ userId }: { userId: string }) {
   }, [userId]);
 
   const fetchData = async () => {
-    // Fetch stats to determine which achievements are unlocked
     const { data: mpData } = await supabase
       .from("match_players")
       .select("match_id, team, matches!inner(id, team1_score, team2_score, status)")
@@ -35,7 +34,6 @@ export function ProfileAchievementsTab({ userId }: { userId: string }) {
     if (mpData) {
       const completed = (mpData as any[]).filter(mp => mp.matches.status === "completed");
       totalMatches = completed.length;
-      const sorted = completed.sort((a, b) => 0); // Already sorted from DB
       for (const mp of completed) {
         const m = mp.matches;
         const won = (mp.team === 1 && (m.team1_score ?? 0) > (m.team2_score ?? 0)) ||
@@ -68,7 +66,7 @@ export function ProfileAchievementsTab({ userId }: { userId: string }) {
   if (loading) {
     return (
       <div className="grid grid-cols-2 gap-2">
-        {[1, 2, 3, 4].map(i => <div key={i} className="h-28 bg-white/5 rounded-2xl animate-pulse" />)}
+        {[1, 2, 3, 4].map(i => <div key={i} className="h-28 bg-[#E2E8F0] rounded-2xl animate-pulse" />)}
       </div>
     );
   }
@@ -82,19 +80,19 @@ export function ProfileAchievementsTab({ userId }: { userId: string }) {
             key={a.id}
             className={`rounded-2xl p-4 flex flex-col items-center text-center transition-all ${
               a.unlocked
-                ? "bg-white/10 backdrop-blur-sm border border-[#14b8a6]/40 shadow-[0_0_15px_rgba(20,184,166,0.15)]"
-                : "bg-white/5 border border-white/10 opacity-50"
+                ? "bg-white shadow-sm border border-[#14b8a6]/30 shadow-[0_0_15px_rgba(20,184,166,0.08)]"
+                : "bg-[#F8FAFC] border border-[#E2E8F0] opacity-60"
             }`}
           >
             <div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-2 ${
-              a.unlocked ? "bg-[#14b8a6]/20" : "bg-white/5"
+              a.unlocked ? "bg-[#14b8a6]/10" : "bg-[#F1F5F9]"
             }`}>
-              <Icon className={`w-5 h-5 ${a.unlocked ? "text-[#14b8a6]" : "text-white/30"}`} />
+              <Icon className={`w-5 h-5 ${a.unlocked ? "text-[#14b8a6]" : "text-[#CBD5E1]"}`} />
             </div>
-            <p className={`text-xs font-semibold ${a.unlocked ? "text-white" : "text-white/30"}`} style={{ fontFamily: SPACE }}>
+            <p className={`text-xs font-semibold ${a.unlocked ? "text-[#0F172A]" : "text-[#CBD5E1]"}`} style={{ fontFamily: SPACE }}>
               {a.name}
             </p>
-            <p className={`text-[10px] mt-0.5 ${a.unlocked ? "text-white/40" : "text-white/20"}`}>
+            <p className={`text-[10px] mt-0.5 ${a.unlocked ? "text-[#94A3B8]" : "text-[#CBD5E1]"}`}>
               {a.description}
             </p>
           </div>

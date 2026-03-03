@@ -70,15 +70,15 @@ export function ProfileMatchesTab({ userId }: { userId: string }) {
   if (loading) {
     return (
       <div className="space-y-2">
-        {[1, 2, 3].map(i => <div key={i} className="h-16 bg-white/5 rounded-2xl animate-pulse" />)}
+        {[1, 2, 3].map(i => <div key={i} className="h-16 bg-[#E2E8F0] rounded-2xl animate-pulse" />)}
       </div>
     );
   }
 
   if (matches.length === 0) {
     return (
-      <div className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl p-8 text-center">
-        <p className="text-white/40 text-sm">No completed matches yet</p>
+      <div className="bg-white shadow-sm border border-[#E2E8F0] rounded-2xl p-8 text-center">
+        <p className="text-[#94A3B8] text-sm">No completed matches yet</p>
       </div>
     );
   }
@@ -86,22 +86,22 @@ export function ProfileMatchesTab({ userId }: { userId: string }) {
   return (
     <div className="space-y-2">
       {matches.map(m => (
-        <div key={m.id} className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl p-3.5 flex items-center gap-3">
+        <div key={m.id} className="bg-white shadow-sm border border-[#E2E8F0] rounded-2xl p-3.5 flex items-center gap-3">
           <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-sm font-bold shrink-0 ${
-            m.result === "W" ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30" : "bg-red-500/20 text-red-400 border border-red-500/30"
+            m.result === "W" ? "bg-emerald-50 text-emerald-600 border border-emerald-200" : "bg-red-50 text-red-500 border border-red-200"
           }`} style={{ fontFamily: SPACE }}>
             {m.result}
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-center justify-between">
-              <span className="text-white font-semibold text-sm tabular-nums" style={{ fontFamily: SPACE }}>{m.score}</span>
-              <span className="text-white/30 text-[10px]">{m.date}</span>
+              <span className="text-[#0F172A] font-semibold text-sm tabular-nums" style={{ fontFamily: SPACE }}>{m.score}</span>
+              <span className="text-[#CBD5E1] text-[10px]">{m.date}</span>
             </div>
             <div className="flex items-center gap-1 mt-0.5">
-              <MapPin className="w-3 h-3 text-white/30" />
-              <span className="text-white/40 text-xs truncate">{m.location}</span>
+              <MapPin className="w-3 h-3 text-[#CBD5E1]" />
+              <span className="text-[#94A3B8] text-xs truncate">{m.location}</span>
             </div>
-            <span className="text-[10px] text-white/30 uppercase tracking-wider capitalize">{m.format}</span>
+            <span className="text-[10px] text-[#CBD5E1] uppercase tracking-wider capitalize">{m.format}</span>
           </div>
         </div>
       ))}

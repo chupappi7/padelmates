@@ -102,11 +102,11 @@ export default function ProfilePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-[#1a2a4a] to-[#0f172a]">
+      <div className="min-h-screen bg-[#F5F5F5]">
         <div className="container py-8">
           <div className="animate-pulse space-y-4">
-            <div className="h-32 bg-white/10 rounded-2xl" />
-            <div className="h-16 bg-white/10 rounded-2xl" />
+            <div className="h-32 bg-[#E2E8F0] rounded-2xl" />
+            <div className="h-16 bg-[#E2E8F0] rounded-2xl" />
           </div>
         </div>
       </div>
@@ -114,69 +114,71 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#1a2a4a] to-[#0f172a] pb-32 md:pb-8">
+    <div className="min-h-screen bg-[#F5F5F5] pb-32 md:pb-8">
       {/* Header */}
-      <div className="px-4 pt-4 pb-2 flex items-center justify-between">
-        <button onClick={() => navigate("/settings")} className="w-9 h-9 rounded-full bg-white/10 backdrop-blur-sm flex items-center justify-center">
-          <Settings className="w-4.5 h-4.5 text-white/70" />
-        </button>
-        <h1 className="text-white font-bold text-lg" style={{ fontFamily: SPACE }}>Profile</h1>
-        <div className="w-9" />
+      <div className="bg-gradient-to-b from-teal-50 to-white px-4 pt-4 pb-2">
+        <div className="flex items-center justify-between">
+          <button onClick={() => navigate("/settings")} className="w-9 h-9 rounded-full bg-[#F1F5F9] flex items-center justify-center">
+            <Settings className="w-4.5 h-4.5 text-[#64748B]" />
+          </button>
+          <h1 className="text-[#0F172A] font-bold text-lg" style={{ fontFamily: SPACE }}>Profile</h1>
+          <div className="w-9" />
+        </div>
+
+        {/* Avatar + Name */}
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="flex flex-col items-center pt-2 pb-4"
+        >
+          <div className="relative">
+            <Avatar className="w-20 h-20 ring-2 ring-[#14b8a6]/20 ring-offset-2 ring-offset-white">
+              <AvatarImage src={profile?.avatar_url || undefined} className="object-cover" />
+              <AvatarFallback className="text-2xl font-bold bg-[#14b8a6]/10 text-[#14b8a6]" style={{ fontFamily: SPACE }}>
+                {profile?.name?.charAt(0).toUpperCase()}
+              </AvatarFallback>
+            </Avatar>
+            <label
+              htmlFor="avatar-upload-main"
+              className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-[#14b8a6] flex items-center justify-center cursor-pointer shadow-lg shadow-[#14b8a6]/30"
+            >
+              <Camera className="w-3.5 h-3.5 text-white" />
+            </label>
+            <Input type="file" id="avatar-upload-main" accept="image/*" className="hidden" onChange={handleAvatarUpload} />
+          </div>
+
+          <p className="text-[#0F172A] text-xl font-bold mt-3" style={{ fontFamily: SPACE }}>{profile?.name}</p>
+
+          <div className="flex items-center gap-2 mt-1.5">
+            <button onClick={() => setLevelSheetOpen(true)}>
+              <SkillBadge level={profile?.skill_level || 2} size="sm" />
+            </button>
+            {profile?.friend_code && (
+              <>
+                <span className="text-[#CBD5E1] text-xs">·</span>
+                <button onClick={handleCopyCode} className="flex items-center gap-1 group">
+                  {copied ? <Check className="w-3 h-3 text-[#64748B]" /> : <Copy className="w-3 h-3 text-[#94A3B8] group-hover:text-[#64748B] transition-colors" />}
+                  <span className={`text-[11px] font-mono tracking-wider ${copied ? "text-[#64748B]" : "text-[#94A3B8] group-hover:text-[#64748B]"} transition-colors`}>
+                    {profile.friend_code}
+                  </span>
+                </button>
+              </>
+            )}
+          </div>
+        </motion.div>
       </div>
 
-      {/* Avatar + Name */}
-      <motion.div
-        initial={{ opacity: 0, y: 16 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="flex flex-col items-center px-4 pt-2 pb-4"
-      >
-        <div className="relative">
-          <Avatar className="w-20 h-20 ring-2 ring-white/20 ring-offset-2 ring-offset-transparent">
-            <AvatarImage src={profile?.avatar_url || undefined} className="object-cover" />
-            <AvatarFallback className="text-2xl font-bold bg-[#14b8a6]/30 text-[#5eead4]" style={{ fontFamily: SPACE }}>
-              {profile?.name?.charAt(0).toUpperCase()}
-            </AvatarFallback>
-          </Avatar>
-          <label
-            htmlFor="avatar-upload-main"
-            className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-[#14b8a6] flex items-center justify-center cursor-pointer shadow-lg shadow-[#14b8a6]/30"
-          >
-            <Camera className="w-3.5 h-3.5 text-white" />
-          </label>
-          <Input type="file" id="avatar-upload-main" accept="image/*" className="hidden" onChange={handleAvatarUpload} />
-        </div>
-
-        <p className="text-white text-xl font-bold mt-3" style={{ fontFamily: SPACE }}>{profile?.name}</p>
-
-        <div className="flex items-center gap-2 mt-1.5">
-          <button onClick={() => setLevelSheetOpen(true)}>
-            <SkillBadge level={profile?.skill_level || 2} size="sm" />
-          </button>
-          {profile?.friend_code && (
-            <>
-              <span className="text-white/20 text-xs">·</span>
-              <button onClick={handleCopyCode} className="flex items-center gap-1 group">
-                {copied ? <Check className="w-3 h-3 text-white/70" /> : <Copy className="w-3 h-3 text-white/40 group-hover:text-white/60 transition-colors" />}
-                <span className={`text-[11px] font-mono tracking-wider ${copied ? "text-white/70" : "text-white/40 group-hover:text-white/60"} transition-colors`}>
-                  {profile.friend_code}
-                </span>
-              </button>
-            </>
-          )}
-        </div>
-      </motion.div>
-
       {/* Tab Navigation */}
-      <div className="px-4 mb-4">
-        <div className="flex gap-1 bg-white/5 backdrop-blur-sm rounded-2xl p-1">
+      <div className="px-4 mb-4 mt-4">
+        <div className="flex gap-1 bg-white rounded-2xl p-1 shadow-sm border border-[#E2E8F0]">
           {TABS.map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
               className={`flex-1 py-2 px-2 rounded-xl text-xs font-semibold transition-all ${
                 activeTab === tab
-                  ? "bg-white text-[#0f172a] shadow-sm"
-                  : "text-white/60 hover:text-white/80"
+                  ? "bg-[#14b8a6] text-white shadow-sm"
+                  : "text-[#64748B] hover:text-[#0F172A]"
               }`}
               style={{ fontFamily: SPACE }}
             >
