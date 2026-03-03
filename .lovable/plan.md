@@ -1,35 +1,28 @@
 
 
-## Plan: Improve In-App Game Sharing
+## Plan: Add Chat Actions Menu
 
-### Problem
-When sharing a game to a friend via the share sheet, the message sent is just `"Check out this match! {url}"` which renders as plain text (visible in screenshot). The `SharedGameCard` never triggers because:
-1. The regex expects `"Check out this match: "` (colon) but the code sends `"Check out this match! "` (exclamation)
-2. The regex expects `/games/{uuid}` but the URL uses `/join/{slug}`
+### Changes
 
-### Solution
+**1. Three-dot menu in chat header bar (next to user name)**
 
-**1. Change message format to a simple structured tag**
+Add a `DropdownMenu` with `MoreVertical` icon button to the right side of the chat header, pushed to the far right with `ml-auto`. Options:
+- **Mute** -- toggles muted state via `conversation_preferences` table
+- **Block** -- placeholder action with toast (blocking logic can be expanded later)
+- **Delete Chat** -- sets `deleted: true` in `conversation_preferences` and navigates back to `/messages`
 
-In `ShareGameSheet.tsx`, update `handleSendToFriend` to send a structured message:
-```
-[game:${gameId}]
-```
-This is clean, parseable, and lets the `SharedGameCard` component handle all the rich rendering (it already fetches game data and shows location, date, time, players, skill level).
+**2. Long-press / context menu on individual chat bubbles**
 
-**2. Update `ChatMessageContent.tsx` to detect `[game:uuid]` format**
-
-Replace the complex regex with a simple pattern match for `[game:{id}]`. When detected, render the existing `SharedGameCard` component which already has a polished UI with all game details.
-
-**3. Remove the old unused regex pattern**
-
-The `GAME_SHARE_REGEX` pattern is no longer needed.
+Wrap each message bubble in a `ContextMenu` (from existing `@radix-ui/react-context-menu`). On mobile this triggers on long-press. Options:
+- **Copy** -- copies message text to clipboard
+- **Delete** -- deletes the message from `chat_messages` table (only for own messages)
 
 ### Files to Change
 
-- `src/components/games/ShareGameSheet.tsx` -- line 138: change message from `Check out this match! ${shareUrl}` to `[game:${gameId}]`
-- `src/components/chat/ChatMessageContent.tsx` -- replace `GAME_SHARE_REGEX` with `[game:uuid]` detection pattern
-
-### Result
-The shared game will render as the existing rich `SharedGameCard` (showing title, location, date/time, players, skill badge, "View Match" CTA) instead of plain text. Tapping navigates to the game detail page.
+- `src/pages/Messages/ChatPage.tsx`
+  - Import `DropdownMenu` components, `MoreVertical`, `Copy`, `Trash2`, `BellOff` icons, `ContextMenu` components
+  - Add state for `muted`
+  - Add `DropdownMenu` button after the user name/avatar section in header (line ~209, before closing `</div>`)
+  - Wrap each message bubble in `ContextMenu` with Copy + Delete (own messages only) options
+  - Add handler functions: `handleDeleteChat`, `handleMuteChat`, `handleDeleteMessage`, `handleCopyMessage`
 
