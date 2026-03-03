@@ -102,7 +102,7 @@ export default function ProfilePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-[#1a2a4a] to-[#0f172a]">
+      <div className="min-h-screen bg-[#0f172a]">
         <div className="container py-8">
           <div className="animate-pulse space-y-4">
             <div className="h-32 bg-white/10 rounded-2xl" />
@@ -114,7 +114,7 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#1a2a4a] to-[#0f172a] pb-32 md:pb-8">
+    <div className="min-h-screen bg-[#0f172a] pb-32 md:pb-8">
       {/* Header */}
       <div className="px-4 pt-4 pb-2 flex items-center justify-between">
         <button onClick={() => navigate("/settings")} className="w-9 h-9 rounded-full bg-white/10 backdrop-blur-sm flex items-center justify-center">

@@ -7,7 +7,7 @@
 @layer base {
   :root {
     /* Deep blue glassmorphism theme */
-    --background: 220 40% 11%;
+    --background: 222 47% 11%;
     --foreground: 210 20% 98%;
 
     --card: 220 40% 15%;
@@ -85,8 +85,7 @@
   body {
     @apply bg-background text-foreground antialiased;
     font-family: 'Inter', system-ui, sans-serif;
-    background: linear-gradient(180deg, hsl(220 40% 16%) 0%, hsl(220 45% 8%) 100%);
-    background-attachment: fixed;
+    background: #0f172a;
     min-height: 100vh;
     -webkit-tap-highlight-color: transparent;
     -webkit-font-smoothing: antialiased;
