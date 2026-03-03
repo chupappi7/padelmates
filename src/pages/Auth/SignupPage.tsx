@@ -108,11 +108,22 @@ export default function SignupPage() {
     `w-full h-[52px] rounded-xl px-4 text-base bg-white border outline-none transition-colors ${field ? "border-red-500" : "border-[#E2E8F0] focus:border-primary"}`;
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-6 pb-24" style={{ backgroundColor: "#0D1F1E" }}>
+    <div
+      className="min-h-screen flex items-center justify-center px-6 pb-24 relative overflow-hidden"
+      style={{
+        backgroundColor: "#0D1F1E",
+        backgroundImage:
+          "radial-gradient(ellipse at 20% 50%, rgba(20,184,166,0.12) 0%, transparent 60%), radial-gradient(ellipse at 80% 20%, rgba(20,184,166,0.08) 0%, transparent 50%)",
+      }}
+    >
+      {/* Glow orbs */}
+      <div className="absolute top-[-10%] right-[-5%] w-72 h-72 md:w-96 md:h-96 rounded-full bg-primary/10 blur-3xl animate-float pointer-events-none" />
+      <div className="absolute bottom-[-10%] left-[-5%] w-80 h-80 md:w-96 md:h-96 rounded-full bg-primary/[0.07] blur-3xl animate-float pointer-events-none" style={{ animationDelay: "3s" }} />
+
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="w-full max-w-md"
+        className="w-full max-w-md relative z-10"
       >
         {/* Logo — always visible, always same size */}
         <div className="flex flex-col items-center mb-10">
