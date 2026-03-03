@@ -23,7 +23,6 @@ import {
   ChevronUp,
   ImagePlus,
   X,
-  Volleyball,
 } from "lucide-react";
 import {
   Collapsible,
@@ -33,6 +32,7 @@ import {
 import { HeroCard } from "@/components/profile/HeroCard";
 import { LevelSelectSheet } from "@/components/profile/LevelSelectSheet";
 import { ProfileClubs } from "@/components/profile/ProfileClubs";
+import { ProfilePerformanceCard } from "@/components/profile/ProfilePerformanceCard";
 import { PersonalDetailsGrid } from "@/components/profile/PersonalDetailsGrid";
 
 interface Profile {
@@ -203,6 +203,8 @@ export default function ProfilePage() {
             onPdrClick={() => navigate("/elo")}
           />
 
+          {user && <ProfilePerformanceCard userId={user.id} />}
+
           {user && (
             <PersonalDetailsGrid
               userId={user.id}
@@ -214,14 +216,6 @@ export default function ProfilePage() {
               onSaved={fetchProfile}
             />
           )}
-
-          <Button
-            className="w-full gap-2 bg-[hsl(160,60%,45%)] hover:bg-[hsl(160,60%,40%)] text-white font-semibold h-12 rounded-2xl shadow-sm"
-            onClick={() => navigate("/match-history")}
-          >
-            <Volleyball className="w-5 h-5" />
-            Match History
-          </Button>
 
           {user && <ProfileClubs userId={user.id} />}
 
