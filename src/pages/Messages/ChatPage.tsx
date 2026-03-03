@@ -7,6 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, MapPin, Calendar } from "lucide-react";
+import { Navbar } from "@/components/layout/Navbar";
 import { cn } from "@/lib/utils";
 import { format, isToday, isYesterday } from "date-fns";
 import { ChatInputWithUpload } from "@/components/chat/ChatInputWithUpload";
@@ -176,6 +177,7 @@ export default function ChatPage() {
 
   return (
     <div className="flex flex-col h-screen bg-background">
+      <Navbar />
       {/* Header */}
       <div className="sticky top-0 z-50 glass-card border-b border-border/50 px-3 py-2.5">
         <div className="flex items-center gap-3">
