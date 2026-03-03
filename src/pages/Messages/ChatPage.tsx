@@ -366,7 +366,7 @@ export default function ChatPage() {
                       <ContextMenu>
                         <ContextMenuTrigger asChild>
                           {isGameCard ? (
-                            <div className="max-w-[75%]">
+                            <div className="max-w-[75%] select-none">
                               <ChatMessageContent message={msg.message} isMine={isMine} />
                               <p className={cn(
                                 "text-[10px] mt-0.5 text-right",
@@ -378,7 +378,7 @@ export default function ChatPage() {
                           ) : (
                             <div
                               className={cn(
-                                "max-w-[75%] px-3.5 py-2 text-sm",
+                                "max-w-[75%] px-3.5 py-2 text-sm select-none",
                                 isMine
                                   ? "bg-primary text-primary-foreground rounded-2xl rounded-br-md"
                                   : "bg-muted rounded-2xl rounded-bl-md"
