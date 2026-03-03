@@ -998,7 +998,7 @@ export default function CreateGamePage() {
                       </div>
 
                       <div className="space-y-3">
-                        <Label className="text-sm">Price</Label>
+                        <Label className="text-sm">Price (optional)</Label>
                         {/* Price mode toggle */}
                         <div className="flex gap-2">
                           <button
@@ -1010,7 +1010,7 @@ export default function CreateGamePage() {
                                 : "border-border text-muted-foreground hover:border-primary/40"
                             }`}
                           >
-                            Split among players
+                            Full Court Price
                           </button>
                           <button
                             type="button"
@@ -1021,7 +1021,7 @@ export default function CreateGamePage() {
                                 : "border-border text-muted-foreground hover:border-primary/40"
                             }`}
                           >
-                            Per player
+                            Per Player
                           </button>
                         </div>
 
@@ -1031,7 +1031,7 @@ export default function CreateGamePage() {
                             type="number"
                             min="0"
                             step="1"
-                            placeholder={formData.priceMode === "split_evenly" ? "e.g., 800 (full court price)" : "e.g., 200"}
+                            placeholder={formData.priceMode === "split_evenly" ? "e.g., 800" : "e.g., 200"}
                             value={formData.totalPrice}
                             onChange={(e) => handleChange("totalPrice", e.target.value)}
                             className="h-11 pl-10"
@@ -1044,12 +1044,12 @@ export default function CreateGamePage() {
                             </p>
                           ) : (
                             <p className="text-xs text-muted-foreground">
-                              {Number(formData.totalPrice)} Kč per player
+                              <strong>{Number(formData.totalPrice)} Kč per player</strong>
                             </p>
                           )
                         ) : (
                           <p className="text-xs text-muted-foreground">
-                            {formData.priceMode === "split_evenly" ? "Enter the total court price to split" : "Enter the price each player pays"}
+                            Leave empty for free
                           </p>
                         )}
                       </div>
