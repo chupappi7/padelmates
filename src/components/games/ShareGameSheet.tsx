@@ -183,25 +183,10 @@ export function ShareGameSheet({
                 <Link2 className="w-4 h-4 text-primary" />
               </div>
               <div className="text-left">
-                <p className="text-sm font-medium">Copy invite message</p>
+                <p className="text-sm font-medium">Copy invite link</p>
                 <p className="text-xs text-muted-foreground">Copy full invite to clipboard</p>
               </div>
             </button>
-
-            {isMobile && (
-              <button
-                onClick={handleWhatsApp}
-                className="w-full flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-accent/50 transition-colors"
-              >
-                <div className="w-9 h-9 rounded-full bg-[#25D366]/10 flex items-center justify-center shrink-0">
-                  <MessageCircle className="w-4 h-4 text-[#25D366]" />
-                </div>
-                <div className="text-left">
-                  <p className="text-sm font-medium">Share to WhatsApp</p>
-                  <p className="text-xs text-muted-foreground">Send match invite via WhatsApp</p>
-                </div>
-              </button>
-            )}
 
             {user && (
               <button
@@ -214,6 +199,21 @@ export function ShareGameSheet({
                 <div className="text-left">
                   <p className="text-sm font-medium">Send to friends</p>
                   <p className="text-xs text-muted-foreground">Share via in-app message</p>
+                </div>
+              </button>
+            )}
+
+            {isMobile && (
+              <button
+                onClick={handleWhatsApp}
+                className="w-full flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-accent/50 transition-colors"
+              >
+                <div className="w-9 h-9 rounded-full bg-[#25D366]/10 flex items-center justify-center shrink-0">
+                  <MessageCircle className="w-4 h-4 text-[#25D366]" />
+                </div>
+                <div className="text-left">
+                  <p className="text-sm font-medium">Share to WhatsApp</p>
+                  <p className="text-xs text-muted-foreground">Send match invite via WhatsApp</p>
                 </div>
               </button>
             )}
