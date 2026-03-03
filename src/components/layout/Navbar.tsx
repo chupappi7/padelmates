@@ -51,7 +51,7 @@ export function Navbar() {
 
   return (
     <>
-      <nav className="sticky top-0 z-50 glass-card border-b border-border/50">
+      <nav className="sticky top-0 z-50 bg-white/5 backdrop-blur-xl border-b border-white/10">
         <div className="flex items-center justify-between h-14 md:h-16 px-3 md:px-6 w-full">
           <Link to="/" className="flex items-center gap-0.5">
             <img src={logoIcon} alt="PadelMates" className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl object-cover" />
