@@ -6,12 +6,15 @@ import { useConversations } from "@/hooks/useConversations";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, MapPin, Calendar } from "lucide-react";
+import { ArrowLeft, MapPin, Calendar, MoreVertical, Copy, Trash2, BellOff, Ban } from "lucide-react";
 import { Navbar } from "@/components/layout/Navbar";
 import { cn } from "@/lib/utils";
 import { format, isToday, isYesterday } from "date-fns";
 import { ChatInputWithUpload } from "@/components/chat/ChatInputWithUpload";
 import { ChatMessageContent } from "@/components/chat/ChatMessageContent";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger } from "@/components/ui/context-menu";
+import { toast } from "sonner";
 
 interface ChatMessage {
   id: string;
@@ -40,6 +43,7 @@ export default function ChatPage() {
   const [courtContext, setCourtContext] = useState<CourtContext | null>(null);
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
+  const [muted, setMuted] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -116,6 +120,15 @@ export default function ChatPage() {
 
       // Mark conversation as read
       markAsRead(chatId);
+
+      // Fetch muted state
+      const { data: pref } = await supabase
+        .from("conversation_preferences")
+        .select("muted")
+        .eq("conversation_id", chatId)
+        .eq("user_id", user.id)
+        .maybeSingle();
+      if (pref) setMuted(pref.muted);
     };
 
     fetchChat();
@@ -152,6 +165,54 @@ export default function ChatPage() {
 
     setSending(false);
     inputRef.current?.focus();
+  };
+
+  const handleMuteChat = async () => {
+    if (!user || !chatId) return;
+    const newMuted = !muted;
+    const { data: existing } = await supabase
+      .from("conversation_preferences")
+      .select("id")
+      .eq("conversation_id", chatId)
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+    if (existing) {
+      await supabase.from("conversation_preferences").update({ muted: newMuted }).eq("id", existing.id);
+    } else {
+      await supabase.from("conversation_preferences").insert({ conversation_id: chatId, user_id: user.id, muted: newMuted });
+    }
+    setMuted(newMuted);
+    toast(newMuted ? "Chat muted" : "Chat unmuted");
+  };
+
+  const handleDeleteChat = async () => {
+    if (!user || !chatId) return;
+    const { data: existing } = await supabase
+      .from("conversation_preferences")
+      .select("id")
+      .eq("conversation_id", chatId)
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+    if (existing) {
+      await supabase.from("conversation_preferences").update({ deleted: true }).eq("id", existing.id);
+    } else {
+      await supabase.from("conversation_preferences").insert({ conversation_id: chatId, user_id: user.id, deleted: true });
+    }
+    toast("Chat deleted");
+    navigate("/messages");
+  };
+
+  const handleCopyMessage = (text: string) => {
+    navigator.clipboard.writeText(text);
+    toast("Copied to clipboard");
+  };
+
+  const handleDeleteMessage = async (msgId: string) => {
+    await supabase.from("chat_messages").delete().eq("id", msgId);
+    setMessages((prev) => prev.filter((m) => m.id !== msgId));
+    toast("Message deleted");
   };
 
   const formatMessageTime = (dateStr: string) => format(new Date(dateStr), "HH:mm");
@@ -207,6 +268,28 @@ export default function ChatPage() {
               </div>
             </button>
           )}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-9 w-9 shrink-0 ml-auto">
+                <MoreVertical className="w-5 h-5" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={handleMuteChat}>
+                <BellOff className="w-4 h-4 mr-2" />
+                {muted ? "Unmute" : "Mute"}
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => toast("User blocked (placeholder)")}>
+                <Ban className="w-4 h-4 mr-2" />
+                Block
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={handleDeleteChat} className="text-destructive focus:text-destructive">
+                <Trash2 className="w-4 h-4 mr-2" />
+                Delete Chat
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 
@@ -280,34 +363,50 @@ export default function ChatPage() {
                         </div>
                       )}
                       {isMine && <div className="flex-1" />}
-                      {isGameCard ? (
-                        <div className="max-w-[75%]">
-                          <ChatMessageContent message={msg.message} isMine={isMine} />
-                          <p className={cn(
-                            "text-[10px] mt-0.5 text-right",
-                            "text-muted-foreground"
-                          )}>
-                            {formatMessageTime(msg.created_at)}
-                          </p>
-                        </div>
-                      ) : (
-                        <div
-                          className={cn(
-                            "max-w-[75%] px-3.5 py-2 text-sm",
-                            isMine
-                              ? "bg-primary text-primary-foreground rounded-2xl rounded-br-md"
-                              : "bg-muted rounded-2xl rounded-bl-md"
+                      <ContextMenu>
+                        <ContextMenuTrigger asChild>
+                          {isGameCard ? (
+                            <div className="max-w-[75%]">
+                              <ChatMessageContent message={msg.message} isMine={isMine} />
+                              <p className={cn(
+                                "text-[10px] mt-0.5 text-right",
+                                "text-muted-foreground"
+                              )}>
+                                {formatMessageTime(msg.created_at)}
+                              </p>
+                            </div>
+                          ) : (
+                            <div
+                              className={cn(
+                                "max-w-[75%] px-3.5 py-2 text-sm",
+                                isMine
+                                  ? "bg-primary text-primary-foreground rounded-2xl rounded-br-md"
+                                  : "bg-muted rounded-2xl rounded-bl-md"
+                              )}
+                            >
+                              <ChatMessageContent message={msg.message} isMine={isMine} />
+                              <p className={cn(
+                                "text-[10px] mt-0.5 text-right",
+                                isMine ? "text-primary-foreground/60" : "text-muted-foreground"
+                              )}>
+                                {formatMessageTime(msg.created_at)}
+                              </p>
+                            </div>
                           )}
-                        >
-                          <ChatMessageContent message={msg.message} isMine={isMine} />
-                          <p className={cn(
-                            "text-[10px] mt-0.5 text-right",
-                            isMine ? "text-primary-foreground/60" : "text-muted-foreground"
-                          )}>
-                            {formatMessageTime(msg.created_at)}
-                          </p>
-                        </div>
-                      )}
+                        </ContextMenuTrigger>
+                        <ContextMenuContent>
+                          <ContextMenuItem onClick={() => handleCopyMessage(msg.message)}>
+                            <Copy className="w-4 h-4 mr-2" />
+                            Copy
+                          </ContextMenuItem>
+                          {isMine && (
+                            <ContextMenuItem onClick={() => handleDeleteMessage(msg.id)} className="text-destructive focus:text-destructive">
+                              <Trash2 className="w-4 h-4 mr-2" />
+                              Delete
+                            </ContextMenuItem>
+                          )}
+                        </ContextMenuContent>
+                      </ContextMenu>
                       {isMine && (
                         <div className="w-7 shrink-0 self-end">
                           {showAvatar && myProfile && (
