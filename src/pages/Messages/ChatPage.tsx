@@ -363,7 +363,9 @@ export default function ChatPage() {
                         </div>
                       )}
                       {isMine && <div className="flex-1" />}
-                      <ContextMenu>
+                      <ContextMenu onOpenChange={(open) => {
+                        if (open && navigator.vibrate) navigator.vibrate(30);
+                      }}>
                         <ContextMenuTrigger asChild>
                           {isGameCard ? (
                             <div className="max-w-[75%] select-none">
