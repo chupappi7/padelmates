@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { MapPin, Calendar, Users, ChevronRight } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { SkillBadge } from "@/components/games/SkillBadge";
 
 interface SharedGameCardProps {
@@ -76,12 +77,6 @@ export function SharedGameCard({ gameId, title }: SharedGameCardProps) {
   const totalPlayers = playerCount + prefilledCount;
   const spotsLeft = game.max_players - totalPlayers;
 
-  const spotsColor = spotsLeft <= 0
-    ? "bg-destructive/15 text-destructive border-destructive/20"
-    : spotsLeft <= 2
-      ? "bg-warning/15 text-warning border-warning/20"
-      : "bg-success/15 text-success border-success/20";
-
   const isFull = spotsLeft <= 0;
 
   return (
@@ -99,20 +94,22 @@ export function SharedGameCard({ gameId, title }: SharedGameCardProps) {
       </div>
 
       {/* Details */}
-      <div className="space-y-1">
-        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-          <MapPin className="w-3 h-3 shrink-0" />
-          <span className="break-words line-clamp-2">{locationStr}</span>
+      <div className="space-y-1.5">
+        <div className="flex items-start gap-2 text-xs text-muted-foreground">
+          <MapPin className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+          <span className="break-words">{locationStr}</span>
         </div>
-        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-          <Calendar className="w-3 h-3 shrink-0" />
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <Calendar className="w-3.5 h-3.5 shrink-0" />
           <span>{dateStr} · {startTime}{endTime ? ` – ${endTime}` : ""}</span>
         </div>
-        <div className="flex items-center gap-1.5">
-          <span className={`inline-flex items-center gap-0.5 rounded-full border px-1.5 py-0.5 text-[10px] font-semibold ${spotsColor}`}>
-            <Users className="w-3 h-3" />
-            {totalPlayers}/{game.max_players}
-            {isFull ? " Full" : ` · ${spotsLeft} left`}
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <Users className="w-3.5 h-3.5 shrink-0" />
+          <span className={cn(
+            "font-semibold",
+            spotsLeft <= 0 ? "text-destructive" : spotsLeft <= 2 ? "text-warning" : "text-success"
+          )}>
+            {totalPlayers}/{game.max_players}{isFull ? " · Full" : ` · ${spotsLeft} left`}
           </span>
         </div>
       </div>
