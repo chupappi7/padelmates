@@ -281,15 +281,15 @@ export function MatchesTab({
     .filter((p) => !team1Picks.includes(p.user_id))
     .map((p) => p.user_id);
 
-  const handleSubmitScore = async (setScores: Array<{t1: number; t2: number}>, setsWonT1: number, setsWonT2: number) => {
+  const handleSubmitScore = async (t1: number, t2: number) => {
     if (!scoringMatchId) return;
 
     const { error } = await supabase
       .from("matches")
       .update({
-        team1_score: setsWonT1,
-        team2_score: setsWonT2,
-        set_scores: setScores,
+        team1_score: t1,
+        team2_score: t2,
+        set_scores: [{ t1, t2 }],
         status: "completed",
       })
       .eq("id", scoringMatchId);
@@ -454,7 +454,7 @@ export function MatchesTab({
                       {match.team2_score}
                     </span>
                   </div>
-                  <p className="text-[9px] text-muted-foreground/60 uppercase tracking-wider -mt-0.5">Sets</p>
+                  <p className="text-[9px] text-muted-foreground/60 uppercase tracking-wider -mt-0.5">Games</p>
                 </div>
 
                 {/* Team 2 — left-aligned names, avatars on left */}
@@ -473,18 +473,6 @@ export function MatchesTab({
                 </div>
               </div>
 
-              {/* Set score pills */}
-              {match.set_scores && match.set_scores.length > 0 && (
-                <div className="flex justify-center gap-1.5 mt-2">
-                  {match.set_scores.map((s, i) => (
-                    <span key={i} className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full bg-muted text-[10px] font-semibold tabular-nums">
-                      <span className={cn(s.t1 > s.t2 ? "text-success" : "text-muted-foreground")}>{s.t1}</span>
-                      <span className="text-muted-foreground/40">-</span>
-                      <span className={cn(s.t2 > s.t1 ? "text-success" : "text-muted-foreground")}>{s.t2}</span>
-                    </span>
-                  ))}
-                </div>
-              )}
             </div>
 
             {/* Score button */}
@@ -626,9 +614,44 @@ export function MatchesTab({
           <ScoreScrollPicker
             open={true}
             onOpenChange={(open) => { if (!open) setScoringMatchId(null); }}
-            setScores={Array.isArray(m.set_scores) ? (m.set_scores as Array<{t1: number; t2: number}>) : []}
+            initialScore={{ t1: m.team1_score, t2: m.team2_score }}
             onConfirm={handleSubmitScore}
           />
+        );
+      })()}
+
+      {/* End Session button */}
+      {canManage && matches.length > 0 && (() => {
+        const allCompleted = matches.every((m) => m.status === "completed");
+        return (
+          <Button
+            variant="destructive"
+            size="sm"
+            className="w-full h-10 gap-1.5"
+            disabled={!allCompleted}
+            onClick={async () => {
+              // Update games_played for all real players in completed matches
+              const realPlayerIds = new Set<string>();
+              matches.forEach((m) => {
+                m.match_players.forEach((mp) => {
+                  if (!guestMap.has(mp.user_id)) realPlayerIds.add(mp.user_id);
+                });
+              });
+
+              try {
+                for (const uid of realPlayerIds) {
+                  const { data } = await supabase.from("profiles").select("games_played").eq("user_id", uid).single();
+                  await supabase.from("profiles").update({ games_played: (data?.games_played ?? 0) + 1 }).eq("user_id", uid);
+                }
+                toast.success("Session ended! Player stats updated.");
+              } catch {
+                toast.error("Failed to update player stats");
+              }
+            }}
+          >
+            <Trophy className="w-4 h-4" />
+            {matches.every((m) => m.status === "completed") ? "End Session" : "Complete all matches first"}
+          </Button>
         );
       })()}
     </div>

@@ -22,23 +22,19 @@ export function SubmitScoreTab() {
   const [team1, setTeam1] = useState<SelectedPlayer[]>([]);
   const [team2, setTeam2] = useState<SelectedPlayer[]>([]);
   const [showScorePicker, setShowScorePicker] = useState(false);
-  const [setScores, setSetScores] = useState<{ t1: number; t2: number }[]>([{ t1: 0, t2: 0 }]);
+  const [gameScore, setGameScore] = useState<{ t1: number; t2: number }>({ t1: 0, t2: 0 });
   const [submitting, setSubmitting] = useState(false);
 
   const allSelectedIds = [...team1, ...team2].map((p) => p.user_id);
 
-  const handleConfirmScore = async (
-    scores: { t1: number; t2: number }[],
-    setsWonT1: number,
-    setsWonT2: number
-  ) => {
+  const handleConfirmScore = async (t1: number, t2: number) => {
     if (team1.length !== 2 || team2.length !== 2) return;
 
-    setSetScores(scores);
+    setGameScore({ t1, t2 });
     setSubmitting(true);
 
     try {
-      const team1Won = setsWonT1 > setsWonT2;
+      const team1Won = t1 > t2;
       const result = calculateDoubles(
         [team1[0].elo_rating, team1[1].elo_rating],
         [team2[0].elo_rating, team2[1].elo_rating],
@@ -72,7 +68,7 @@ export function SubmitScoreTab() {
       // Reset
       setTeam1([]);
       setTeam2([]);
-      setSetScores([{ t1: 0, t2: 0 }]);
+      setGameScore({ t1: 0, t2: 0 });
     } catch (err) {
       toast.error("Failed to submit score.");
     } finally {
@@ -120,7 +116,7 @@ export function SubmitScoreTab() {
       <ScoreScrollPicker
         open={showScorePicker}
         onOpenChange={setShowScorePicker}
-        setScores={setScores}
+        initialScore={gameScore}
         onConfirm={handleConfirmScore}
       />
     </div>
