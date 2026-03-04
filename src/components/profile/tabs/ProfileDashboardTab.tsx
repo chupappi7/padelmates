@@ -14,6 +14,7 @@ interface MatchResult {
 
 interface Props {
   userId: string;
+  isSelf?: boolean;
   profile: {
     name: string;
     pdr_rating: number | null;
@@ -22,7 +23,7 @@ interface Props {
   };
 }
 
-export function ProfileDashboardTab({ userId, profile }: Props) {
+export function ProfileDashboardTab({ userId, profile, isSelf = true }: Props) {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [results, setResults] = useState<MatchResult[]>([]);
@@ -157,14 +158,14 @@ export function ProfileDashboardTab({ userId, profile }: Props) {
       <div className="bg-white shadow-sm border border-[#E2E8F0] rounded-2xl p-4">
         <div className="flex items-start gap-3">
           <div className="w-10 h-10 rounded-xl bg-[#14b8a6]/10 flex items-center justify-center shrink-0">
-            <span className="text-lg">👋</span>
+            <span className="text-lg">{isSelf ? "👋" : "📊"}</span>
           </div>
           <div>
             <p className="text-[#0F172A] font-semibold text-sm" style={{ fontFamily: SPACE }}>
-              Hi {profile.name.split(" ")[0]}!
+              {isSelf ? `Hi ${profile.name.split(" ")[0]}!` : profile.name.split(" ")[0]}
             </p>
             <p className="text-[#64748B] text-xs mt-0.5">
-              You've played <span className="text-[#14b8a6] font-semibold">{thisMonthCount}</span> matches this month
+              {isSelf ? "You've" : "Has"} played <span className="text-[#14b8a6] font-semibold">{thisMonthCount}</span> matches this month
             </p>
           </div>
         </div>
@@ -283,7 +284,7 @@ export function ProfileDashboardTab({ userId, profile }: Props) {
 
       {/* Match History link */}
       <button
-        onClick={() => navigate("/match-history")}
+        onClick={() => navigate(isSelf ? "/match-history" : `/match-history/${userId}`)}
         className="w-full bg-white shadow-sm border border-[#E2E8F0] rounded-2xl px-4 py-3 flex items-center justify-between hover:bg-[#F8FAFC] transition-colors"
       >
         <span className="text-[#64748B] text-xs font-medium">View Full Match History</span>
