@@ -11,6 +11,7 @@ import { SkillBadge } from "@/components/games/SkillBadge";
 import { JoinRequestModal } from "@/components/games/JoinRequestModal";
 import { ParticipantsTab } from "@/components/games/ParticipantsTab";
 import { MatchesTab } from "@/components/games/MatchesTab";
+import { AmericanoTab } from "@/components/games/AmericanoTab";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -1029,18 +1030,33 @@ export default function GameDetailPage() {
           {/* Matches Tab */}
           {activeTab === "matches" && (
             <motion.div key="matches" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-              <MatchesTab
-                gameId={game.id}
-                canManage={canManage}
-                players={players}
-                hostIsPlaying={game.host_is_playing}
-                hostId={game.host_id}
-                hostProfile={game.profiles ? {
-                  name: game.profiles.name,
-                  avatar_url: game.profiles.avatar_url,
-                } : null}
-                guestNames={prefilledPlayers.map(p => (typeof p === "string" ? p : p.name).trim()).filter(Boolean)}
-              />
+              {game.format === "americano" || game.format === "team_americano" ? (
+                <AmericanoTab
+                  gameId={game.id}
+                  canManage={canManage}
+                  players={players}
+                  hostIsPlaying={game.host_is_playing}
+                  hostId={game.host_id}
+                  hostProfile={game.profiles ? {
+                    name: game.profiles.name,
+                    avatar_url: game.profiles.avatar_url,
+                  } : null}
+                  currentUserId={user?.id}
+                />
+              ) : (
+                <MatchesTab
+                  gameId={game.id}
+                  canManage={canManage}
+                  players={players}
+                  hostIsPlaying={game.host_is_playing}
+                  hostId={game.host_id}
+                  hostProfile={game.profiles ? {
+                    name: game.profiles.name,
+                    avatar_url: game.profiles.avatar_url,
+                  } : null}
+                  guestNames={prefilledPlayers.map(p => (typeof p === "string" ? p : p.name).trim()).filter(Boolean)}
+                />
+              )}
             </motion.div>
           )}
 

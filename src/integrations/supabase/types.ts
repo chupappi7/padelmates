@@ -14,6 +14,94 @@ export type Database = {
   }
   public: {
     Tables: {
+      americano_config: {
+        Row: {
+          courts: number
+          created_at: string
+          game_id: string
+          id: string
+          locked: boolean
+          points_per_match: number
+        }
+        Insert: {
+          courts?: number
+          created_at?: string
+          game_id: string
+          id?: string
+          locked?: boolean
+          points_per_match?: number
+        }
+        Update: {
+          courts?: number
+          created_at?: string
+          game_id?: string
+          id?: string
+          locked?: boolean
+          points_per_match?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "americano_config_game_id_fkey"
+            columns: ["game_id"]
+            isOneToOne: true
+            referencedRelation: "games"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      americano_matches: {
+        Row: {
+          court_number: number
+          created_at: string
+          game_id: string
+          id: string
+          round_number: number
+          status: string
+          team1_player1: string
+          team1_player2: string
+          team1_score: number | null
+          team2_player1: string
+          team2_player2: string
+          team2_score: number | null
+        }
+        Insert: {
+          court_number?: number
+          created_at?: string
+          game_id: string
+          id?: string
+          round_number: number
+          status?: string
+          team1_player1: string
+          team1_player2: string
+          team1_score?: number | null
+          team2_player1: string
+          team2_player2: string
+          team2_score?: number | null
+        }
+        Update: {
+          court_number?: number
+          created_at?: string
+          game_id?: string
+          id?: string
+          round_number?: number
+          status?: string
+          team1_player1?: string
+          team1_player2?: string
+          team1_score?: number | null
+          team2_player1?: string
+          team2_player2?: string
+          team2_score?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "americano_matches_game_id_fkey"
+            columns: ["game_id"]
+            isOneToOne: false
+            referencedRelation: "games"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       americano_rounds: {
         Row: {
           id: string
@@ -84,6 +172,53 @@ export type Database = {
           status?: string
         }
         Relationships: []
+      }
+      americano_standings: {
+        Row: {
+          created_at: string
+          game_id: string
+          id: string
+          losses: number
+          matches_played: number
+          points_against: number
+          points_for: number
+          ties: number
+          user_id: string
+          wins: number
+        }
+        Insert: {
+          created_at?: string
+          game_id: string
+          id?: string
+          losses?: number
+          matches_played?: number
+          points_against?: number
+          points_for?: number
+          ties?: number
+          user_id: string
+          wins?: number
+        }
+        Update: {
+          created_at?: string
+          game_id?: string
+          id?: string
+          losses?: number
+          matches_played?: number
+          points_against?: number
+          points_for?: number
+          ties?: number
+          user_id?: string
+          wins?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "americano_standings_game_id_fkey"
+            columns: ["game_id"]
+            isOneToOne: false
+            referencedRelation: "games"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       announcement_comments: {
         Row: {
