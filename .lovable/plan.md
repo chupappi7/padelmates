@@ -1,38 +1,32 @@
 
 
-## Plan: Redesign Score Picker with Team Labels Flanking the Score
+## Plan: Improve Choose Teams Modal UX
 
-The current layout stacks "Team 1" and "Team 2" labels above their respective scroll columns. The user wants team labels on the left and right sides of the score area for a cleaner, more intuitive UI.
+The current modal already has a single player pool, but needs polish. The key insight: once 2 players are picked, the other 2 are obviously Team 2 -- make this feel instant and clear.
 
-### New Layout
+### Changes (single file: `MatchesTab.tsx`, lines 540-634)
 
-```text
-┌─────────────────────────────────┐
-│          Set Score              │
-│    [Set 1] [Set 2] [+]         │
-│                                 │
-│  Team 1    [4] - [6]    Team 2  │
-│  (label)   scrollers   (label)  │
-│                                 │
-│       Remove Set 1              │
-│       4-6 / 6-3                 │
-│       Sets: 1 - 1               │
-│     [ Confirm Score ]           │
-└─────────────────────────────────┘
-```
+**1. Player pool grid (lines 550-574)**
+- Keep the 2-column grid of player buttons
+- Selected players get teal fill (already done)
+- Unselected players: when 2 are already picked, style the remaining as "Team 2" with a subtle secondary highlight (e.g. `bg-muted border-muted-foreground/20`) instead of looking like they can still be tapped
+- Add a small "Team 1" / "Team 2" badge overlay on each player chip once teams are locked (2 selected)
 
-### Changes (single file: `ScoreScrollPicker.tsx`)
+**2. Replace the separate preview section (lines 576-623)**
+- Remove the separate Team 1 / Team 2 preview block below the divider entirely
+- Instead, once 2 players are selected, show a compact one-line summary: `"Team 1: Thinh, Alejandro  vs  Team 2: Fede, kiki"` — just text, no avatars, below the grid
+- This eliminates redundancy since the grid itself already shows who is on which team via color coding
 
-1. **Remove the separate header row** (lines 202-206) with Team 1/Team 2 labels above the columns.
+**3. Visual states in the grid**
+- 0 selected: all players show neutral style, subtitle says "Tap 2 players for Team 1"
+- 1 selected: picked player is teal, others neutral, subtitle says "Tap 1 more for Team 1"
+- 2 selected: picked players are teal with "T1" indicator, other 2 get a softer secondary color with "T2" indicator, subtitle says "Teams set — ready to go"
 
-2. **Restructure the picker row** (lines 207-225) to be a single flex row with 5 elements:
-   - `Team 1` label (vertical text or small horizontal label, left-aligned)
-   - Score scroll column (Team 1)
-   - Dash separator
-   - Score scroll column (Team 2)
-   - `Team 2` label (right-aligned)
+**4. Create Match button (lines 625-632)**
+- Keep disabled until exactly 2 picked — no changes needed
 
-3. **Widen the dialog** slightly from `max-w-[320px]` to `max-w-[360px]` to accommodate the side labels comfortably.
-
-4. Team labels will use `text-[11px] font-bold uppercase tracking-wider text-muted-foreground` and be vertically centered alongside the scroll columns using `items-center`.
+### Result
+- No redundant preview section
+- Color-coded grid makes teams instantly obvious
+- Cleaner, shorter modal
 
