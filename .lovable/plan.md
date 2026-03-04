@@ -1,19 +1,12 @@
 
 
-## Fix: Remove Leave Button from Club Cards
+## Fix: Reposition Create Button
 
-The leave button on club list cards is awkward UX — users shouldn't accidentally leave a club from a list view. The leave action already exists in the club detail page's dropdown menu, which is the appropriate place for it.
+Move the Create button from the header row (where it crowds the title) to sit inline with the tabs row, pushed to the right. This gives the header breathing room and places the action next to the navigation context.
 
-### Changes
+### Changes — `src/pages/Clubs/ClubsListPage.tsx`
 
-**`src/pages/Clubs/ClubsListPage.tsx`**
-
-1. Remove the `LogOut` icon import and `leavingId` state
-2. Remove the `handleLeave` function
-3. In the "My Clubs" tab action area, remove the leave button for members — keep only the Settings icon for owners/admins and the "Joined" badge for all members
-4. Clean up unused imports (`LogOut`)
-
-The card will simply show:
-- **Owner/Admin**: Settings gear icon + "Joined" badge
-- **Member**: Just the "Joined" badge (tapping the card navigates to detail page where they can leave via the dropdown)
+1. Remove the Create button from the header `div` (lines 145-152)
+2. Add it to the tabs row (line 156) — make the tabs container `flex justify-between items-center`, with tabs on the left and the Create button on the right
+3. Make the Create button slightly smaller to match tab pill sizing
 
