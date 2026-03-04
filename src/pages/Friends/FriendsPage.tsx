@@ -247,12 +247,12 @@ export default function PlayersPage() {
                   <Badge
                     variant="secondary"
                     className={cn(
-                      "h-5 px-1.5 text-[10px] rounded-full",
+                      "h-5 px-1.5 text-[10px] rounded-full font-bold",
                       tab.dot && activeTab !== tab.value
                         ? "bg-destructive text-destructive-foreground"
                         : activeTab === tab.value
                           ? "bg-primary/15 text-primary"
-                          : "bg-muted-foreground/15"
+                          : "bg-primary/10 text-primary"
                     )}
                   >
                     {tab.count}
