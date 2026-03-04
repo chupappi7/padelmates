@@ -153,8 +153,8 @@ export default function MyMatchesPage() {
   const renderGameGrid = (list: Game[], statusOverride?: "hosting") =>
     groupByDate(list).map((group) => (
       <div key={group.label}>
-        <h3 className="text-sm font-semibold text-muted-foreground mb-2 px-1">{group.label}</h3>
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+        <h3 className="text-sm font-semibold text-muted-foreground mb-2 lg:mb-3 px-1">{group.label}</h3>
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3 lg:gap-4">
           {group.games.map((game, index) => (
             <motion.div key={game.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: Math.min(index * 0.03, 0.15) }}>
               <GameCard
@@ -188,14 +188,14 @@ export default function MyMatchesPage() {
   return (
     <div className="min-h-screen bg-background pb-24 md:pb-0">
       <Navbar />
-      <div className="container py-4 sm:py-8">
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mb-4">
-          <h1 className="font-display text-2xl sm:text-3xl font-bold mb-1">My Matches</h1>
-          <p className="text-sm text-muted-foreground">Your matches and court listings</p>
+      <div className="container max-w-6xl py-4 sm:py-8 lg:py-10">
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mb-6 lg:mb-8">
+          <h1 className="font-display text-2xl sm:text-3xl lg:text-4xl font-bold mb-1">My Matches</h1>
+          <p className="text-sm lg:text-base text-muted-foreground">Your matches and court listings</p>
         </motion.div>
 
         <Tabs defaultValue="upcoming" className="mt-4">
-          <TabsList className="w-full grid grid-cols-3 h-12">
+          <TabsList className="w-full sm:w-auto grid grid-cols-3 sm:inline-grid h-12">
             <TabsTrigger value="upcoming" className="text-sm">Upcoming ({upcoming.length})</TabsTrigger>
             <TabsTrigger value="past" className="text-sm">Past ({past.length})</TabsTrigger>
             <TabsTrigger value="listings" className="text-sm">Listings ({listings.length})</TabsTrigger>
