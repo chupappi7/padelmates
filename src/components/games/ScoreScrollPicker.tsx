@@ -198,9 +198,13 @@ export function ScoreScrollPicker({
         </div>
 
         {/* Score pickers for active set */}
-        <div className="flex items-center justify-center gap-2 px-6 py-2">
-          <div className="flex flex-col items-center gap-1">
-            <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Team 1</p>
+        <div className="px-6 py-2">
+          <div className="flex items-end justify-center gap-2 mb-1">
+            <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider w-14 text-center">Team 1</p>
+            <div className="w-6" />
+            <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider w-14 text-center">Team 2</p>
+          </div>
+          <div className="flex items-center justify-center gap-2">
             <div className="w-14">
               <ScrollColumn
                 items={currentSet.t2 === 7 ? allGameScores.slice(0, 7) : allGameScores}
@@ -208,10 +212,9 @@ export function ScoreScrollPicker({
                 onSelect={(v) => updateSet(activeSet, "t1", v)}
               />
             </div>
-          </div>
-          <span className="text-2xl font-bold text-muted-foreground mt-4">-</span>
-          <div className="flex flex-col items-center gap-1">
-            <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Team 2</p>
+            <div className="flex items-center justify-center w-6" style={{ height: CONTAINER_HEIGHT }}>
+              <span className="text-2xl font-bold text-muted-foreground">-</span>
+            </div>
             <div className="w-14">
               <ScrollColumn
                 items={currentSet.t1 === 7 ? allGameScores.slice(0, 7) : allGameScores}
