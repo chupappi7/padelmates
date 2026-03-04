@@ -413,13 +413,6 @@ export function ParticipantsTab({
         </section>
       )}
 
-      {/* Empty state */}
-      {!hostIsPlaying && confirmedFromRequests.length === 0 && directPlayers.length === 0 && (
-        <div className="text-center py-8">
-          <Users className="w-10 h-10 text-muted-foreground/40 mx-auto mb-2" />
-          <p className="text-sm text-muted-foreground">No players yet. Be the first to join!</p>
-        </div>
-      )}
 
       {/* Substitution Section */}
       {allowSubstitutions && showConfirmed && (
