@@ -198,75 +198,55 @@ export default function ClubsListPage() {
             ))}
           </div>
         ) : activeList.length > 0 ? (
-          <div className="space-y-3">
+          <div className="space-y-2">
             {activeList.map((club, index) => (
               <motion.div
                 key={club.id}
-                initial={{ opacity: 0, y: 12 }}
+                initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.03 }}
+                transition={{ delay: index * 0.025 }}
                 onClick={() => navigate(`/clubs/${club.id}`)}
-                className="bg-card rounded-2xl p-4 cursor-pointer hover:shadow-md transition-all shadow-sm border border-border"
+                className="group flex items-center gap-3 bg-card rounded-xl px-3 py-2.5 cursor-pointer hover:bg-accent/50 transition-all border border-border/60"
               >
-                <div className="flex items-center gap-3.5">
-                  {/* Avatar */}
-                  <Avatar className="h-12 w-12 rounded-full shrink-0">
-                    <AvatarImage src={club.logo_url || undefined} />
-                    <AvatarFallback className="bg-primary text-primary-foreground font-bold text-lg rounded-full">
-                      {club.name.charAt(0)}
-                    </AvatarFallback>
-                  </Avatar>
+                {/* Avatar */}
+                <Avatar className="h-10 w-10 rounded-full shrink-0">
+                  <AvatarImage src={club.logo_url || undefined} />
+                  <AvatarFallback className="bg-primary text-primary-foreground font-bold text-sm rounded-full">
+                    {club.name.charAt(0)}
+                  </AvatarFallback>
+                </Avatar>
 
-                  {/* Info */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <h3 className="font-display font-bold text-sm truncate">
-                        {club.name}
-                      </h3>
-                      {club.is_private && <Lock className="w-3 h-3 text-muted-foreground shrink-0" />}
-                      {tab === "my" && roleBadge(club.my_role)}
-                    </div>
-                    {(club.city || club.country) && (
-                      <div className="flex items-center gap-1 text-xs text-muted-foreground mt-0.5">
-                        <MapPin className="w-3 h-3 shrink-0" /> {[club.city, club.country].filter(Boolean).join(", ")}
-                      </div>
-                    )}
-                    <div className="flex items-center gap-3 text-[11px] text-muted-foreground mt-1 whitespace-nowrap">
-                      <span className="flex items-center gap-1"><Users className="w-3 h-3 shrink-0" /> {club.member_count} {club.member_count === 1 ? "member" : "members"}</span>
-                      <span>·</span>
-                      <span className="flex items-center gap-1"><CalendarDays className="w-3 h-3 shrink-0" /> {club.upcoming_count} upcoming</span>
-                    </div>
+                {/* Info — single line name + meta */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-1.5">
+                    <h3 className="font-display font-bold text-[13px] truncate">{club.name}</h3>
+                    {club.is_private && <Lock className="w-3 h-3 text-muted-foreground shrink-0" />}
+                    {tab === "my" && roleBadge(club.my_role)}
                   </div>
-
-                  {/* Actions */}
-                  <div className="flex items-center gap-1.5 shrink-0">
-                    {tab === "my" ? (
+                  <div className="flex items-center gap-2 text-[11px] text-muted-foreground mt-0.5">
+                    <span className="flex items-center gap-1"><Users className="w-3 h-3" />{club.member_count}</span>
+                    <span className="text-border">·</span>
+                    <span className="flex items-center gap-1"><CalendarDays className="w-3 h-3" />{club.upcoming_count}</span>
+                    {(club.city || club.country) && (
                       <>
-                        {(club.my_role === "owner" || club.my_role === "admin") && (
-                          <button
-                            onClick={e => { e.stopPropagation(); navigate(`/clubs/${club.id}`); }}
-                            className="text-muted-foreground hover:text-foreground transition-colors p-1.5"
-                            title="Manage"
-                          >
-                            <Settings className="w-4 h-4" />
-                          </button>
-                        )}
-                        <span className="text-[11px] font-semibold text-primary border border-primary rounded-full px-3 py-1 flex items-center gap-1 whitespace-nowrap">
-                          <Check className="w-3 h-3" /> Joined
-                        </span>
+                        <span className="text-border">·</span>
+                        <span className="truncate">{[club.city, club.country].filter(Boolean).join(", ")}</span>
                       </>
-                    ) : (
-                      <Button
-                        size="sm"
-                        className="rounded-full h-8 px-4 text-xs"
-                        onClick={e => handleJoin(e, club.id, club.is_private)}
-                        disabled={joiningId === club.id}
-                      >
-                        Join
-                      </Button>
                     )}
                   </div>
                 </div>
+
+                {/* Right action */}
+                {tab === "discover" && (
+                  <Button
+                    size="sm"
+                    className="rounded-full h-7 px-3.5 text-[11px] font-semibold shrink-0"
+                    onClick={e => handleJoin(e, club.id, club.is_private)}
+                    disabled={joiningId === club.id}
+                  >
+                    Join
+                  </Button>
+                )}
               </motion.div>
             ))}
           </div>
