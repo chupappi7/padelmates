@@ -427,7 +427,7 @@ export function MatchesTab({
                 <div className="flex-1 space-y-1.5 min-w-0">
                   {team1.map((mp) => (
                     <div key={mp.id} className="flex items-center justify-end gap-1.5">
-                      <span className="text-xs font-medium truncate">{mp.profiles?.name || "Player"}</span>
+                      <span className="text-xs font-medium truncate">{mp.profiles?.name?.split(" ")[0] || "Player"}</span>
                       <Avatar className="h-6 w-6 shrink-0">
                         <AvatarImage src={mp.profiles?.avatar_url || undefined} />
                         <AvatarFallback className="text-[9px] bg-primary/10 text-primary">
@@ -468,7 +468,7 @@ export function MatchesTab({
                           {mp.profiles?.name?.charAt(0).toUpperCase() || "?"}
                         </AvatarFallback>
                       </Avatar>
-                      <span className="text-xs font-medium truncate">{mp.profiles?.name || "Player"}</span>
+                      <span className="text-xs font-medium truncate">{mp.profiles?.name?.split(" ")[0] || "Player"}</span>
                     </div>
                   ))}
                 </div>
