@@ -395,6 +395,16 @@ export function AmericanoTab({
         });
       }
 
+      // Notify all players (including host) to give credits
+      for (const p of allPlayers) {
+        await supabase.from("notifications").insert({
+          user_id: p.user_id, type: "credit_prompt",
+          title: "Give credits to your teammates!",
+          message: "The tournament has ended. Head to the match page to give credits to your fellow players.",
+          link: `/games/${gameId}`,
+        });
+      }
+
       setTournamentEnded(true);
       toast.success("Tournament ended! 🏆");
     } catch {
