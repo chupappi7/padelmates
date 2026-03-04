@@ -1,14 +1,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-
-const CREDIT_LABELS: Record<string, string> = {
-  mvp: "MVP",
-  clutch_play: "Clutch Play",
-  sharp_shots: "Sharp Shots",
-  team_spirit: "Team Spirit",
-  never_gives_up: "Never Gives Up",
-  best_sportsmanship: "Best Sportsmanship",
-};
+import { getCreditLabel } from "@/lib/creditTypes";
 
 interface LifetimeCreditsProps {
   userId: string;
@@ -36,7 +28,7 @@ export function LifetimeCredits({ userId }: LifetimeCreditsProps) {
             key={c.id}
             className="px-2.5 py-1 rounded-full bg-muted text-[11px] font-semibold text-foreground"
           >
-            {CREDIT_LABELS[c.credit_type] || c.credit_type}
+            {getCreditLabel(c.credit_type)}
           </span>
         ))}
       </div>

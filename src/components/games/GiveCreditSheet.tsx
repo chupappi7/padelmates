@@ -4,15 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 import { ArrowLeft } from "lucide-react";
-
-const CREDIT_TYPES = [
-  { key: "mvp", label: "MVP" },
-  { key: "clutch_play", label: "Clutch Play" },
-  { key: "sharp_shots", label: "Sharp Shots" },
-  { key: "team_spirit", label: "Team Spirit" },
-  { key: "never_gives_up", label: "Never Gives Up" },
-  { key: "best_sportsmanship", label: "Best Sportsmanship" },
-] as const;
+import { CREDIT_TYPES, type CreditType } from "@/lib/creditTypes";
 
 interface Player {
   user_id: string;
@@ -25,9 +17,11 @@ interface GiveCreditSheetProps {
   onOpenChange: (open: boolean) => void;
   players: Player[];
   onConfirm: (receiverId: string, creditType: string) => Promise<void>;
+  /** Credits already given by current user in this match */
+  givenTo?: string[];
 }
 
-export function GiveCreditSheet({ open, onOpenChange, players, onConfirm }: GiveCreditSheetProps) {
+export function GiveCreditSheet({ open, onOpenChange, players, onConfirm, givenTo = [] }: GiveCreditSheetProps) {
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null);
   const [selectedType, setSelectedType] = useState<string | null>(null);
@@ -54,9 +48,15 @@ export function GiveCreditSheet({ open, onOpenChange, players, onConfirm }: Give
 
   const creditLabel = CREDIT_TYPES.find(c => c.key === selectedType)?.label || selectedType;
 
+  const physicalCredits = CREDIT_TYPES.filter(c => c.category === "physical");
+  const mentalCredits = CREDIT_TYPES.filter(c => c.category === "mental");
+
+  // Filter out players who already received a credit from this user
+  const availablePlayers = players.filter(p => !givenTo.includes(p.user_id));
+
   return (
     <Sheet open={open} onOpenChange={handleOpenChange}>
-      <SheetContent side="bottom" className="rounded-t-2xl max-h-[70vh]">
+      <SheetContent side="bottom" className="rounded-t-2xl max-h-[80vh] overflow-y-auto">
         <SheetHeader>
           <SheetTitle className="flex items-center gap-2">
             {step > 1 && (
@@ -73,40 +73,68 @@ export function GiveCreditSheet({ open, onOpenChange, players, onConfirm }: Give
         <div className="mt-4 space-y-3">
           {step === 1 && (
             <div className="space-y-2">
-              {players.map(p => (
-                <button
-                  key={p.user_id}
-                  onClick={() => { setSelectedPlayer(p); setStep(2); }}
-                  className="w-full flex items-center gap-3 p-3 rounded-xl border border-border hover:border-primary/50 transition-colors text-left"
-                >
-                  <Avatar className="h-9 w-9">
-                    <AvatarImage src={p.avatar_url || undefined} />
-                    <AvatarFallback className="text-xs bg-primary/10 text-primary">
-                      {p.name.charAt(0).toUpperCase()}
-                    </AvatarFallback>
-                  </Avatar>
-                  <span className="text-sm font-medium">{p.name}</span>
-                </button>
-              ))}
+              {availablePlayers.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-4">You've given credits to all players!</p>
+              ) : (
+                availablePlayers.map(p => (
+                  <button
+                    key={p.user_id}
+                    onClick={() => { setSelectedPlayer(p); setStep(2); }}
+                    className="w-full flex items-center gap-3 p-3 rounded-xl border border-border hover:border-primary/50 transition-colors text-left"
+                  >
+                    <Avatar className="h-9 w-9">
+                      <AvatarImage src={p.avatar_url || undefined} />
+                      <AvatarFallback className="text-xs bg-primary/10 text-primary">
+                        {p.name.charAt(0).toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                    <span className="text-sm font-medium">{p.name}</span>
+                  </button>
+                ))
+              )}
             </div>
           )}
 
           {step === 2 && (
-            <div className="flex flex-wrap gap-2">
-              {CREDIT_TYPES.map(ct => (
-                <button
-                  key={ct.key}
-                  onClick={() => { setSelectedType(ct.key); setStep(3); }}
-                  className={cn(
-                    "px-3.5 py-2 rounded-full border text-xs font-semibold transition-colors",
-                    selectedType === ct.key
-                      ? "bg-primary text-primary-foreground border-primary"
-                      : "bg-muted text-foreground border-border hover:border-primary/50"
-                  )}
-                >
-                  {ct.label}
-                </button>
-              ))}
+            <div className="space-y-4">
+              <div>
+                <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">Physical</p>
+                <div className="flex flex-wrap gap-2">
+                  {physicalCredits.map(ct => (
+                    <button
+                      key={ct.key}
+                      onClick={() => { setSelectedType(ct.key); setStep(3); }}
+                      className={cn(
+                        "px-3 py-1.5 rounded-full border text-xs font-semibold transition-colors",
+                        selectedType === ct.key
+                          ? "bg-primary text-primary-foreground border-primary"
+                          : "bg-muted text-foreground border-border hover:border-primary/50"
+                      )}
+                    >
+                      {ct.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">Mental / Social</p>
+                <div className="flex flex-wrap gap-2">
+                  {mentalCredits.map(ct => (
+                    <button
+                      key={ct.key}
+                      onClick={() => { setSelectedType(ct.key); setStep(3); }}
+                      className={cn(
+                        "px-3 py-1.5 rounded-full border text-xs font-semibold transition-colors",
+                        selectedType === ct.key
+                          ? "bg-primary text-primary-foreground border-primary"
+                          : "bg-muted text-foreground border-border hover:border-primary/50"
+                      )}
+                    >
+                      {ct.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
           )}
 

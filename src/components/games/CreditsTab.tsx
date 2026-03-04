@@ -3,8 +3,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { GiveCreditSheet, CREDIT_TYPES } from "./GiveCreditSheet";
-import { cn } from "@/lib/utils";
+import { GiveCreditSheet } from "./GiveCreditSheet";
+import { getCreditLabel } from "@/lib/creditTypes";
 
 interface CreditsTabProps {
   gameId: string;
@@ -23,8 +23,6 @@ interface Credit {
   created_at: string;
 }
 
-const creditLabel = (type: string) => CREDIT_TYPES.find(c => c.key === type)?.label || type;
-
 export function CreditsTab({ gameId, endDateTime, players, gameLocation, gameDate }: CreditsTabProps) {
   const { user } = useAuth();
   const [credits, setCredits] = useState<Credit[]>([]);
@@ -37,8 +35,10 @@ export function CreditsTab({ gameId, endDateTime, players, gameLocation, gameDat
   const windowOpen = now < windowEnd;
   const hoursLeft = Math.max(0, Math.ceil((windowEnd - now) / (1000 * 60 * 60)));
 
-  const myCredit = credits.find(c => c.giver_id === user?.id);
-  const hasGiven = !!myCredit;
+  // IDs of players the current user already gave credits to
+  const givenTo = credits.filter(c => c.giver_id === user?.id).map(c => c.receiver_id);
+  const otherPlayers = players.filter(p => p.user_id !== user?.id);
+  const allGiven = otherPlayers.length > 0 && otherPlayers.every(p => givenTo.includes(p.user_id));
 
   const fetchCredits = useCallback(async () => {
     const { data } = await supabase
@@ -58,10 +58,8 @@ export function CreditsTab({ gameId, endDateTime, players, gameLocation, gameDat
     creditsByReceiver[c.receiver_id].push(c);
   });
 
-  // Credits received by current user (with giver info)
+  // Credits received by current user
   const myReceivedCredits = credits.filter(c => c.receiver_id === user?.id);
-
-  const otherPlayers = players.filter(p => p.user_id !== user?.id);
 
   const handleGiveCredit = async (receiverId: string, creditType: string) => {
     if (!user) return;
@@ -78,18 +76,17 @@ export function CreditsTab({ gameId, endDateTime, players, gameLocation, gameDat
     } as any);
 
     if (error) {
-      if (error.code === "23505") toast.error("You already gave a credit in this match");
+      if (error.code === "23505") toast.error("You already gave a credit to this player");
       else toast.error("Failed to give credit");
       return;
     }
 
-    // Send notification to receiver
-    const receiverPlayer = players.find(p => p.user_id === receiverId);
+    // Notify receiver
     await supabase.from("notifications").insert({
       user_id: receiverId,
       type: "credit_received",
-      title: "You got a credit",
-      message: `Someone from ${gameLocation} on ${gameDate} gave you a ${creditLabel(creditType)} credit.`,
+      title: "You got a credit!",
+      message: `Someone gave you a ${getCreditLabel(creditType)} credit from ${gameLocation} on ${gameDate}.`,
       link: `/games/${gameId}`,
     });
 
@@ -103,7 +100,7 @@ export function CreditsTab({ gameId, endDateTime, players, gameLocation, gameDat
 
   return (
     <div className="space-y-4">
-      {/* Section 1: Credits Earned (public) */}
+      {/* Credits Earned (public) */}
       <div className="bg-card border border-border rounded-xl p-4">
         <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Credits Earned</h3>
         {Object.keys(creditsByReceiver).length === 0 ? (
@@ -121,7 +118,7 @@ export function CreditsTab({ gameId, endDateTime, players, gameLocation, gameDat
                         key={c.id}
                         className="px-2.5 py-1 rounded-full bg-muted text-[11px] font-semibold text-foreground"
                       >
-                        {creditLabel(c.credit_type)}
+                        {getCreditLabel(c.credit_type)}
                       </span>
                     ))}
                   </div>
@@ -132,7 +129,7 @@ export function CreditsTab({ gameId, endDateTime, players, gameLocation, gameDat
         )}
       </div>
 
-      {/* Section 2: Your Credits (private - only if current user received credits) */}
+      {/* Your Credits (private) */}
       {myReceivedCredits.length > 0 && (
         <div className="bg-card border border-primary/20 rounded-xl p-4">
           <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Your Credits</h3>
@@ -142,7 +139,7 @@ export function CreditsTab({ gameId, endDateTime, players, gameLocation, gameDat
               return (
                 <div key={c.id} className="flex items-center justify-between text-sm">
                   <span className="px-2.5 py-1 rounded-full bg-muted text-[11px] font-semibold">
-                    {creditLabel(c.credit_type)}
+                    {getCreditLabel(c.credit_type)}
                   </span>
                   <span className="text-muted-foreground text-xs">from {giver?.name || "Someone"}</span>
                 </div>
@@ -152,20 +149,20 @@ export function CreditsTab({ gameId, endDateTime, players, gameLocation, gameDat
         </div>
       )}
 
-      {/* Section 3: Give Credit button */}
+      {/* Give Credit button */}
       <div className="text-center space-y-1.5">
-        {user && windowOpen && !hasGiven && players.some(p => p.user_id === user.id) && (
+        {user && windowOpen && !allGiven && players.some(p => p.user_id === user.id) && (
           <>
             <Button variant="hero" onClick={() => setSheetOpen(true)}>
               Give a Credit
             </Button>
-            <p className="text-xs text-muted-foreground">{hoursLeft}h left to give a credit</p>
+            <p className="text-xs text-muted-foreground">{hoursLeft}h left · {givenTo.length}/{otherPlayers.length} given</p>
           </>
         )}
-        {hasGiven && (
-          <p className="text-sm font-medium text-muted-foreground">✓ Credit given</p>
+        {allGiven && (
+          <p className="text-sm font-medium text-muted-foreground">✓ All credits given</p>
         )}
-        {!windowOpen && !hasGiven && (
+        {!windowOpen && !allGiven && (
           <p className="text-sm text-muted-foreground">Credit window closed</p>
         )}
       </div>
@@ -175,6 +172,7 @@ export function CreditsTab({ gameId, endDateTime, players, gameLocation, gameDat
         onOpenChange={setSheetOpen}
         players={otherPlayers}
         onConfirm={handleGiveCredit}
+        givenTo={givenTo}
       />
     </div>
   );

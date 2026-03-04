@@ -4,7 +4,7 @@ import { useNotifications, AppNotification } from "@/hooks/useNotifications";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerTrigger } from "@/components/ui/drawer";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Bell, UserPlus, CalendarCheck, Megaphone, LogIn, LogOut, Inbox, CheckCheck } from "lucide-react";
+import { Bell, UserPlus, CalendarCheck, Megaphone, LogIn, LogOut, Inbox, CheckCheck, Award, Star } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
@@ -16,6 +16,8 @@ const iconMap: Record<AppNotification["type"], typeof Bell> = {
   game_join: LogIn,
   game_leave: LogOut,
   game_request: Inbox,
+  credit_received: Award,
+  credit_prompt: Star,
 };
 
 const colorMap: Record<AppNotification["type"], string> = {
@@ -25,6 +27,8 @@ const colorMap: Record<AppNotification["type"], string> = {
   game_join: "bg-primary/10 text-primary",
   game_leave: "bg-destructive/10 text-destructive",
   game_request: "bg-warning/10 text-warning",
+  credit_received: "bg-primary/10 text-primary",
+  credit_prompt: "bg-secondary/10 text-secondary",
 };
 
 function NotificationItem({

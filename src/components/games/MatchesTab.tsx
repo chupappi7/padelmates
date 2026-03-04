@@ -658,6 +658,18 @@ export function MatchesTab({
                   const { data } = await supabase.from("profiles").select("games_played").eq("user_id", uid).single();
                   await supabase.from("profiles").update({ games_played: (data?.games_played ?? 0) + 1 }).eq("user_id", uid);
                 }
+
+                // Notify all players to give credits
+                for (const uid of realPlayerIds) {
+                  await supabase.from("notifications").insert({
+                    user_id: uid,
+                    type: "credit_prompt",
+                    title: "Give credits to your teammates!",
+                    message: "The session has ended. Head to the match page to give credits to your fellow players.",
+                    link: `/games/${gameId}`,
+                  });
+                }
+
                 setSessionEnded(true);
                 toast.success("Session ended! Player stats updated.");
               } catch {
