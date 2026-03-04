@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, Fragment } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { cn } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -15,8 +15,9 @@ import { DayPicker } from "@/components/games/DayPicker";
 import { supabase } from "@/integrations/supabase/client";
 import { Navbar } from "@/components/layout/Navbar";
 import { SkillRangePicker } from "@/components/games/SkillRangePicker";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { motion } from "framer-motion";
-import { Calendar, Plus } from "lucide-react";
+import { Calendar, Plus, Users } from "lucide-react";
 import { HostTypeModal } from "@/components/games/HostTypeModal";
 import { useAuth } from "@/contexts/AuthContext";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -63,6 +64,8 @@ export default function GamesListPage() {
   const [requestedGameIds, setRequestedGameIds] = useState<Set<string>>(new Set());
   const [clubFilter, setClubFilter] = useState<string>("all");
   const [userClubs, setUserClubs] = useState<{ id: string; name: string; logo_url: string | null }[]>([]);
+  const [friendsJoining, setFriendsJoining] = useState(false);
+  const [friendJoinedGameIds, setFriendJoinedGameIds] = useState<Set<string>>(new Set());
   const navigate = useNavigate();
   const { user } = useAuth();
   const isMobile = useIsMobile();
@@ -74,6 +77,7 @@ export default function GamesListPage() {
     if (user) {
       fetchUserGames();
       fetchUserClubs();
+      fetchFriendJoinedGames();
     }
   }, [user]);
 
@@ -91,6 +95,26 @@ export default function GamesListPage() {
       .select("id, name, logo_url")
       .in("id", clubIds);
     setUserClubs(clubs?.map((c) => ({ id: c.id, name: c.name, logo_url: c.logo_url })) || []);
+  };
+
+  const fetchFriendJoinedGames = async () => {
+    if (!user) return;
+    // Get accepted friendships
+    const { data: friendships } = await supabase
+      .from("friendships")
+      .select("requester_id, addressee_id")
+      .or(`requester_id.eq.${user.id},addressee_id.eq.${user.id}`)
+      .eq("status", "accepted");
+    if (!friendships || friendships.length === 0) { setFriendJoinedGameIds(new Set()); return; }
+    const friendIds = friendships.map(f => f.requester_id === user.id ? f.addressee_id : f.requester_id);
+    // Get games friends have joined
+    const { data: friendPlayers } = await supabase
+      .from("game_players")
+      .select("game_id")
+      .in("user_id", friendIds);
+    const ids = new Set<string>();
+    friendPlayers?.forEach(p => ids.add(p.game_id));
+    setFriendJoinedGameIds(ids);
   };
 
   const fetchGames = async () => {
@@ -237,7 +261,9 @@ export default function GamesListPage() {
         (formatFilter === "americano" && (game.format === "americano" || game.format === "team_americano"));
       const matchesClub =
         clubFilter === "all" || game.club_id === clubFilter;
-      return matchesDay && matchesSkill && matchesFormat && matchesClub;
+      const matchesFriends =
+        !friendsJoining || friendJoinedGameIds.has(game.id);
+      return matchesDay && matchesSkill && matchesFormat && matchesClub && matchesFriends;
     });
 
     if (userLocation) {
@@ -257,7 +283,7 @@ export default function GamesListPage() {
     result.sort((a, b) => new Date(a.date_time).getTime() - new Date(b.date_time).getTime());
 
     return result;
-  }, [games, selectedDate, skillMin, skillMax, formatFilter, clubFilter, userLocation]);
+  }, [games, selectedDate, skillMin, skillMax, formatFilter, clubFilter, friendsJoining, friendJoinedGameIds, userLocation]);
 
   const isAllMode = selectedDate === null;
 
@@ -299,10 +325,9 @@ export default function GamesListPage() {
           <DayPicker selectedDate={selectedDate} onSelectDate={setSelectedDate} />
 
           {/* Filters */}
-          {isMobile ? (
-            <div className="flex gap-2 mt-4">
+          <div className="flex gap-2 mt-4 flex-wrap">
               <Select value={formatFilter} onValueChange={setFormatFilter}>
-                <SelectTrigger className="flex-1 h-11">
+                <SelectTrigger className={cn(isMobile ? "flex-1" : "w-[140px]", "h-11 shrink-0")}>
                   <SelectValue placeholder="Type" />
                 </SelectTrigger>
                 <SelectContent className="bg-popover z-50">
@@ -320,7 +345,7 @@ export default function GamesListPage() {
                   else { const n = Number(val); setSkillRange(n, n); }
                 }}
               >
-                <SelectTrigger className="flex-1 h-11">
+                <SelectTrigger className={cn(isMobile ? "flex-1" : "w-[140px]", "h-11 shrink-0")}>
                   <SelectValue placeholder="Level" />
                 </SelectTrigger>
                 <SelectContent className="bg-popover z-50">
@@ -331,95 +356,55 @@ export default function GamesListPage() {
                   <SelectItem value="1">D</SelectItem>
                 </SelectContent>
               </Select>
-            </div>
-          ) : (
-            <div className="flex gap-2 mt-4">
-              <Select value={formatFilter} onValueChange={setFormatFilter}>
-                <SelectTrigger className="w-[140px] h-11 shrink-0">
-                  <SelectValue placeholder="Type" />
-                </SelectTrigger>
-                <SelectContent className="bg-popover z-50">
-                  <SelectItem value="all">All Types</SelectItem>
-                  <SelectItem value="casual_match">Match</SelectItem>
-                  <SelectItem value="americano">Americano</SelectItem>
-                  <SelectItem value="court">Court</SelectItem>
-                  <SelectItem value="backup">Backup</SelectItem>
-                </SelectContent>
-              </Select>
-              <Select
-                value={skillMin !== null ? String(skillMin) : "all"}
-                onValueChange={(val) => {
-                  if (val === "all") setSkillRange(null, null);
-                  else { const n = Number(val); setSkillRange(n, n); }
-                }}
-              >
-                <SelectTrigger className="w-[140px] h-11 shrink-0">
-                  <SelectValue placeholder="Level" />
-                </SelectTrigger>
-                <SelectContent className="bg-popover z-50">
-                  <SelectItem value="all">All Levels</SelectItem>
-                  <SelectItem value="4">A</SelectItem>
-                  <SelectItem value="3">B</SelectItem>
-                  <SelectItem value="2">C</SelectItem>
-                  <SelectItem value="1">D</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          )}
 
-          {/* Club filter */}
-          {user && (
-            userClubs.length > 0 ? (
-              <div className="mt-5">
-                <p className="text-[11px] text-muted-foreground mb-2">Filter by club</p>
-                <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1">
-                  <button
-                    onClick={() => setClubFilter("all")}
-                    className={cn(
-                      "shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-colors",
-                      clubFilter === "all"
-                        ? "bg-primary text-primary-foreground"
-                        : "border border-border text-foreground hover:bg-muted"
-                    )}
-                  >
-                    All
-                  </button>
-                  {userClubs.map((club) => (
-                    <button
-                      key={club.id}
-                      onClick={() => setClubFilter(club.id)}
-                      className={cn(
-                        "shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-colors whitespace-nowrap",
-                        clubFilter === club.id
-                          ? "bg-primary text-primary-foreground"
-                          : "border border-border text-foreground hover:bg-muted"
-                      )}
-                    >
-                      {club.logo_url ? (
-                        <img
-                          src={club.logo_url}
-                          alt=""
-                          className="w-5 h-5 rounded object-cover"
-                        />
-                      ) : (
-                        <div className="w-5 h-5 rounded bg-muted flex items-center justify-center text-[10px] font-bold text-muted-foreground">
-                          {club.name.charAt(0)}
-                        </div>
-                      )}
-                      {club.name}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            ) : (
-              <p className="mt-4 text-[11px] text-muted-foreground">
-                <button onClick={() => navigate("/clubs")} className="text-primary hover:underline">
-                  Join a club
-                </button>{" "}
-                to filter matches
-              </p>
-            )
-          )}
+              {/* Club dropdown */}
+              {user && (
+                userClubs.length > 0 ? (
+                  <Select value={clubFilter} onValueChange={setClubFilter}>
+                    <SelectTrigger className={cn(isMobile ? "flex-1" : "w-[160px]", "h-11 shrink-0")}>
+                      <SelectValue placeholder="Club" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-popover z-50">
+                      <SelectItem value="all">All Clubs</SelectItem>
+                      {userClubs.map((club) => (
+                        <SelectItem key={club.id} value={club.id}>
+                          {club.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                ) : (
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="outline"
+                          className="h-11 opacity-50 cursor-not-allowed"
+                          disabled
+                        >
+                          Club
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Join a club to filter by club</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                )
+              )}
+
+              {/* Friends Joining toggle */}
+              {user && (
+                <Button
+                  variant={friendsJoining ? "default" : "outline"}
+                  className={cn("h-11 shrink-0 gap-1.5", friendsJoining && "bg-primary text-primary-foreground")}
+                  onClick={() => setFriendsJoining(!friendsJoining)}
+                >
+                  <Users className="w-4 h-4" />
+                  Friends
+                </Button>
+              )}
+            </div>
         </motion.div>
 
         {loading ? (
@@ -528,12 +513,16 @@ export default function GamesListPage() {
               <Calendar className="w-7 h-7 sm:w-8 sm:h-8 text-muted-foreground" />
             </div>
             <h3 className="font-display text-lg sm:text-xl font-bold mb-2">
-              {isAllMode ? "No upcoming matches" : "No matches on this day"}
+              {friendsJoining
+                ? "No matches with friends right now"
+                : isAllMode ? "No upcoming matches" : "No matches on this day"}
             </h3>
             <p className="text-sm sm:text-base text-muted-foreground mb-6">
-              {skillMin !== null || formatFilter !== "all" || clubFilter !== "all"
-                ? "Try adjusting your filters"
-                : "Be the first to host a game!"}
+              {friendsJoining
+                ? "Check back later or browse all matches."
+                : skillMin !== null || formatFilter !== "all" || clubFilter !== "all"
+                  ? "Try adjusting your filters"
+                  : "Be the first to host a game!"}
             </p>
           </motion.div>
         )}
