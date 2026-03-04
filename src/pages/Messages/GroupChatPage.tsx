@@ -235,8 +235,8 @@ export default function GroupChatPage() {
                                 )}
                               >
                                 {!isMine && (
-                                  <div className="w-7 shrink-0">
-                                    {showAvatar && (
+                                  <div className="w-7 shrink-0 self-end">
+                                    {showTail && (
                                       <Avatar className="h-7 w-7">
                                         <AvatarImage src={msg.profiles?.avatar_url || undefined} />
                                         <AvatarFallback className="text-[10px] bg-primary/10 text-primary">
@@ -275,7 +275,7 @@ export default function GroupChatPage() {
                     </div>
                                 {isMine && (
                                   <div className="w-7 shrink-0 self-end">
-                                    {showAvatar && myProfile && (
+                                    {showTail && myProfile && (
                                       <Avatar className="h-7 w-7">
                                         <AvatarImage src={myProfile.avatar_url || undefined} />
                                         <AvatarFallback className="text-[10px] bg-primary/10 text-primary">
