@@ -165,7 +165,7 @@ export function ScoreScrollPicker({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[320px] p-0">
+      <DialogContent className="max-w-[370px] p-0">
         <DialogHeader className="p-4 pb-2">
           <DialogTitle className="text-center text-base">Set Score</DialogTitle>
         </DialogHeader>
@@ -198,13 +198,9 @@ export function ScoreScrollPicker({
         </div>
 
         {/* Score pickers for active set */}
-        <div className="px-6 py-2">
-          <div className="flex items-end justify-center gap-2 mb-1">
-            <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider w-14 text-center">Team 1</p>
-            <div className="w-6" />
-            <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider w-14 text-center">Team 2</p>
-          </div>
-          <div className="flex items-center justify-center gap-2">
+        <div className="px-4 py-2">
+          <div className="flex items-center justify-center gap-3">
+            <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider w-10 text-center leading-tight">Team<br/>1</p>
             <div className="w-14">
               <ScrollColumn
                 items={currentSet.t2 === 7 ? allGameScores.slice(0, 7) : allGameScores}
@@ -222,6 +218,7 @@ export function ScoreScrollPicker({
                 onSelect={(v) => updateSet(activeSet, "t2", v)}
               />
             </div>
+            <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider w-10 text-center leading-tight">Team<br/>2</p>
           </div>
         </div>
 
