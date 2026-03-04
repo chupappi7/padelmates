@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { BarChart, Bar, XAxis, ResponsiveContainer, Cell } from "recharts";
+import { BarChart, Bar, XAxis, ResponsiveContainer, Cell, LabelList } from "recharts";
 import { Flame, Trophy, CalendarDays, ChevronRight } from "lucide-react";
 import { ProfileClubsGlass } from "./ProfileClubsGlass";
 
@@ -235,6 +235,12 @@ export function ProfileDashboardTab({ userId, profile, isSelf = true }: Props) {
                 {monthlyData.map((_, i) => (
                   <Cell key={i} fill={i === monthlyData.length - 1 ? "#14b8a6" : "#E2E8F0"} />
                 ))}
+                <LabelList
+                  dataKey="count"
+                  position="top"
+                  style={{ fontSize: 11, fontFamily: SPACE, fontWeight: 700, fill: "#64748B" }}
+                  formatter={(v: number) => (v > 0 ? v : "")}
+                />
               </Bar>
             </BarChart>
           </ResponsiveContainer>
