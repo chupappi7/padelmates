@@ -159,7 +159,7 @@ function ConversationRow({
                 <Pin className="w-3 h-3 text-primary shrink-0 -rotate-45" />
               )}
               <p className={cn(
-                "text-sm line-clamp-1",
+                "text-sm line-clamp-2",
                 hasUnread ? "font-bold" : "font-medium"
               )}>
                 {convo.title}
