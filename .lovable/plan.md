@@ -1,27 +1,40 @@
+## Plan: Show Game Score, Simplify Score Picker, Add End Session
 
+### Problem
 
-## Plan: Post-Creation "Invite Friends" Modal
-
-After a game is created successfully, show a bottom sheet where the host can invite friends. Each invite sends a `[game:gameId]` message to their DM, identical to ShareGameSheet's "Send to Friends" logic.
+Currently each round displays "1 - 0 SETS" with set score pills below. Since each round is a single match, it should show the actual game score (e.g., "7 - 6 ") as the main number. Also need an "End Session" button and score submission restricted to host/admin.
 
 ### Changes
 
-**1. New component: `src/components/games/InviteFriendsSheet.tsx`**
-- Bottom sheet with friend list, search, avatars, and Send/Sent buttons per row
-- Reuses `useFriends` hook and the same DM logic from `ShareGameSheet` (find-or-create chat, insert `[game:gameId]` message)
-- "Skip" link at bottom to dismiss without inviting
-- On close/skip: calls `onDone()` callback
-- Props: `open`, `onOpenChange`, `gameId`, `onDone`
+**1. Simplify `ScoreScrollPicker` — remove multi-set UI**
 
-**2. Edit `src/pages/Games/CreateGamePage.tsx` (lines 270-279)**
-- Add state: `createdGameId: string | null`
-- After successful insert, instead of `navigate(...)`, set `createdGameId = data.id` to open the invite sheet
-- Render `<InviteFriendsSheet>` at bottom of component
-- On sheet done/skip: `navigate(/games/${createdGameId})`
+- Remove set tabs, add/remove set buttons — each round is one game score only
+- Change dialog title from "Set Score" to "Score"
+- Remove summary section showing sets won
+- The picker becomes: two scroll columns for Team 1 and Team 2 game scores (0-7), confirm button
+- `onConfirm` callback still passes the score but simplified (single game score, not array of sets)
 
-### Flow
-1. User creates game → toast "Game created!"
-2. InviteFriendsSheet opens with friend list + search
-3. User taps "Send" on any friends → sends `[game:id]` to their DMs
-4. User taps "Done" or "Skip" → navigates to game detail
+**2. Update `MatchesTab` score display**
 
+- Change big center score to show the game score directly (from `set_scores[0].t1` / `set_scores[0].t2`) instead of sets won
+- Change label from "Sets" to "Games"
+- Remove set score pills below (since there's only one game per round, the pills are redundant — the big score IS the game score)
+- Update `handleSubmitScore` to store the single game score: `team1_score` and `team2_score` get the actual game points (e.g., 7 and 6), `set_scores` stores the single entry for compatibility
+
+**3. Add "End Session" button**
+
+- Below all match cards and the Randomize/Choose Teams buttons, add an "End Session" button (only visible to host/admin via `canManage`)
+- Only enabled when all matches are completed
+- On click: confirms all scores, could update game status or trigger stats calculation
+- For now: marks the game as ended and shows a success toast
+
+**4. Score submission already gated by `canManage**`
+
+- The "Enter Score" / "Edit Score" buttons are already wrapped in `{canManage && ...}` — this is correct, only host and admin can submit scores. No change needed here.
+
+5. games will update users stats in profile, matches to matches history, to stats winrate, matches played etc.
+
+### Files to edit
+
+- `src/components/games/ScoreScrollPicker.tsx` — simplify to single game score
+- `src/components/games/MatchesTab.tsx` — update display, add End Session button
