@@ -1,6 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Navbar } from "@/components/layout/Navbar";
 import { useAuth } from "@/contexts/AuthContext";
@@ -8,8 +11,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 import {
-  Users, Calendar, CalendarDays, MoreVertical, Settings,
-  UserPlus, Check, Lock, MapPin, LogOut, Flag
+  Users, Calendar, CalendarDays, MoreVertical, Pencil,
+  UserPlus, Check, Lock, MapPin, LogOut, Flag, X, Camera
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -21,7 +24,6 @@ import ClubFeedTab from "@/components/clubs/ClubFeedTab";
 import ClubMatchesTab from "@/components/clubs/ClubMatchesTab";
 import ClubMembersTab from "@/components/clubs/ClubMembersTab";
 import ClubAboutTab from "@/components/clubs/ClubAboutTab";
-import ClubAdminPanel from "@/components/clubs/ClubAdminPanel";
 
 interface Club {
   id: string;
@@ -62,7 +64,7 @@ export default function ClubDetailPage() {
   const [memberRole, setMemberRole] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<TabId>("feed");
   const [actionLoading, setActionLoading] = useState(false);
-  const [adminOpen, setAdminOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
   const [ownerProfile, setOwnerProfile] = useState<{ name: string; avatar_url: string | null } | null>(null);
 
   useEffect(() => {
@@ -106,7 +108,6 @@ export default function ClubDetailPage() {
       setMemberRole(null);
     }
 
-    // Fetch owner profile
     const { data: ownerData } = await supabase
       .from("profiles")
       .select("name, avatar_url")
@@ -199,9 +200,9 @@ export default function ClubDetailPage() {
               variant="ghost"
               size="icon"
               className="bg-black/30 text-white hover:bg-black/50 rounded-full h-9 w-9"
-              onClick={() => setAdminOpen(true)}
+              onClick={() => setEditOpen(true)}
             >
-              <Settings className="w-4 h-4" />
+              <Pencil className="w-4 h-4" />
             </Button>
           )}
           <DropdownMenu>
@@ -222,7 +223,6 @@ export default function ClubDetailPage() {
             </DropdownMenuContent>
           </DropdownMenu>
 
-          {/* Join / Status button */}
           {!isOwner && memberStatus === "none" && (
             <Button
               onClick={handleJoin}
@@ -254,7 +254,6 @@ export default function ClubDetailPage() {
       {/* Club info overlay */}
       <div className="container max-w-2xl -mt-10 relative z-10 pb-28">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-          {/* Logo + Name */}
           <div className="flex items-end gap-3 mb-3">
             <Avatar className="h-20 w-20 rounded-full border-4 border-background shadow-md bg-background">
               <AvatarImage src={club.logo_url || undefined} className="object-cover" />
@@ -275,7 +274,6 @@ export default function ClubDetailPage() {
             </div>
           )}
 
-          {/* Owner row */}
           {ownerProfile && (
             <div
               className="flex items-center gap-2 mt-2 cursor-pointer group"
@@ -291,12 +289,10 @@ export default function ClubDetailPage() {
             </div>
           )}
 
-          {/* Description preview */}
           {club.description && (
             <p className="text-sm text-muted-foreground mt-2 line-clamp-2">{club.description}</p>
           )}
 
-          {/* Stats Bar */}
           <div className="flex flex-wrap items-center gap-2 mt-4">
             <div className="flex items-center gap-1.5 bg-card border border-border rounded-full px-2.5 py-1 text-xs">
               <Users className="w-3 h-3 text-muted-foreground" />
@@ -315,7 +311,6 @@ export default function ClubDetailPage() {
             </div>
           </div>
 
-          {/* Tabs */}
           <div className="flex gap-1.5 mt-6 overflow-x-auto scrollbar-hide">
             {TABS.map((tab) => (
               <button
@@ -332,7 +327,6 @@ export default function ClubDetailPage() {
             ))}
           </div>
 
-          {/* Tab Content */}
           <div className="mt-5">
             {activeTab === "feed" && <ClubFeedTab clubId={id!} isAdmin={isAdmin} clubLogo={club.logo_url} clubName={club.name} />}
             {activeTab === "matches" && <ClubMatchesTab clubId={id!} />}
@@ -342,16 +336,131 @@ export default function ClubDetailPage() {
         </motion.div>
       </div>
 
-      {/* Admin Panel */}
-      {adminOpen && (
-        <ClubAdminPanel
-          clubId={id!}
-          club={club}
-          isOwner={isOwner}
-          onClose={() => setAdminOpen(false)}
-          onClubUpdated={fetchClub}
-        />
+      {/* Inline Edit Sheet */}
+      {editOpen && (
+        <ClubEditSheet club={club} onClose={() => setEditOpen(false)} onSaved={fetchClub} />
       )}
+    </div>
+  );
+}
+
+/* ── Inline Edit Sheet ── */
+function ClubEditSheet({ club, onClose, onSaved }: { club: Club; onClose: () => void; onSaved: () => void }) {
+  const { user } = useAuth();
+  const logoRef = useRef<HTMLInputElement>(null);
+  const coverRef = useRef<HTMLInputElement>(null);
+
+  const [form, setForm] = useState({
+    name: club.name,
+    description: club.description || "",
+    city: club.city || "",
+    country: club.country || "",
+    instagram_url: club.instagram_url || "",
+    website_url: club.website_url || "",
+  });
+  const [saving, setSaving] = useState(false);
+
+  const handleSave = async () => {
+    if (!form.name.trim()) { toast.error("Name is required"); return; }
+    setSaving(true);
+    const { error } = await supabase
+      .from("clubs")
+      .update({
+        name: form.name.trim(),
+        description: form.description.trim() || null,
+        city: form.city.trim() || null,
+        country: form.country.trim() || null,
+        instagram_url: form.instagram_url.trim() || null,
+        website_url: form.website_url.trim() || null,
+      })
+      .eq("id", club.id);
+
+    if (error) toast.error("Failed to save");
+    else { toast.success("Saved!"); onSaved(); onClose(); }
+    setSaving(false);
+  };
+
+  const handleUpload = async (file: File, type: "logo" | "cover") => {
+    if (!user) return;
+    const ext = file.name.split(".").pop();
+    const path = `${user.id}/${Date.now()}.${ext}`;
+    const bucket = "club-logos";
+
+    const { error: upErr } = await supabase.storage.from(bucket).upload(path, file, { upsert: true });
+    if (upErr) { toast.error("Upload failed"); return; }
+
+    const { data: urlData } = supabase.storage.from(bucket).getPublicUrl(path);
+    const field = type === "logo" ? "logo_url" : "cover_url";
+    await supabase.from("clubs").update({ [field]: urlData.publicUrl }).eq("id", club.id);
+    toast.success(`${type === "logo" ? "Logo" : "Cover"} updated!`);
+    onSaved();
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 bg-background overflow-y-auto">
+      <div className="sticky top-0 z-10 bg-background border-b border-border px-4 py-3 flex items-center justify-between">
+        <h2 className="font-display text-lg font-bold">Edit Club</h2>
+        <Button variant="ghost" size="icon" onClick={onClose}>
+          <X className="w-5 h-5" />
+        </Button>
+      </div>
+
+      <div className="p-4 pb-28 max-w-2xl mx-auto space-y-5">
+        {/* Photos */}
+        <div className="space-y-3">
+          <Label>Club Logo</Label>
+          <div className="flex items-center gap-3">
+            <Avatar className="h-16 w-16 rounded-full">
+              <AvatarImage src={club.logo_url || undefined} />
+              <AvatarFallback className="bg-primary/10 text-primary font-bold text-xl rounded-full">{club.name.charAt(0)}</AvatarFallback>
+            </Avatar>
+            <Button variant="outline" size="sm" onClick={() => logoRef.current?.click()}>
+              <Camera className="w-4 h-4 mr-1" /> Change Logo
+            </Button>
+            <input ref={logoRef} type="file" accept="image/*" className="hidden" onChange={e => e.target.files?.[0] && handleUpload(e.target.files[0], "logo")} />
+          </div>
+
+          <Label>Cover Photo</Label>
+          <Button variant="outline" size="sm" onClick={() => coverRef.current?.click()}>
+            <Camera className="w-4 h-4 mr-1" /> Upload Cover
+          </Button>
+          <input ref={coverRef} type="file" accept="image/*" className="hidden" onChange={e => e.target.files?.[0] && handleUpload(e.target.files[0], "cover")} />
+        </div>
+
+        {/* Form fields */}
+        <div className="space-y-3">
+          <div className="space-y-1.5">
+            <Label>Club Name *</Label>
+            <Input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} className="h-11" />
+          </div>
+          <div className="space-y-1.5">
+            <Label>Description</Label>
+            <Textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} rows={3} />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <Label>City</Label>
+              <Input value={form.city} onChange={e => setForm(f => ({ ...f, city: e.target.value }))} className="h-11" />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Country</Label>
+              <Input value={form.country} onChange={e => setForm(f => ({ ...f, country: e.target.value }))} className="h-11" />
+            </div>
+          </div>
+          <div className="space-y-1.5">
+            <Label>Instagram</Label>
+            <Input value={form.instagram_url} onChange={e => setForm(f => ({ ...f, instagram_url: e.target.value }))} placeholder="@handle or URL" className="h-11" />
+          </div>
+          <div className="space-y-1.5">
+            <Label>Website</Label>
+            <Input value={form.website_url} onChange={e => setForm(f => ({ ...f, website_url: e.target.value }))} placeholder="https://..." className="h-11" />
+          </div>
+        </div>
+
+        <Button variant="hero" className="w-full" onClick={handleSave} disabled={saving}>
+          {saving ? "Saving..." : "Save Changes"}
+        </Button>
+      </div>
     </div>
   );
 }
