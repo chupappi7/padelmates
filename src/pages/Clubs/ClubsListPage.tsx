@@ -7,7 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Navbar } from "@/components/layout/Navbar";
 import { useAuth } from "@/contexts/AuthContext";
 import { motion } from "framer-motion";
-import { Plus, Search, Users, CalendarDays, Lock, Check, MapPin, Settings, LogOut, Compass } from "lucide-react";
+import { Plus, Search, Users, CalendarDays, Lock, Check, MapPin, Settings, Compass } from "lucide-react";
 import { toast } from "sonner";
 
 interface Club {
@@ -32,7 +32,7 @@ export default function ClubsListPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [tab, setTab] = useState<Tab>("my");
   const [joiningId, setJoiningId] = useState<string | null>(null);
-  const [leavingId, setLeavingId] = useState<string | null>(null);
+  
   const navigate = useNavigate();
   const { user } = useAuth();
 
@@ -107,15 +107,6 @@ export default function ClubsListPage() {
     finally { setJoiningId(null); }
   };
 
-  const handleLeave = async (e: React.MouseEvent, clubId: string) => {
-    e.stopPropagation();
-    if (!user) return;
-    setLeavingId(clubId);
-    await supabase.from("club_followers").delete().eq("club_id", clubId).eq("user_id", user.id);
-    setClubs(prev => prev.map(c => c.id === clubId ? { ...c, is_member: false, my_role: null, member_count: Math.max(0, c.member_count - 1) } : c));
-    toast.success("Left club");
-    setLeavingId(null);
-  };
 
   // ── My Clubs: sorted by role priority ──
   const myClubs = clubs
@@ -258,16 +249,6 @@ export default function ClubsListPage() {
                             title="Manage"
                           >
                             <Settings className="w-4 h-4" />
-                          </button>
-                        )}
-                        {club.my_role === "member" && (
-                          <button
-                            onClick={e => handleLeave(e, club.id)}
-                            disabled={leavingId === club.id}
-                            className="text-muted-foreground/50 hover:text-destructive transition-colors p-1.5"
-                            title="Leave club"
-                          >
-                            <LogOut className="w-3.5 h-3.5" />
                           </button>
                         )}
                         <span className="text-[11px] font-semibold text-primary border border-primary rounded-full px-3 py-1 flex items-center gap-1 whitespace-nowrap">
