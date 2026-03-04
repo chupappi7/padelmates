@@ -17,7 +17,7 @@ import { Navbar } from "@/components/layout/Navbar";
 import { SkillRangePicker } from "@/components/games/SkillRangePicker";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { motion } from "framer-motion";
-import { Calendar, Plus, Users } from "lucide-react";
+import { Calendar, Plus, Users, Gamepad2, Signal, Building2 } from "lucide-react";
 import { HostTypeModal } from "@/components/games/HostTypeModal";
 import { useAuth } from "@/contexts/AuthContext";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -326,75 +326,69 @@ export default function GamesListPage() {
 
           {/* Filters */}
             <div className="flex gap-2 mt-4">
-              <div className="flex-1 min-w-0">
-                <Select value={formatFilter} onValueChange={setFormatFilter}>
-                  <SelectTrigger className="h-11 w-full">
-                    <SelectValue placeholder="Type" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-popover z-50">
-                    <SelectItem value="all">All Types</SelectItem>
-                    <SelectItem value="casual_match">Match</SelectItem>
-                    <SelectItem value="americano">Americano</SelectItem>
-                    <SelectItem value="court">Court</SelectItem>
-                    <SelectItem value="backup">Backup</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="flex-1 min-w-0">
-                <Select
-                  value={skillMin !== null ? String(skillMin) : "all"}
-                  onValueChange={(val) => {
-                    if (val === "all") setSkillRange(null, null);
-                    else { const n = Number(val); setSkillRange(n, n); }
-                  }}
-                >
-                  <SelectTrigger className="h-11 w-full">
-                    <SelectValue placeholder="Level" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-popover z-50">
-                    <SelectItem value="all">All Levels</SelectItem>
-                    <SelectItem value="4">A</SelectItem>
-                    <SelectItem value="3">B</SelectItem>
-                    <SelectItem value="2">C</SelectItem>
-                    <SelectItem value="1">D</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+              <Select value={formatFilter} onValueChange={setFormatFilter}>
+                <SelectTrigger className="h-11 w-11 shrink-0 rounded-full [&>svg.lucide-chevrons-up-down]:hidden [&>svg.lucide-check]:hidden px-0 justify-center">
+                  <Gamepad2 className="w-4 h-4" />
+                </SelectTrigger>
+                <SelectContent className="bg-popover z-50">
+                  <SelectItem value="all">All Types</SelectItem>
+                  <SelectItem value="casual_match">Match</SelectItem>
+                  <SelectItem value="americano">Americano</SelectItem>
+                  <SelectItem value="court">Court</SelectItem>
+                  <SelectItem value="backup">Backup</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select
+                value={skillMin !== null ? String(skillMin) : "all"}
+                onValueChange={(val) => {
+                  if (val === "all") setSkillRange(null, null);
+                  else { const n = Number(val); setSkillRange(n, n); }
+                }}
+              >
+                <SelectTrigger className="h-11 w-11 shrink-0 rounded-full [&>svg.lucide-chevrons-up-down]:hidden px-0 justify-center">
+                  <Signal className="w-4 h-4" />
+                </SelectTrigger>
+                <SelectContent className="bg-popover z-50">
+                  <SelectItem value="all">All Levels</SelectItem>
+                  <SelectItem value="4">A</SelectItem>
+                  <SelectItem value="3">B</SelectItem>
+                  <SelectItem value="2">C</SelectItem>
+                  <SelectItem value="1">D</SelectItem>
+                </SelectContent>
+              </Select>
               {user && (
-                <div className="flex-1 min-w-0">
-                  {userClubs.length > 0 ? (
-                    <Select value={clubFilter} onValueChange={setClubFilter}>
-                      <SelectTrigger className="h-11 w-full">
-                        <SelectValue placeholder="Club" />
-                      </SelectTrigger>
-                      <SelectContent className="bg-popover z-50">
-                        <SelectItem value="all">All Clubs</SelectItem>
-                        {userClubs.map((club) => (
-                          <SelectItem key={club.id} value={club.id}>
-                            {club.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  ) : (
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button
-                            variant="outline"
-                            className="h-11 w-full opacity-50 cursor-not-allowed"
-                            disabled
-                          >
-                            Club
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>Join a club to filter by club</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  )}
-                </div>
+                userClubs.length > 0 ? (
+                  <Select value={clubFilter} onValueChange={setClubFilter}>
+                    <SelectTrigger className="h-11 w-11 shrink-0 rounded-full [&>svg.lucide-chevrons-up-down]:hidden px-0 justify-center">
+                      <Building2 className="w-4 h-4" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-popover z-50">
+                      <SelectItem value="all">All Clubs</SelectItem>
+                      {userClubs.map((club) => (
+                        <SelectItem key={club.id} value={club.id}>
+                          {club.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                ) : (
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="outline"
+                          className="h-11 w-11 shrink-0 rounded-full opacity-50 cursor-not-allowed"
+                          disabled
+                        >
+                          <Building2 className="w-4 h-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Join a club to filter by club</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                )
               )}
               {user && (
                 <Button
