@@ -33,7 +33,8 @@ function ScrollColumn({
   onSelect: (val: string) => void;
 }) {
   const ref = useRef<HTMLDivElement>(null);
-  const scrollTimeout = useRef<ReturnType<typeof setTimeout>>();
+  const isUserScrolling = useRef(false);
+  const snapTimer = useRef<ReturnType<typeof setTimeout>>();
 
   const scrollToIndex = useCallback((index: number, smooth = true) => {
     if (!ref.current) return;
@@ -45,30 +46,48 @@ function ScrollColumn({
 
   useEffect(() => {
     const index = items.indexOf(selected);
-    if (index !== -1) {
-      setTimeout(() => scrollToIndex(index, false), 50);
+    if (index !== -1 && !isUserScrolling.current) {
+      setTimeout(() => scrollToIndex(index, false), 30);
     }
   }, [items, selected, scrollToIndex]);
 
+  const snapToNearest = useCallback(() => {
+    if (!ref.current) return;
+    const scrollTop = ref.current.scrollTop;
+    const index = Math.round(scrollTop / ITEM_HEIGHT);
+    const clampedIndex = Math.max(0, Math.min(index, items.length - 1));
+    // Snap position
+    const targetTop = clampedIndex * ITEM_HEIGHT;
+    if (Math.abs(scrollTop - targetTop) > 1) {
+      ref.current.scrollTo({ top: targetTop, behavior: "smooth" });
+    }
+    onSelect(items[clampedIndex]);
+    isUserScrolling.current = false;
+  }, [items, onSelect]);
+
   const handleScroll = useCallback(() => {
-    if (scrollTimeout.current) clearTimeout(scrollTimeout.current);
-    scrollTimeout.current = setTimeout(() => {
-      if (!ref.current) return;
-      const scrollTop = ref.current.scrollTop;
-      const index = Math.round(scrollTop / ITEM_HEIGHT);
-      const clampedIndex = Math.max(0, Math.min(index, items.length - 1));
-      scrollToIndex(clampedIndex, true);
-      onSelect(items[clampedIndex]);
-    }, 80);
-  }, [items, onSelect, scrollToIndex]);
+    isUserScrolling.current = true;
+    if (snapTimer.current) clearTimeout(snapTimer.current);
+    snapTimer.current = setTimeout(snapToNearest, 60);
+  }, [snapToNearest]);
 
   const handleClick = useCallback(
     (index: number) => {
+      isUserScrolling.current = true;
       scrollToIndex(index, true);
-      setTimeout(() => onSelect(items[index]), 200);
+      setTimeout(() => {
+        onSelect(items[index]);
+        isUserScrolling.current = false;
+      }, 200);
     },
     [items, onSelect, scrollToIndex]
   );
+
+  // Handle touch end for immediate snap
+  const handleTouchEnd = useCallback(() => {
+    if (snapTimer.current) clearTimeout(snapTimer.current);
+    snapTimer.current = setTimeout(snapToNearest, 40);
+  }, [snapToNearest]);
 
   return (
     <div className="relative" style={{ height: CONTAINER_HEIGHT }}>
@@ -82,8 +101,10 @@ function ScrollColumn({
       <div
         ref={ref}
         onScroll={handleScroll}
+        onTouchEnd={handleTouchEnd}
+        onMouseUp={handleTouchEnd}
         className="h-full overflow-y-auto scrollbar-hide relative z-[1]"
-        style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+        style={{ scrollbarWidth: "none", msOverflowStyle: "none", WebkitOverflowScrolling: "touch" }}
       >
         <div style={{ height: PADDING }} />
         {items.map((item, i) => (
