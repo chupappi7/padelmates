@@ -9,6 +9,7 @@ interface Announcement {
   content: string;
   created_at: string;
   author_id: string;
+  image_url?: string | null;
   author_name?: string;
   author_avatar?: string | null;
 }
@@ -113,6 +114,14 @@ export default function ClubFeedTab({ clubId, isAdmin }: { clubId: string; isAdm
             <p className={`text-sm text-muted-foreground whitespace-pre-line ${expanded ? "" : "line-clamp-3"}`}>
               {a.content}
             </p>
+            {a.image_url && (
+              <img
+                src={a.image_url}
+                alt=""
+                className="mt-2 w-full rounded-lg object-cover max-h-64"
+                onClick={(e) => { e.stopPropagation(); window.open(a.image_url!, "_blank"); }}
+              />
+            )}
           </div>
         );
       })}
