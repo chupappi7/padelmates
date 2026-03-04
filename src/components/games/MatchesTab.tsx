@@ -544,83 +544,67 @@ export function MatchesTab({
             <DialogTitle>{editingMatchId ? "Edit Teams" : "Choose Teams"}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
-            <p className="text-xs text-muted-foreground text-center">Tap 2 players for Team 1</p>
+            <p className="text-xs text-muted-foreground text-center">
+              {team1Picks.length === 0
+                ? "Tap 2 players for Team 1"
+                : team1Picks.length === 1
+                ? "Tap 1 more for Team 1"
+                : "Teams set — ready to go ✓"}
+            </p>
 
             {/* Player pool */}
             <div className="grid grid-cols-2 gap-2">
               {allPlayers.map((p) => {
                 const picked = team1Picks.includes(p.user_id);
+                const teamsLocked = team1Picks.length === 2;
+                const isTeam2 = teamsLocked && !picked;
                 return (
                   <button
                     key={p.user_id}
                     onClick={() => toggleTeam1Pick(p.user_id)}
                     className={cn(
-                      "flex items-center gap-1.5 px-3 py-2 rounded-lg border text-xs font-medium transition-colors",
+                      "relative flex items-center gap-1.5 px-3 py-2.5 rounded-xl border text-xs font-medium transition-all",
                       picked
-                        ? "bg-primary text-primary-foreground border-primary"
+                        ? "bg-primary text-primary-foreground border-primary ring-2 ring-primary/30"
+                        : isTeam2
+                        ? "bg-accent/60 border-accent text-accent-foreground"
                         : "bg-card border-border hover:border-primary/50"
                     )}
                   >
-                    <Avatar className="h-5 w-5 shrink-0">
+                    <Avatar className="h-6 w-6 shrink-0">
                       <AvatarImage src={p.profiles?.avatar_url || undefined} />
-                      <AvatarFallback className="text-[8px]">
+                      <AvatarFallback className="text-[9px]">
                         {p.profiles?.name?.charAt(0).toUpperCase() || "?"}
                       </AvatarFallback>
                     </Avatar>
                     <span className="truncate">{p.profiles?.name || "Player"}</span>
+                    {teamsLocked && (
+                      <span className={cn(
+                        "absolute -top-1.5 -right-1.5 text-[9px] font-bold px-1.5 py-0.5 rounded-full leading-none",
+                        picked
+                          ? "bg-primary-foreground text-primary"
+                          : "bg-accent-foreground text-accent"
+                      )}>
+                        {picked ? "T1" : "T2"}
+                      </span>
+                    )}
                   </button>
                 );
               })}
             </div>
 
-            {/* Team preview */}
-            <div className="border-t border-border pt-3">
-              <div className="flex items-start">
-                {/* Team 1 preview */}
-                <div className="flex-1 space-y-1 min-w-0">
-                  <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">Team 1</p>
-                  {team1Picks.length > 0 ? team1Picks.map((uid) => {
-                    const p = allPlayers.find((pl) => pl.user_id === uid);
-                    return (
-                      <div key={uid} className="flex items-center gap-1.5">
-                        <Avatar className="h-5 w-5 shrink-0">
-                          <AvatarImage src={p?.profiles?.avatar_url || undefined} />
-                          <AvatarFallback className="text-[8px] bg-primary/10 text-primary">
-                            {p?.profiles?.name?.charAt(0).toUpperCase() || "?"}
-                          </AvatarFallback>
-                        </Avatar>
-                        <span className="text-xs font-medium truncate">{p?.profiles?.name?.split(" ")[0] || "Player"}</span>
-                      </div>
-                    );
-                  }) : (
-                    <p className="text-xs text-muted-foreground/50 italic">Select 2…</p>
-                  )}
-                </div>
-
-                <span className="text-xs font-bold text-muted-foreground/50 px-3 pt-5">vs</span>
-
-                {/* Team 2 preview */}
-                <div className="flex-1 space-y-1 min-w-0">
-                  <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">Team 2</p>
-                  {derivedTeam2.length > 0 && derivedTeam2.length <= 2 ? derivedTeam2.map((uid) => {
-                    const p = allPlayers.find((pl) => pl.user_id === uid);
-                    return (
-                      <div key={uid} className="flex items-center gap-1.5">
-                        <Avatar className="h-5 w-5 shrink-0">
-                          <AvatarImage src={p?.profiles?.avatar_url || undefined} />
-                          <AvatarFallback className="text-[8px] bg-primary/10 text-primary">
-                            {p?.profiles?.name?.charAt(0).toUpperCase() || "?"}
-                          </AvatarFallback>
-                        </Avatar>
-                        <span className="text-xs font-medium truncate">{p?.profiles?.name?.split(" ")[0] || "Player"}</span>
-                      </div>
-                    );
-                  }) : (
-                    <p className="text-xs text-muted-foreground/50 italic">Auto-filled</p>
-                  )}
-                </div>
-              </div>
-            </div>
+            {/* Compact summary */}
+            {team1Picks.length === 2 && (
+              <p className="text-[11px] text-center text-muted-foreground">
+                <span className="font-semibold text-primary">
+                  {team1Picks.map(uid => allPlayers.find(pl => pl.user_id === uid)?.profiles?.name?.split(" ")[0] || "Player").join(" & ")}
+                </span>
+                {" vs "}
+                <span className="font-semibold text-accent-foreground">
+                  {derivedTeam2.map(uid => allPlayers.find(pl => pl.user_id === uid)?.profiles?.name?.split(" ")[0] || "Player").join(" & ")}
+                </span>
+              </p>
+            )}
 
             <Button
               variant="hero"
