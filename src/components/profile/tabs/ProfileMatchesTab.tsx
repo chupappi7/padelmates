@@ -149,10 +149,9 @@ export function ProfileMatchesTab({ userId, isSelf = true }: { userId: string; i
   return (
     <div className="space-y-2">
       {matches.map(m => (
-        <button
+        <div
           key={m.id}
-          onClick={() => navigate(`/games/${m.gameId}`)}
-          className="w-full bg-white shadow-sm border border-[#E2E8F0] rounded-2xl p-3 text-left hover:bg-[#F8FAFC] transition-colors"
+          className="w-full bg-white shadow-sm border border-[#E2E8F0] rounded-2xl p-3 text-left"
         >
           {/* Header: format + location + date */}
           <div className="flex items-center justify-between mb-2">
@@ -177,7 +176,12 @@ export function ProfileMatchesTab({ userId, isSelf = true }: { userId: string; i
             <div className="flex-1 min-w-0 text-right">
               {m.myTeamPlayers.map(p => (
                 <div key={p.userId} className="flex items-center justify-end gap-1.5 py-0.5">
-                  <span className="text-[#0F172A] text-xs font-medium truncate">{p.name}</span>
+                  <span
+                    className={`text-[#0F172A] text-xs font-medium truncate ${p.name !== "You" ? "cursor-pointer hover:underline" : ""}`}
+                    onClick={() => p.name !== "You" && navigate(`/profile/${p.userId}`)}
+                  >
+                    {p.name}
+                  </span>
                   <Avatar className="w-5 h-5">
                     <AvatarImage src={p.avatarUrl || undefined} />
                     <AvatarFallback className="text-[8px] bg-[#F1F5F9] text-[#64748B]">{p.name[0]}</AvatarFallback>
@@ -208,12 +212,17 @@ export function ProfileMatchesTab({ userId, isSelf = true }: { userId: string; i
                     <AvatarImage src={p.avatarUrl || undefined} />
                     <AvatarFallback className="text-[8px] bg-[#F1F5F9] text-[#64748B]">{p.name[0]}</AvatarFallback>
                   </Avatar>
-                  <span className="text-[#0F172A] text-xs font-medium truncate">{p.name}</span>
+                  <span
+                    className="text-[#0F172A] text-xs font-medium truncate cursor-pointer hover:underline"
+                    onClick={() => navigate(`/profile/${p.userId}`)}
+                  >
+                    {p.name}
+                  </span>
                 </div>
               ))}
             </div>
           </div>
-        </button>
+        </div>
       ))}
 
       {/* View Full Match History */}
