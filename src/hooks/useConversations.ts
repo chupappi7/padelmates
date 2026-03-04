@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { formatGameContext } from "@/lib/formatGameContext";
+import { format } from "date-fns";
 
 export type ConversationType = "dm" | "court" | "match";
 
@@ -17,6 +18,7 @@ export interface UnifiedConversation {
   type: ConversationType;
   title: string;
   contextLabel?: string;
+  gameLocation?: string;
   avatarUrl: string | null;
   lastMessage: string;
   lastMessageAt: string;
@@ -232,7 +234,7 @@ export function useConversations() {
       const [matchGamesRes, allGameMsgsRes, gameUnreadCounts] = await Promise.all([
         supabase
           .from("games")
-          .select("id, title, location, payment_mode, host_id, date_time, end_date_time")
+          .select("id, title, location, payment_mode, host_id, date_time, end_date_time, format")
           .in("id", allMatchGameIds)
           .neq("payment_mode", "court_sharing"),
         supabase
@@ -305,11 +307,20 @@ export function useConversations() {
           senderName = lastMsg.user_id === user.id ? "You" : senderProfileMap[lastMsg.user_id] || "Unknown";
         }
 
+        const formatLabels: Record<string, string> = {
+          casual_match: "Friendly Match",
+          americano: "Americano",
+          team_americano: "Team Americano",
+        };
+        const formatLabel = formatLabels[(game as any).format] || "Match";
+        const dateStr = format(new Date(game.date_time), "EEE, MMM d · HH:mm");
+
         const convo: UnifiedConversation = {
           id: convoId,
           type: "match",
-          title: game.title,
-          contextLabel: formatGameContext(game.location, game.date_time),
+          title: `${formatLabel} · ${dateStr}`,
+          contextLabel: game.location,
+          gameLocation: game.location,
           avatarUrl: null,
           lastMessage: lastMsg?.message || "",
           lastMessageAt: lastMsg?.created_at || "",
