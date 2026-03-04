@@ -1,34 +1,27 @@
 
 
-## Fix: Notification badge not clearing on "Mark all read"
+## Plan: Post-Creation "Invite Friends" Modal
 
-### Problem
-When `markAllAsRead` runs, it optimistically sets all notifications to `read: true` (badge disappears). But the subsequent DB update triggers the realtime subscription, which calls `fetchNotifications()` — this re-fetches from the database and can briefly return stale unread rows, overwriting the optimistic state and making the badge reappear.
+After a game is created successfully, show a bottom sheet where the host can invite friends. Each invite sends a `[game:gameId]` message to their DM, identical to ShareGameSheet's "Send to Friends" logic.
 
-### Solution (single file: `src/hooks/useNotifications.ts`)
+### Changes
 
-Add a short debounce/guard so the realtime-triggered refetch doesn't overwrite optimistic updates:
+**1. New component: `src/components/games/InviteFriendsSheet.tsx`**
+- Bottom sheet with friend list, search, avatars, and Send/Sent buttons per row
+- Reuses `useFriends` hook and the same DM logic from `ShareGameSheet` (find-or-create chat, insert `[game:gameId]` message)
+- "Skip" link at bottom to dismiss without inviting
+- On close/skip: calls `onDone()` callback
+- Props: `open`, `onOpenChange`, `gameId`, `onDone`
 
-1. **Add a `skipNextRefetch` ref** — set it to `true` right before the DB update in `markAllAsRead` (and `markAsRead`)
-2. **In the realtime callback**, check `skipNextRefetch.current` — if true, reset it and skip the refetch
-3. This lets the optimistic state stick while the DB catches up; the *next* realtime event (e.g. a new notification) will refetch normally
+**2. Edit `src/pages/Games/CreateGamePage.tsx` (lines 270-279)**
+- Add state: `createdGameId: string | null`
+- After successful insert, instead of `navigate(...)`, set `createdGameId = data.id` to open the invite sheet
+- Render `<InviteFriendsSheet>` at bottom of component
+- On sheet done/skip: `navigate(/games/${createdGameId})`
 
-```typescript
-const skipNextRefetch = useRef(false);
-
-// In realtime callback:
-() => {
-  if (skipNextRefetch.current) {
-    skipNextRefetch.current = false;
-    return;
-  }
-  fetchNotifications();
-}
-
-// In markAllAsRead:
-skipNextRefetch.current = true;
-await supabase.from("notifications").update({ read: true })...
-```
-
-This is a minimal, targeted fix — no UI changes needed since the badge logic (`unreadCount > 0`) is already correct.
+### Flow
+1. User creates game → toast "Game created!"
+2. InviteFriendsSheet opens with friend list + search
+3. User taps "Send" on any friends → sends `[game:id]` to their DMs
+4. User taps "Done" or "Skip" → navigates to game detail
 
