@@ -1042,6 +1042,7 @@ export default function GameDetailPage() {
                     avatar_url: game.profiles.avatar_url,
                   } : null}
                   currentUserId={user?.id}
+                  guestNames={prefilledPlayers.map(p => (typeof p === "string" ? p : p.name).trim()).filter(Boolean)}
                 />
               ) : (
                 <MatchesTab

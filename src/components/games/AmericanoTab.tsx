@@ -68,7 +68,12 @@ interface AmericanoTabProps {
   hostId: string;
   hostProfile: Profile | null;
   currentUserId?: string;
+  guestNames?: string[];
 }
+
+// Generate a deterministic fake UUID for a guest by index
+const guestUUID = (index: number) =>
+  `00000000-0000-4000-8000-${index.toString().padStart(12, "0")}`;
 
 // Round-robin schedule: fix player 0, rotate rest
 function generateRoundRobin(playerIds: string[]): { round: number; matches: [string, string, string, string][] }[] {
@@ -114,6 +119,7 @@ export function AmericanoTab({
   hostId,
   hostProfile,
   currentUserId,
+  guestNames = [],
 }: AmericanoTabProps) {
   const [config, setConfig] = useState<AmericanoConfig | null>(null);
   const [matches, setMatches] = useState<AmericanoMatch[]>([]);
@@ -130,11 +136,23 @@ export function AmericanoTab({
   const [setupCourts, setSetupCourts] = useState(1);
   const [setupPoints, setSetupPoints] = useState(24);
 
+  // Build guest player entries with deterministic UUIDs
+  const guestPlayers: Player[] = guestNames.map((name, i) => ({
+    id: `guest-${i}`,
+    user_id: guestUUID(i),
+    role: "guest",
+    profiles: { name: `${name} (Guest)`, avatar_url: null },
+  }));
+
+  const guestMap = new Map<string, string>();
+  guestNames.forEach((name, i) => guestMap.set(guestUUID(i), `${name} (Guest)`));
+
   const allPlayers = [
     ...(hostIsPlaying && hostProfile
       ? [{ id: "host", user_id: hostId, role: "host", profiles: hostProfile }]
       : []),
     ...players,
+    ...guestPlayers,
   ];
 
   const totalPlayers = allPlayers.length;
@@ -161,9 +179,14 @@ export function AmericanoTab({
     allPlayers.forEach((p) => uids.add(p.user_id));
 
     if (uids.size > 0) {
-      const { data: profs } = await supabase.from("profiles").select("user_id, name, avatar_url").in("user_id", Array.from(uids));
+      const realUids = Array.from(uids).filter((id) => !guestMap.has(id));
       const map: Record<string, Profile> = {};
-      profs?.forEach((p) => { map[p.user_id] = { name: p.name, avatar_url: p.avatar_url }; });
+      // Pre-populate guest profiles
+      guestMap.forEach((name, uuid) => { map[uuid] = { name, avatar_url: null }; });
+      if (realUids.length > 0) {
+        const { data: profs } = await supabase.from("profiles").select("user_id, name, avatar_url").in("user_id", realUids);
+        profs?.forEach((p) => { map[p.user_id] = { name: p.name, avatar_url: p.avatar_url }; });
+      }
       // Add host profile
       if (hostProfile) map[hostId] = hostProfile;
       setProfiles(map);
@@ -182,7 +205,7 @@ export function AmericanoTab({
     }
 
     setLoading(false);
-  }, [gameId]);
+  }, [gameId, guestNames]);
 
   useEffect(() => {
     fetchAll();
