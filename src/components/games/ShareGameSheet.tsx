@@ -24,6 +24,7 @@ interface ShareGameSheetProps {
   gameMaxPlayers?: number;
   currentPlayersCount?: number;
   hostName?: string;
+  clubName?: string;
   skillLevel?: number;
   pricePerPlayer?: number;
 }
@@ -40,7 +41,7 @@ const formatLabel = (f: string) => {
 export function ShareGameSheet({
   open, onOpenChange, gameId,
   gameSlug, gameLocation, gameDateTime, endDateTime, gameFormat,
-  gameMaxPlayers, currentPlayersCount, hostName, skillLevel, pricePerPlayer,
+  gameMaxPlayers, currentPlayersCount, hostName, clubName, skillLevel, pricePerPlayer,
 }: ShareGameSheetProps) {
   const isMobile = useIsMobile();
   const { user } = useAuth();
@@ -56,6 +57,10 @@ export function ShareGameSheet({
     const lines: string[] = [];
 
     lines.push("🎾 Join us for a padel match!");
+    lines.push("");
+
+    const displayHost = clubName || (hostName ? hostName.split(" ")[0] : null);
+    if (displayHost) lines.push(`👤 Hosted by ${displayHost}`);
     lines.push("");
 
     if (gameLocation) lines.push(`📍 ${gameLocation}`);
