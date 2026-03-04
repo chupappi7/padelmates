@@ -499,13 +499,13 @@ function PlayerCard({
       <div className="flex-1 min-w-0 flex items-center gap-2">
         <p className="text-sm font-medium truncate">{name}</p>
         {isHost && (
-          <Badge variant="outline" className="rounded-full text-[9px] px-1.5 py-0 bg-primary/10 text-primary border-primary/20 shrink-0">
-            Host
+          <Badge variant="outline" className="rounded-full text-[9px] px-1.5 py-0 bg-primary/10 text-primary border-primary/20 shrink-0 font-semibold">
+            ★ Host
           </Badge>
         )}
         {isAdmin && !isHost && (
-          <Badge variant="outline" className="rounded-full text-[9px] px-1.5 py-0 bg-accent/10 text-accent border-accent/20 shrink-0">
-            Admin
+          <Badge variant="outline" className="rounded-full text-[9px] px-1.5 py-0 bg-secondary text-secondary-foreground border-secondary shrink-0 font-semibold">
+            🛡 Admin
           </Badge>
         )}
         {isGuest && (

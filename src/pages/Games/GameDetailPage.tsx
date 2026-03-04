@@ -234,7 +234,7 @@ export default function GameDetailPage() {
   };
 
   const fetchRequests = async () => {
-    const { data } = await supabase.from("join_requests").select("*").eq("game_id", id).order("created_at", { ascending: false });
+    const { data } = await supabase.from("join_requests").select("*").eq("game_id", id).order("created_at", { ascending: true });
     if (data && data.length > 0) {
       const userIds = [...new Set(data.map((r) => r.user_id))];
       const { data: profiles } = await supabase.from("profiles").select("user_id, name, avatar_url, skill_level").in("user_id", userIds);
