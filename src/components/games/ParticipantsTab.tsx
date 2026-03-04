@@ -4,7 +4,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { SkillBadge } from "./SkillBadge";
-import { Check, X, Users, Clock, ShieldCheck, RefreshCw, Plus, DollarSign, CheckCircle2, Star } from "lucide-react";
+import { Check, X, Users, Clock, ShieldCheck, RefreshCw, Plus, DollarSign, CheckCircle2, Star, UserMinus } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface Profile {
@@ -59,6 +59,8 @@ interface ParticipantsTabProps {
   isRequestAndPay?: boolean;
   /** Callback when host confirms a player's payment */
   onConfirmPayment?: (requestId: string) => void;
+  /** Callback to remove a confirmed player */
+  onRemovePlayer?: (userId: string) => void;
 }
 
 type FilterType = "all" | "requests";
@@ -86,6 +88,7 @@ export function ParticipantsTab({
   onAddAdmin,
   isRequestAndPay,
   onConfirmPayment,
+  onRemovePlayer,
 }: ParticipantsTabProps) {
   const [activeFilter, setActiveFilter] = useState<FilterType>("all");
 
@@ -234,6 +237,8 @@ export function ParticipantsTab({
                   role={matchingPlayer?.role}
                   showRoleToggle={isHost}
                   onToggleRole={matchingPlayer ? () => onToggleRole(matchingPlayer.id, matchingPlayer.role) : undefined}
+                  canRemove={canManage}
+                  onRemove={onRemovePlayer ? () => onRemovePlayer(request.user_id) : undefined}
                 />
               );
             })}
@@ -249,6 +254,8 @@ export function ParticipantsTab({
                 role={player.role}
                 showRoleToggle={isHost}
                 onToggleRole={() => onToggleRole(player.id, player.role)}
+                canRemove={canManage}
+                onRemove={onRemovePlayer ? () => onRemovePlayer(player.user_id) : undefined}
               />
             ))}
 
@@ -456,6 +463,8 @@ function PlayerCard({
   role,
   showRoleToggle,
   onToggleRole,
+  canRemove,
+  onRemove,
 }: {
   name: string;
   avatarUrl: string | null;
@@ -466,6 +475,8 @@ function PlayerCard({
   role?: string;
   showRoleToggle?: boolean;
   onToggleRole?: () => void;
+  canRemove?: boolean;
+  onRemove?: () => void;
 }) {
   const isAdmin = role === "admin";
   const navigate = useNavigate();
@@ -514,9 +525,18 @@ function PlayerCard({
         )}
       </div>
       {skillLevel && (
-        <div className="ml-auto shrink-0">
+        <div className="shrink-0">
           <SkillBadge level={skillLevel} size="sm" />
         </div>
+      )}
+      {canRemove && !isHost && onRemove && (
+        <button
+          onClick={(e) => { e.stopPropagation(); onRemove(); }}
+          className="shrink-0 p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+          title="Remove player"
+        >
+          <UserMinus className="w-3.5 h-3.5" />
+        </button>
       )}
     </div>
   );
