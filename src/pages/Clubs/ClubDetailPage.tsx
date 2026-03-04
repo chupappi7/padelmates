@@ -8,7 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 import {
-  Users, Calendar, CalendarDays, MoreVertical, Pencil,
+  Users, Calendar, CalendarDays, MoreVertical, Settings,
   UserPlus, Check, Lock, MapPin, LogOut, Flag
 } from "lucide-react";
 import {
@@ -201,7 +201,7 @@ export default function ClubDetailPage() {
               className="bg-black/30 text-white hover:bg-black/50 rounded-full h-9 w-9"
               onClick={() => setAdminOpen(true)}
             >
-              <Pencil className="w-4 h-4" />
+              <Settings className="w-4 h-4" />
             </Button>
           )}
           <DropdownMenu>
