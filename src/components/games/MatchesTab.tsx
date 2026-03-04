@@ -420,83 +420,72 @@ export function MatchesTab({
               )}
             </div>
 
-            {/* Score section */}
-            <div className="flex items-center justify-center gap-3 py-2">
-              <div className="flex items-center gap-1.5">
-                <span className={cn(
-                  "text-3xl font-bold tabular-nums",
-                  isCompleted && match.team1_score > match.team2_score && "text-success"
-                )}>
-                  {match.team1_score}
-                </span>
-                <span className="text-muted-foreground text-xl">-</span>
-                <span className={cn(
-                  "text-3xl font-bold tabular-nums",
-                  isCompleted && match.team2_score > match.team1_score && "text-success"
-                )}>
-                  {match.team2_score}
-                </span>
-              </div>
-            </div>
-            <p className="text-[9px] text-muted-foreground/60 uppercase tracking-wider text-center -mt-1">Sets</p>
-
-            {/* Set score pills */}
-            {match.set_scores && match.set_scores.length > 0 && (
-              <div className="flex justify-center gap-1.5 mt-1 px-4">
-                {match.set_scores.map((s, i) => (
-                  <span key={i} className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full bg-muted text-[10px] font-semibold tabular-nums">
-                    <span className={cn(s.t1 > s.t2 ? "text-success" : "text-muted-foreground")}>{s.t1}</span>
-                    <span className="text-muted-foreground/40">-</span>
-                    <span className={cn(s.t2 > s.t1 ? "text-success" : "text-muted-foreground")}>{s.t2}</span>
-                  </span>
-                ))}
-              </div>
-            )}
-
-            {/* Teams — stacked vertically */}
-            <div className="px-4 pt-3 pb-3 space-y-2">
-              {/* Team 1 */}
-              <div className="bg-muted/30 rounded-lg px-3 py-2">
-                <p className="text-[9px] font-semibold text-muted-foreground/70 uppercase tracking-wider mb-1.5">Team 1</p>
-                <div className="space-y-1.5">
+            {/* Side-by-side layout: Team 1 | Score | Team 2 */}
+            <div className="px-4 pt-2 pb-3">
+              <div className="flex items-center">
+                {/* Team 1 — right-aligned names, avatars on right */}
+                <div className="flex-1 space-y-1.5 min-w-0">
                   {team1.map((mp) => (
-                    <div key={mp.id} className="flex items-center gap-2">
-                      <Avatar className="h-6 w-6">
+                    <div key={mp.id} className="flex items-center justify-end gap-1.5">
+                      <span className="text-xs font-medium truncate">{mp.profiles?.name || "Player"}</span>
+                      <Avatar className="h-6 w-6 shrink-0">
                         <AvatarImage src={mp.profiles?.avatar_url || undefined} />
                         <AvatarFallback className="text-[9px] bg-primary/10 text-primary">
                           {mp.profiles?.name?.charAt(0).toUpperCase() || "?"}
                         </AvatarFallback>
                       </Avatar>
-                      <span className="text-xs font-medium">{mp.profiles?.name || "Player"}</span>
                     </div>
                   ))}
                 </div>
-              </div>
 
-              {/* VS divider */}
-              <div className="flex items-center gap-2">
-                <div className="flex-1 h-px bg-border" />
-                <span className="text-[10px] font-bold text-muted-foreground/50 uppercase">vs</span>
-                <div className="flex-1 h-px bg-border" />
-              </div>
+                {/* Center score */}
+                <div className="flex flex-col items-center px-3 shrink-0">
+                  <div className="flex items-center gap-1.5">
+                    <span className={cn(
+                      "text-3xl font-bold tabular-nums",
+                      isCompleted && match.team1_score > match.team2_score && "text-success"
+                    )}>
+                      {match.team1_score}
+                    </span>
+                    <span className="text-muted-foreground text-xl">–</span>
+                    <span className={cn(
+                      "text-3xl font-bold tabular-nums",
+                      isCompleted && match.team2_score > match.team1_score && "text-success"
+                    )}>
+                      {match.team2_score}
+                    </span>
+                  </div>
+                  <p className="text-[9px] text-muted-foreground/60 uppercase tracking-wider -mt-0.5">Sets</p>
+                </div>
 
-              {/* Team 2 */}
-              <div className="bg-muted/30 rounded-lg px-3 py-2">
-                <p className="text-[9px] font-semibold text-muted-foreground/70 uppercase tracking-wider mb-1.5">Team 2</p>
-                <div className="space-y-1.5">
+                {/* Team 2 — left-aligned names, avatars on left */}
+                <div className="flex-1 space-y-1.5 min-w-0">
                   {team2.map((mp) => (
-                    <div key={mp.id} className="flex items-center gap-2">
-                      <Avatar className="h-6 w-6">
+                    <div key={mp.id} className="flex items-center gap-1.5">
+                      <Avatar className="h-6 w-6 shrink-0">
                         <AvatarImage src={mp.profiles?.avatar_url || undefined} />
                         <AvatarFallback className="text-[9px] bg-primary/10 text-primary">
                           {mp.profiles?.name?.charAt(0).toUpperCase() || "?"}
                         </AvatarFallback>
                       </Avatar>
-                      <span className="text-xs font-medium">{mp.profiles?.name || "Player"}</span>
+                      <span className="text-xs font-medium truncate">{mp.profiles?.name || "Player"}</span>
                     </div>
                   ))}
                 </div>
               </div>
+
+              {/* Set score pills */}
+              {match.set_scores && match.set_scores.length > 0 && (
+                <div className="flex justify-center gap-1.5 mt-2">
+                  {match.set_scores.map((s, i) => (
+                    <span key={i} className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full bg-muted text-[10px] font-semibold tabular-nums">
+                      <span className={cn(s.t1 > s.t2 ? "text-success" : "text-muted-foreground")}>{s.t1}</span>
+                      <span className="text-muted-foreground/40">-</span>
+                      <span className={cn(s.t2 > s.t1 ? "text-success" : "text-muted-foreground")}>{s.t2}</span>
+                    </span>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Score button */}
@@ -518,16 +507,16 @@ export function MatchesTab({
 
       {/* Next Round button — shown when matches exist */}
       {canManage && matches.length > 0 && allPlayers.length >= 4 && (
-        <div className="flex gap-2">
+        <div className="grid grid-cols-2 gap-2">
           <Button
             variant="hero"
             size="sm"
             onClick={handleGenerateRandom}
             disabled={generating}
-            className="gap-1.5 flex-1"
+            className="gap-1.5 h-10"
           >
             <Shuffle className="w-4 h-4" />
-            {generating ? "Generating..." : "Next Round (Random)"}
+            {generating ? "Generating..." : "Randomize"}
           </Button>
           <Button
             variant="outline"
@@ -538,10 +527,10 @@ export function MatchesTab({
               setEditingMatchId(null);
               setShowTeamPicker(true);
             }}
-            className="gap-1.5"
+            className="gap-1.5 h-10"
           >
-            <Plus className="w-4 h-4" />
-            Choose
+            <Users className="w-4 h-4" />
+            Choose Teams
           </Button>
         </div>
       )}
