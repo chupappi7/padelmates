@@ -4,7 +4,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { SkillBadge } from "./SkillBadge";
-import { Check, X, Users, Clock, ShieldCheck, RefreshCw, Plus, DollarSign } from "lucide-react";
+import { Check, X, Users, Clock, ShieldCheck, RefreshCw, Plus, DollarSign, CheckCircle2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface Profile {
@@ -170,7 +170,7 @@ export function ParticipantsTab({
       {showConfirmed && organizers.length > 0 && (
         <section>
           <div className="flex items-center gap-2 mb-3">
-            <span className="text-base">🛡️</span>
+            <ShieldCheck className="w-4 h-4 text-primary" />
             <h3 className="text-sm font-semibold">Organizers</h3>
           </div>
           <div className="flex items-start gap-4 flex-wrap">
@@ -202,7 +202,7 @@ export function ParticipantsTab({
       {showConfirmed && (
         <section>
           <div className="flex items-center gap-2 mb-3">
-            <span className="text-base">✅</span>
+            <CheckCircle2 className="w-4 h-4 text-primary" />
             <h3 className="text-sm font-semibold">Confirmed Players</h3>
             <Badge variant="outline" className="rounded-full text-xs ml-auto">
               {totalConfirmed}/{maxPlayers}
@@ -303,7 +303,7 @@ export function ParticipantsTab({
       {showConfirmed && isRequestAndPay && awaitingPayment.length > 0 && (
         <section>
           <div className="flex items-center gap-2 mb-3">
-            <span className="text-base">💰</span>
+            <DollarSign className="w-4 h-4 text-yellow-600" />
             <h3 className="text-sm font-semibold">Awaiting Payment</h3>
             <Badge variant="outline" className="rounded-full text-xs ml-auto bg-warning/10 text-warning border-warning/20">
               {awaitingPayment.length}
@@ -357,7 +357,7 @@ export function ParticipantsTab({
       {showRequests && pendingRequests.length > 0 && (
         <section>
           <div className="flex items-center gap-2 mb-3">
-            <span className="text-base">⏳</span>
+            <Clock className="w-4 h-4 text-muted-foreground" />
             <h3 className="text-sm font-semibold">Join Requests</h3>
             <Badge variant="outline" className="rounded-full text-xs ml-auto">
               {pendingRequests.length}
@@ -425,7 +425,7 @@ export function ParticipantsTab({
       {allowSubstitutions && showConfirmed && (
         <section>
           <div className="flex items-center gap-2 mb-3">
-            <span className="text-base">🔄</span>
+            <RefreshCw className="w-4 h-4 text-muted-foreground" />
             <h3 className="text-sm font-semibold">Substitutions</h3>
           </div>
           {emptySlots <= 0 && showSubstituteJoin && onJoinAsSubstitute ? (
