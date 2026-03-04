@@ -1090,8 +1090,329 @@ export default function CreateGamePage() {
                       />
                     </div>
                   </>
+                ) : hostType === "americano" ? (
+                  /* ========== HOST AMERICANO ========== */
+                  <>
+                    {/* Card 1: Location & Schedule */}
+                    <div className="bg-card border border-border rounded-xl md:rounded-2xl p-4 md:p-6 space-y-4 md:space-y-5">
+                      <h2 className="font-display font-bold text-base md:text-lg flex items-center gap-2">
+                        <MapPin className="w-4 h-4 md:w-5 md:h-5 text-primary" />
+                        Location & Schedule
+                      </h2>
+
+                      <div className="grid grid-cols-3 gap-3">
+                        <div className="col-span-2 space-y-1.5">
+                          <Label className="text-sm">Court / Location <span className="text-destructive">*</span></Label>
+                          <CourtPicker value={formData.location} onChange={(v) => handleChange("location", v)} />
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label htmlFor="courtNumber" className="text-sm">Court #</Label>
+                          <Input
+                            id="courtNumber"
+                            placeholder="e.g., 3"
+                            value={formData.courtNumber}
+                            onChange={(e) => handleChange("courtNumber", e.target.value)}
+                            className="h-11"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <Label className="text-sm">Date <span className="text-destructive">*</span></Label>
+                        <Popover open={showDatePicker} onOpenChange={setShowDatePicker}>
+                          <PopoverTrigger asChild>
+                            <button
+                              type="button"
+                              className="w-full h-11 px-3 flex items-center justify-between bg-background border border-input rounded-md text-sm hover:bg-accent transition-colors"
+                            >
+                              <span className={selectedDate ? "text-foreground" : "text-muted-foreground"}>
+                                {selectedDate ? format(selectedDate, "EEE, MMM d") : "Select date"}
+                              </span>
+                              <Calendar className="w-4 h-4 text-muted-foreground" />
+                            </button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0" align="start">
+                            <CalendarComponent
+                              mode="single"
+                              selected={selectedDate}
+                              onSelect={(date) => {
+                                setSelectedDate(date);
+                                setShowDatePicker(false);
+                              }}
+                              disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
+                              initialFocus
+                            />
+                          </PopoverContent>
+                        </Popover>
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <Label className="text-sm">Start Time <span className="text-destructive">*</span></Label>
+                        <button
+                          type="button"
+                          onClick={() => setShowTimePicker(true)}
+                          className="w-full h-11 px-3 flex items-center justify-between bg-background border border-input rounded-md text-sm hover:bg-accent transition-colors"
+                        >
+                          <span className="text-foreground">{selectedTime}</span>
+                          <Clock className="w-4 h-4 text-muted-foreground" />
+                        </button>
+                      </div>
+
+                      <TimeScrollPicker open={showTimePicker} onOpenChange={setShowTimePicker} value={selectedTime} onChange={setSelectedTime} />
+
+                      <div className="space-y-1.5">
+                        <Label className="text-sm">Duration</Label>
+                        <DurationChips duration={duration} onDurationChange={setDuration} selectedTime={selectedTime} />
+                      </div>
+                    </div>
+
+                    {/* Card 2: Players */}
+                    <div className="bg-card border border-border rounded-xl md:rounded-2xl p-4 md:p-6 space-y-5">
+                      <h2 className="font-display font-bold text-base md:text-lg flex items-center gap-2">
+                        <Users className="w-4 h-4 md:w-5 md:h-5 text-primary" />
+                        Players
+                      </h2>
+
+                      {/* Are you playing? */}
+                      <div className="space-y-2">
+                        <Label className="text-sm font-medium">Are you playing?</Label>
+                        <div className="flex gap-2">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              handleChange("hostIsPlaying", true);
+                              setSpotsNeeded(prev => Math.max(minSpotsNeeded(true, prefilledCount), prev));
+                            }}
+                            className={`flex-1 h-10 rounded-xl border-2 text-sm font-medium transition-all ${
+                              formData.hostIsPlaying
+                                ? "border-primary bg-primary/10 text-foreground"
+                                : "border-border text-muted-foreground hover:border-primary/40"
+                            }`}
+                          >
+                            I'm playing
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              handleChange("hostIsPlaying", false);
+                              setSpotsNeeded(prev => Math.max(minSpotsNeeded(false, prefilledCount), prev));
+                            }}
+                            className={`flex-1 h-10 rounded-xl border-2 text-sm font-medium transition-all ${
+                              !formData.hostIsPlaying
+                                ? "border-primary bg-primary/10 text-foreground"
+                                : "border-border text-muted-foreground hover:border-primary/40"
+                            }`}
+                          >
+                            I'm organizing
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="h-px bg-border" />
+
+                      {/* Confirmed players */}
+                      <div className="space-y-2">
+                        <Label className="text-sm font-medium flex items-center gap-1.5">
+                          <UserPlus className="w-3.5 h-3.5 text-primary" />
+                          Players already confirmed
+                        </Label>
+                        {formData.hostIsPlaying && (
+                          <div className="flex items-center gap-2 p-2 bg-primary/5 border border-primary/20 rounded-lg">
+                            <span className="w-2 h-2 rounded-full bg-primary shrink-0" />
+                            <span className="text-sm flex-1 truncate px-1 font-medium">You (host)</span>
+                            <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded-full">Playing</span>
+                          </div>
+                        )}
+                        {prefilledPlayers.map((player, index) => (
+                          <div key={index} className="flex items-center gap-2 p-2 bg-muted/30 border border-border rounded-lg">
+                            <span className="text-sm flex-1 truncate px-1">
+                              {typeof player === "object" ? player.name : player || "Guest"}
+                            </span>
+                            {typeof player === "object" && (
+                              <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded-full">Friend</span>
+                            )}
+                            <button
+                              type="button"
+                              onClick={() => setPrefilledPlayers(prev => prev.filter((_, i) => i !== index))}
+                              className="w-7 h-7 rounded-md bg-muted hover:bg-destructive/10 flex items-center justify-center transition-colors shrink-0"
+                            >
+                              <XIcon className="w-3 h-3 text-muted-foreground" />
+                            </button>
+                          </div>
+                        ))}
+                        {prefilledPlayers.length < maxPrefilledSlots && (
+                          <button
+                            type="button"
+                            onClick={() => setShowPlayerPicker(true)}
+                            className="w-full flex items-center justify-center gap-1.5 h-9 rounded-lg border border-dashed border-border text-sm text-muted-foreground hover:text-foreground hover:border-primary/50 transition-colors"
+                          >
+                            <UserPlus className="w-3.5 h-3.5" />
+                            Add player
+                          </button>
+                        )}
+                      </div>
+
+                      <FriendPickerSheet
+                        open={showPlayerPicker}
+                        onOpenChange={setShowPlayerPicker}
+                        selected={prefilledPlayers}
+                        onSelect={(newPlayers) => {
+                          const added = newPlayers.length - prefilledPlayers.length;
+                          if (added > 0) {
+                            const newPrefilledCount = newPlayers.filter(p => (typeof p === "string" ? p : p.name).trim()).length;
+                            const newMin = Math.max(1, 4 - newPrefilledCount - (formData.hostIsPlaying ? 1 : 0));
+                            setSpotsNeeded(prev => Math.max(newMin, prev - added));
+                          }
+                          setPrefilledPlayers(newPlayers);
+                        }}
+                        maxSlots={maxPrefilledSlots}
+                      />
+
+                      <div className="h-px bg-border" />
+
+                      {/* Spots needed */}
+                      <div className="space-y-3">
+                        <Label className="text-sm font-medium">How many more players do you need? <span className="text-destructive">*</span></Label>
+                        <div className="flex items-center gap-4">
+                          <button
+                            type="button"
+                            onClick={() => handleSpotsNeededChange(-1)}
+                            disabled={clampedSpotsNeeded <= currentMin}
+                            className="w-12 h-12 rounded-xl border-2 border-border bg-background text-xl font-bold flex items-center justify-center transition-all hover:border-primary/60 disabled:opacity-30 disabled:cursor-not-allowed select-none"
+                          >
+                            –
+                          </button>
+                          <div className="flex-1 flex flex-col items-center">
+                            <span className="text-4xl font-bold text-foreground leading-none">{clampedSpotsNeeded}</span>
+                            <span className="text-xs text-muted-foreground mt-1">
+                              {clampedSpotsNeeded === 1 ? "player" : "players"}
+                            </span>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => handleSpotsNeededChange(1)}
+                            disabled={clampedSpotsNeeded >= maxSpotsNeeded}
+                            className="w-12 h-12 rounded-xl border-2 border-border bg-background text-xl font-bold flex items-center justify-center transition-all hover:border-primary/60 disabled:opacity-30 disabled:cursor-not-allowed select-none"
+                          >
+                            +
+                          </button>
+                        </div>
+
+                        {/* Composition summary */}
+                        <div className="bg-muted/40 rounded-xl px-4 py-3 space-y-1">
+                          <div className="flex items-center gap-1.5 text-sm text-muted-foreground flex-wrap">
+                            {formData.hostIsPlaying && (
+                              <span className="flex items-center gap-1">
+                                <span className="w-2 h-2 rounded-full bg-primary inline-block" />
+                                You
+                              </span>
+                            )}
+                            {formData.hostIsPlaying && prefilledCount > 0 && <span>·</span>}
+                            {prefilledCount > 0 && (
+                              <span>{prefilledCount} confirmed</span>
+                            )}
+                            {(formData.hostIsPlaying || prefilledCount > 0) && <span>·</span>}
+                            <span className="font-medium text-foreground">{clampedSpotsNeeded} spot{clampedSpotsNeeded !== 1 ? "s" : ""} open</span>
+                            <span>·</span>
+                            <span className="font-medium text-foreground">{derivedMaxPlayers} total</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Allow substitutions */}
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <Label className="text-sm font-medium">Allow Substitutions</Label>
+                          <p className="text-xs text-muted-foreground">Players can swap in/out during the event</p>
+                        </div>
+                        <Switch checked={allowSubstitutions} onCheckedChange={setAllowSubstitutions} />
+                      </div>
+                    </div>
+
+                    {/* Card 3: Skill & Settings */}
+                    <div className="bg-card border border-border rounded-xl md:rounded-2xl p-4 md:p-6 space-y-4 md:space-y-5">
+                      <h2 className="font-display font-bold text-base md:text-lg flex items-center gap-2">
+                        <Trophy className="w-4 h-4 md:w-5 md:h-5 text-primary" />
+                        Skill Level & Settings
+                      </h2>
+
+                      <div className="space-y-1.5">
+                        <Label htmlFor="skill" className="text-sm">Skill Level</Label>
+                        <Select
+                          value={String(formData.skillLevel)}
+                          onValueChange={(v) => handleChange("skillLevel", parseInt(v))}
+                        >
+                          <SelectTrigger className="h-11">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="4">A</SelectItem>
+                            <SelectItem value="3">B</SelectItem>
+                            <SelectItem value="2">C</SelectItem>
+                            <SelectItem value="1">D</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <Label className="text-sm">Visibility</Label>
+                        <Select
+                          value={formData.visibility}
+                          onValueChange={(v) => handleChange("visibility", v)}
+                        >
+                          <SelectTrigger className="h-11">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="public">🌍 Public - Anyone can find</SelectItem>
+                            {isHostingAsClub && (
+                              <SelectItem value="club_only">🏠 Club Members Only</SelectItem>
+                            )}
+                            <SelectItem value="private">🔗 Private - Link only</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <Label className="text-sm">Price per Player (optional)</Label>
+                        <div className="relative">
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-semibold text-sm">Kč</span>
+                          <Input
+                            type="number"
+                            min="0"
+                            step="1"
+                            placeholder="e.g., 200"
+                            value={formData.totalPrice}
+                            onChange={(e) => handleChange("totalPrice", e.target.value)}
+                            className="h-11 pl-10"
+                          />
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          {formData.totalPrice && Number(formData.totalPrice) > 0
+                            ? `${Number(formData.totalPrice)} Kč per player`
+                            : "Leave empty for free"}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Card 4: About (optional) */}
+                    <div className="bg-card border border-border rounded-xl md:rounded-2xl p-4 md:p-6 space-y-4 md:space-y-5">
+                      <h2 className="font-display font-bold text-base md:text-lg flex items-center gap-2">
+                        <Users className="w-4 h-4 md:w-5 md:h-5 text-muted-foreground" />
+                        About This Tournament
+                        <span className="text-xs font-normal text-muted-foreground ml-1">(optional)</span>
+                      </h2>
+                      <Textarea
+                        placeholder="Format details, house rules, prizes..."
+                        value={formData.description}
+                        onChange={(e) => handleChange("description", e.target.value)}
+                        rows={3}
+                        className="text-sm resize-none"
+                      />
+                    </div>
+                  </>
                 ) : (
-                  /* ========== SELL SPOTS / other ========== */
+                  /* ========== OTHER / fallback ========== */
                   <>
                     <div className="bg-card border border-border rounded-xl md:rounded-2xl p-4 md:p-6 space-y-4 md:space-y-5">
                       <h2 className="font-display font-bold text-base md:text-lg flex items-center gap-2">
