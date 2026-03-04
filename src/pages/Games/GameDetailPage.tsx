@@ -1008,6 +1008,7 @@ export default function GameDetailPage() {
                   name: game.profiles.name,
                   avatar_url: game.profiles.avatar_url,
                 } : null}
+                guestCount={prefilledCount}
               />
             </motion.div>
           )}
