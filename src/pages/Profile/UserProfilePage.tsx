@@ -9,6 +9,7 @@ import { ArrowLeft, History } from "lucide-react";
 import { HeroCard } from "@/components/profile/HeroCard";
 import { ProfileActionButtons } from "@/components/profile/ProfileActionButtons";
 import { ProfileClubs } from "@/components/profile/ProfileClubs";
+import { LifetimeCredits } from "@/components/profile/LifetimeCredits";
 
 interface PublicProfile {
   name: string;
@@ -197,6 +198,9 @@ export default function UserProfilePage() {
             <History className="w-4 h-4" />
             Match History
           </Button>
+
+          {/* Lifetime Credits */}
+          {userId && <LifetimeCredits userId={userId} />}
 
           {/* Clubs */}
           {userId && <ProfileClubs userId={userId} />}
