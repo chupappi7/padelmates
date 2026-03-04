@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
+import { InviteFriendsSheet } from "@/components/games/InviteFriendsSheet";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -76,6 +77,7 @@ export default function CreateGamePage() {
 
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
+  const [createdGameId, setCreatedGameId] = useState<string | null>(null);
   const [bookingScreenshotPath, setBookingScreenshotPath] = useState<string | null>(null);
   const [bookingScreenshotUploading, setBookingScreenshotUploading] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
@@ -276,7 +278,7 @@ export default function CreateGamePage() {
     }
 
     toast.success(isSellCourt ? "Court listing created!" : "Game created successfully!");
-    navigate(`/games/${data.id}`);
+    setCreatedGameId(data.id);
   };
 
   const handleChange = (field: string, value: string | number | boolean) => {
@@ -1461,6 +1463,14 @@ export default function CreateGamePage() {
           </form>
         </motion.div>
       </div>
+      {createdGameId && (
+        <InviteFriendsSheet
+          open={!!createdGameId}
+          onOpenChange={(val) => { if (!val) { navigate(`/games/${createdGameId}`); setCreatedGameId(null); } }}
+          gameId={createdGameId}
+          onDone={() => { navigate(`/games/${createdGameId}`); setCreatedGameId(null); }}
+        />
+      )}
     </div>
   );
 }
