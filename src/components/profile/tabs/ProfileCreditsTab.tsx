@@ -1,17 +1,9 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Award } from "lucide-react";
+import { getCreditLabel } from "@/lib/creditTypes";
 
 const SPACE = "'Space Grotesk', system-ui, sans-serif";
-
-const CREDIT_LABELS: Record<string, string> = {
-  mvp: "MVP",
-  clutch_play: "Clutch Play",
-  sharp_shots: "Sharp Shots",
-  team_spirit: "Team Spirit",
-  never_gives_up: "Never Gives Up",
-  best_sportsmanship: "Best Sportsmanship",
-};
 
 export function ProfileCreditsTab({ userId }: { userId: string }) {
   const [credits, setCredits] = useState<{ id: string; credit_type: string }[]>([]);
@@ -37,7 +29,6 @@ export function ProfileCreditsTab({ userId }: { userId: string }) {
     );
   }
 
-  // Group credits by type with counts
   const grouped: Record<string, number> = {};
   credits.forEach(c => {
     grouped[c.credit_type] = (grouped[c.credit_type] || 0) + 1;
@@ -57,7 +48,6 @@ export function ProfileCreditsTab({ userId }: { userId: string }) {
 
   return (
     <div className="space-y-3">
-      {/* Summary */}
       <div className="bg-white rounded-2xl border border-[#E2E8F0] p-4">
         <div className="flex items-center gap-2 mb-3">
           <div className="w-8 h-8 rounded-lg bg-[#14b8a6]/10 flex items-center justify-center">
@@ -68,8 +58,6 @@ export function ProfileCreditsTab({ userId }: { userId: string }) {
             <p className="text-[10px] text-[#94A3B8] -mt-0.5">Total Credits</p>
           </div>
         </div>
-
-        {/* Credit type breakdown */}
         <div className="flex flex-wrap gap-1.5">
           {Object.entries(grouped)
             .sort((a, b) => b[1] - a[1])
@@ -78,7 +66,7 @@ export function ProfileCreditsTab({ userId }: { userId: string }) {
                 key={type}
                 className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-[#F1F5F9] text-[11px] font-semibold text-[#0F172A]"
               >
-                {CREDIT_LABELS[type] || type}
+                {getCreditLabel(type)}
                 {count > 1 && (
                   <span className="text-[10px] text-[#14b8a6] font-bold">×{count}</span>
                 )}
@@ -87,7 +75,6 @@ export function ProfileCreditsTab({ userId }: { userId: string }) {
         </div>
       </div>
 
-      {/* Individual credit pills */}
       <div className="bg-white rounded-2xl border border-[#E2E8F0] p-4">
         <p className="text-xs font-semibold text-[#94A3B8] uppercase tracking-wider mb-2.5">All Credits</p>
         <div className="flex flex-wrap gap-1.5">
@@ -96,7 +83,7 @@ export function ProfileCreditsTab({ userId }: { userId: string }) {
               key={c.id}
               className="px-2.5 py-1 rounded-full bg-[#F1F5F9] text-[11px] font-semibold text-[#0F172A]"
             >
-              {CREDIT_LABELS[c.credit_type] || c.credit_type}
+              {getCreditLabel(c.credit_type)}
             </span>
           ))}
         </div>

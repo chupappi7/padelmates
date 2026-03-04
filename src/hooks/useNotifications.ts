@@ -5,7 +5,7 @@ import { format } from "date-fns";
 
 export interface AppNotification {
   id: string;
-  type: "friend_request" | "game_confirmed" | "announcement" | "game_join" | "game_leave" | "game_request";
+  type: "friend_request" | "game_confirmed" | "announcement" | "game_join" | "game_leave" | "game_request" | "credit_received" | "credit_prompt";
   title: string;
   message: string;
   created_at: string;
