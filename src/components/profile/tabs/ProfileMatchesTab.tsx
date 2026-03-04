@@ -178,11 +178,11 @@ export function ProfileMatchesTab({ userId, isSelf = true }: { userId: string; i
                 <div key={p.userId} className="flex items-center justify-end gap-1.5 py-0.5">
                   <span
                     className={`text-[#0F172A] text-xs font-medium truncate ${p.name !== "You" ? "cursor-pointer hover:underline" : ""}`}
-                    onClick={() => p.name !== "You" && navigate(`/profile/${p.userId}`)}
+                    onClick={() => p.name !== "You" && navigate(`/user/${p.userId}`)}
                   >
                     {p.name}
                   </span>
-                  <Avatar className={`w-5 h-5 ${p.name !== "You" ? "cursor-pointer" : ""}`} onClick={() => p.name !== "You" && navigate(`/profile/${p.userId}`)}>
+                  <Avatar className={`w-5 h-5 ${p.name !== "You" ? "cursor-pointer" : ""}`} onClick={() => p.name !== "You" && navigate(`/user/${p.userId}`)}>
                     <AvatarImage src={p.avatarUrl || undefined} />
                     <AvatarFallback className="text-[8px] bg-[#F1F5F9] text-[#64748B]">{p.name[0]}</AvatarFallback>
                   </Avatar>
@@ -208,13 +208,13 @@ export function ProfileMatchesTab({ userId, isSelf = true }: { userId: string; i
             <div className="flex-1 min-w-0">
               {m.oppTeamPlayers.map(p => (
                 <div key={p.userId} className="flex items-center gap-1.5 py-0.5">
-                  <Avatar className="w-5 h-5 cursor-pointer" onClick={() => navigate(`/profile/${p.userId}`)}>
+                  <Avatar className="w-5 h-5 cursor-pointer" onClick={() => navigate(`/user/${p.userId}`)}>
                     <AvatarImage src={p.avatarUrl || undefined} />
                     <AvatarFallback className="text-[8px] bg-[#F1F5F9] text-[#64748B]">{p.name[0]}</AvatarFallback>
                   </Avatar>
                   <span
                     className="text-[#0F172A] text-xs font-medium truncate cursor-pointer hover:underline"
-                    onClick={() => navigate(`/profile/${p.userId}`)}
+                    onClick={() => navigate(`/user/${p.userId}`)}
                   >
                     {p.name}
                   </span>
