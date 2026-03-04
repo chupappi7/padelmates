@@ -295,13 +295,13 @@ export function MatchesTab({
             <h3 className="font-display font-bold text-lg mb-1">No Matches Yet</h3>
             <p className="text-sm text-muted-foreground">
               {canManage
-                ? totalPlayerCount < 4
-                  ? `Need at least 4 players (currently ${totalPlayerCount}).`
+                ? allPlayers.length < 4
+                  ? `Need at least 4 confirmed players (currently ${allPlayers.length}).`
                   : "Create matches to start tracking scores."
                 : "Matches will appear here once the host creates them."}
             </p>
           </div>
-          {canManage && totalPlayerCount >= 4 && (
+          {canManage && allPlayers.length >= 4 && (
             <div className="flex flex-col gap-2 pt-1">
               <Button
                 variant="hero"
