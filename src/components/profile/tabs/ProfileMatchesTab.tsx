@@ -102,7 +102,8 @@ export function ProfileMatchesTab({ userId, isSelf = true }: { userId: string; i
             team: p.team,
             isSelf: p.user_id === userId,
           };
-        });
+        })
+        .sort((a, b) => (a.isSelf ? -1 : 0) - (b.isSelf ? -1 : 0));
       const oppTeamPlayers = matchPlayers
         .filter(p => p.team !== myTeam)
         .map(p => {
