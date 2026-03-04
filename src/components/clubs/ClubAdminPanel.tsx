@@ -141,10 +141,13 @@ function AnnouncementsTab({ clubId }: { clubId: string }) {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [saving, setSaving] = useState(false);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const imageRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => { fetch(); }, [clubId]);
+  useEffect(() => { fetchAnnouncements(); }, [clubId]);
 
-  const fetch = async () => {
+  const fetchAnnouncements = async () => {
     const { data } = await supabase
       .from("club_announcements")
       .select("*")
@@ -153,20 +156,49 @@ function AnnouncementsTab({ clubId }: { clubId: string }) {
     setAnnouncements(data || []);
   };
 
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith("image/")) { toast.error("Only images allowed"); return; }
+    if (file.size > 5 * 1024 * 1024) { toast.error("Image must be under 5MB"); return; }
+    setImageFile(file);
+    setImagePreview(URL.createObjectURL(file));
+  };
+
+  const removeImage = () => {
+    setImageFile(null);
+    if (imagePreview) URL.revokeObjectURL(imagePreview);
+    setImagePreview(null);
+    if (imageRef.current) imageRef.current.value = "";
+  };
+
   const handlePost = async () => {
     if (!title.trim() || !content.trim() || !user) return;
     setSaving(true);
+
+    let image_url: string | null = null;
+
+    if (imageFile) {
+      const ext = imageFile.name.split(".").pop();
+      const path = `${user.id}/${Date.now()}.${ext}`;
+      const { error: upErr } = await supabase.storage.from("club-announcements").upload(path, imageFile);
+      if (upErr) { toast.error("Image upload failed"); setSaving(false); return; }
+      const { data: urlData } = supabase.storage.from("club-announcements").getPublicUrl(path);
+      image_url = urlData.publicUrl;
+    }
+
     const { error } = await supabase.from("club_announcements").insert({
       club_id: clubId,
       author_id: user.id,
       title: title.trim(),
       content: content.trim(),
-    });
+      image_url,
+    } as any);
     if (error) { toast.error("Failed to post"); }
     else {
       toast.success("Announcement posted!");
-      setTitle(""); setContent(""); setShowForm(false);
-      fetch();
+      setTitle(""); setContent(""); removeImage(); setShowForm(false);
+      fetchAnnouncements();
     }
     setSaving(false);
   };
@@ -174,7 +206,7 @@ function AnnouncementsTab({ clubId }: { clubId: string }) {
   const handleDelete = async (id: string) => {
     await supabase.from("club_announcements").delete().eq("id", id);
     toast.success("Deleted");
-    fetch();
+    fetchAnnouncements();
   };
 
   return (
@@ -187,20 +219,47 @@ function AnnouncementsTab({ clubId }: { clubId: string }) {
         <div className="bg-card border border-border rounded-xl p-4 space-y-3">
           <Input placeholder="Title" value={title} onChange={e => setTitle(e.target.value)} className="h-11" />
           <Textarea placeholder="Body" value={content} onChange={e => setContent(e.target.value)} rows={3} />
+
+          {/* Image upload */}
+          <input ref={imageRef} type="file" accept="image/*" className="hidden" onChange={handleImageSelect} />
+          {imagePreview ? (
+            <div className="relative">
+              <img src={imagePreview} alt="Preview" className="w-full rounded-lg object-cover max-h-48" />
+              <button
+                type="button"
+                onClick={removeImage}
+                className="absolute top-2 right-2 bg-background/80 backdrop-blur rounded-full p-1"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => imageRef.current?.click()}
+              className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <Camera className="w-4 h-4" /> Add Photo
+            </button>
+          )}
+
           <div className="flex gap-2">
             <Button variant="hero" onClick={handlePost} disabled={saving || !title.trim() || !content.trim()} className="flex-1">
               {saving ? "Posting..." : "Post"}
             </Button>
-            <Button variant="outline" onClick={() => setShowForm(false)}>Cancel</Button>
+            <Button variant="outline" onClick={() => { setShowForm(false); removeImage(); }}>Cancel</Button>
           </div>
         </div>
       )}
 
       {announcements.map(a => (
         <div key={a.id} className="bg-card border border-border rounded-xl p-4 flex justify-between items-start">
-          <div>
+          <div className="flex-1 min-w-0">
             <h4 className="font-bold text-sm">{a.title}</h4>
             <p className="text-xs text-muted-foreground line-clamp-2 mt-1">{a.content}</p>
+            {a.image_url && (
+              <img src={a.image_url} alt="" className="mt-2 w-full rounded-lg object-cover max-h-32" />
+            )}
           </div>
           <Button variant="ghost" size="icon" onClick={() => handleDelete(a.id)} className="shrink-0">
             <Trash2 className="w-4 h-4 text-destructive" />
