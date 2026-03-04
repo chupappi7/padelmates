@@ -497,6 +497,20 @@ export default function GameDetailPage() {
     else { toast.success(newRole === "admin" ? "Promoted to admin" : "Demoted to player"); fetchPlayers(); }
   };
 
+  const handleRemovePlayer = async (userId: string) => {
+    if (!id) return;
+    setActionLoading(userId);
+    // Remove from game_players
+    const { error: gpError } = await supabase.from("game_players").delete().eq("game_id", id).eq("user_id", userId);
+    if (gpError) { toast.error("Failed to remove player"); setActionLoading(null); return; }
+    // Also remove their join request if any
+    await supabase.from("join_requests").delete().eq("game_id", id).eq("user_id", userId);
+    toast.success("Player removed");
+    fetchPlayers();
+    fetchRequests();
+    setActionLoading(null);
+  };
+
   const handleExpressInterest = async () => {
     if (!user || !id) return;
     setJoinLoading(true);
@@ -991,6 +1005,7 @@ export default function GameDetailPage() {
                 onJoinAsSubstitute={() => isOpenJoin ? setShowJoinConfirm(true) : setShowJoinModal(true)}
                 isRequestAndPay={isRequestAndPay}
                 onConfirmPayment={handleConfirmPayment}
+                onRemovePlayer={handleRemovePlayer}
               />
             </motion.div>
           )}
