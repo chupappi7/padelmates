@@ -334,7 +334,7 @@ export default function ClubDetailPage() {
 
           {/* Tab Content */}
           <div className="mt-5">
-            {activeTab === "feed" && <ClubFeedTab clubId={id!} isAdmin={isAdmin} />}
+            {activeTab === "feed" && <ClubFeedTab clubId={id!} isAdmin={isAdmin} clubLogo={club.logo_url} clubName={club.name} />}
             {activeTab === "matches" && <ClubMatchesTab clubId={id!} />}
             {activeTab === "members" && <ClubMembersTab clubId={id!} ownerId={club.owner_id} />}
             {activeTab === "about" && <ClubAboutTab club={club} ownerId={club.owner_id} />}
