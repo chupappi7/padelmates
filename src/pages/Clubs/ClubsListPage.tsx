@@ -120,8 +120,8 @@ export default function ClubsListPage() {
             />
           </div>
 
-          {/* Filters */}
-          <div className="flex gap-2 mb-5">
+          {/* Filters + Create */}
+          <div className="flex items-center gap-2 mb-5">
             {(["all", "joined"] as Filter[]).map(f => (
               <button
                 key={f}
@@ -135,6 +135,14 @@ export default function ClubsListPage() {
                 {f === "all" ? "All" : "Joined"}
               </button>
             ))}
+            {user && (
+              <button
+                onClick={() => navigate("/clubs/create")}
+                className="ml-auto rounded-full px-4 py-1.5 text-sm font-semibold bg-primary text-primary-foreground flex items-center gap-1"
+              >
+                <Plus className="w-3.5 h-3.5" /> Create
+              </button>
+            )}
           </div>
         </motion.div>
 
@@ -222,17 +230,6 @@ export default function ClubsListPage() {
           </motion.div>
         )}
 
-        {/* Floating Create button */}
-        {user && (
-          <Button
-            variant="hero"
-            size="lg"
-            className="fixed bottom-20 right-4 rounded-full shadow-lg z-30"
-            onClick={() => navigate("/clubs/create")}
-          >
-            <Plus className="w-5 h-5" /> Create Club
-          </Button>
-        )}
       </div>
     </div>
   );
