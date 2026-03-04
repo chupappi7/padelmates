@@ -4,22 +4,15 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
-import { LogOut, Camera, ChevronDown, ChevronUp, CreditCard, Pencil, ImagePlus, X } from "lucide-react";
+import { LogOut, Camera, Settings } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
 import { SkillBadge } from "@/components/games/SkillBadge";
 import { LevelSelectSheet } from "@/components/profile/LevelSelectSheet";
 import { ProfileDashboardTab } from "@/components/profile/tabs/ProfileDashboardTab";
 import { ProfileMatchesTab } from "@/components/profile/tabs/ProfileMatchesTab";
 import { ProfileAnalysisTab } from "@/components/profile/tabs/ProfileAnalysisTab";
 import { ProfileCreditsTab } from "@/components/profile/tabs/ProfileCreditsTab";
-import { ProfilePersonalDetails } from "@/components/profile/tabs/ProfilePersonalDetails";
-import { ProfileClubsGlass } from "@/components/profile/tabs/ProfileClubsGlass";
-import { ProfilePaymentInfo } from "@/components/profile/tabs/ProfilePaymentInfo";
-import { LifetimeCredits } from "@/components/profile/LifetimeCredits";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Copy, Check } from "lucide-react";
 
 const SPACE = "'Space Grotesk', system-ui, sans-serif";
@@ -106,8 +99,8 @@ export default function ProfilePage() {
       <div className="min-h-screen bg-[#F5F5F5]">
         <div className="container py-8">
           <div className="animate-pulse space-y-4">
-            <div className="h-32 bg-[#E2E8F0] rounded-2xl" />
-            <div className="h-16 bg-[#E2E8F0] rounded-2xl" />
+            <div className="h-24 bg-[#E2E8F0] rounded-2xl" />
+            <div className="h-12 bg-[#E2E8F0] rounded-2xl" />
           </div>
         </div>
       </div>
@@ -116,41 +109,46 @@ export default function ProfilePage() {
 
   return (
     <div className="min-h-screen bg-[#F5F5F5] pb-32 md:pb-8 lg:max-w-4xl lg:mx-auto">
-      {/* Header */}
-      <div className="bg-gradient-to-b from-teal-50 to-white px-4 pt-4 pb-2">
+      {/* Header — tightened */}
+      <div className="bg-gradient-to-b from-teal-50 to-white px-4 pt-3 pb-1">
         <div className="flex items-center justify-between">
           <div className="w-9" />
           <h1 className="text-[#0F172A] font-bold text-lg" style={{ fontFamily: SPACE }}>Profile</h1>
-          <button onClick={async () => { await signOut(); navigate("/login"); }} className="w-9 h-9 rounded-full bg-red-50 flex items-center justify-center">
-            <LogOut className="w-4 h-4 text-red-500" />
-          </button>
+          <div className="flex items-center gap-1.5">
+            <button onClick={() => navigate("/settings")} className="w-9 h-9 rounded-full bg-[#F1F5F9] flex items-center justify-center">
+              <Settings className="w-4 h-4 text-[#64748B]" />
+            </button>
+            <button onClick={async () => { await signOut(); navigate("/login"); }} className="w-9 h-9 rounded-full bg-red-50 flex items-center justify-center">
+              <LogOut className="w-4 h-4 text-red-500" />
+            </button>
+          </div>
         </div>
 
-        {/* Avatar + Name */}
+        {/* Avatar + Name — tighter spacing */}
         <motion.div
-          initial={{ opacity: 0, y: 16 }}
+          initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
-          className="flex flex-col items-center pt-2 pb-4"
+          className="flex flex-col items-center pt-1 pb-2"
         >
           <div className="relative">
-            <Avatar className="w-20 h-20 ring-2 ring-[#14b8a6]/20 ring-offset-2 ring-offset-white">
+            <Avatar className="w-18 h-18 ring-2 ring-[#14b8a6]/20 ring-offset-2 ring-offset-white">
               <AvatarImage src={profile?.avatar_url || undefined} className="object-cover" />
-              <AvatarFallback className="text-2xl font-bold bg-[#14b8a6]/10 text-[#14b8a6]" style={{ fontFamily: SPACE }}>
+              <AvatarFallback className="text-xl font-bold bg-[#14b8a6]/10 text-[#14b8a6]" style={{ fontFamily: SPACE }}>
                 {profile?.name?.charAt(0).toUpperCase()}
               </AvatarFallback>
             </Avatar>
             <label
               htmlFor="avatar-upload-main"
-              className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-[#14b8a6] flex items-center justify-center cursor-pointer shadow-lg shadow-[#14b8a6]/30"
+              className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-[#14b8a6] flex items-center justify-center cursor-pointer shadow-lg shadow-[#14b8a6]/30"
             >
-              <Camera className="w-3.5 h-3.5 text-white" />
+              <Camera className="w-3 h-3 text-white" />
             </label>
             <Input type="file" id="avatar-upload-main" accept="image/*" className="hidden" onChange={handleAvatarUpload} />
           </div>
 
-          <p className="text-[#0F172A] text-xl font-bold mt-3" style={{ fontFamily: SPACE }}>{profile?.name}</p>
+          <p className="text-[#0F172A] text-lg font-bold mt-2" style={{ fontFamily: SPACE }}>{profile?.name}</p>
 
-          <div className="flex items-center gap-2 mt-1.5">
+          <div className="flex items-center gap-2 mt-1">
             <button onClick={() => setLevelSheetOpen(true)}>
               <SkillBadge level={profile?.skill_level || 2} size="sm" />
             </button>
@@ -170,7 +168,7 @@ export default function ProfilePage() {
       </div>
 
       {/* Tab Navigation */}
-      <div className="px-4 mb-4 mt-4">
+      <div className="px-4 mb-3 mt-3">
         <div className="flex gap-1 bg-white rounded-2xl p-1 shadow-sm border border-[#E2E8F0]">
           {TABS.map((tab) => (
             <button
@@ -189,7 +187,7 @@ export default function ProfilePage() {
         </div>
       </div>
 
-      {/* Tab Content */}
+      {/* Tab Content — no more personal details/clubs/payment outside tabs */}
       <div className="px-4 space-y-3">
         <motion.div
           key={activeTab}
@@ -210,32 +208,6 @@ export default function ProfilePage() {
             <ProfileCreditsTab userId={user.id} />
           )}
         </motion.div>
-
-        {/* Personal Details - collapsible */}
-        {user && profile && (
-          <ProfilePersonalDetails
-            userId={user.id}
-            region={profile.region}
-            preferredPosition={profile.preferred_position}
-            preferredHand={profile.preferred_hand}
-            sex={profile.sex}
-            birthYear={profile.birth_year}
-            onSaved={fetchProfile}
-          />
-        )}
-
-        {/* Clubs */}
-        {user && <ProfileClubsGlass userId={user.id} />}
-
-        {/* Payment Info */}
-        {user && profile && (
-          <ProfilePaymentInfo
-            userId={user.id}
-            bankDetails={profile.bank_details}
-            bankQrUrl={profile.bank_qr_url}
-            onSaved={fetchProfile}
-          />
-        )}
       </div>
 
       <LevelSelectSheet

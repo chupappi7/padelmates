@@ -30,6 +30,7 @@ const GroupChatPage = lazy(() => import("./pages/Messages/GroupChatPage"));
 const EloPage = lazy(() => import("./pages/Elo/EloPage"));
 const MatchHistoryPage = lazy(() => import("./pages/Profile/MatchHistoryPage"));
 const JoinPage = lazy(() => import("./pages/Games/JoinPage"));
+const SettingsPage = lazy(() => import("./pages/Profile/SettingsPage"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient();
@@ -67,6 +68,7 @@ const App = () => (
               <Route path="/messages/:chatId" element={<ChatPage />} />
               <Route path="/elo" element={<EloPage />} />
               <Route path="/profile" element={<ProfilePage />} />
+              <Route path="/settings" element={<SettingsPage />} />
               <Route path="/match-history" element={<MatchHistoryPage />} />
               <Route path="/match-history/:userId" element={<MatchHistoryPage />} />
               <Route path="/user/:userId" element={<UserProfilePage />} />
