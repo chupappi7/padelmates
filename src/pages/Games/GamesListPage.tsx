@@ -395,18 +395,14 @@ export default function GamesListPage() {
 
               {/* Friends Joining toggle */}
               {user && (
-                <button
+                <Button
+                  variant={friendsJoining ? "default" : "outline"}
+                  className={cn("h-11 shrink-0 gap-1.5", friendsJoining && "bg-primary text-primary-foreground")}
                   onClick={() => setFriendsJoining(!friendsJoining)}
-                  className={cn(
-                    "h-9 px-3 rounded-full text-sm font-medium inline-flex items-center gap-1.5 border transition-colors shrink-0",
-                    friendsJoining
-                      ? "bg-primary text-primary-foreground border-primary"
-                      : "bg-transparent text-muted-foreground border-border hover:bg-accent"
-                  )}
                 >
-                  <Users className="w-3.5 h-3.5" />
+                  <Users className="w-4 h-4" />
                   Friends
-                </button>
+                </Button>
               )}
             </div>
         </motion.div>
