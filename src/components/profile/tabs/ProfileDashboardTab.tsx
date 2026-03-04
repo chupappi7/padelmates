@@ -282,14 +282,6 @@ export function ProfileDashboardTab({ userId, profile, isSelf = true }: Props) {
         </div>
       )}
 
-      {/* Match History link */}
-      <button
-        onClick={() => navigate(isSelf ? "/match-history" : `/match-history/${userId}`)}
-        className="w-full bg-white shadow-sm border border-[#E2E8F0] rounded-2xl px-4 py-3 flex items-center justify-between hover:bg-[#F8FAFC] transition-colors"
-      >
-        <span className="text-[#64748B] text-xs font-medium">View Full Match History</span>
-        <ChevronRight className="w-4 h-4 text-[#CBD5E1]" />
-      </button>
     </div>
   );
 }

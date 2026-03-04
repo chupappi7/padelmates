@@ -249,7 +249,7 @@ export default function UserProfilePage() {
             <ProfileDashboardTab userId={userId} isSelf={false} profile={{ name: profile.name, pdr_rating: profile.pdr_rating, pdr_phase: profile.pdr_phase, created_at: profile.created_at }} />
           )}
           {activeTab === "Matches" && userId && (
-            <ProfileMatchesTab userId={userId} />
+            <ProfileMatchesTab userId={userId} isSelf={false} />
           )}
           {activeTab === "Analysis" && userId && (
             <ProfileAnalysisTab userId={userId} />

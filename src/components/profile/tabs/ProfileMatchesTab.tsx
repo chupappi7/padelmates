@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
-import { MapPin } from "lucide-react";
+import { MapPin, ChevronRight } from "lucide-react";
 
 const SPACE = "'Space Grotesk', system-ui, sans-serif";
 
@@ -14,7 +15,8 @@ interface MatchEntry {
   format: string;
 }
 
-export function ProfileMatchesTab({ userId }: { userId: string }) {
+export function ProfileMatchesTab({ userId, isSelf = true }: { userId: string; isSelf?: boolean }) {
+  const navigate = useNavigate();
   const [matches, setMatches] = useState<MatchEntry[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -105,6 +107,15 @@ export function ProfileMatchesTab({ userId }: { userId: string }) {
           </div>
         </div>
       ))}
+
+      {/* View Full Match History */}
+      <button
+        onClick={() => navigate(isSelf ? "/match-history" : `/match-history/${userId}`)}
+        className="w-full bg-white shadow-sm border border-[#E2E8F0] rounded-2xl px-4 py-3 flex items-center justify-between hover:bg-[#F8FAFC] transition-colors"
+      >
+        <span className="text-[#64748B] text-xs font-medium">View Full Match History</span>
+        <ChevronRight className="w-4 h-4 text-[#CBD5E1]" />
+      </button>
     </div>
   );
 }
