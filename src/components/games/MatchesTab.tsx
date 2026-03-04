@@ -5,7 +5,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Trophy, Shuffle, Trash2, Users, Plus, Pencil } from "lucide-react";
+import { Trophy, Shuffle, Trash2, Users, Plus, Pencil, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   Dialog,
@@ -77,6 +77,7 @@ export function MatchesTab({
   const [editingMatchId, setEditingMatchId] = useState<string | null>(null);
   const [team1Picks, setTeam1Picks] = useState<string[]>([]);
   const [team2Picks, setTeam2Picks] = useState<string[]>([]);
+  const [sessionEnded, setSessionEnded] = useState(false);
 
   // Build guest player entries with deterministic UUIDs
   const guestPlayers: Player[] = guestNames.map((name, i) => ({
@@ -623,6 +624,21 @@ export function MatchesTab({
       {/* End Session button */}
       {canManage && matches.length > 0 && (() => {
         const allCompleted = matches.every((m) => m.status === "completed");
+
+        if (sessionEnded) {
+          return (
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-full h-10 gap-1.5 bg-emerald-50 border-emerald-200 text-emerald-600 hover:bg-emerald-50 cursor-default"
+              disabled
+            >
+              <Check className="w-4 h-4" />
+              Scores Submitted
+            </Button>
+          );
+        }
+
         return (
           <Button
             variant="destructive"
@@ -630,7 +646,6 @@ export function MatchesTab({
             className="w-full h-10 gap-1.5"
             disabled={!allCompleted}
             onClick={async () => {
-              // Update games_played for all real players in completed matches
               const realPlayerIds = new Set<string>();
               matches.forEach((m) => {
                 m.match_players.forEach((mp) => {
@@ -643,6 +658,7 @@ export function MatchesTab({
                   const { data } = await supabase.from("profiles").select("games_played").eq("user_id", uid).single();
                   await supabase.from("profiles").update({ games_played: (data?.games_played ?? 0) + 1 }).eq("user_id", uid);
                 }
+                setSessionEnded(true);
                 toast.success("Session ended! Player stats updated.");
               } catch {
                 toast.error("Failed to update player stats");
@@ -650,7 +666,7 @@ export function MatchesTab({
             }}
           >
             <Trophy className="w-4 h-4" />
-            {matches.every((m) => m.status === "completed") ? "End Session" : "Complete all matches first"}
+            {allCompleted ? "End Session" : "Complete all matches first"}
           </Button>
         );
       })()}
