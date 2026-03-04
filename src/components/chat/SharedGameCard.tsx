@@ -21,6 +21,7 @@ interface GamePreview {
   max_players: number;
   format: string;
   prefilled_players: unknown;
+  host_is_playing: boolean;
 }
 
 export function SharedGameCard({ gameId, title }: SharedGameCardProps) {
@@ -33,7 +34,7 @@ export function SharedGameCard({ gameId, title }: SharedGameCardProps) {
       const [{ data }, { count }] = await Promise.all([
         supabase
           .from("games")
-          .select("title, location, court_number, date_time, end_date_time, skill_level, max_players, format, prefilled_players")
+          .select("title, location, court_number, date_time, end_date_time, skill_level, max_players, format, prefilled_players, host_is_playing")
           .eq("id", gameId)
           .single(),
         supabase
@@ -74,7 +75,8 @@ export function SharedGameCard({ gameId, title }: SharedGameCardProps) {
 
   // Calculate total players including prefilled
   const prefilledCount = Array.isArray(game.prefilled_players) ? game.prefilled_players.length : 0;
-  const totalPlayers = playerCount + prefilledCount;
+  const hostCount = game.host_is_playing ? 1 : 0;
+  const totalPlayers = playerCount + prefilledCount + hostCount;
   const spotsLeft = game.max_players - totalPlayers;
 
   const isFull = spotsLeft <= 0;
