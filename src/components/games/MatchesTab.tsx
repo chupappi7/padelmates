@@ -5,7 +5,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Trophy, Shuffle, Trash2, Users } from "lucide-react";
+import { Trophy, Shuffle, Trash2, Users, Plus, Pencil } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   Dialog,
@@ -74,6 +74,7 @@ export function MatchesTab({
   const [generating, setGenerating] = useState(false);
   const [scoringMatchId, setScoringMatchId] = useState<string | null>(null);
   const [showTeamPicker, setShowTeamPicker] = useState(false);
+  const [editingMatchId, setEditingMatchId] = useState<string | null>(null);
   const [team1Picks, setTeam1Picks] = useState<string[]>([]);
   const [team2Picks, setTeam2Picks] = useState<string[]>([]);
 
@@ -162,6 +163,8 @@ export function MatchesTab({
     return () => { supabase.removeChannel(channel); };
   }, [gameId, fetchMatches]);
 
+  const nextRoundNumber = matches.length > 0 ? Math.max(...matches.map((m) => m.round_number)) + 1 : 1;
+
   const handleGenerateRandom = async () => {
     if (allPlayers.length < 4) {
       toast.error("Need at least 4 players to generate matches");
@@ -169,11 +172,7 @@ export function MatchesTab({
     }
 
     setGenerating(true);
-
-    // Shuffle players
     const shuffled = [...allPlayers].sort(() => Math.random() - 0.5);
-
-    // For padel: create matches of 4 players (2v2)
     const matchCount = Math.floor(shuffled.length / 4);
     if (matchCount === 0) {
       toast.error("Need at least 4 players");
@@ -181,18 +180,14 @@ export function MatchesTab({
       return;
     }
 
-    const nextRound = matches.length > 0 ? Math.max(...matches.map((m) => m.round_number)) + 1 : 1;
-
     try {
       for (let i = 0; i < matchCount; i++) {
         const group = shuffled.slice(i * 4, i * 4 + 4);
-
         const { data: matchData, error: matchError } = await supabase
           .from("matches")
-          .insert({ game_id: gameId, round_number: nextRound + i })
+          .insert({ game_id: gameId, round_number: nextRoundNumber + i })
           .select()
           .single();
-
         if (matchError) throw matchError;
 
         const matchPlayers = group.map((p, idx) => ({
@@ -200,14 +195,12 @@ export function MatchesTab({
           user_id: p.user_id,
           team: idx < 2 ? 1 : 2,
         }));
-
         const { error: mpError } = await supabase.from("match_players").insert(matchPlayers);
         if (mpError) throw mpError;
       }
-
       toast.success(`Generated ${matchCount} match${matchCount > 1 ? "es" : ""} with random teams!`);
       fetchMatches();
-    } catch (err) {
+    } catch {
       toast.error("Failed to generate matches");
     }
     setGenerating(false);
@@ -220,33 +213,55 @@ export function MatchesTab({
     }
 
     setGenerating(true);
-    const nextRound = matches.length > 0 ? Math.max(...matches.map((m) => m.round_number)) + 1 : 1;
 
     try {
-      const { data: matchData, error: matchError } = await supabase
-        .from("matches")
-        .insert({ game_id: gameId, round_number: nextRound })
-        .select()
-        .single();
-      if (matchError) throw matchError;
+      // If editing, delete old match_players and update
+      if (editingMatchId) {
+        await supabase.from("match_players").delete().eq("match_id", editingMatchId);
+        const matchPlayers = [
+          ...team1Picks.map((uid) => ({ match_id: editingMatchId, user_id: uid, team: 1 })),
+          ...team2Picks.map((uid) => ({ match_id: editingMatchId, user_id: uid, team: 2 })),
+        ];
+        const { error: mpError } = await supabase.from("match_players").insert(matchPlayers);
+        if (mpError) throw mpError;
 
-      const matchPlayers = [
-        ...team1Picks.map((uid) => ({ match_id: matchData.id, user_id: uid, team: 1 })),
-        ...team2Picks.map((uid) => ({ match_id: matchData.id, user_id: uid, team: 2 })),
-      ];
+        toast.success("Teams updated!");
+      } else {
+        const { data: matchData, error: matchError } = await supabase
+          .from("matches")
+          .insert({ game_id: gameId, round_number: nextRoundNumber })
+          .select()
+          .single();
+        if (matchError) throw matchError;
 
-      const { error: mpError } = await supabase.from("match_players").insert(matchPlayers);
-      if (mpError) throw mpError;
+        const matchPlayers = [
+          ...team1Picks.map((uid) => ({ match_id: matchData.id, user_id: uid, team: 1 })),
+          ...team2Picks.map((uid) => ({ match_id: matchData.id, user_id: uid, team: 2 })),
+        ];
+        const { error: mpError } = await supabase.from("match_players").insert(matchPlayers);
+        if (mpError) throw mpError;
 
-      toast.success("Match created with chosen teams!");
+        toast.success("Match created with chosen teams!");
+      }
+
       setShowTeamPicker(false);
+      setEditingMatchId(null);
       setTeam1Picks([]);
       setTeam2Picks([]);
       fetchMatches();
     } catch {
-      toast.error("Failed to create match");
+      toast.error("Failed to save match");
     }
     setGenerating(false);
+  };
+
+  const openEditTeams = (match: Match) => {
+    const t1 = match.match_players.filter((mp) => mp.team === 1).map((mp) => mp.user_id);
+    const t2 = match.match_players.filter((mp) => mp.team === 2).map((mp) => mp.user_id);
+    setTeam1Picks(t1);
+    setTeam2Picks(t2);
+    setEditingMatchId(match.id);
+    setShowTeamPicker(true);
   };
 
   const togglePlayerPick = (userId: string, team: 1 | 2) => {
@@ -254,7 +269,6 @@ export function MatchesTab({
       if (team1Picks.includes(userId)) {
         setTeam1Picks((p) => p.filter((id) => id !== userId));
       } else if (team1Picks.length < 2) {
-        // Remove from team 2 if present
         setTeam2Picks((p) => p.filter((id) => id !== userId));
         setTeam1Picks((p) => [...p, userId]);
       }
@@ -311,7 +325,7 @@ export function MatchesTab({
 
   return (
     <div className="space-y-4">
-      {/* No matches state with generate options */}
+      {/* No matches state */}
       {matches.length === 0 && (
         <div className="bg-card border border-border rounded-xl p-6 text-center space-y-4">
           <Trophy className="w-10 h-10 text-muted-foreground mx-auto" />
@@ -343,6 +357,7 @@ export function MatchesTab({
                 onClick={() => {
                   setTeam1Picks([]);
                   setTeam2Picks([]);
+                  setEditingMatchId(null);
                   setShowTeamPicker(true);
                 }}
                 className="gap-1.5 w-full"
@@ -355,7 +370,7 @@ export function MatchesTab({
         </div>
       )}
 
-
+      {/* Match cards */}
       {matches.map((match) => {
         const team1 = match.match_players.filter((mp) => mp.team === 1);
         const team2 = match.match_players.filter((mp) => mp.team === 2);
@@ -365,12 +380,12 @@ export function MatchesTab({
           <div
             key={match.id}
             className={cn(
-              "bg-card border rounded-xl p-4",
+              "bg-card border rounded-xl overflow-hidden",
               isCompleted ? "border-border" : "border-primary/20"
             )}
           >
             {/* Header */}
-            <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center justify-between px-4 pt-3 pb-2">
               <div className="flex items-center gap-2">
                 <Badge variant="outline" className="text-xs rounded-full">
                   Round {match.round_number}
@@ -386,103 +401,159 @@ export function MatchesTab({
                 )}
               </div>
               {canManage && (
-                <button
-                  onClick={() => handleDeleteMatch(match.id)}
-                  className="text-muted-foreground hover:text-destructive transition-colors p-1"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => openEditTeams(match)}
+                    className="text-muted-foreground hover:text-foreground transition-colors p-1.5 rounded-lg hover:bg-muted/50"
+                    title="Edit teams"
+                  >
+                    <Pencil className="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    onClick={() => handleDeleteMatch(match.id)}
+                    className="text-muted-foreground hover:text-destructive transition-colors p-1.5 rounded-lg hover:bg-destructive/10"
+                    title="Delete match"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
               )}
             </div>
 
-            {/* Teams + Score */}
-            <div className="flex items-center gap-3">
-              {/* Team 1 */}
-              <div className="flex-1 space-y-1.5">
-                <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Team 1</p>
-                {team1.map((mp) => (
-                  <div key={mp.id} className="flex items-center gap-2">
-                    <Avatar className="h-7 w-7">
-                      <AvatarImage src={mp.profiles?.avatar_url || undefined} />
-                      <AvatarFallback className="text-[10px] bg-primary/10 text-primary">
-                        {mp.profiles?.name?.charAt(0).toUpperCase() || "?"}
-                      </AvatarFallback>
-                    </Avatar>
-                    <span className="text-xs font-medium truncate">{mp.profiles?.name || "Player"}</span>
-                  </div>
+            {/* Score section */}
+            <div className="flex items-center justify-center gap-3 py-2">
+              <div className="flex items-center gap-1.5">
+                <span className={cn(
+                  "text-3xl font-bold tabular-nums",
+                  isCompleted && match.team1_score > match.team2_score && "text-success"
+                )}>
+                  {match.team1_score}
+                </span>
+                <span className="text-muted-foreground text-xl">-</span>
+                <span className={cn(
+                  "text-3xl font-bold tabular-nums",
+                  isCompleted && match.team2_score > match.team1_score && "text-success"
+                )}>
+                  {match.team2_score}
+                </span>
+              </div>
+            </div>
+            <p className="text-[9px] text-muted-foreground/60 uppercase tracking-wider text-center -mt-1">Sets</p>
+
+            {/* Set score pills */}
+            {match.set_scores && match.set_scores.length > 0 && (
+              <div className="flex justify-center gap-1.5 mt-1 px-4">
+                {match.set_scores.map((s, i) => (
+                  <span key={i} className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full bg-muted text-[10px] font-semibold tabular-nums">
+                    <span className={cn(s.t1 > s.t2 ? "text-success" : "text-muted-foreground")}>{s.t1}</span>
+                    <span className="text-muted-foreground/40">-</span>
+                    <span className={cn(s.t2 > s.t1 ? "text-success" : "text-muted-foreground")}>{s.t2}</span>
+                  </span>
                 ))}
               </div>
+            )}
 
-              {/* Score */}
-              <div className="flex flex-col items-center shrink-0 min-w-[80px]">
-                {/* Sets won */}
-                <div className="flex items-center gap-1.5">
-                  <span className={cn(
-                    "text-2xl font-bold",
-                    isCompleted && match.team1_score > match.team2_score && "text-success"
-                  )}>
-                    {match.team1_score}
-                  </span>
-                  <span className="text-muted-foreground text-lg">-</span>
-                  <span className={cn(
-                    "text-2xl font-bold",
-                    isCompleted && match.team2_score > match.team1_score && "text-success"
-                  )}>
-                    {match.team2_score}
-                  </span>
+            {/* Teams — stacked vertically */}
+            <div className="px-4 pt-3 pb-3 space-y-2">
+              {/* Team 1 */}
+              <div className="bg-muted/30 rounded-lg px-3 py-2">
+                <p className="text-[9px] font-semibold text-muted-foreground/70 uppercase tracking-wider mb-1.5">Team 1</p>
+                <div className="space-y-1.5">
+                  {team1.map((mp) => (
+                    <div key={mp.id} className="flex items-center gap-2">
+                      <Avatar className="h-6 w-6">
+                        <AvatarImage src={mp.profiles?.avatar_url || undefined} />
+                        <AvatarFallback className="text-[9px] bg-primary/10 text-primary">
+                          {mp.profiles?.name?.charAt(0).toUpperCase() || "?"}
+                        </AvatarFallback>
+                      </Avatar>
+                      <span className="text-xs font-medium">{mp.profiles?.name || "Player"}</span>
+                    </div>
+                  ))}
                 </div>
-                <p className="text-[9px] text-muted-foreground/60 uppercase tracking-wider">Sets</p>
+              </div>
 
-                {/* Set score pills */}
-                {match.set_scores && match.set_scores.length > 0 && (
-                  <div className="flex flex-wrap justify-center gap-1 mt-1">
-                    {match.set_scores.map((s, i) => (
-                      <span key={i} className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-muted text-[10px] font-semibold tabular-nums">
-                        <span className={cn(s.t1 > s.t2 ? "text-success" : "text-muted-foreground")}>{s.t1}</span>
-                        <span className="text-muted-foreground/40">-</span>
-                        <span className={cn(s.t2 > s.t1 ? "text-success" : "text-muted-foreground")}>{s.t2}</span>
-                      </span>
-                    ))}
-                  </div>
-                )}
-
-                {canManage && (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="h-7 text-xs px-3 mt-1.5"
-                    onClick={() => setScoringMatchId(match.id)}
-                  >
-                    {isCompleted ? "Edit" : "Score"}
-                  </Button>
-                )}
+              {/* VS divider */}
+              <div className="flex items-center gap-2">
+                <div className="flex-1 h-px bg-border" />
+                <span className="text-[10px] font-bold text-muted-foreground/50 uppercase">vs</span>
+                <div className="flex-1 h-px bg-border" />
               </div>
 
               {/* Team 2 */}
-              <div className="flex-1 space-y-1.5 text-right">
-                <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Team 2</p>
-                {team2.map((mp) => (
-                  <div key={mp.id} className="flex items-center gap-2 justify-end">
-                    <span className="text-xs font-medium truncate">{mp.profiles?.name || "Player"}</span>
-                    <Avatar className="h-7 w-7">
-                      <AvatarImage src={mp.profiles?.avatar_url || undefined} />
-                      <AvatarFallback className="text-[10px] bg-primary/10 text-primary">
-                        {mp.profiles?.name?.charAt(0).toUpperCase() || "?"}
-                      </AvatarFallback>
-                    </Avatar>
-                  </div>
-                ))}
+              <div className="bg-muted/30 rounded-lg px-3 py-2">
+                <p className="text-[9px] font-semibold text-muted-foreground/70 uppercase tracking-wider mb-1.5">Team 2</p>
+                <div className="space-y-1.5">
+                  {team2.map((mp) => (
+                    <div key={mp.id} className="flex items-center gap-2">
+                      <Avatar className="h-6 w-6">
+                        <AvatarImage src={mp.profiles?.avatar_url || undefined} />
+                        <AvatarFallback className="text-[9px] bg-primary/10 text-primary">
+                          {mp.profiles?.name?.charAt(0).toUpperCase() || "?"}
+                        </AvatarFallback>
+                      </Avatar>
+                      <span className="text-xs font-medium">{mp.profiles?.name || "Player"}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
+
+            {/* Score button */}
+            {canManage && (
+              <div className="px-4 pb-3">
+                <Button
+                  size="sm"
+                  variant={isCompleted ? "outline" : "hero"}
+                  className="w-full h-9 text-xs"
+                  onClick={() => setScoringMatchId(match.id)}
+                >
+                  {isCompleted ? "Edit Score" : "Enter Score"}
+                </Button>
+              </div>
+            )}
           </div>
         );
       })}
 
-      {/* Choose Teams Dialog */}
-      <Dialog open={showTeamPicker} onOpenChange={setShowTeamPicker}>
+      {/* Next Round button — shown when matches exist */}
+      {canManage && matches.length > 0 && allPlayers.length >= 4 && (
+        <div className="flex gap-2">
+          <Button
+            variant="hero"
+            size="sm"
+            onClick={handleGenerateRandom}
+            disabled={generating}
+            className="gap-1.5 flex-1"
+          >
+            <Shuffle className="w-4 h-4" />
+            {generating ? "Generating..." : "Next Round (Random)"}
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              setTeam1Picks([]);
+              setTeam2Picks([]);
+              setEditingMatchId(null);
+              setShowTeamPicker(true);
+            }}
+            className="gap-1.5"
+          >
+            <Plus className="w-4 h-4" />
+            Choose
+          </Button>
+        </div>
+      )}
+
+      {/* Choose / Edit Teams Dialog */}
+      <Dialog open={showTeamPicker} onOpenChange={(open) => {
+        if (!open) { setEditingMatchId(null); }
+        setShowTeamPicker(open);
+      }}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
-            <DialogTitle>Choose Teams</DialogTitle>
+            <DialogTitle>{editingMatchId ? "Edit Teams" : "Choose Teams"}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div>
@@ -553,7 +624,7 @@ export function MatchesTab({
               disabled={team1Picks.length !== 2 || team2Picks.length !== 2 || generating}
               onClick={handleCreateChosenMatch}
             >
-              {generating ? "Creating..." : "Create Match"}
+              {generating ? "Saving..." : editingMatchId ? "Save Teams" : "Create Match"}
             </Button>
           </div>
         </DialogContent>
