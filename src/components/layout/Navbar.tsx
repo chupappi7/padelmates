@@ -98,29 +98,14 @@ export function Navbar() {
                     )}
                   </Button>
                 </NotificationPanel>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" className="relative h-9 w-9 rounded-full p-0">
-                      <Avatar className="h-9 w-9">
-                        <AvatarImage src="" alt="Profile" />
-                        <AvatarFallback className="bg-primary/10 text-primary font-semibold text-sm">
-                          {user.email?.charAt(0).toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent className="w-48" align="end" forceMount>
-                    <DropdownMenuItem onClick={() => navigate("/profile")}>
-                      <User className="mr-2 h-4 w-4" />
-                      Profile
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={handleSignOut}>
-                      <LogOut className="mr-2 h-4 w-4" />
-                      Sign Out
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                <Button variant="ghost" className="relative h-9 w-9 rounded-full p-0" onClick={() => navigate("/profile")}>
+                  <Avatar className="h-9 w-9">
+                    <AvatarImage src="" alt="Profile" />
+                    <AvatarFallback className="bg-primary/10 text-primary font-semibold text-sm">
+                      {user.email?.charAt(0).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                </Button>
               </>
             ) : (
               <Button variant="hero" size="sm" onClick={() => navigate("/login")} className="text-xs h-8 px-3">
