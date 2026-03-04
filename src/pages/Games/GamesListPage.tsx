@@ -397,11 +397,11 @@ export default function GamesListPage() {
               {user && (
                 <Button
                   variant={friendsJoining ? "default" : "outline"}
-                  className={cn("h-11 shrink-0 gap-1.5", friendsJoining && "bg-primary text-primary-foreground")}
+                  size="icon"
+                  className={cn("h-11 w-11 shrink-0 rounded-full", friendsJoining && "bg-primary text-primary-foreground")}
                   onClick={() => setFriendsJoining(!friendsJoining)}
                 >
                   <Users className="w-4 h-4" />
-                  Friends
                 </Button>
               )}
             </div>
