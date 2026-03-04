@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { format } from "date-fns";
@@ -20,6 +20,7 @@ export function useNotifications() {
   const { user } = useAuth();
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [loading, setLoading] = useState(true);
+  const skipNextRefetch = useRef(false);
 
   const fetchNotifications = async () => {
     if (!user) return;
@@ -64,7 +65,13 @@ export function useNotifications() {
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "notifications", filter: `user_id=eq.${user.id}` },
-        () => fetchNotifications()
+        () => {
+          if (skipNextRefetch.current) {
+            skipNextRefetch.current = false;
+            return;
+          }
+          fetchNotifications();
+        }
       )
       .subscribe();
 
@@ -81,6 +88,7 @@ export function useNotifications() {
     );
     // Only DB notifications can be persisted
     if (notification._dbId) {
+      skipNextRefetch.current = true;
       await supabase
         .from("notifications")
         .update({ read: true })
@@ -92,6 +100,7 @@ export function useNotifications() {
     if (!user) return;
     setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
     // Mark all DB notifications as read
+    skipNextRefetch.current = true;
     await supabase
       .from("notifications")
       .update({ read: true })
