@@ -66,8 +66,17 @@ export default function EloPage() {
   const tier = profile?.pdr_rating ? getTier(profile.pdr_rating) : null;
 
   return (
-    <div className="min-h-screen bg-[#F5F5F5] pb-24">
+    <div className="min-h-screen bg-background pb-24 relative">
       <Navbar />
+
+      {/* Coming Soon overlay */}
+      <div className="absolute inset-0 z-50 flex items-center justify-center pointer-events-none" style={{ top: '56px' }}>
+        <div className="absolute inset-0 backdrop-blur-[1.5px] bg-background/50" />
+        <div className="relative bg-card border border-border rounded-2xl px-8 py-6 shadow-lg text-center pointer-events-auto">
+          <h2 className="text-2xl font-bold font-display text-foreground mb-1">Coming Soon</h2>
+          <p className="text-sm text-muted-foreground">PDR ratings are under development</p>
+        </div>
+      </div>
 
       <PDRHero
         profile={profile}
