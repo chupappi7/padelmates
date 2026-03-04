@@ -18,7 +18,7 @@ interface ScoreScrollPickerProps {
 
 const allGameScores = Array.from({ length: 8 }, (_, i) => i.toString()); // 0-7
 
-const ITEM_HEIGHT = 40;
+const ITEM_HEIGHT = 44;
 const VISIBLE_ITEMS = 5;
 const CONTAINER_HEIGHT = ITEM_HEIGHT * VISIBLE_ITEMS;
 const PADDING = ITEM_HEIGHT * Math.floor(VISIBLE_ITEMS / 2);
@@ -33,8 +33,8 @@ function ScrollColumn({
   onSelect: (val: string) => void;
 }) {
   const ref = useRef<HTMLDivElement>(null);
-  const isUserScrolling = useRef(false);
-  const snapTimer = useRef<ReturnType<typeof setTimeout>>();
+  const isScrolling = useRef(false);
+  const scrollTimeout = useRef<ReturnType<typeof setTimeout>>();
 
   const scrollToIndex = useCallback((index: number, smooth = true) => {
     if (!ref.current) return;
@@ -46,48 +46,34 @@ function ScrollColumn({
 
   useEffect(() => {
     const index = items.indexOf(selected);
-    if (index !== -1 && !isUserScrolling.current) {
-      setTimeout(() => scrollToIndex(index, false), 30);
+    if (index !== -1) {
+      setTimeout(() => scrollToIndex(index, false), 50);
     }
   }, [items, selected, scrollToIndex]);
 
-  const snapToNearest = useCallback(() => {
-    if (!ref.current) return;
-    const scrollTop = ref.current.scrollTop;
-    const index = Math.round(scrollTop / ITEM_HEIGHT);
-    const clampedIndex = Math.max(0, Math.min(index, items.length - 1));
-    // Snap position
-    const targetTop = clampedIndex * ITEM_HEIGHT;
-    if (Math.abs(scrollTop - targetTop) > 1) {
-      ref.current.scrollTo({ top: targetTop, behavior: "smooth" });
-    }
-    onSelect(items[clampedIndex]);
-    isUserScrolling.current = false;
-  }, [items, onSelect]);
-
   const handleScroll = useCallback(() => {
-    isUserScrolling.current = true;
-    if (snapTimer.current) clearTimeout(snapTimer.current);
-    snapTimer.current = setTimeout(snapToNearest, 60);
-  }, [snapToNearest]);
+    isScrolling.current = true;
+    if (scrollTimeout.current) clearTimeout(scrollTimeout.current);
+
+    scrollTimeout.current = setTimeout(() => {
+      isScrolling.current = false;
+      if (!ref.current) return;
+      const scrollTop = ref.current.scrollTop;
+      const index = Math.round(scrollTop / ITEM_HEIGHT);
+      const clampedIndex = Math.max(0, Math.min(index, items.length - 1));
+
+      scrollToIndex(clampedIndex, true);
+      onSelect(items[clampedIndex]);
+    }, 80);
+  }, [items, onSelect, scrollToIndex]);
 
   const handleClick = useCallback(
     (index: number) => {
-      isUserScrolling.current = true;
       scrollToIndex(index, true);
-      setTimeout(() => {
-        onSelect(items[index]);
-        isUserScrolling.current = false;
-      }, 200);
+      setTimeout(() => onSelect(items[index]), 200);
     },
     [items, onSelect, scrollToIndex]
   );
-
-  // Handle touch end for immediate snap
-  const handleTouchEnd = useCallback(() => {
-    if (snapTimer.current) clearTimeout(snapTimer.current);
-    snapTimer.current = setTimeout(snapToNearest, 40);
-  }, [snapToNearest]);
 
   return (
     <div className="relative" style={{ height: CONTAINER_HEIGHT }}>
@@ -101,27 +87,25 @@ function ScrollColumn({
       <div
         ref={ref}
         onScroll={handleScroll}
-        onTouchEnd={handleTouchEnd}
-        onMouseUp={handleTouchEnd}
         className="h-full overflow-y-auto scrollbar-hide relative z-[1]"
-        style={{ scrollbarWidth: "none", msOverflowStyle: "none", WebkitOverflowScrolling: "touch", scrollSnapType: "y mandatory" }}
+        style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
       >
-        <div style={{ height: PADDING, scrollSnapAlign: "none" }} />
+        <div style={{ height: PADDING }} />
         {items.map((item, i) => (
           <button
             key={item}
             type="button"
             onClick={() => handleClick(i)}
             className={cn(
-              "w-full flex items-center justify-center text-lg font-semibold transition-all",
+              "w-full flex items-center justify-center text-xl font-semibold transition-all",
               item === selected ? "text-primary scale-105" : "text-muted-foreground/60"
             )}
-            style={{ height: ITEM_HEIGHT, scrollSnapAlign: "start" }}
+            style={{ height: ITEM_HEIGHT }}
           >
             {item}
           </button>
         ))}
-        <div style={{ height: PADDING, scrollSnapAlign: "none" }} />
+        <div style={{ height: PADDING }} />
       </div>
     </div>
   );
