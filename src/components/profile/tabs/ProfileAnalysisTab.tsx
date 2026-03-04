@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { subDays, subMonths, startOfDay, format } from "date-fns";
 import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, Tooltip } from "recharts";
-import { Trophy, Flame, TrendingDown, MapPin, Users, Swords } from "lucide-react";
+import { Trophy, Flame, TrendingDown, MapPin, Users, Swords, Clock, Percent } from "lucide-react";
 
 const SPACE = "'Space Grotesk', system-ui, sans-serif";
 
@@ -32,6 +32,8 @@ interface PlayerInfo {
 interface GameInfo {
   id: string;
   location: string;
+  dateTime: string;
+  endDateTime: string | null;
 }
 
 export function ProfileAnalysisTab({ userId }: { userId: string }) {
@@ -106,14 +108,14 @@ export function ProfileAnalysisTab({ userId }: { userId: string }) {
       }
     }
 
-    // 3. Get game locations
+    // 3. Get game locations and durations
     if (gameIds.size > 0) {
       const { data: gamesData } = await supabase
         .from("games")
-        .select("id, location")
+        .select("id, location, date_time, end_date_time")
         .in("id", [...gameIds]);
       if (gamesData) {
-        setGameMap(new Map(gamesData.map(g => [g.id, { id: g.id, location: g.location }])));
+        setGameMap(new Map(gamesData.map(g => [g.id, { id: g.id, location: g.location, dateTime: g.date_time, endDateTime: g.end_date_time }])));
       }
     }
 
@@ -271,6 +273,23 @@ export function ProfileAnalysisTab({ userId }: { userId: string }) {
     return [...counts.entries()].sort((a, b) => b[1] - a[1])[0][0];
   }, [filtered, gameMap]);
 
+  // Hours played (sum of game durations for filtered matches, dedup by gameId)
+  const hoursPlayed = useMemo(() => {
+    const seenGames = new Set<string>();
+    let totalMs = 0;
+    for (const m of filtered) {
+      if (seenGames.has(m.gameId)) continue;
+      seenGames.add(m.gameId);
+      const game = gameMap.get(m.gameId);
+      if (game && game.endDateTime) {
+        const dur = new Date(game.endDateTime).getTime() - new Date(game.dateTime).getTime();
+        if (dur > 0) totalMs += dur;
+      }
+    }
+    const hours = totalMs / (1000 * 60 * 60);
+    return hours < 10 ? hours.toFixed(1) : Math.round(hours).toString();
+  }, [filtered, gameMap]);
+
   // W/L per location
   const locationStats = useMemo(() => {
     const data = new Map<string, { wins: number; total: number }>();
@@ -328,17 +347,32 @@ export function ProfileAnalysisTab({ userId }: { userId: string }) {
         </div>
       )}
 
-      {/* Overview card — only if enough data */}
+      {/* Overview stats — always shown */}
+      <div className="grid grid-cols-3 gap-2">
+        {[
+          { label: "Win %", value: `${stats.winRate}%`, icon: Percent, color: "text-[#14b8a6]" },
+          { label: "Played", value: stats.total, icon: Trophy, color: "text-amber-500" },
+          { label: "Hours", value: hoursPlayed, icon: Clock, color: "text-blue-500" },
+        ].map(s => (
+          <div key={s.label} className="bg-white shadow-sm border border-[#E2E8F0] rounded-2xl p-3 text-center">
+            <s.icon className={`w-4 h-4 ${s.color} mx-auto mb-1`} />
+            <p className="text-[#0F172A] font-bold text-lg tabular-nums leading-none" style={{ fontFamily: SPACE }}>
+              {s.value}
+            </p>
+            <p className="text-[#94A3B8] text-[10px] font-medium uppercase tracking-wider mt-1">{s.label}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* W/L breakdown — only if enough data */}
       {hasEnoughData && (
-        <div className="grid grid-cols-4 gap-2">
+        <div className="grid grid-cols-2 gap-2">
           {[
-            { label: "Played", value: stats.total },
-            { label: "Wins", value: stats.wins },
-            { label: "Losses", value: stats.losses },
-            { label: "Win %", value: `${stats.winRate}%` },
+            { label: "Wins", value: stats.wins, color: "text-emerald-500" },
+            { label: "Losses", value: stats.losses, color: "text-red-400" },
           ].map(s => (
             <div key={s.label} className="bg-white shadow-sm border border-[#E2E8F0] rounded-2xl p-3 text-center">
-              <p className="text-[#0F172A] font-bold text-lg tabular-nums leading-none" style={{ fontFamily: SPACE }}>
+              <p className={`font-bold text-lg tabular-nums leading-none ${s.color}`} style={{ fontFamily: SPACE }}>
                 {s.value}
               </p>
               <p className="text-[#94A3B8] text-[10px] font-medium uppercase tracking-wider mt-1">{s.label}</p>
