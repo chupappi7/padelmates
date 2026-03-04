@@ -147,74 +147,63 @@ export default function ClubsListPage() {
         </motion.div>
 
         {loading ? (
-          <div className="space-y-4">
+          <div className="space-y-3">
             {[1, 2, 3].map(i => (
-              <div key={i} className="h-48 bg-card rounded-2xl animate-pulse" />
+              <div key={i} className="h-20 bg-white rounded-2xl animate-pulse" />
             ))}
           </div>
         ) : filteredClubs.length > 0 ? (
-          <div className="space-y-4">
+          <div className="space-y-3">
             {filteredClubs.map((club, index) => (
               <motion.div
                 key={club.id}
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.04 }}
+                transition={{ delay: index * 0.03 }}
                 onClick={() => navigate(`/clubs/${club.id}`)}
-                className="bg-card border border-border rounded-2xl overflow-hidden cursor-pointer hover:shadow-md transition-all"
+                className="bg-white rounded-2xl p-4 cursor-pointer hover:shadow-md transition-all shadow-sm flex items-center gap-3.5"
               >
-                {/* Cover */}
-                <div
-                  className="h-24 w-full"
-                  style={{
-                    background: club.cover_url
-                      ? `url(${club.cover_url}) center/cover`
-                      : "linear-gradient(135deg, #0D2137, #1A4060)",
-                  }}
-                />
+                {/* Avatar */}
+                <Avatar className="h-12 w-12 rounded-full shrink-0">
+                  <AvatarImage src={club.logo_url || undefined} />
+                  <AvatarFallback className="bg-[hsl(var(--primary))] text-white font-bold text-lg rounded-full">
+                    {club.name.charAt(0)}
+                  </AvatarFallback>
+                </Avatar>
 
-                {/* Body */}
-                <div className="p-4 -mt-6 relative">
-                  <div className="flex items-end justify-between mb-2">
-                    <Avatar className="h-12 w-12 rounded-full border-2 border-card shadow-sm">
-                      <AvatarImage src={club.logo_url || undefined} />
-                      <AvatarFallback className="bg-card text-primary font-bold text-lg rounded-full">
-                        {club.name.charAt(0)}
-                      </AvatarFallback>
-                    </Avatar>
-
-                    {club.is_member ? (
-                      <span className="text-xs font-semibold text-primary border border-primary rounded-full px-3 py-1 flex items-center gap-1">
-                        <Check className="w-3 h-3" /> Joined
-                      </span>
-                    ) : (
-                      <Button
-                        size="sm"
-                        className="rounded-full h-8 px-4 text-xs"
-                        onClick={e => handleJoin(e, club.id, club.is_private)}
-                        disabled={joiningId === club.id}
-                      >
-                        <UserPlus className="w-3 h-3 mr-1" /> Join
-                      </Button>
-                    )}
-                  </div>
-
-                  <h3 className="font-display font-bold text-base flex items-center gap-1.5">
+                {/* Info */}
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-display font-bold text-sm text-[#0f172a] flex items-center gap-1.5 truncate">
                     {club.name}
-                    {club.is_private && <Lock className="w-3.5 h-3.5 text-muted-foreground" />}
+                    {club.is_private && <Lock className="w-3 h-3 text-gray-400 shrink-0" />}
                   </h3>
-
                   {(club.city || club.country) && (
-                    <div className="flex items-center gap-1 text-xs text-muted-foreground mt-0.5">
-                      <MapPin className="w-3 h-3" /> {[club.city, club.country].filter(Boolean).join(", ")}
+                    <div className="flex items-center gap-1 text-xs text-gray-400 mt-0.5">
+                      <MapPin className="w-3 h-3 shrink-0" /> {[club.city, club.country].filter(Boolean).join(", ")}
                     </div>
                   )}
-
-                  <div className="flex items-center gap-4 text-xs text-muted-foreground mt-2.5">
-                    <span className="flex items-center gap-1"><Users className="w-3.5 h-3.5" /> {club.member_count} members</span>
-                    <span className="flex items-center gap-1"><CalendarDays className="w-3.5 h-3.5" /> {club.upcoming_count} upcoming</span>
+                  <div className="flex items-center gap-3 text-[11px] text-gray-400 mt-1">
+                    <span className="flex items-center gap-1"><Users className="w-3 h-3" /> {club.member_count} {club.member_count === 1 ? "member" : "members"}</span>
+                    <span>·</span>
+                    <span className="flex items-center gap-1"><CalendarDays className="w-3 h-3" /> {club.upcoming_count} upcoming</span>
                   </div>
                 </div>
+
+                {/* Join status */}
+                {club.is_member ? (
+                  <span className="text-[11px] font-semibold text-[hsl(var(--primary))] border border-[hsl(var(--primary))] rounded-full px-3 py-1 flex items-center gap-1 shrink-0 whitespace-nowrap">
+                    <Check className="w-3 h-3" /> Joined
+                  </span>
+                ) : (
+                  <Button
+                    size="sm"
+                    className="rounded-full h-8 px-4 text-xs shrink-0"
+                    onClick={e => handleJoin(e, club.id, club.is_private)}
+                    disabled={joiningId === club.id}
+                  >
+                    Join
+                  </Button>
+                )}
               </motion.div>
             ))}
           </div>
