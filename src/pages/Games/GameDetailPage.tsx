@@ -1378,6 +1378,7 @@ export default function GameDetailPage() {
         gameMaxPlayers={game?.max_players}
         currentPlayersCount={totalPlayers}
         hostName={game?.profiles?.name || undefined}
+        clubName={game?.club?.name || undefined}
         skillLevel={game?.skill_level}
         pricePerPlayer={game?.price_per_player}
       />
