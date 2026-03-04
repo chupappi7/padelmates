@@ -115,7 +115,7 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F5F5F5] pb-32 md:pb-8">
+    <div className="min-h-screen bg-[#F5F5F5] pb-32 md:pb-8 lg:max-w-4xl lg:mx-auto">
       {/* Header */}
       <div className="bg-gradient-to-b from-teal-50 to-white px-4 pt-4 pb-2">
         <div className="flex items-center justify-between">

@@ -296,7 +296,7 @@ export default function GamesListPage() {
     <div className="min-h-screen bg-background pb-24 md:pb-0">
       <Navbar />
 
-      <div className="container py-4 sm:py-8">
+      <div className="container max-w-6xl py-4 sm:py-8 lg:py-10">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -304,7 +304,7 @@ export default function GamesListPage() {
         >
           <div className="mb-4 flex items-start justify-between">
             <div>
-              <h1 className="font-display text-2xl sm:text-3xl font-bold mb-0.5">Matches</h1>
+              <h1 className="font-display text-2xl sm:text-3xl lg:text-4xl font-bold mb-0.5">Matches</h1>
               <p className="text-sm text-muted-foreground">
                 {selectedDate ? format(selectedDate, "EEEE, MMMM d, yyyy") : "All upcoming"}
               </p>
@@ -325,7 +325,7 @@ export default function GamesListPage() {
           <DayPicker selectedDate={selectedDate} onSelectDate={setSelectedDate} />
 
           {/* Filters */}
-            <div className="grid grid-cols-2 gap-2 mt-4">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 mt-4">
               <Select value={formatFilter} onValueChange={setFormatFilter}>
                 <SelectTrigger className="h-9 rounded-full text-xs px-3 [&>svg.lucide-chevrons-up-down]:hidden">
                   <div className="flex items-center gap-1.5">

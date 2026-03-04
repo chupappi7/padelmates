@@ -211,7 +211,7 @@ export default function PlayersPage() {
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      <div className="container py-5 max-w-2xl px-4 pb-32 md:pb-8">
+      <div className="container py-5 max-w-2xl lg:max-w-4xl px-4 pb-32 md:pb-8">
         <motion.div
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
@@ -219,7 +219,7 @@ export default function PlayersPage() {
         >
           {/* Header */}
           <div className="mb-5">
-            <h1 className="font-display text-2xl font-bold mb-1">Players</h1>
+            <h1 className="font-display text-2xl lg:text-3xl font-bold mb-1">Players</h1>
             <p className="text-xs text-muted-foreground">
               {totalFriends} {totalFriends === 1 ? "friend" : "friends"}
               {incomingRequests.length > 0 && (

@@ -356,7 +356,7 @@ export default function InboxPage() {
     <>
       <Navbar />
       <div className="min-h-screen bg-background pb-24 md:pb-8">
-        <div className="container max-w-2xl py-4">
+        <div className="container max-w-2xl lg:max-w-3xl py-4 lg:py-6">
           {/* Header */}
           <div className="flex items-center gap-3 mb-4">
             <Button variant="ghost" size="icon" className="md:hidden h-9 w-9" onClick={() => navigate("/")}>

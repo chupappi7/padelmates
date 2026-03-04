@@ -252,7 +252,7 @@ export default function ClubDetailPage() {
       </div>
 
       {/* Club info overlay */}
-      <div className="container max-w-2xl -mt-10 relative z-10 pb-28">
+      <div className="container max-w-2xl lg:max-w-4xl -mt-10 relative z-10 pb-28">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
           <div className="flex items-end gap-3 mb-3">
             <Avatar className="h-20 w-20 rounded-full border-4 border-background shadow-md bg-background">
