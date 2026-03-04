@@ -131,7 +131,7 @@ export default function ProfilePage() {
           className="flex flex-col items-center pt-1 pb-2"
         >
           <div className="relative">
-            <Avatar className="w-18 h-18 ring-2 ring-[#14b8a6]/20 ring-offset-2 ring-offset-white">
+            <Avatar className="w-16 h-16 ring-2 ring-[#14b8a6]/20 ring-offset-2 ring-offset-white">
               <AvatarImage src={profile?.avatar_url || undefined} className="object-cover" />
               <AvatarFallback className="text-xl font-bold bg-[#14b8a6]/10 text-[#14b8a6]" style={{ fontFamily: SPACE }}>
                 {profile?.name?.charAt(0).toUpperCase()}
