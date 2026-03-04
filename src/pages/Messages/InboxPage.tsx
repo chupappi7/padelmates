@@ -24,7 +24,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Search, MessageCircle, ArrowLeft, Trophy, Archive, BellOff, Trash2, ArchiveRestore, MoreVertical, Pin, PinOff, VolumeX } from "lucide-react";
-import { format } from "date-fns";
+import { format, formatDistanceToNowStrict, isToday, isYesterday, differenceInMinutes } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 
@@ -37,6 +37,26 @@ const filterTabs: { key: FilterTab; label: string }[] = [
   { key: "court", label: "Courts" },
   { key: "dm", label: "DMs" },
 ];
+
+// ── Helpers ──────────────────────────────────────────────────────────────
+function formatRelativeTime(dateStr: string): string {
+  const date = new Date(dateStr);
+  const now = new Date();
+  const mins = differenceInMinutes(now, date);
+  if (mins < 1) return "now";
+  if (mins < 60) return `${mins}m`;
+  if (isToday(date)) return format(date, "HH:mm");
+  if (isYesterday(date)) return "Yesterday";
+  if (now.getFullYear() === date.getFullYear()) return format(date, "MMM d");
+  return format(date, "MMM d, yyyy");
+}
+
+function formatPreviewText(message: string): string {
+  if (!message) return "";
+  if (message.startsWith("[image]")) return "📷 Photo";
+  if (message.startsWith("[file]")) return "📎 Attachment";
+  return message;
+}
 
 // ── Conversation Row ────────────────────────────────────────────────────
 function ConversationRow({
@@ -59,12 +79,23 @@ function ConversationRow({
   onPin: () => void;
 }) {
   const isArchived = inboxTab === "archived";
+  const hasUnread = convo.unreadCount > 0 && !isArchived;
+
+  // Build preview line
+  const previewText = formatPreviewText(convo.lastMessage);
+  let previewLine = "";
+  if (previewText) {
+    const prefix = convo.lastMessageSenderName
+      ? `${convo.lastMessageSenderName === "You" ? "You" : convo.lastMessageSenderName.split(" ")[0]}: `
+      : "";
+    previewLine = prefix + previewText;
+  }
 
   return (
     <div
       className={cn(
         "flex items-center gap-3 w-full px-3 py-3 rounded-xl transition-colors text-left",
-        convo.unreadCount > 0 && !isArchived && "bg-muted/30",
+        hasUnread && "bg-muted/30",
         isArchived && "opacity-70"
       )}
     >
@@ -86,39 +117,57 @@ function ConversationRow({
 
         {/* Content */}
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-1.5 mb-0.5">
-            {convo.prefs.pinned && (
-              <Pin className="w-3 h-3 text-primary shrink-0 -rotate-45" />
-            )}
-            <p className={cn(
-              "text-sm line-clamp-2",
-              convo.unreadCount > 0 && !isArchived ? "font-bold" : "font-medium"
-            )}>
-              {convo.title}
-            </p>
-            {convo.prefs.muted && (
-              <VolumeX className="w-3 h-3 text-muted-foreground shrink-0" />
+          <div className="flex items-center justify-between gap-2 mb-0.5">
+            <div className="flex items-center gap-1.5 min-w-0 flex-1">
+              {convo.prefs.pinned && (
+                <Pin className="w-3 h-3 text-primary shrink-0 -rotate-45" />
+              )}
+              <p className={cn(
+                "text-sm line-clamp-1",
+                hasUnread ? "font-bold" : "font-medium"
+              )}>
+                {convo.title}
+              </p>
+              {convo.prefs.muted && (
+                <VolumeX className="w-3 h-3 text-muted-foreground shrink-0" />
+              )}
+            </div>
+            {/* Timestamp */}
+            {convo.lastMessageAt && (
+              <span className={cn(
+                "text-[10px] shrink-0",
+                hasUnread ? "text-primary font-semibold" : "text-muted-foreground"
+              )}>
+                {formatRelativeTime(convo.lastMessageAt)}
+              </span>
             )}
           </div>
-          {convo.contextLabel && (
-            <p className="text-[10px] text-muted-foreground -mt-0.5 mb-0.5 line-clamp-1">
+
+          {/* Context label for match/court (location only, no duplicate date) */}
+          {convo.type === "match" && convo.contextLabel && (
+            <p className="text-[11px] text-muted-foreground line-clamp-1">
               {convo.contextLabel}
             </p>
           )}
-          {convo.gameDateTime && (
-            <p className="text-xs text-muted-foreground">
-              {format(new Date(convo.gameDateTime), "EEE, MMM d · HH:mm")}
+
+          {/* Last message preview */}
+          {previewLine ? (
+            <p className={cn(
+              "text-xs line-clamp-1",
+              hasUnread ? "text-foreground font-semibold" : "text-muted-foreground"
+            )}>
+              {previewLine}
             </p>
-          )}
+          ) : convo.type !== "match" ? (
+            <p className="text-xs text-muted-foreground line-clamp-1">No messages yet</p>
+          ) : null}
         </div>
       </button>
 
-      {/* Right side: unread badge + menu */}
+      {/* Right side: unread dot + menu */}
       <div className="flex items-center gap-1 shrink-0">
-        {convo.unreadCount > 0 && !isArchived && (
-          <span className="min-w-[20px] h-5 rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center px-1.5">
-            {convo.unreadCount}
-          </span>
+        {hasUnread && (
+          <span className="w-2.5 h-2.5 rounded-full bg-primary shrink-0" />
         )}
 
         <DropdownMenu>
