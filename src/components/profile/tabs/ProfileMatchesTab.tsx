@@ -12,6 +12,7 @@ interface PlayerInfo {
   name: string;
   avatarUrl: string | null;
   team: number;
+  isSelf?: boolean;
 }
 
 interface MatchEntry {
@@ -96,9 +97,10 @@ export function ProfileMatchesTab({ userId, isSelf = true }: { userId: string; i
           const prof = profileMap.get(p.user_id);
           return {
             userId: p.user_id,
-            name: p.user_id === userId ? "You" : (prof?.name?.split(" ").map((n: string, i: number) => i === 0 ? n : n[0] + ".").join(" ") || "Unknown"),
+            name: prof?.name?.split(" ").map((n: string, i: number) => i === 0 ? n : n[0] + ".").join(" ") || "Unknown",
             avatarUrl: prof?.avatar_url || null,
             team: p.team,
+            isSelf: p.user_id === userId,
           };
         });
       const oppTeamPlayers = matchPlayers
@@ -177,12 +179,12 @@ export function ProfileMatchesTab({ userId, isSelf = true }: { userId: string; i
               {m.myTeamPlayers.map(p => (
                 <div key={p.userId} className="flex items-center justify-end gap-1.5 py-0.5">
                   <span
-                    className={`text-[#0F172A] text-xs font-medium truncate ${p.name !== "You" ? "cursor-pointer hover:underline" : ""}`}
-                    onClick={() => p.name !== "You" && navigate(`/user/${p.userId}`)}
+                    className={`text-xs font-medium truncate ${p.isSelf ? "text-[#14b8a6] font-bold" : "text-[#0F172A] cursor-pointer hover:underline"}`}
+                    onClick={() => !p.isSelf && navigate(`/user/${p.userId}`)}
                   >
                     {p.name}
                   </span>
-                  <Avatar className={`w-5 h-5 ${p.name !== "You" ? "cursor-pointer" : ""}`} onClick={() => p.name !== "You" && navigate(`/user/${p.userId}`)}>
+                  <Avatar className={`w-5 h-5 ${!p.isSelf ? "cursor-pointer" : ""}`} onClick={() => !p.isSelf && navigate(`/user/${p.userId}`)}>
                     <AvatarImage src={p.avatarUrl || undefined} />
                     <AvatarFallback className="text-[8px] bg-[#F1F5F9] text-[#64748B]">{p.name[0]}</AvatarFallback>
                   </Avatar>
