@@ -398,7 +398,7 @@ export default function GamesListPage() {
                   onClick={() => setFriendsJoining(!friendsJoining)}
                 >
                   <Users className="w-3.5 h-3.5 shrink-0 mr-1.5" />
-                  Friends
+                  With Friends
                 </Button>
               )}
             </div>
