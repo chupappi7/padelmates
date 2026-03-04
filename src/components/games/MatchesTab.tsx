@@ -5,7 +5,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Trophy, Shuffle, Trash2, Users } from "lucide-react";
+import { Trophy, Shuffle, Trash2, Users, Swords } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   Dialog,
@@ -13,6 +13,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface Profile {
   name: string;
@@ -286,30 +292,36 @@ export function MatchesTab({
       {/* Generate button for managers */}
       {canManage && (
         <div className="flex gap-2">
-          <Button
-            variant="hero"
-            size="sm"
-            onClick={handleGenerateRandom}
-            disabled={generating || allPlayers.length < 4}
-            className="gap-1.5"
-          >
-            <Shuffle className="w-4 h-4" />
-            {generating ? "Generating..." : "Random Teams"}
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => {
-              setTeam1Picks([]);
-              setTeam2Picks([]);
-              setShowTeamPicker(true);
-            }}
-            disabled={allPlayers.length < 4}
-            className="gap-1.5"
-          >
-            <Users className="w-4 h-4" />
-            Choose Teams
-          </Button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="hero"
+              size="sm"
+              disabled={generating || allPlayers.length < 4}
+              className="gap-1.5"
+            >
+              <Swords className="w-4 h-4" />
+              {generating ? "Generating..." : "Generate Teams"}
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start">
+            <DropdownMenuItem onClick={handleGenerateRandom} className="gap-2">
+              <Shuffle className="w-4 h-4" />
+              Random Teams
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => {
+                setTeam1Picks([]);
+                setTeam2Picks([]);
+                setShowTeamPicker(true);
+              }}
+              className="gap-2"
+            >
+              <Users className="w-4 h-4" />
+              Choose Teams
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
         </div>
       )}
 
