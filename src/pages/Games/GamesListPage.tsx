@@ -325,10 +325,13 @@ export default function GamesListPage() {
           <DayPicker selectedDate={selectedDate} onSelectDate={setSelectedDate} />
 
           {/* Filters */}
-            <div className="flex gap-2 mt-4">
+            <div className="grid grid-cols-2 gap-2 mt-4">
               <Select value={formatFilter} onValueChange={setFormatFilter}>
-                <SelectTrigger className="h-11 w-11 shrink-0 rounded-full [&>svg.lucide-chevrons-up-down]:hidden [&>svg.lucide-check]:hidden px-0 justify-center">
-                  <Gamepad2 className="w-4 h-4" />
+                <SelectTrigger className="h-9 rounded-full text-xs px-3 [&>svg.lucide-chevrons-up-down]:hidden">
+                  <div className="flex items-center gap-1.5">
+                    <Gamepad2 className="w-3.5 h-3.5 shrink-0" />
+                    <SelectValue placeholder="Type" />
+                  </div>
                 </SelectTrigger>
                 <SelectContent className="bg-popover z-50">
                   <SelectItem value="all">All Types</SelectItem>
@@ -345,8 +348,11 @@ export default function GamesListPage() {
                   else { const n = Number(val); setSkillRange(n, n); }
                 }}
               >
-                <SelectTrigger className="h-11 w-11 shrink-0 rounded-full [&>svg.lucide-chevrons-up-down]:hidden px-0 justify-center">
-                  <Signal className="w-4 h-4" />
+                <SelectTrigger className="h-9 rounded-full text-xs px-3 [&>svg.lucide-chevrons-up-down]:hidden">
+                  <div className="flex items-center gap-1.5">
+                    <Signal className="w-3.5 h-3.5 shrink-0" />
+                    <SelectValue placeholder="Level" />
+                  </div>
                 </SelectTrigger>
                 <SelectContent className="bg-popover z-50">
                   <SelectItem value="all">All Levels</SelectItem>
@@ -359,8 +365,11 @@ export default function GamesListPage() {
               {user && (
                 userClubs.length > 0 ? (
                   <Select value={clubFilter} onValueChange={setClubFilter}>
-                    <SelectTrigger className="h-11 w-11 shrink-0 rounded-full [&>svg.lucide-chevrons-up-down]:hidden px-0 justify-center">
-                      <Building2 className="w-4 h-4" />
+                    <SelectTrigger className="h-9 rounded-full text-xs px-3 [&>svg.lucide-chevrons-up-down]:hidden">
+                      <div className="flex items-center gap-1.5">
+                        <Building2 className="w-3.5 h-3.5 shrink-0" />
+                        <SelectValue placeholder="Club" />
+                      </div>
                     </SelectTrigger>
                     <SelectContent className="bg-popover z-50">
                       <SelectItem value="all">All Clubs</SelectItem>
@@ -372,32 +381,24 @@ export default function GamesListPage() {
                     </SelectContent>
                   </Select>
                 ) : (
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          variant="outline"
-                          className="h-11 w-11 shrink-0 rounded-full opacity-50 cursor-not-allowed"
-                          disabled
-                        >
-                          <Building2 className="w-4 h-4" />
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>Join a club to filter by club</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
+                  <Button
+                    variant="outline"
+                    className="h-9 rounded-full text-xs px-3 opacity-50 cursor-not-allowed justify-start"
+                    disabled
+                  >
+                    <Building2 className="w-3.5 h-3.5 shrink-0 mr-1.5" />
+                    Club
+                  </Button>
                 )
               )}
               {user && (
                 <Button
                   variant={friendsJoining ? "default" : "outline"}
-                  size="icon"
-                  className={cn("h-11 w-11 shrink-0 rounded-full", friendsJoining && "bg-primary text-primary-foreground")}
+                  className={cn("h-9 rounded-full text-xs px-3 justify-start", friendsJoining && "bg-primary text-primary-foreground")}
                   onClick={() => setFriendsJoining(!friendsJoining)}
                 >
-                  <Users className="w-4 h-4" />
+                  <Users className="w-3.5 h-3.5 shrink-0 mr-1.5" />
+                  Friends
                 </Button>
               )}
             </div>
