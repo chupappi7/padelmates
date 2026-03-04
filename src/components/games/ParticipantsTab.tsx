@@ -479,7 +479,7 @@ function PlayerCard({
       onClick={userId ? () => navigate(`/user/${userId}`) : undefined}
     >
       <div className="relative shrink-0">
-        <Avatar className="h-8 w-8">
+        <Avatar className="h-8 w-8 ring-1 ring-foreground/10">
           <AvatarImage src={avatarUrl || undefined} />
           <AvatarFallback className="bg-primary/10 text-primary font-semibold text-xs">
             {name?.charAt(0).toUpperCase()}
@@ -542,7 +542,7 @@ function OrganizerAvatar({
       className="flex flex-col items-center gap-1.5 group"
     >
       <div className="relative">
-        <Avatar className="h-12 w-12">
+        <Avatar className="h-12 w-12 ring-1 ring-foreground/10">
           <AvatarImage src={avatarUrl || undefined} />
           <AvatarFallback className="bg-primary/10 text-primary font-semibold text-sm">
             {name?.charAt(0).toUpperCase()}
