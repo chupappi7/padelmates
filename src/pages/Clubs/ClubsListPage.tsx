@@ -240,10 +240,10 @@ export default function ClubsListPage() {
                         <MapPin className="w-3 h-3 shrink-0" /> {[club.city, club.country].filter(Boolean).join(", ")}
                       </div>
                     )}
-                    <div className="flex items-center gap-3 text-[11px] text-muted-foreground mt-1">
-                      <span className="flex items-center gap-1"><Users className="w-3 h-3" /> {club.member_count} {club.member_count === 1 ? "member" : "members"}</span>
+                    <div className="flex items-center gap-3 text-[11px] text-muted-foreground mt-1 whitespace-nowrap">
+                      <span className="flex items-center gap-1"><Users className="w-3 h-3 shrink-0" /> {club.member_count} {club.member_count === 1 ? "member" : "members"}</span>
                       <span>·</span>
-                      <span className="flex items-center gap-1"><CalendarDays className="w-3 h-3" /> {club.upcoming_count} upcoming</span>
+                      <span className="flex items-center gap-1"><CalendarDays className="w-3 h-3 shrink-0" /> {club.upcoming_count} upcoming</span>
                     </div>
                   </div>
 
