@@ -55,6 +55,7 @@ function formatPreviewText(message: string): string {
   if (!message) return "";
   if (message.startsWith("[image]")) return "📷 Photo";
   if (message.startsWith("[file]")) return "📎 Attachment";
+  if (message.startsWith("[game:")) return "🎾 Shared a match";
   return message;
 }
 
