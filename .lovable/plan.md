@@ -1,60 +1,36 @@
 
 
-## Refactor: Dashboard, Matches Tab & Analysis Tab Overhaul
+## Plan: Rewrite EditGamePage to match CreateGamePage form structure
 
-Three changes across three files.
+The current `EditGamePage` has a significantly different and outdated form layout compared to `CreateGamePage`. The create page has distinct flows per host type (find_players, americano, sell_court, sell_spots) with modern card-based layouts, spots-needed stepper, game type selector, and proper join mode/price sections. The edit page uses an older generic layout that doesn't match.
 
----
+### Approach
 
-### 1. Dashboard — Remove "View Full Match History" link
+**Rewrite `EditGamePage.tsx`** to mirror the `CreateGamePage` form UI while keeping edit-specific logic (fetching existing game data, updating instead of inserting).
 
-**`src/components/profile/tabs/ProfileDashboardTab.tsx`**
+Key changes:
 
-Remove the "View Full Match History" button at the bottom (lines 285-292). Dashboard keeps everything else (welcome card, PDR, stats, form strip, activity chart, top partner).
+1. **Detect host type from saved game data** -- Map `payment_mode` and `format` back to `HostType` during fetch:
+   - `court_sharing` → `sell_court`
+   - `spot_selling` → `sell_spots`
+   - `americano`/`team_americano` format → `americano`
+   - Otherwise → `find_players`
 
----
+2. **Add missing state** -- Add `spotsNeeded`, `gameType`, `customGameType`, `allowSubstitutions`, `userClubs`, `hostingAs` state variables matching create page.
 
-### 2. Matches Tab — Add "View Full Match History" link
+3. **Replace the form JSX** -- Use the exact same card-based layout from CreateGamePage for each host type:
+   - **Find Players**: Type of Game card → Location & Schedule card → Players card (with stepper) → Skill Level card → How to Join card (join mode + price + visibility)
+   - **Americano**: Location & Schedule → Players (with stepper + substitutions toggle) → Skill Level & Settings (visibility, price) → About Tournament
+   - **Sell Court**: Court Details card (location, date, time, duration, price, note, booking screenshot)
+   - **Sell Spots**: Location & Schedule → Details → Price
 
-**`src/components/profile/tabs/ProfileMatchesTab.tsx`**
+4. **Derive values identically** -- Use the same `spotsNeeded`/`derivedMaxPlayers`/`clampedSpotsNeeded` logic from CreateGamePage.
 
-- Accept new optional prop `isSelf?: boolean` (default `true`)
-- After the match list, add a "View Full Match History" button that navigates to `/match-history` (self) or `/match-history/${userId}` (other)
-- Same styling as the removed dashboard button
+5. **Update `fetchGame`** -- Populate all new state from saved game data (reverse-engineer `spotsNeeded` from `max_players - prefilled - hostIsPlaying`, detect `gameType` from title pattern, load `allowSubstitutions`).
 
----
+6. **Update `handleSubmit`** -- Match the create page's title generation and price calculation logic per host type.
 
-### 3. Analysis Tab — Complete Redesign
+### Files to modify
 
-**`src/components/profile/tabs/ProfileAnalysisTab.tsx`**
-
-Replace the current simple analysis with a period-filtered deep analytics view.
-
-**Period selector**: Horizontal pill chips — `This Week`, `This Month`, `3 Months`, `All Time` (default: This Month)
-
-**Data source**: Fetch all `match_players` rows for the user joined with `matches` (completed only), then filter client-side by selected period. Also fetch `game_players` + `games` for location data.
-
-**Empty state rule**: If fewer than 3 matches in selected period, show: *"Not enough data for [period]. Play more matches to see your stats here."* — but still show the Streaks section below.
-
-**Sections displayed (in order)**:
-
-1. **Overview card** — Matches played, Wins, Losses, Win Rate % (4-col grid, same style as dashboard stats)
-
-2. **Win Rate Trend** — Line chart (recharts `LineChart`) showing win rate over time buckets appropriate to the period (daily for week, weekly for month/3mo, monthly for all-time). X-axis = time labels, Y-axis = win %. Teal line.
-
-3. **Streaks** — Current W streak, Best W streak, Current L streak (always shown even with <3 matches)
-
-4. **Most Played Partner** — Avatar + name + match count (same query pattern as dashboard's Top Partner, but filtered to period)
-
-5. **Toughest Opponent** — Player on the opposing team with highest win rate against this user (minimum 2 encounters). Show name + record (e.g. "1W–3L")
-
-6. **Favourite Location** — Top location by match count in period
-
-7. **W/L per location** — Small bar chart or list showing win rate per location (if multiple locations exist)
-
-**Technical approach**:
-- Single data fetch on mount: all match_players + matches for user, all match_players for those matches (to find partners/opponents), game data for locations
-- Filter client-side when period changes (no re-fetch)
-- Use `subDays`, `subMonths` from `date-fns` for period boundaries
-- Reuse existing card styling (white, border-[#E2E8F0], rounded-2xl)
+- `src/pages/Games/EditGamePage.tsx` -- Full rewrite of form body and state management to match CreateGamePage patterns.
 
