@@ -325,9 +325,9 @@ export default function GamesListPage() {
           <DayPicker selectedDate={selectedDate} onSelectDate={setSelectedDate} />
 
           {/* Filters */}
-            <div className="flex gap-2 mt-4">
+            <div className="grid grid-cols-[1fr_1fr_auto] gap-2 mt-4">
               <Select value={formatFilter} onValueChange={setFormatFilter}>
-                <SelectTrigger className="h-11 min-w-0 flex-1">
+                <SelectTrigger className="h-11 w-full">
                   <SelectValue placeholder="Type" />
                 </SelectTrigger>
                 <SelectContent className="bg-popover z-50">
@@ -345,7 +345,7 @@ export default function GamesListPage() {
                   else { const n = Number(val); setSkillRange(n, n); }
                 }}
               >
-                <SelectTrigger className="h-11 min-w-0 flex-1">
+                <SelectTrigger className="h-11 w-full">
                   <SelectValue placeholder="Level" />
                 </SelectTrigger>
                 <SelectContent className="bg-popover z-50">
@@ -357,53 +357,55 @@ export default function GamesListPage() {
                 </SelectContent>
               </Select>
 
-              {/* Club dropdown */}
-              {user && (
-                userClubs.length > 0 ? (
-                  <Select value={clubFilter} onValueChange={setClubFilter}>
-                    <SelectTrigger className="h-11 min-w-0 flex-1">
-                      <SelectValue placeholder="Club" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-popover z-50">
-                      <SelectItem value="all">All Clubs</SelectItem>
-                      {userClubs.map((club) => (
-                        <SelectItem key={club.id} value={club.id}>
-                          {club.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                ) : (
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          variant="outline"
-                          className="h-11 opacity-50 cursor-not-allowed"
-                          disabled
-                        >
-                          Club
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>Join a club to filter by club</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                )
-              )}
+              <div className="flex gap-2">
+                {/* Club dropdown */}
+                {user && (
+                  userClubs.length > 0 ? (
+                    <Select value={clubFilter} onValueChange={setClubFilter}>
+                      <SelectTrigger className="h-11 w-[120px]">
+                        <SelectValue placeholder="Club" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-popover z-50">
+                        <SelectItem value="all">All Clubs</SelectItem>
+                        {userClubs.map((club) => (
+                          <SelectItem key={club.id} value={club.id}>
+                            {club.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="outline"
+                            className="h-11 opacity-50 cursor-not-allowed"
+                            disabled
+                          >
+                            Club
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Join a club to filter by club</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  )
+                )}
 
-              {/* Friends Joining toggle */}
-              {user && (
-                <Button
-                  variant={friendsJoining ? "default" : "outline"}
-                  size="icon"
-                  className={cn("h-11 w-11 shrink-0 rounded-full", friendsJoining && "bg-primary text-primary-foreground")}
-                  onClick={() => setFriendsJoining(!friendsJoining)}
-                >
-                  <Users className="w-4 h-4" />
-                </Button>
-              )}
+                {/* Friends Joining toggle */}
+                {user && (
+                  <Button
+                    variant={friendsJoining ? "default" : "outline"}
+                    size="icon"
+                    className={cn("h-11 w-11 shrink-0 rounded-full", friendsJoining && "bg-primary text-primary-foreground")}
+                    onClick={() => setFriendsJoining(!friendsJoining)}
+                  >
+                    <Users className="w-4 h-4" />
+                  </Button>
+                )}
+              </div>
             </div>
         </motion.div>
 
