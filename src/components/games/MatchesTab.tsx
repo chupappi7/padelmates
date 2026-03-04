@@ -5,7 +5,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Trophy, Shuffle, Trash2, Users, Swords } from "lucide-react";
+import { Trophy, Shuffle, Trash2, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   Dialog,
@@ -13,12 +13,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 
 interface Profile {
   name: string;
@@ -289,56 +283,51 @@ export function MatchesTab({
 
   return (
     <div className="space-y-4">
-      {/* Generate button for managers */}
-      {canManage && (
-        <div className="flex gap-2">
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button
-              variant="hero"
-              size="sm"
-              disabled={generating || allPlayers.length < 4}
-              className="gap-1.5"
-            >
-              <Swords className="w-4 h-4" />
-              {generating ? "Generating..." : "Generate Teams"}
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="start">
-            <DropdownMenuItem onClick={handleGenerateRandom} className="gap-2">
-              <Shuffle className="w-4 h-4" />
-              Random Teams
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={() => {
-                setTeam1Picks([]);
-                setTeam2Picks([]);
-                setShowTeamPicker(true);
-              }}
-              className="gap-2"
-            >
-              <Users className="w-4 h-4" />
-              Choose Teams
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-        </div>
-      )}
-
-      {/* No matches state */}
+      {/* No matches state with generate options */}
       {matches.length === 0 && (
-        <div className="bg-card border border-border rounded-xl p-6 text-center">
-          <Trophy className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
-          <h3 className="font-display font-bold text-lg mb-1">No Matches Yet</h3>
-          <p className="text-sm text-muted-foreground">
-            {canManage
-              ? `${allPlayers.length < 4 ? `Need at least 4 players (currently ${allPlayers.length}).` : "Generate random teams to create matches."}`
-              : "Matches will appear here once the host creates them."}
-          </p>
+        <div className="bg-card border border-border rounded-xl p-6 text-center space-y-4">
+          <Trophy className="w-10 h-10 text-muted-foreground mx-auto" />
+          <div>
+            <h3 className="font-display font-bold text-lg mb-1">No Matches Yet</h3>
+            <p className="text-sm text-muted-foreground">
+              {canManage
+                ? allPlayers.length < 4
+                  ? `Need at least 4 players (currently ${allPlayers.length}).`
+                  : "Create matches to start tracking scores."
+                : "Matches will appear here once the host creates them."}
+            </p>
+          </div>
+          {canManage && allPlayers.length >= 4 && (
+            <div className="flex flex-col gap-2 pt-1">
+              <Button
+                variant="hero"
+                size="sm"
+                onClick={handleGenerateRandom}
+                disabled={generating}
+                className="gap-1.5 w-full"
+              >
+                <Shuffle className="w-4 h-4" />
+                {generating ? "Generating..." : "Random Teams"}
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setTeam1Picks([]);
+                  setTeam2Picks([]);
+                  setShowTeamPicker(true);
+                }}
+                className="gap-1.5 w-full"
+              >
+                <Users className="w-4 h-4" />
+                Choose Teams
+              </Button>
+            </div>
+          )}
         </div>
       )}
 
-      {/* Match cards */}
+
       {matches.map((match) => {
         const team1 = match.match_players.filter((mp) => mp.team === 1);
         const team2 = match.match_players.filter((mp) => mp.team === 2);
