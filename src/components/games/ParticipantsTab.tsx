@@ -4,7 +4,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { SkillBadge } from "./SkillBadge";
-import { Check, X, Users, Clock, ShieldCheck, RefreshCw, Plus, DollarSign, CheckCircle2 } from "lucide-react";
+import { Check, X, Users, Clock, ShieldCheck, RefreshCw, Plus, DollarSign, CheckCircle2, Star } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface Profile {
@@ -559,7 +559,7 @@ function OrganizerAvatar({
         </Avatar>
         {isHost && (
           <div className="absolute -bottom-0.5 -right-0.5 bg-primary text-primary-foreground rounded-full p-0.5">
-            <Check className="w-2.5 h-2.5" />
+            <Star className="w-2.5 h-2.5 fill-current" />
           </div>
         )}
         {!isHost && (
