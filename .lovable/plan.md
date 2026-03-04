@@ -1,45 +1,70 @@
 
 
-## Plan: Enhanced Profile Page with Performance Analytics
+## Plan: Club Announcements with Image Uploads and Member Notifications
 
-### Overview
-Add a **Performance & Analytics** section to the profile page that fetches real match data and displays rich stats. Restructure the page layout for better information density while maintaining the existing dark-navy hero + white-card design system.
+### Current State
+- `club_announcements` table has: `id`, `club_id`, `author_id`, `title`, `content`, `created_at` -- no image support
+- Admin panel has a basic announcement form (title + body text only)
+- Feed tab displays announcements as text cards
+- No notification is sent to members when an announcement is posted
 
-### Changes
+### Changes Required
 
-**1. New component: `src/components/profile/ProfilePerformanceCard.tsx`**
+#### 1. Database Migration
+- Add `image_url` (text, nullable) column to `club_announcements` table
+- Create a `club-announcements` storage bucket (public) with RLS policies for admin uploads
+- Create a database trigger/function that inserts a notification for each active club member when a new announcement is created
 
-A white card section titled "PERFORMANCE" that fetches data from `match_players`, `matches`, and `match_submissions` tables for the current user. Displays:
+#### 2. Update Announcement Form (ClubAdminPanel.tsx - AnnouncementsTab)
+- Add image picker button (camera icon) below the text fields
+- Upload selected image to `club-announcements` bucket on post
+- Save the public URL in the new `image_url` column
+- Show image preview before posting with remove option
 
-- **Top stats row** (4 items in a grid): Matches Played, Wins, Losses, Win Rate %
-- **Secondary stats row**: Current Win Streak, Best Win Streak, Games Hosted (from `games` table where `host_id = user_id`), Games Joined (from `game_players`)
-- **Form indicator**: Last 5 matches shown as a row of small W/L colored dots (green/red) — like a recent form strip
-- **Monthly activity**: A simple text line like "12 matches this month" with a small bar chart using recharts (already installed) showing matches per month for the last 3 months
+#### 3. Update Feed Display (ClubFeedTab.tsx)
+- Read `image_url` from announcements data
+- Render the image below the announcement text (rounded, full-width) when present
 
-Data fetching:
-- Query `match_players` joined with `matches` (status = completed) to get W/L counts
-- Query `games` where `host_id = user_id` for hosted count
-- Query `game_players` for joined count
-- All in a single `useEffect`
+#### 4. Notify Members on Announcement Post
+- Database trigger `notify_club_members_on_announcement`: on INSERT to `club_announcements`, insert a notification row for each active member of the club (excluding the author)
+- Notification type: `"announcement"`, with title like "New Post in [Club Name]", message = announcement title, link = `/clubs/{club_id}`
 
-Styling: White card with `rounded-2xl shadow-sm`, consistent with PersonalDetailsGrid. Stats use Space Grotesk font for numbers, `text-[11px] uppercase tracking` for labels.
+### Technical Details
 
-**2. Update `src/pages/Profile/ProfilePage.tsx`**
+**Storage bucket SQL:**
+```sql
+INSERT INTO storage.buckets (id, name, public) VALUES ('club-announcements', 'club-announcements', true);
+-- RLS: authenticated users can upload to their own folder
+CREATE POLICY "Users can upload announcement images" ON storage.objects FOR INSERT TO authenticated WITH CHECK (bucket_id = 'club-announcements');
+CREATE POLICY "Public read announcement images" ON storage.objects FOR SELECT USING (bucket_id = 'club-announcements');
+```
 
-- Import and render `ProfilePerformanceCard` between HeroCard and PersonalDetailsGrid
-- Pass `userId` as prop
-- Remove the standalone "Match History" button and integrate it as a link row at the bottom of the performance card ("View Full Match History →")
+**Trigger function SQL:**
+```sql
+CREATE OR REPLACE FUNCTION public.notify_club_members_on_announcement()
+RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER AS $$
+DECLARE
+  club_name TEXT;
+  member RECORD;
+BEGIN
+  SELECT name INTO club_name FROM public.clubs WHERE id = NEW.club_id;
+  FOR member IN
+    SELECT user_id FROM public.club_followers
+    WHERE club_id = NEW.club_id AND status = 'active' AND user_id != NEW.author_id
+  LOOP
+    INSERT INTO public.notifications (user_id, type, title, message, link, read)
+    VALUES (member.user_id, 'announcement', 'New Post in ' || club_name, NEW.title, '/clubs/' || NEW.club_id, false);
+  END LOOP;
+  RETURN NEW;
+END;
+$$;
 
-### Layout Order (top to bottom)
-1. HeroCard (unchanged)
-2. **ProfilePerformanceCard** (new)
-3. PersonalDetailsGrid (unchanged)
-4. ProfileClubs (unchanged)
-5. Payment Info collapsible (unchanged)
+CREATE TRIGGER on_club_announcement_insert
+  AFTER INSERT ON public.club_announcements
+  FOR EACH ROW EXECUTE FUNCTION public.notify_club_members_on_announcement();
+```
 
-### Files to Create
-- `src/components/profile/ProfilePerformanceCard.tsx`
-
-### Files to Modify
-- `src/pages/Profile/ProfilePage.tsx` — add import, render new component, remove standalone Match History button
+**Files to modify:**
+- `src/components/clubs/ClubAdminPanel.tsx` -- add image upload to AnnouncementsTab
+- `src/components/clubs/ClubFeedTab.tsx` -- render announcement images
 
