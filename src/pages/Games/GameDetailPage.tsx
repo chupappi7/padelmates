@@ -511,6 +511,21 @@ export default function GameDetailPage() {
     setActionLoading(null);
   };
 
+  const handleRemoveGuest = async (guestIndex: number) => {
+    if (!id || !game) return;
+    const current: (string | { name: string; user_id: string })[] = Array.isArray((game as any).prefilled_players) ? (game as any).prefilled_players : [];
+    // Filter out empty names first, then remove by index
+    const nonEmpty = current.filter(p => {
+      const name = typeof p === "string" ? p : p.name;
+      return name.trim();
+    });
+    const updated = nonEmpty.filter((_, i) => i !== guestIndex);
+    const { error } = await supabase.from("games").update({ prefilled_players: updated }).eq("id", id);
+    if (error) { toast.error("Failed to remove guest"); return; }
+    toast.success("Guest removed");
+    fetchGame();
+  };
+
   const handleExpressInterest = async () => {
     if (!user || !id) return;
     setJoinLoading(true);
@@ -1006,6 +1021,7 @@ export default function GameDetailPage() {
                 isRequestAndPay={isRequestAndPay}
                 onConfirmPayment={handleConfirmPayment}
                 onRemovePlayer={handleRemovePlayer}
+                onRemoveGuest={handleRemoveGuest}
               />
             </motion.div>
           )}

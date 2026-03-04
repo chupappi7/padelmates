@@ -67,6 +67,8 @@ interface ParticipantsTabProps {
   onConfirmPayment?: (requestId: string) => void;
   /** Callback to remove a confirmed player */
   onRemovePlayer?: (userId: string) => void;
+  /** Callback to remove a guest by index */
+  onRemoveGuest?: (guestIndex: number) => void;
 }
 
 type FilterType = "all" | "requests";
@@ -95,6 +97,7 @@ export function ParticipantsTab({
   isRequestAndPay,
   onConfirmPayment,
   onRemovePlayer,
+  onRemoveGuest,
 }: ParticipantsTabProps) {
   const [activeFilter, setActiveFilter] = useState<FilterType>("all");
 
@@ -279,6 +282,8 @@ export function ParticipantsTab({
                   avatarUrl={null}
                   userId={isLinked ? (player as { name: string; user_id: string }).user_id : undefined}
                   isGuest={!isLinked}
+                  canRemove={canManage}
+                  onRemove={onRemoveGuest ? () => onRemoveGuest(i) : undefined}
                 />
               );
             })}
@@ -486,16 +491,18 @@ function PlayerCard({
 }) {
   const isAdmin = role === "admin";
   const navigate = useNavigate();
-  const showMenu = !isHost && ((showRoleToggle && onToggleRole) || (canRemove && onRemove));
+  // Show menu on every non-host row when host is managing
+  const showMenu = !isHost && (canRemove || showRoleToggle);
 
   return (
     <div
       className={cn(
-        "flex items-center gap-3 px-3 py-2 rounded-xl bg-muted/30",
+        "flex items-center gap-3 px-3 py-2 rounded-xl bg-muted/30 min-h-[44px]",
         userId && "cursor-pointer hover:bg-muted/50 transition-colors"
       )}
       onClick={userId ? () => navigate(`/user/${userId}`) : undefined}
     >
+      {/* Avatar */}
       <div className="relative shrink-0">
         <Avatar className="h-8 w-8 ring-1 ring-foreground/10">
           <AvatarImage src={avatarUrl || undefined} />
@@ -509,25 +516,31 @@ function PlayerCard({
           </div>
         )}
       </div>
+
+      {/* Name + tags */}
       <div className="flex-1 min-w-0 flex items-center gap-2">
         <p className="text-sm font-medium truncate">{name}</p>
         {isHost && (
           <span className="text-[9px] font-semibold text-primary shrink-0">Host</span>
         )}
         {isAdmin && !isHost && (
-          <span className="text-[9px] font-semibold text-primary shrink-0">Admin</span>
+          <span className="text-[9px] font-semibold text-primary shrink-0">Co-host</span>
         )}
         {isGuest && (
           <Badge variant="outline" className="rounded-full text-[9px] px-1.5 py-0 bg-muted text-muted-foreground border-border shrink-0">
             Guest
           </Badge>
         )}
-        {skillLevel && (
-          <div className="shrink-0">
-            <SkillBadge level={skillLevel} size="sm" />
-          </div>
-        )}
       </div>
+
+      {/* Level badge — right side before dots */}
+      {skillLevel && (
+        <div className="shrink-0">
+          <SkillBadge level={skillLevel} size="sm" />
+        </div>
+      )}
+
+      {/* Three dots menu */}
       {showMenu && (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -538,20 +551,22 @@ function PlayerCard({
               <MoreVertical className="w-4 h-4" />
             </button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="min-w-[140px]">
-            {showRoleToggle && onToggleRole && (
+          <DropdownMenuContent align="end" className="min-w-[160px]">
+            {/* Make Co-host — only for registered players, not guests */}
+            {!isGuest && showRoleToggle && onToggleRole && (
               <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onToggleRole(); }}>
                 <ShieldCheck className="w-3.5 h-3.5 mr-2" />
-                {isAdmin ? "Remove Admin" : "Make Admin"}
+                {isAdmin ? "Remove Co-host" : "Make Co-host"}
               </DropdownMenuItem>
             )}
+            {/* Kick / Remove */}
             {canRemove && onRemove && (
               <DropdownMenuItem
                 onClick={(e) => { e.stopPropagation(); onRemove(); }}
                 className="text-destructive focus:text-destructive"
               >
                 <UserMinus className="w-3.5 h-3.5 mr-2" />
-                Kick
+                {isGuest ? "Remove Guest" : "Kick from Match"}
               </DropdownMenuItem>
             )}
           </DropdownMenuContent>
