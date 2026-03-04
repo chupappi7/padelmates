@@ -49,8 +49,9 @@ import {
 import { CourtDMChat } from "@/components/games/CourtDMChat";
 import { ShareGameSheet } from "@/components/games/ShareGameSheet";
 import { BookingProofTab } from "@/components/games/BookingProofTab";
+import { CreditsTab } from "@/components/games/CreditsTab";
 import { ALL_COURTS } from "@/components/games/CourtPicker";
-import { ShieldCheck } from "lucide-react";
+import { ShieldCheck, Award } from "lucide-react";
 
 interface Game {
   id: string;
@@ -110,13 +111,14 @@ const formatLabels = {
   team_americano: "Team Americano",
 };
 
-type TabKey = "details" | "proof" | "participants" | "matches" | "chat";
+type TabKey = "details" | "proof" | "participants" | "matches" | "credits" | "chat";
 
-const tabs: { key: TabKey; label: string; icon: typeof Info }[] = [
+const baseTabs: { key: TabKey; label: string; icon: typeof Info }[] = [
   { key: "details", label: "Details", icon: Info },
   { key: "proof", label: "Proof", icon: ShieldCheck },
   { key: "participants", label: "Players", icon: Users },
   { key: "matches", label: "Matches", icon: Swords },
+  { key: "credits", label: "Credits", icon: Award },
   { key: "chat", label: "Chat", icon: MessageCircle },
 ];
 
@@ -709,7 +711,7 @@ export default function GameDetailPage() {
 
           {/* Tab Navigation Buttons */}
           <div className="flex gap-0.5 bg-muted/50 rounded-lg p-0.5 mb-2 overflow-x-auto scrollbar-hide">
-            {tabs.map((tab) => {
+            {baseTabs.map((tab) => {
               // Court sharing: show Details + Proof + Messages (DM) only
               if (isCourtSharing) {
                 if (tab.key !== "details" && tab.key !== "proof" && tab.key !== "chat") return null;
@@ -718,6 +720,11 @@ export default function GameDetailPage() {
                 // Hide proof and chat for non-participants in regular games
                 if (tab.key === "proof") return null;
                 if (tab.key === "chat" && !canAccessChat) return null;
+                // Credits tab: only show if match has ended
+                if (tab.key === "credits") {
+                  const endDt = game?.end_date_time;
+                  if (!endDt || new Date(endDt).getTime() > Date.now()) return null;
+                }
               }
 
               const isActive = activeTab === tab.key;
@@ -1001,6 +1008,22 @@ export default function GameDetailPage() {
                   name: game.profiles.name,
                   avatar_url: game.profiles.avatar_url,
                 } : null}
+              />
+            </motion.div>
+          )}
+
+          {/* Credits Tab */}
+          {activeTab === "credits" && game.end_date_time && new Date(game.end_date_time).getTime() <= Date.now() && (
+            <motion.div key="credits" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+              <CreditsTab
+                gameId={game.id}
+                endDateTime={game.end_date_time}
+                players={[
+                  ...(game.host_is_playing && game.profiles ? [{ user_id: game.host_id, name: game.profiles.name, avatar_url: game.profiles.avatar_url }] : []),
+                  ...players.map(p => ({ user_id: p.user_id, name: p.profiles?.name || "Player", avatar_url: p.profiles?.avatar_url || null })),
+                ]}
+                gameLocation={game.location}
+                gameDate={format(new Date(game.date_time), "MMM d")}
               />
             </motion.div>
           )}

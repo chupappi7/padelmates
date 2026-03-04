@@ -18,6 +18,7 @@ import { ProfileAchievementsTab } from "@/components/profile/tabs/ProfileAchieve
 import { ProfilePersonalDetails } from "@/components/profile/tabs/ProfilePersonalDetails";
 import { ProfileClubsGlass } from "@/components/profile/tabs/ProfileClubsGlass";
 import { ProfilePaymentInfo } from "@/components/profile/tabs/ProfilePaymentInfo";
+import { LifetimeCredits } from "@/components/profile/LifetimeCredits";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Copy, Check } from "lucide-react";
 
@@ -225,6 +226,9 @@ export default function ProfilePage() {
 
         {/* Clubs */}
         {user && <ProfileClubsGlass userId={user.id} />}
+
+        {/* Lifetime Credits */}
+        {user && <LifetimeCredits userId={user.id} />}
 
         {/* Payment Info */}
         {user && profile && (

@@ -720,6 +720,41 @@ export type Database = {
           },
         ]
       }
+      match_credits: {
+        Row: {
+          created_at: string | null
+          credit_type: string
+          giver_id: string
+          id: string
+          match_id: string
+          receiver_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          credit_type: string
+          giver_id: string
+          id?: string
+          match_id: string
+          receiver_id: string
+        }
+        Update: {
+          created_at?: string | null
+          credit_type?: string
+          giver_id?: string
+          id?: string
+          match_id?: string
+          receiver_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "match_credits_match_id_fkey"
+            columns: ["match_id"]
+            isOneToOne: false
+            referencedRelation: "games"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       match_invites: {
         Row: {
           created_at: string | null
