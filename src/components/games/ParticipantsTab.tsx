@@ -4,8 +4,14 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { SkillBadge } from "./SkillBadge";
-import { Check, X, Users, Clock, ShieldCheck, RefreshCw, Plus, DollarSign, CheckCircle2, Star, UserMinus } from "lucide-react";
+import { Check, X, Users, Clock, ShieldCheck, RefreshCw, Plus, DollarSign, CheckCircle2, Star, UserMinus, MoreVertical } from "lucide-react";
 import { cn } from "@/lib/utils";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface Profile {
   name: string;
@@ -480,6 +486,7 @@ function PlayerCard({
 }) {
   const isAdmin = role === "admin";
   const navigate = useNavigate();
+  const showMenu = !isHost && ((showRoleToggle && onToggleRole) || (canRemove && onRemove));
 
   return (
     <div
@@ -515,28 +522,40 @@ function PlayerCard({
             Guest
           </Badge>
         )}
-        {showRoleToggle && !isHost && onToggleRole && (
-          <button
-            onClick={(e) => { e.stopPropagation(); onToggleRole(); }}
-            className="text-[9px] text-muted-foreground hover:text-foreground transition-colors shrink-0"
-          >
-            {isAdmin ? "Remove admin" : "Make admin"}
-          </button>
+        {skillLevel && (
+          <div className="shrink-0">
+            <SkillBadge level={skillLevel} size="sm" />
+          </div>
         )}
       </div>
-      {skillLevel && (
-        <div className="shrink-0">
-          <SkillBadge level={skillLevel} size="sm" />
-        </div>
-      )}
-      {canRemove && !isHost && onRemove && (
-        <button
-          onClick={(e) => { e.stopPropagation(); onRemove(); }}
-          className="shrink-0 p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
-          title="Remove player"
-        >
-          <UserMinus className="w-3.5 h-3.5" />
-        </button>
+      {showMenu && (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button
+              onClick={(e) => e.stopPropagation()}
+              className="shrink-0 p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
+            >
+              <MoreVertical className="w-4 h-4" />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="min-w-[140px]">
+            {showRoleToggle && onToggleRole && (
+              <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onToggleRole(); }}>
+                <ShieldCheck className="w-3.5 h-3.5 mr-2" />
+                {isAdmin ? "Remove Admin" : "Make Admin"}
+              </DropdownMenuItem>
+            )}
+            {canRemove && onRemove && (
+              <DropdownMenuItem
+                onClick={(e) => { e.stopPropagation(); onRemove(); }}
+                className="text-destructive focus:text-destructive"
+              >
+                <UserMinus className="w-3.5 h-3.5 mr-2" />
+                Kick
+              </DropdownMenuItem>
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
       )}
     </div>
   );
