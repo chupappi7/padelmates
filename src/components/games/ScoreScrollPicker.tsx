@@ -104,9 +104,9 @@ function ScrollColumn({
         onTouchEnd={handleTouchEnd}
         onMouseUp={handleTouchEnd}
         className="h-full overflow-y-auto scrollbar-hide relative z-[1]"
-        style={{ scrollbarWidth: "none", msOverflowStyle: "none", WebkitOverflowScrolling: "touch" }}
+        style={{ scrollbarWidth: "none", msOverflowStyle: "none", WebkitOverflowScrolling: "touch", scrollSnapType: "y mandatory" }}
       >
-        <div style={{ height: PADDING }} />
+        <div style={{ height: PADDING, scrollSnapAlign: "none" }} />
         {items.map((item, i) => (
           <button
             key={item}
@@ -116,12 +116,12 @@ function ScrollColumn({
               "w-full flex items-center justify-center text-lg font-semibold transition-all",
               item === selected ? "text-primary scale-105" : "text-muted-foreground/60"
             )}
-            style={{ height: ITEM_HEIGHT }}
+            style={{ height: ITEM_HEIGHT, scrollSnapAlign: "start" }}
           >
             {item}
           </button>
         ))}
-        <div style={{ height: PADDING }} />
+        <div style={{ height: PADDING, scrollSnapAlign: "none" }} />
       </div>
     </div>
   );
