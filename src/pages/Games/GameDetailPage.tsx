@@ -378,7 +378,7 @@ export default function GameDetailPage() {
       fetchPlayers();
       const { data: profile } = await supabase.from("profiles").select("name").eq("user_id", user.id).single();
       const hostPlaying = game?.host_is_playing ? 1 : 0;
-      const ctx = game ? ` | ${formatGameContext(game.location, game.date_time, players.length + 1 + hostPlaying, game.max_players)}` : "";
+      const ctx = game ? ` | ${formatGameContext(game.location, game.date_time, players.length + 1 + hostPlaying + prefilledCount, game.max_players)}` : "";
       notifyHost("game_join", "Game Update", `${profile?.name || "Someone"} joined "${game?.title}"${ctx}`);
     }
     setJoinLoading(false);
@@ -397,7 +397,7 @@ export default function GameDetailPage() {
       await supabase.from("join_requests").delete().eq("game_id", id).eq("user_id", user.id);
       setMyRequest(null);
       const hostPlaying = game?.host_is_playing ? 1 : 0;
-      const ctx = game ? ` | ${formatGameContext(game.location, game.date_time, players.length - 1 + hostPlaying, game.max_players)}` : "";
+      const ctx = game ? ` | ${formatGameContext(game.location, game.date_time, players.length - 1 + hostPlaying + prefilledCount, game.max_players)}` : "";
       notifyHost("game_leave", "Game Update", `${profile?.name || "Someone"} left "${game?.title}"${ctx}`);
     }
     setJoinLoading(false);
