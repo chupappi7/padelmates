@@ -325,44 +325,46 @@ export default function GamesListPage() {
           <DayPicker selectedDate={selectedDate} onSelectDate={setSelectedDate} />
 
           {/* Filters */}
-            <div className="grid grid-cols-[1fr_1fr_auto] gap-2 mt-4">
-              <Select value={formatFilter} onValueChange={setFormatFilter}>
-                <SelectTrigger className="h-11 w-full">
-                  <SelectValue placeholder="Type" />
-                </SelectTrigger>
-                <SelectContent className="bg-popover z-50">
-                  <SelectItem value="all">All Types</SelectItem>
-                  <SelectItem value="casual_match">Match</SelectItem>
-                  <SelectItem value="americano">Americano</SelectItem>
-                  <SelectItem value="court">Court</SelectItem>
-                  <SelectItem value="backup">Backup</SelectItem>
-                </SelectContent>
-              </Select>
-              <Select
-                value={skillMin !== null ? String(skillMin) : "all"}
-                onValueChange={(val) => {
-                  if (val === "all") setSkillRange(null, null);
-                  else { const n = Number(val); setSkillRange(n, n); }
-                }}
-              >
-                <SelectTrigger className="h-11 w-full">
-                  <SelectValue placeholder="Level" />
-                </SelectTrigger>
-                <SelectContent className="bg-popover z-50">
-                  <SelectItem value="all">All Levels</SelectItem>
-                  <SelectItem value="4">A</SelectItem>
-                  <SelectItem value="3">B</SelectItem>
-                  <SelectItem value="2">C</SelectItem>
-                  <SelectItem value="1">D</SelectItem>
-                </SelectContent>
-              </Select>
-
-              <div className="flex gap-2">
-                {/* Club dropdown */}
-                {user && (
-                  userClubs.length > 0 ? (
+            <div className="flex gap-2 mt-4">
+              <div className="flex-1 min-w-0">
+                <Select value={formatFilter} onValueChange={setFormatFilter}>
+                  <SelectTrigger className="h-11 w-full">
+                    <SelectValue placeholder="Type" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-popover z-50">
+                    <SelectItem value="all">All Types</SelectItem>
+                    <SelectItem value="casual_match">Match</SelectItem>
+                    <SelectItem value="americano">Americano</SelectItem>
+                    <SelectItem value="court">Court</SelectItem>
+                    <SelectItem value="backup">Backup</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex-1 min-w-0">
+                <Select
+                  value={skillMin !== null ? String(skillMin) : "all"}
+                  onValueChange={(val) => {
+                    if (val === "all") setSkillRange(null, null);
+                    else { const n = Number(val); setSkillRange(n, n); }
+                  }}
+                >
+                  <SelectTrigger className="h-11 w-full">
+                    <SelectValue placeholder="Level" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-popover z-50">
+                    <SelectItem value="all">All Levels</SelectItem>
+                    <SelectItem value="4">A</SelectItem>
+                    <SelectItem value="3">B</SelectItem>
+                    <SelectItem value="2">C</SelectItem>
+                    <SelectItem value="1">D</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              {user && (
+                <div className="flex-1 min-w-0">
+                  {userClubs.length > 0 ? (
                     <Select value={clubFilter} onValueChange={setClubFilter}>
-                      <SelectTrigger className="h-11 w-[120px]">
+                      <SelectTrigger className="h-11 w-full">
                         <SelectValue placeholder="Club" />
                       </SelectTrigger>
                       <SelectContent className="bg-popover z-50">
@@ -380,7 +382,7 @@ export default function GamesListPage() {
                         <TooltipTrigger asChild>
                           <Button
                             variant="outline"
-                            className="h-11 opacity-50 cursor-not-allowed"
+                            className="h-11 w-full opacity-50 cursor-not-allowed"
                             disabled
                           >
                             Club
@@ -391,21 +393,19 @@ export default function GamesListPage() {
                         </TooltipContent>
                       </Tooltip>
                     </TooltipProvider>
-                  )
-                )}
-
-                {/* Friends Joining toggle */}
-                {user && (
-                  <Button
-                    variant={friendsJoining ? "default" : "outline"}
-                    size="icon"
-                    className={cn("h-11 w-11 shrink-0 rounded-full", friendsJoining && "bg-primary text-primary-foreground")}
-                    onClick={() => setFriendsJoining(!friendsJoining)}
-                  >
-                    <Users className="w-4 h-4" />
-                  </Button>
-                )}
-              </div>
+                  )}
+                </div>
+              )}
+              {user && (
+                <Button
+                  variant={friendsJoining ? "default" : "outline"}
+                  size="icon"
+                  className={cn("h-11 w-11 shrink-0 rounded-full", friendsJoining && "bg-primary text-primary-foreground")}
+                  onClick={() => setFriendsJoining(!friendsJoining)}
+                >
+                  <Users className="w-4 h-4" />
+                </Button>
+              )}
             </div>
         </motion.div>
 
