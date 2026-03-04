@@ -14,7 +14,7 @@ import { LevelSelectSheet } from "@/components/profile/LevelSelectSheet";
 import { ProfileDashboardTab } from "@/components/profile/tabs/ProfileDashboardTab";
 import { ProfileMatchesTab } from "@/components/profile/tabs/ProfileMatchesTab";
 import { ProfileAnalysisTab } from "@/components/profile/tabs/ProfileAnalysisTab";
-import { ProfileAchievementsTab } from "@/components/profile/tabs/ProfileAchievementsTab";
+import { ProfileCreditsTab } from "@/components/profile/tabs/ProfileCreditsTab";
 import { ProfilePersonalDetails } from "@/components/profile/tabs/ProfilePersonalDetails";
 import { ProfileClubsGlass } from "@/components/profile/tabs/ProfileClubsGlass";
 import { ProfilePaymentInfo } from "@/components/profile/tabs/ProfilePaymentInfo";
@@ -24,7 +24,7 @@ import { Copy, Check } from "lucide-react";
 
 const SPACE = "'Space Grotesk', system-ui, sans-serif";
 
-const TABS = ["Dashboard", "Matches", "Analysis", "Achievements"] as const;
+const TABS = ["Dashboard", "Matches", "Analysis", "Credits"] as const;
 type Tab = typeof TABS[number];
 
 interface Profile {
@@ -206,8 +206,8 @@ export default function ProfilePage() {
           {activeTab === "Analysis" && user && (
             <ProfileAnalysisTab userId={user.id} />
           )}
-          {activeTab === "Achievements" && user && (
-            <ProfileAchievementsTab userId={user.id} />
+          {activeTab === "Credits" && user && (
+            <ProfileCreditsTab userId={user.id} />
           )}
         </motion.div>
 
@@ -226,9 +226,6 @@ export default function ProfilePage() {
 
         {/* Clubs */}
         {user && <ProfileClubsGlass userId={user.id} />}
-
-        {/* Lifetime Credits */}
-        {user && <LifetimeCredits userId={user.id} />}
 
         {/* Payment Info */}
         {user && profile && (
