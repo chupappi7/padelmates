@@ -134,11 +134,11 @@ export default function ClubsListPage() {
     <div className="min-h-screen bg-background">
       <Navbar />
 
-      <div className="container py-6 pb-28 max-w-2xl">
+      <div className="container py-6 pb-28 max-w-2xl lg:max-w-4xl">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
           {/* Header */}
           <div className="mb-5">
-            <h1 className="font-display text-2xl font-bold mb-0.5">Clubs</h1>
+            <h1 className="font-display text-2xl lg:text-3xl font-bold mb-0.5">Clubs</h1>
             <p className="text-sm text-muted-foreground">Your communities & discover new ones</p>
           </div>
 
@@ -198,7 +198,7 @@ export default function ClubsListPage() {
             ))}
           </div>
         ) : activeList.length > 0 ? (
-          <div className="space-y-2">
+          <div className="space-y-2 lg:grid lg:grid-cols-2 lg:gap-3 lg:space-y-0">
             {activeList.map((club, index) => (
               <motion.div
                 key={club.id}

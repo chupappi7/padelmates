@@ -87,7 +87,7 @@ export default function EloPage() {
         tier={tier}
       />
 
-      <div className="max-w-lg mx-auto px-4 mt-4">
+      <div className="max-w-lg lg:max-w-2xl mx-auto px-4 mt-4">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <div className="flex items-center justify-between mb-4">
             <TabsList className="flex-1 grid grid-cols-3 bg-white border border-[#E2E8F0] rounded-full p-1 h-auto">
