@@ -180,7 +180,7 @@ export function ProfileDashboardTab({ userId, profile }: Props) {
             <div className="w-7 h-7 rounded-lg bg-[#14b8a6]/10 flex items-center justify-center text-[10px] font-bold text-[#14b8a6]" style={{ fontFamily: SPACE }}>
               PDR
             </div>
-            <span className="text-[11px] text-[#94A3B8] font-medium uppercase tracking-wider">Rating</span>
+            <span className="text-[11px] text-[#94A3B8] font-medium uppercase tracking-wider">Padel Dynamic Rating</span>
           </div>
           <span className="text-[10px] bg-[#F1F5F9] text-[#64748B] px-2 py-0.5 rounded-full font-medium capitalize">
             {profile.pdr_phase}
