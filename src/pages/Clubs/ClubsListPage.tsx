@@ -137,44 +137,44 @@ export default function ClubsListPage() {
       <div className="container py-6 pb-28 max-w-2xl">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
           {/* Header */}
-          <div className="flex items-center justify-between mb-5">
-            <div>
-              <h1 className="font-display text-2xl font-bold mb-0.5">Clubs</h1>
-              <p className="text-sm text-muted-foreground">Your communities & discover new ones</p>
+          <div className="mb-5">
+            <h1 className="font-display text-2xl font-bold mb-0.5">Clubs</h1>
+            <p className="text-sm text-muted-foreground">Your communities & discover new ones</p>
+          </div>
+
+          {/* Tabs + Create */}
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex gap-1">
+              {([
+                { id: "my" as Tab, label: "My Clubs", icon: <Users className="w-3.5 h-3.5" /> },
+                { id: "discover" as Tab, label: "Discover", icon: <Compass className="w-3.5 h-3.5" /> },
+              ]).map(t => (
+                <button
+                  key={t.id}
+                  onClick={() => { setTab(t.id); setSearchQuery(""); }}
+                  className={`flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-semibold transition-colors ${
+                    tab === t.id
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-card border border-border text-muted-foreground"
+                  }`}
+                >
+                  {t.icon} {t.label}
+                  {t.id === "my" && myClubs.length > 0 && (
+                    <span className={`text-[10px] ml-0.5 ${tab === t.id ? "text-primary-foreground/70" : "text-muted-foreground/60"}`}>
+                      ({clubs.filter(c => c.is_member).length})
+                    </span>
+                  )}
+                </button>
+              ))}
             </div>
             {user && (
               <button
                 onClick={() => navigate("/clubs/create")}
-                className="rounded-full px-4 py-2 text-sm font-semibold bg-primary text-primary-foreground flex items-center gap-1.5 shadow-sm"
+                className="rounded-full px-3.5 py-2 text-xs font-semibold bg-primary text-primary-foreground flex items-center gap-1.5 shadow-sm"
               >
                 <Plus className="w-3.5 h-3.5" /> Create
               </button>
             )}
-          </div>
-
-          {/* Tabs */}
-          <div className="flex gap-1 mb-4">
-            {([
-              { id: "my" as Tab, label: "My Clubs", icon: <Users className="w-3.5 h-3.5" /> },
-              { id: "discover" as Tab, label: "Discover", icon: <Compass className="w-3.5 h-3.5" /> },
-            ]).map(t => (
-              <button
-                key={t.id}
-                onClick={() => { setTab(t.id); setSearchQuery(""); }}
-                className={`flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-semibold transition-colors ${
-                  tab === t.id
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-card border border-border text-muted-foreground"
-                }`}
-              >
-                {t.icon} {t.label}
-                {t.id === "my" && myClubs.length > 0 && (
-                  <span className={`text-[10px] ml-0.5 ${tab === t.id ? "text-primary-foreground/70" : "text-muted-foreground/60"}`}>
-                    ({clubs.filter(c => c.is_member).length})
-                  </span>
-                )}
-              </button>
-            ))}
           </div>
 
           {/* Search (always on discover, optional on my clubs) */}
