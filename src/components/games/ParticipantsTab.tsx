@@ -485,13 +485,8 @@ function PlayerCard({
             {name?.charAt(0).toUpperCase()}
           </AvatarFallback>
         </Avatar>
-        {isHost && (
+        {(isHost || isAdmin) && (
           <div className="absolute -bottom-0.5 -right-0.5 bg-primary text-primary-foreground rounded-full p-0.5">
-            <Check className="w-2 h-2" />
-          </div>
-        )}
-        {isAdmin && !isHost && (
-          <div className="absolute -bottom-0.5 -right-0.5 bg-accent text-accent-foreground rounded-full p-0.5">
             <ShieldCheck className="w-2 h-2" />
           </div>
         )}
@@ -499,14 +494,10 @@ function PlayerCard({
       <div className="flex-1 min-w-0 flex items-center gap-2">
         <p className="text-sm font-medium truncate">{name}</p>
         {isHost && (
-          <Badge variant="outline" className="rounded-full text-[9px] px-1.5 py-0 bg-primary/10 text-primary border-primary/20 shrink-0 font-semibold">
-            ★ Host
-          </Badge>
+          <span className="text-[9px] font-semibold text-primary shrink-0">Host</span>
         )}
         {isAdmin && !isHost && (
-          <Badge variant="outline" className="rounded-full text-[9px] px-1.5 py-0 bg-secondary text-secondary-foreground border-secondary shrink-0 font-semibold">
-            🛡 Admin
-          </Badge>
+          <span className="text-[9px] font-semibold text-primary shrink-0">Admin</span>
         )}
         {isGuest && (
           <Badge variant="outline" className="rounded-full text-[9px] px-1.5 py-0 bg-muted text-muted-foreground border-border shrink-0">
@@ -557,16 +548,9 @@ function OrganizerAvatar({
             {name?.charAt(0).toUpperCase()}
           </AvatarFallback>
         </Avatar>
-        {isHost && (
-          <div className="absolute -bottom-0.5 -right-0.5 bg-primary text-primary-foreground rounded-full p-0.5">
-            <Star className="w-2.5 h-2.5 fill-current" />
-          </div>
-        )}
-        {!isHost && (
-          <div className="absolute -bottom-0.5 -right-0.5 bg-accent text-accent-foreground rounded-full p-0.5">
-            <ShieldCheck className="w-2.5 h-2.5" />
-          </div>
-        )}
+        <div className="absolute -bottom-0.5 -right-0.5 bg-primary text-primary-foreground rounded-full p-0.5">
+          <ShieldCheck className="w-2.5 h-2.5" />
+        </div>
       </div>
       <span className="text-[11px] text-muted-foreground group-hover:text-foreground transition-colors max-w-[60px] truncate">
         {name.split(" ")[0]}
