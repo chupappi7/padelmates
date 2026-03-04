@@ -53,8 +53,12 @@ interface MatchesTabProps {
   hostIsPlaying: boolean;
   hostId: string;
   hostProfile: Profile | null;
-  guestCount?: number;
+  guestNames?: string[];
 }
+
+// Generate a deterministic fake UUID for a guest by index
+const guestUUID = (index: number) =>
+  `00000000-0000-4000-8000-${index.toString().padStart(12, "0")}`;
 
 export function MatchesTab({
   gameId,
@@ -63,7 +67,7 @@ export function MatchesTab({
   hostIsPlaying,
   hostId,
   hostProfile,
-  guestCount = 0,
+  guestNames = [],
 }: MatchesTabProps) {
   const [matches, setMatches] = useState<Match[]>([]);
   const [loading, setLoading] = useState(true);
@@ -73,15 +77,28 @@ export function MatchesTab({
   const [team1Picks, setTeam1Picks] = useState<string[]>([]);
   const [team2Picks, setTeam2Picks] = useState<string[]>([]);
 
-  // All available players (including host if playing)
+  // Build guest player entries with deterministic UUIDs
+  const guestPlayers: Player[] = guestNames.map((name, i) => ({
+    id: `guest-${i}`,
+    user_id: guestUUID(i),
+    role: "guest",
+    profiles: { name: `${name} (Guest)`, avatar_url: null },
+  }));
+
+  // Build a lookup map for guest UUIDs → names (for rendering saved matches)
+  const guestMap = new Map<string, string>();
+  guestNames.forEach((name, i) => guestMap.set(guestUUID(i), `${name} (Guest)`));
+
+  // All available players (including host if playing + guests)
   const allPlayers = [
     ...(hostIsPlaying && hostProfile
       ? [{ id: "host", user_id: hostId, role: "host", profiles: hostProfile }]
       : []),
     ...players,
+    ...guestPlayers,
   ];
 
-  const totalPlayerCount = allPlayers.length + guestCount;
+  const totalPlayerCount = allPlayers.length;
 
   const fetchMatches = useCallback(async () => {
     const { data: matchesData } = await supabase
@@ -97,14 +114,21 @@ export function MatchesTab({
         .select("*")
         .in("match_id", matchIds);
 
-      // Fetch profiles for match players
+      // Fetch profiles for match players (skip guest UUIDs)
       const playerUserIds = [...new Set((mpData || []).map((mp) => mp.user_id))];
+      const realUserIds = playerUserIds.filter((id) => !guestMap.has(id));
       const profileMap: Record<string, Profile> = {};
-      if (playerUserIds.length > 0) {
+
+      // Pre-populate guest profiles from the map
+      guestMap.forEach((name, uuid) => {
+        profileMap[uuid] = { name, avatar_url: null };
+      });
+
+      if (realUserIds.length > 0) {
         const { data: profiles } = await supabase
           .from("profiles")
           .select("user_id, name, avatar_url")
-          .in("user_id", playerUserIds);
+          .in("user_id", realUserIds);
         profiles?.forEach((p) => {
           profileMap[p.user_id] = { name: p.name, avatar_url: p.avatar_url };
         });
@@ -124,7 +148,7 @@ export function MatchesTab({
       setMatches([]);
     }
     setLoading(false);
-  }, [gameId]);
+  }, [gameId, guestNames]);
 
   useEffect(() => {
     fetchMatches();
