@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Navbar } from "@/components/layout/Navbar";
 import { useAuth } from "@/contexts/AuthContext";
@@ -79,6 +79,10 @@ function ConversationRow({
   onDelete: () => void;
   onPin: () => void;
 }) {
+  const [menuOpen, setMenuOpen] = useState(false);
+  const longPressTimer = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+  const didLongPress = React.useRef(false);
+
   const isArchived = inboxTab === "archived";
   const hasUnread = convo.unreadCount > 0 && !isArchived;
 
@@ -92,16 +96,47 @@ function ConversationRow({
     previewLine = prefix + previewText;
   }
 
+  const startLongPress = () => {
+    didLongPress.current = false;
+    longPressTimer.current = setTimeout(() => {
+      didLongPress.current = true;
+      if (navigator.vibrate) navigator.vibrate(30);
+      setMenuOpen(true);
+    }, 500);
+  };
+
+  const cancelLongPress = () => {
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
+    }
+  };
+
+  const handleClick = () => {
+    if (didLongPress.current) {
+      didLongPress.current = false;
+      return;
+    }
+    onClick();
+  };
+
   return (
-    <div
-      className={cn(
-        "flex items-center gap-3 w-full px-3 py-3 rounded-xl transition-colors text-left",
-        hasUnread && "bg-muted/30",
-        isArchived && "opacity-70"
-      )}
-    >
-      {/* Clickable area */}
-      <button className="flex items-center gap-3 flex-1 min-w-0 text-left" onClick={onClick}>
+    <>
+      <div
+        className={cn(
+          "flex items-center gap-3 w-full px-3 py-3 rounded-xl transition-colors text-left select-none",
+          hasUnread && "bg-muted/30",
+          isArchived && "opacity-70"
+        )}
+        onTouchStart={startLongPress}
+        onTouchEnd={cancelLongPress}
+        onTouchCancel={cancelLongPress}
+        onMouseDown={startLongPress}
+        onMouseUp={cancelLongPress}
+        onMouseLeave={cancelLongPress}
+        onContextMenu={(e) => { e.preventDefault(); }}
+        onClick={handleClick}
+      >
         {/* Avatar */}
         {convo.type === "match" ? (
           <div className="h-12 w-12 rounded-full bg-emerald-500/10 flex items-center justify-center shrink-0">
@@ -144,7 +179,7 @@ function ConversationRow({
             )}
           </div>
 
-          {/* Context label for match/court (location only, no duplicate date) */}
+          {/* Context label for match/court (location) */}
           {convo.type === "match" && convo.contextLabel && (
             <p className="text-[11px] text-muted-foreground line-clamp-1">
               {convo.contextLabel}
@@ -163,57 +198,54 @@ function ConversationRow({
             <p className="text-xs text-muted-foreground line-clamp-1">No messages yet</p>
           ) : null}
         </div>
-      </button>
 
-      {/* Right side: unread dot + menu */}
-      <div className="flex items-center gap-1 shrink-0">
+        {/* Unread dot */}
         {hasUnread && (
           <span className="w-2.5 h-2.5 rounded-full bg-primary shrink-0" />
         )}
-
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full">
-              <MoreVertical className="w-4 h-4 text-muted-foreground" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-44">
-            <DropdownMenuItem onClick={onPin}>
-              {convo.prefs.pinned ? (
-                <>
-                  <PinOff className="mr-2 h-4 w-4" />
-                  Unpin
-                </>
-              ) : (
-                <>
-                  <Pin className="mr-2 h-4 w-4" />
-                  Pin
-                </>
-              )}
-            </DropdownMenuItem>
-            {isArchived ? (
-              <DropdownMenuItem onClick={onUnarchive}>
-                <ArchiveRestore className="mr-2 h-4 w-4" />
-                Restore
-              </DropdownMenuItem>
-            ) : (
-              <DropdownMenuItem onClick={onArchive}>
-                <Archive className="mr-2 h-4 w-4" />
-                Archive
-              </DropdownMenuItem>
-            )}
-            <DropdownMenuItem onClick={onMute}>
-              <BellOff className="mr-2 h-4 w-4" />
-              {convo.prefs.muted ? "Unmute" : "Mute"}
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={onDelete} className="text-destructive focus:text-destructive">
-              <Trash2 className="mr-2 h-4 w-4" />
-              Delete
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
       </div>
-    </div>
+
+      {/* Long-press context menu as dialog */}
+      {menuOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 backdrop-blur-sm"
+          onClick={() => setMenuOpen(false)}
+        >
+          <div
+            className="w-full max-w-sm bg-card rounded-t-2xl border-t border-border p-2 pb-6 space-y-0.5 animate-in slide-in-from-bottom-4 duration-200"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <p className="text-xs text-muted-foreground px-3 py-2 font-medium truncate">{convo.title}</p>
+            <button onClick={() => { onPin(); setMenuOpen(false); }} className="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg hover:bg-muted transition-colors text-sm">
+              {convo.prefs.pinned ? <PinOff className="w-4 h-4 text-muted-foreground" /> : <Pin className="w-4 h-4 text-muted-foreground" />}
+              {convo.prefs.pinned ? "Unpin" : "Pin"}
+            </button>
+            {isArchived ? (
+              <button onClick={() => { onUnarchive(); setMenuOpen(false); }} className="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg hover:bg-muted transition-colors text-sm">
+                <ArchiveRestore className="w-4 h-4 text-muted-foreground" />
+                Restore
+              </button>
+            ) : (
+              <button onClick={() => { onArchive(); setMenuOpen(false); }} className="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg hover:bg-muted transition-colors text-sm">
+                <Archive className="w-4 h-4 text-muted-foreground" />
+                Archive
+              </button>
+            )}
+            <button onClick={() => { onMute(); setMenuOpen(false); }} className="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg hover:bg-muted transition-colors text-sm">
+              <BellOff className="w-4 h-4 text-muted-foreground" />
+              {convo.prefs.muted ? "Unmute" : "Mute"}
+            </button>
+            <button onClick={() => { onDelete(); setMenuOpen(false); }} className="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg hover:bg-muted transition-colors text-sm text-destructive">
+              <Trash2 className="w-4 h-4" />
+              Delete
+            </button>
+            <button onClick={() => setMenuOpen(false)} className="flex items-center justify-center w-full px-3 py-2.5 rounded-lg hover:bg-muted transition-colors text-sm font-medium text-muted-foreground mt-1">
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+    </>
   );
 }
 
