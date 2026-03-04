@@ -325,9 +325,9 @@ export default function GamesListPage() {
           <DayPicker selectedDate={selectedDate} onSelectDate={setSelectedDate} />
 
           {/* Filters */}
-          <div className="flex gap-2 mt-4 flex-wrap">
+            <div className="flex gap-2 mt-4">
               <Select value={formatFilter} onValueChange={setFormatFilter}>
-                <SelectTrigger className={cn(isMobile ? "flex-1" : "w-[140px]", "h-11 shrink-0")}>
+                <SelectTrigger className="h-11 min-w-0 flex-1">
                   <SelectValue placeholder="Type" />
                 </SelectTrigger>
                 <SelectContent className="bg-popover z-50">
@@ -345,7 +345,7 @@ export default function GamesListPage() {
                   else { const n = Number(val); setSkillRange(n, n); }
                 }}
               >
-                <SelectTrigger className={cn(isMobile ? "flex-1" : "w-[140px]", "h-11 shrink-0")}>
+                <SelectTrigger className="h-11 min-w-0 flex-1">
                   <SelectValue placeholder="Level" />
                 </SelectTrigger>
                 <SelectContent className="bg-popover z-50">
@@ -361,7 +361,7 @@ export default function GamesListPage() {
               {user && (
                 userClubs.length > 0 ? (
                   <Select value={clubFilter} onValueChange={setClubFilter}>
-                    <SelectTrigger className={cn(isMobile ? "flex-1" : "w-[160px]", "h-11 shrink-0")}>
+                    <SelectTrigger className="h-11 min-w-0 flex-1">
                       <SelectValue placeholder="Club" />
                     </SelectTrigger>
                     <SelectContent className="bg-popover z-50">
