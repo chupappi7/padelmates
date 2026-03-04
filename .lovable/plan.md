@@ -1,40 +1,33 @@
-## Plan: Show Game Score, Simplify Score Picker, Add End Session
 
-### Problem
 
-Currently each round displays "1 - 0 SETS" with set score pills below. Since each round is a single match, it should show the actual game score (e.g., "7 - 6 ") as the main number. Also need an "End Session" button and score submission restricted to host/admin.
+## Plan: Style Friends Filter as Toggle Pill
 
-### Changes
+The "Friends" button currently uses a standard `Button` with `variant="outline"` which looks visually disconnected from the dropdown filters. Make it a compact toggle pill that sits naturally in the filter row.
 
-**1. Simplify `ScoreScrollPicker` — remove multi-set UI**
+### Change in `src/pages/Games/GamesListPage.tsx` (lines 396-406)
 
-- Remove set tabs, add/remove set buttons — each round is one game score only
-- Change dialog title from "Set Score" to "Score"
-- Remove summary section showing sets won
-- The picker becomes: two scroll columns for Team 1 and Team 2 game scores (0-7), confirm button
-- `onConfirm` callback still passes the score but simplified (single game score, not array of sets)
+Replace the current `Button` with a rounded pill-style toggle that matches the filter row aesthetic:
 
-**2. Update `MatchesTab` score display**
+```tsx
+<button
+  onClick={() => setFriendsJoining(!friendsJoining)}
+  className={cn(
+    "h-9 px-3 rounded-full text-sm font-medium inline-flex items-center gap-1.5 border transition-colors shrink-0",
+    friendsJoining
+      ? "bg-primary text-primary-foreground border-primary"
+      : "bg-transparent text-muted-foreground border-border hover:bg-accent"
+  )}
+>
+  <Users className="w-3.5 h-3.5" />
+  Friends
+</button>
+```
 
-- Change big center score to show the game score directly (from `set_scores[0].t1` / `set_scores[0].t2`) instead of sets won
-- Change label from "Sets" to "Games"
-- Remove set score pills below (since there's only one game per round, the pills are redundant — the big score IS the game score)
-- Update `handleSubmitScore` to store the single game score: `team1_score` and `team2_score` get the actual game points (e.g., 7 and 6), `set_scores` stores the single entry for compatibility
+Key differences from current:
+- `rounded-full` pill shape instead of rectangular button
+- `h-9` (smaller, matching pill proportions) instead of `h-11`
+- Muted text when inactive, primary fill when active
+- Feels like a filter chip rather than an action button
 
-**3. Add "End Session" button**
+Single file edit, ~10 lines changed.
 
-- Below all match cards and the Randomize/Choose Teams buttons, add an "End Session" button (only visible to host/admin via `canManage`)
-- Only enabled when all matches are completed
-- On click: confirms all scores, could update game status or trigger stats calculation
-- For now: marks the game as ended and shows a success toast
-
-**4. Score submission already gated by `canManage**`
-
-- The "Enter Score" / "Edit Score" buttons are already wrapped in `{canManage && ...}` — this is correct, only host and admin can submit scores. No change needed here.
-
-5. games will update users stats in profile, matches to matches history, to stats winrate, matches played etc.
-
-### Files to edit
-
-- `src/components/games/ScoreScrollPicker.tsx` — simplify to single game score
-- `src/components/games/MatchesTab.tsx` — update display, add End Session button
