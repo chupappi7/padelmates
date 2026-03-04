@@ -53,6 +53,7 @@ interface MatchesTabProps {
   hostIsPlaying: boolean;
   hostId: string;
   hostProfile: Profile | null;
+  guestCount?: number;
 }
 
 export function MatchesTab({
@@ -62,6 +63,7 @@ export function MatchesTab({
   hostIsPlaying,
   hostId,
   hostProfile,
+  guestCount = 0,
 }: MatchesTabProps) {
   const [matches, setMatches] = useState<Match[]>([]);
   const [loading, setLoading] = useState(true);
@@ -78,6 +80,8 @@ export function MatchesTab({
       : []),
     ...players,
   ];
+
+  const totalPlayerCount = allPlayers.length + guestCount;
 
   const fetchMatches = useCallback(async () => {
     const { data: matchesData } = await supabase
@@ -291,13 +295,13 @@ export function MatchesTab({
             <h3 className="font-display font-bold text-lg mb-1">No Matches Yet</h3>
             <p className="text-sm text-muted-foreground">
               {canManage
-                ? allPlayers.length < 4
-                  ? `Need at least 4 players (currently ${allPlayers.length}).`
+                ? totalPlayerCount < 4
+                  ? `Need at least 4 players (currently ${totalPlayerCount}).`
                   : "Create matches to start tracking scores."
                 : "Matches will appear here once the host creates them."}
             </p>
           </div>
-          {canManage && allPlayers.length >= 4 && (
+          {canManage && totalPlayerCount >= 4 && (
             <div className="flex flex-col gap-2 pt-1">
               <Button
                 variant="hero"
