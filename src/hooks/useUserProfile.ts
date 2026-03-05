@@ -12,17 +12,34 @@ interface UserProfile {
 
 export function useUserProfile() {
   const { user } = useAuth();
-  const [profile, setProfile] = useState<UserProfile | null>(null);
+  
+  // Use Google metadata as immediate default to avoid avatar flash
+  const googleAvatar = user?.user_metadata?.avatar_url || user?.user_metadata?.picture || null;
+  const googleName = user?.user_metadata?.full_name || user?.user_metadata?.name || user?.email || "";
+  
+  const [profile, setProfile] = useState<UserProfile | null>(
+    user ? {
+      region: null,
+      name: googleName,
+      skill_level: 0,
+      pdr_rating: null,
+      avatar_url: googleAvatar,
+    } : null
+  );
 
   useEffect(() => {
-    if (!user) return;
+    if (!user) { setProfile(null); return; }
     supabase
       .from("profiles")
       .select("region, name, skill_level, pdr_rating, avatar_url")
       .eq("user_id", user.id)
       .single()
       .then(({ data }) => {
-        if (data) setProfile(data as any);
+        if (data) {
+          // If profile has no custom avatar, keep Google avatar
+          const resolvedAvatar = (data as any).avatar_url || googleAvatar;
+          setProfile({ ...(data as any), avatar_url: resolvedAvatar });
+        }
       });
   }, [user]);
 
