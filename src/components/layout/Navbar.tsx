@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Home, Plus, Trophy, CalendarCheck, LogOut, User, Bell, Inbox, Building2, Users, Search } from "lucide-react";
 import { useNotifications } from "@/hooks/useNotifications";
+import { useUserProfile } from "@/hooks/useUserProfile";
 import { useConversations } from "@/hooks/useConversations";
 import { NotificationPanel } from "@/components/layout/NotificationPanel";
 import { HostTypeModal } from "@/components/games/HostTypeModal";
@@ -24,7 +25,11 @@ export function Navbar() {
   const location = useLocation();
   const { unreadCount } = useNotifications();
   const { totalUnread: unreadMessages } = useConversations();
+  const profile = useUserProfile();
   const [showHostModal, setShowHostModal] = useState(false);
+
+  const avatarUrl = profile?.avatar_url || user?.user_metadata?.avatar_url || "";
+  const avatarInitial = (profile?.name || user?.email || "?").charAt(0).toUpperCase();
 
   const handleSignOut = async () => {
     await signOut();
@@ -100,9 +105,9 @@ export function Navbar() {
                 </NotificationPanel>
                 <Button variant="ghost" className="relative h-9 w-9 rounded-full p-0" onClick={() => navigate("/profile")}>
                   <Avatar className="h-9 w-9">
-                    <AvatarImage src="" alt="Profile" />
+                    <AvatarImage src={avatarUrl} alt="Profile" />
                     <AvatarFallback className="bg-primary/10 text-primary font-semibold text-sm">
-                      {user.email?.charAt(0).toUpperCase()}
+                      {avatarInitial}
                     </AvatarFallback>
                   </Avatar>
                 </Button>
@@ -134,9 +139,9 @@ export function Navbar() {
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" className="relative h-10 w-10 rounded-full">
                       <Avatar className="h-10 w-10">
-                        <AvatarImage src="" alt="Profile" />
+                        <AvatarImage src={avatarUrl} alt="Profile" />
                         <AvatarFallback className="bg-primary/10 text-primary font-semibold">
-                          {user.email?.charAt(0).toUpperCase()}
+                          {avatarInitial}
                         </AvatarFallback>
                       </Avatar>
                     </Button>
