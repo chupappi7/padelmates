@@ -72,6 +72,7 @@ export default function OnboardingPage() {
       .eq("user_id", user!.id);
     setLoading(false);
     toast.success("Welcome to PadelMates!");
+    sessionStorage.removeItem("oauth_onboarding_checked");
     navigate("/games", { replace: true });
   };
 

@@ -30,14 +30,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (event === "SIGNED_IN" && session?.user && !checkedOAuthRef.current) {
           checkedOAuthRef.current = true;
           const provider = session.user.app_metadata?.provider;
-          if (provider && provider !== "email") {
+          const alreadyRedirected = sessionStorage.getItem("oauth_onboarding_checked");
+          if (provider && provider !== "email" && !alreadyRedirected) {
+            sessionStorage.setItem("oauth_onboarding_checked", "1");
             // Check if profile is incomplete (no sex/region means they haven't onboarded)
             setTimeout(async () => {
               const { data: profile } = await supabase
                 .from("profiles")
                 .select("sex, region")
                 .eq("user_id", session.user.id)
-                .single();
+                .maybeSingle();
               if (profile && !profile.sex && !profile.region) {
                 window.location.href = "/onboarding";
               }
@@ -78,6 +80,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signOut = async () => {
     checkedOAuthRef.current = false;
+    sessionStorage.removeItem("oauth_onboarding_checked");
     await supabase.auth.signOut();
   };
 
