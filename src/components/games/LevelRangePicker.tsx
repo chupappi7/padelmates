@@ -1,13 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { cn } from "@/lib/utils";
 import {
-  MAIN_LEVELS,
-  SUB_LEVELS,
-  levelsInGroup,
-  mainLevelOf,
-  deriveMinMax,
-  expandToSelected,
-  type MainLevel,
+  LEVEL_HIERARCHY,
+  levelRank,
+  areAdjacent,
   type GameLevel,
 } from "@/lib/levelUtils";
 
@@ -18,137 +14,171 @@ interface LevelRangePickerProps {
 }
 
 export function LevelRangePicker({ minLevel, maxLevel, onChange }: LevelRangePickerProps) {
-  const [selected, setSelected] = useState<Set<string>>(() =>
-    expandToSelected(minLevel, maxLevel)
-  );
+  // Internal state: anchor index and optional second index (always adjacent or shortcut)
+  const [selStart, setSelStart] = useState<number | null>(null);
+  const [selEnd, setSelEnd] = useState<number | null>(null);
 
-  // Sync external changes
+  // Sync from props
   useEffect(() => {
-    setSelected(expandToSelected(minLevel, maxLevel));
+    if (!minLevel || !maxLevel) {
+      setSelStart(null);
+      setSelEnd(null);
+      return;
+    }
+    const s = LEVEL_HIERARCHY.indexOf(maxLevel as GameLevel); // max = best = lowest index
+    const e = LEVEL_HIERARCHY.indexOf(minLevel as GameLevel); // min = weakest = highest index
+    if (s >= 0 && e >= 0) {
+      setSelStart(s);
+      setSelEnd(e);
+    }
   }, [minLevel, maxLevel]);
 
-  const emitChange = (next: Set<string>) => {
-    setSelected(next);
-    if (next.size === 0) {
+  const emit = useCallback((start: number | null, end: number | null) => {
+    if (start === null) {
       onChange("", "");
-    } else {
-      const { min_level, max_level } = deriveMinMax(next);
-      onChange(min_level, max_level);
+      return;
     }
-  };
+    const lo = Math.min(start, end ?? start);
+    const hi = Math.max(start, end ?? start);
+    // lo index = best (max_level), hi index = weakest (min_level)
+    onChange(LEVEL_HIERARCHY[hi], LEVEL_HIERARCHY[lo]);
+  }, [onChange]);
 
-  // Which main levels have at least one sub-level selected?
-  const activeMainLevels = new Set<MainLevel>();
-  selected.forEach((l) => activeMainLevels.add(mainLevelOf(l)));
-
-  const handleMainClick = (main: MainLevel) => {
-    const next = new Set(selected);
-    const groupLevels = levelsInGroup(main);
-
-    if (activeMainLevels.has(main)) {
-      // Deselect all in group
-      groupLevels.forEach((l) => next.delete(l));
-    } else {
-      // Select all in group (= "Any B" / "Any C" default)
-      groupLevels.forEach((l) => next.add(l));
+  const handleTap = (idx: number) => {
+    // Nothing selected → anchor
+    if (selStart === null) {
+      setSelStart(idx);
+      setSelEnd(idx);
+      emit(idx, idx);
+      return;
     }
 
-    emitChange(next);
-  };
+    const lo = Math.min(selStart, selEnd ?? selStart);
+    const hi = Math.max(selStart, selEnd ?? selStart);
 
-  const handleSubClick = (sub: GameLevel, main: MainLevel) => {
-    const next = new Set(selected);
-    const groupLevels = levelsInGroup(main);
-
-    if (next.has(sub)) {
-      next.delete(sub);
-      // If none left in group, deselect main entirely
-    } else {
-      next.add(sub);
+    // Tap inside current range → collapse to that single level
+    if (idx >= lo && idx <= hi) {
+      if (lo === hi) {
+        // Already single, deselect
+        setSelStart(null);
+        setSelEnd(null);
+        emit(null, null);
+      } else {
+        setSelStart(idx);
+        setSelEnd(idx);
+        emit(idx, idx);
+      }
+      return;
     }
 
-    emitChange(next);
+    // Adjacent to current range → expand by 1
+    if (idx === lo - 1 || idx === hi + 1) {
+      const newLo = Math.min(lo, idx);
+      const newHi = Math.max(hi, idx);
+      // Only allow expand if total span ≤ 2 (adjacent pair) unless it's a shortcut
+      if (newHi - newLo <= 1) {
+        setSelStart(newLo);
+        setSelEnd(newHi);
+        emit(newLo, newHi);
+        return;
+      }
+    }
+
+    // Non-adjacent or would create too wide range → move anchor
+    setSelStart(idx);
+    setSelEnd(idx);
+    emit(idx, idx);
   };
 
-  const handleAnyClick = (main: MainLevel) => {
-    const next = new Set(selected);
-    const groupLevels = levelsInGroup(main);
-    // Select all sub-levels
-    groupLevels.forEach((l) => next.add(l));
-    emitChange(next);
+  const handleShortcut = (startLevel: GameLevel, endLevel: GameLevel) => {
+    const s = LEVEL_HIERARCHY.indexOf(startLevel);
+    const e = LEVEL_HIERARCHY.indexOf(endLevel);
+    setSelStart(s);
+    setSelEnd(e);
+    emit(s, e);
   };
 
-  const isAllSubsSelected = (main: MainLevel) => {
-    const groupLevels = levelsInGroup(main);
-    return groupLevels.every((l) => selected.has(l));
+  const lo = selStart !== null ? Math.min(selStart, selEnd ?? selStart) : -1;
+  const hi = selStart !== null ? Math.max(selStart, selEnd ?? selStart) : -1;
+
+  // Check if a shortcut is active
+  const isBActive = lo === LEVEL_HIERARCHY.indexOf("B1" as GameLevel) && hi === LEVEL_HIERARCHY.indexOf("B2" as GameLevel);
+  const isCActive = lo === LEVEL_HIERARCHY.indexOf("C1" as GameLevel) && hi === LEVEL_HIERARCHY.indexOf("C3" as GameLevel);
+
+  // Determine which cells are "reachable" (adjacent to current edges)
+  const isReachable = (idx: number) => {
+    if (selStart === null) return true;
+    // Inside range
+    if (idx >= lo && idx <= hi) return true;
+    // Adjacent to range edges, and would keep span ≤ 1 from anchor
+    if (idx === lo - 1 || idx === hi + 1) {
+      const newSpan = Math.max(hi, idx) - Math.min(lo, idx);
+      return newSpan <= 1;
+    }
+    // Always reachable as a new anchor
+    return true;
   };
 
   return (
     <div className="space-y-3">
-      {/* Step 1: Main level pills */}
-      <div className="flex gap-2">
-        {MAIN_LEVELS.map((main) => {
-          const active = activeMainLevels.has(main);
+      {/* Connected segmented bar */}
+      <div className="flex">
+        {LEVEL_HIERARCHY.map((level, idx) => {
+          const isSelected = idx >= lo && idx <= hi && selStart !== null;
+          const isFirst = idx === 0;
+          const isLast = idx === LEVEL_HIERARCHY.length - 1;
+
           return (
             <button
-              key={main}
+              key={level}
               type="button"
-              onClick={() => handleMainClick(main)}
+              onClick={() => handleTap(idx)}
               className={cn(
-                "flex-1 h-10 rounded-xl border-2 text-sm font-bold transition-all",
-                active
-                  ? "border-primary bg-primary/10 text-foreground"
-                  : "border-border text-muted-foreground hover:border-primary/40"
+                "flex-1 h-11 text-sm font-bold transition-all border-y-2 border-r",
+                "focus:outline-none focus:z-10 relative",
+                isFirst && "rounded-l-xl border-l-2",
+                isLast && "rounded-r-xl",
+                !isFirst && !isSelected && "border-l-0",
+                isSelected
+                  ? "bg-primary text-primary-foreground border-primary z-10"
+                  : "border-border text-muted-foreground hover:bg-accent/50",
+                // Dim unreachable cells slightly for visual hint
+                !isSelected && selStart !== null && !isReachable(idx) && "opacity-50"
               )}
             >
-              {main}
+              {level}
             </button>
           );
         })}
       </div>
 
-      {/* Step 2: Sub-levels for B and C */}
-      {(["B", "C"] as MainLevel[]).map((main) => {
-        if (!activeMainLevels.has(main)) return null;
-        const subs = SUB_LEVELS[main];
-        if (!subs) return null;
-        const allSelected = isAllSubsSelected(main);
-
-        return (
-          <div key={main} className="flex items-center gap-1.5 pl-1">
-            <span className="text-xs text-muted-foreground font-medium w-4 shrink-0">{main}:</span>
-            <div className="flex gap-1.5 flex-wrap">
-              {subs.map((sub) => (
-                <button
-                  key={sub}
-                  type="button"
-                  onClick={() => handleSubClick(sub, main)}
-                  className={cn(
-                    "h-8 px-3 rounded-full text-xs font-semibold border transition-all",
-                    selected.has(sub)
-                      ? "bg-primary text-primary-foreground border-primary"
-                      : "bg-background text-muted-foreground border-border hover:border-primary hover:text-foreground"
-                  )}
-                >
-                  {sub}
-                </button>
-              ))}
-              <button
-                type="button"
-                onClick={() => handleAnyClick(main)}
-                className={cn(
-                  "h-8 px-3 rounded-full text-xs font-semibold border transition-all",
-                  allSelected
-                    ? "bg-primary text-primary-foreground border-primary"
-                    : "bg-background text-muted-foreground border-border hover:border-primary hover:text-foreground"
-                )}
-              >
-                Any {main}
-              </button>
-            </div>
-          </div>
-        );
-      })}
+      {/* Shortcut pills */}
+      <div className="flex gap-2 justify-center">
+        <button
+          type="button"
+          onClick={() => handleShortcut("B1", "B2")}
+          className={cn(
+            "h-8 px-4 rounded-full text-xs font-semibold border transition-all",
+            isBActive
+              ? "bg-primary text-primary-foreground border-primary"
+              : "bg-background text-muted-foreground border-border hover:border-primary hover:text-foreground"
+          )}
+        >
+          All B
+        </button>
+        <button
+          type="button"
+          onClick={() => handleShortcut("C1", "C3")}
+          className={cn(
+            "h-8 px-4 rounded-full text-xs font-semibold border transition-all",
+            isCActive
+              ? "bg-primary text-primary-foreground border-primary"
+              : "bg-background text-muted-foreground border-border hover:border-primary hover:text-foreground"
+          )}
+        >
+          All C
+        </button>
+      </div>
     </div>
   );
 }
