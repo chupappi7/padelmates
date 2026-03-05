@@ -1,5 +1,6 @@
-import { Link } from "react-router-dom";
-import { MapPin, Clock, Users } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { MapPin, Clock, Users, LogIn } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { differenceInHours, format } from "date-fns";
 import { motion } from "framer-motion";
@@ -93,6 +94,8 @@ export function GameCard({
   minLevel,
   maxLevel,
 }: GameCardProps) {
+  const { user } = useAuth();
+  const navigate = useNavigate();
   const isCourtSharing = paymentMode === "court_sharing";
   const isCourtTaken = !!courtTakenBy;
   const totalPlayers = currentPlayers + prefilledCount;
@@ -101,6 +104,7 @@ export function GameCard({
   const urgencyPill = getUrgencyPill();
   const roleAccent = getRoleAccent(userStatus);
   const showPrice = pricePerPlayer > 0 && (priceMode !== "free" || isCourtSharing);
+  const showJoinButton = !user && !isCourtSharing && spotsLeft > 0;
 
   const spotsColor = spotsLeft <= 0
     ? "bg-destructive/15 text-destructive border-destructive/20"
@@ -251,6 +255,16 @@ export function GameCard({
                   );
                 })()}
               </div>
+
+              {showJoinButton && (
+                <button
+                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); navigate("/login"); }}
+                  className="inline-flex items-center gap-1 rounded-full bg-primary px-3 py-1 text-[10px] sm:text-xs font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
+                >
+                  <LogIn className="w-3 h-3" />
+                  Join
+                </button>
+              )}
 
             </div>
 
