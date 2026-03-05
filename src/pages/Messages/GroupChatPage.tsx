@@ -5,7 +5,9 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useConversations } from "@/hooks/useConversations";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, MapPin, Calendar } from "lucide-react";
+import { ArrowLeft, MapPin, Calendar, Copy, Trash2 } from "lucide-react";
+import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger } from "@/components/ui/context-menu";
+import { toast } from "sonner";
 import { Navbar } from "@/components/layout/Navbar";
 import { cn } from "@/lib/utils";
 import { format, isToday, isYesterday } from "date-fns";
@@ -159,6 +161,17 @@ export default function GroupChatPage() {
     setSending(false);
   };
 
+  const handleCopyMessage = (text: string) => {
+    navigator.clipboard.writeText(text);
+    toast("Copied to clipboard");
+  };
+
+  const handleDeleteMessage = async (msgId: string) => {
+    await supabase.from("game_messages").delete().eq("id", msgId);
+    setMessages((prev) => prev.filter((m) => m.id !== msgId));
+    toast("Message deleted");
+  };
+
   const isHost = user?.id === gameInfo?.host_id;
 
   const getQuickPhrases = (): QuickPhrase[] => {
@@ -291,41 +304,59 @@ export default function GroupChatPage() {
                                   </div>
                                 )}
                                 {isMine && <div className="flex-1" />}
-                    <div className={cn("max-w-[75%]")}>
-                                  {isFirstInSeries && (
-                                    <p className={cn(
-                                      "text-[10px] mb-0.5 font-medium",
-                                      isMine ? "text-right mr-1 text-muted-foreground" : "ml-1 text-muted-foreground"
-                                    )}>
-                                      {isMine ? "You" : msg.profiles?.name}
-                                    </p>
-                                  )}
-                      {msg.message.startsWith("[image]") || /^\[game:[\w-]+\]$/.test(msg.message) ? (
-                        <div>
-                          <ChatMessageContent message={msg.message} isMine={isMine} />
-                          <p className="text-[10px] mt-0.5 text-right text-muted-foreground">
-                            {formatMessageTime(msg.created_at)}
-                          </p>
-                        </div>
-                      ) : (
-                        <div
-                          className={cn(
-                            "px-3.5 py-2 text-sm",
-                            isMine
-                              ? "bg-primary text-primary-foreground rounded-2xl rounded-br-md"
-                              : "bg-muted rounded-2xl rounded-bl-md"
+                    <ContextMenu onOpenChange={(open) => {
+                      if (open && navigator.vibrate) navigator.vibrate(30);
+                    }}>
+                      <ContextMenuTrigger asChild>
+                        <div className={cn("max-w-[75%] select-none")}>
+                          {isFirstInSeries && (
+                            <p className={cn(
+                              "text-[10px] mb-0.5 font-medium",
+                              isMine ? "text-right mr-1 text-muted-foreground" : "ml-1 text-muted-foreground"
+                            )}>
+                              {isMine ? "You" : msg.profiles?.name}
+                            </p>
                           )}
-                        >
-                          <ChatMessageContent message={msg.message} isMine={isMine} />
-                          <p className={cn(
-                            "text-[10px] mt-0.5 text-right",
-                            isMine ? "text-primary-foreground/60" : "text-muted-foreground"
-                          )}>
-                            {formatMessageTime(msg.created_at)}
-                          </p>
+                          {msg.message.startsWith("[image]") || /^\[game:[\w-]+\]$/.test(msg.message) ? (
+                            <div>
+                              <ChatMessageContent message={msg.message} isMine={isMine} />
+                              <p className="text-[10px] mt-0.5 text-right text-muted-foreground">
+                                {formatMessageTime(msg.created_at)}
+                              </p>
+                            </div>
+                          ) : (
+                            <div
+                              className={cn(
+                                "px-3.5 py-2 text-sm",
+                                isMine
+                                  ? "bg-primary text-primary-foreground rounded-2xl rounded-br-md"
+                                  : "bg-muted rounded-2xl rounded-bl-md"
+                              )}
+                            >
+                              <ChatMessageContent message={msg.message} isMine={isMine} />
+                              <p className={cn(
+                                "text-[10px] mt-0.5 text-right",
+                                isMine ? "text-primary-foreground/60" : "text-muted-foreground"
+                              )}>
+                                {formatMessageTime(msg.created_at)}
+                              </p>
+                            </div>
+                          )}
                         </div>
-                      )}
-                    </div>
+                      </ContextMenuTrigger>
+                      <ContextMenuContent>
+                        <ContextMenuItem onClick={() => handleCopyMessage(msg.message)}>
+                          <Copy className="w-4 h-4 mr-2" />
+                          Copy
+                        </ContextMenuItem>
+                        {isMine && (
+                          <ContextMenuItem onClick={() => handleDeleteMessage(msg.id)} className="text-destructive focus:text-destructive">
+                            <Trash2 className="w-4 h-4 mr-2" />
+                            Delete
+                          </ContextMenuItem>
+                        )}
+                      </ContextMenuContent>
+                    </ContextMenu>
                                 {isMine && (
                                   <div className="w-7 shrink-0 self-end">
                                     {showTail && myProfile && (
