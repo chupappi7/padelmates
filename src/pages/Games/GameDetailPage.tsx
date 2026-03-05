@@ -1318,7 +1318,7 @@ export default function GameDetailPage() {
             className="w-full h-11 text-sm font-semibold"
             onClick={() => navigate("/login")}
           >
-            Sign in to Join
+            Join Game
           </Button>
         </div>
       )}
@@ -1351,7 +1351,7 @@ export default function GameDetailPage() {
             className="shadow-xl"
             onClick={() => navigate("/login")}
           >
-            Sign in to Join
+            Join Game
           </Button>
         </div>
       )}
