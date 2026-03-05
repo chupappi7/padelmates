@@ -58,6 +58,11 @@ export default function OnboardingPage() {
     setLoading(true);
     const updates: Record<string, unknown> = { sex, region };
     if (age) updates.birth_year = new Date().getFullYear() - parseInt(age);
+    // Patch name & avatar from Google metadata as fallback
+    const googleName = user!.user_metadata?.name || user!.user_metadata?.full_name;
+    if (googleName) updates.name = googleName;
+    const googleAvatar = user!.user_metadata?.avatar_url || user!.user_metadata?.picture;
+    if (googleAvatar) updates.avatar_url = googleAvatar;
     await supabase.from("profiles").update(updates as any).eq("user_id", user!.id);
     setLoading(false);
     goTo("skill");
