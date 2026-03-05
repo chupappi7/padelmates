@@ -29,6 +29,7 @@ interface ShareGameSheetProps {
   minLevel?: string | null;
   maxLevel?: string | null;
   pricePerPlayer?: number;
+  paymentMode?: string;
 }
 
 const formatLabel = (f: string) => {
@@ -43,7 +44,7 @@ const formatLabel = (f: string) => {
 export function ShareGameSheet({
   open, onOpenChange, gameId,
   gameSlug, gameLocation, gameDateTime, endDateTime, gameFormat,
-  gameMaxPlayers, currentPlayersCount, hostName, clubName, skillLevel, minLevel, maxLevel, pricePerPlayer,
+  gameMaxPlayers, currentPlayersCount, hostName, clubName, skillLevel, minLevel, maxLevel, pricePerPlayer, paymentMode,
 }: ShareGameSheetProps) {
   const isMobile = useIsMobile();
   const { user } = useAuth();
@@ -55,14 +56,27 @@ export function ShareGameSheet({
   const joinPath = gameSlug || gameId;
   const shareUrl = `https://padelmates.app/join/${joinPath}`;
 
+  const isCourtSharing = paymentMode === "court_sharing";
+  const isSpotSelling = paymentMode === "spot_selling";
+  const isAmericano = gameFormat === "americano" || gameFormat === "team_americano";
+
   const buildMessage = () => {
     const lines: string[] = [];
 
-    lines.push("🎾 Join us for a padel match!");
+    // Personalized header
+    if (isCourtSharing) {
+      lines.push("🏟️ Court available for padel!");
+    } else if (isSpotSelling) {
+      lines.push("🔄 Looking for a backup player!");
+    } else if (isAmericano) {
+      lines.push(`🏆 Join our ${gameFormat === "team_americano" ? "Team " : ""}Americano tournament!`);
+    } else {
+      lines.push("🎾 Join us for a padel match!");
+    }
     lines.push("");
 
     const displayHost = clubName || (hostName ? hostName.split(" ")[0] : null);
-    if (displayHost) lines.push(`👤 Hosted by ${displayHost}`);
+    if (displayHost) lines.push(`👤 ${isCourtSharing ? "Listed by" : "Hosted by"} ${displayHost}`);
     lines.push("");
 
     if (gameLocation) lines.push(`📍 ${gameLocation}`);
@@ -81,19 +95,32 @@ export function ShareGameSheet({
       }
     }
 
-    if (gameMaxPlayers) {
+    // Spots info — personalized
+    if (isCourtSharing) {
+      // No player count for court sharing
+    } else if (isSpotSelling && gameMaxPlayers) {
+      const filled = currentPlayersCount ?? 0;
+      const left = gameMaxPlayers - filled;
+      lines.push(`🙋 ${left} spot${left !== 1 ? "s" : ""} to fill`);
+    } else if (gameMaxPlayers) {
       const filled = currentPlayersCount ?? 0;
       const left = gameMaxPlayers - filled;
       lines.push(`👥 ${filled}/${gameMaxPlayers} players · ${left} spot${left !== 1 ? "s" : ""} left`);
     }
 
-    if (gameFormat) lines.push(`🎯 ${formatLabel(gameFormat)}`);
+    if (!isSpotSelling && gameFormat) lines.push(`🎯 ${formatLabel(gameFormat)}`);
 
-    const levelLabel = formatLevelBadge(minLevel, maxLevel, skillLevel);
-    if (levelLabel && levelLabel !== "?") lines.push(`🏅 Level ${levelLabel}`);
+    if (!isSpotSelling) {
+      const levelLabel = formatLevelBadge(minLevel, maxLevel, skillLevel);
+      if (levelLabel && levelLabel !== "?") lines.push(`🏅 Level ${levelLabel}`);
+    }
 
     if (pricePerPlayer && pricePerPlayer > 0) {
-      lines.push(`💰 ${pricePerPlayer} Kč per player`);
+      if (isCourtSharing) {
+        lines.push(`💰 ${pricePerPlayer} Kč for the court`);
+      } else {
+        lines.push(`💰 ${pricePerPlayer} Kč per player`);
+      }
     }
 
     lines.push("");

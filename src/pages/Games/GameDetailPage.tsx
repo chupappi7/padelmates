@@ -1429,6 +1429,7 @@ export default function GameDetailPage() {
         minLevel={game?.min_level}
         maxLevel={game?.max_level}
         pricePerPlayer={game?.price_per_player}
+        paymentMode={game?.payment_mode}
       />
     </div>
   );
