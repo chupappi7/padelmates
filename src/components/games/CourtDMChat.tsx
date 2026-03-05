@@ -867,17 +867,20 @@ export function CourtDMChat({
             )}
           </div>
         ) : (
-          messages.map((msg) => (
-            <div key={msg.id} className="flex gap-2.5">
-              <Avatar className="h-7 w-7 shrink-0">
-                <AvatarImage src={msg.profile?.avatar_url || undefined} />
-                <AvatarFallback className="text-[10px]">
-                  {msg.profile?.name?.charAt(0)}
-                </AvatarFallback>
-              </Avatar>
-              {renderBubble(msg)}
-            </div>
-          ))
+          messages.map((msg) => {
+            const isMine = msg.sender_id === currentUserId;
+            return (
+              <div key={msg.id} className={cn("flex gap-2.5", isMine ? "flex-row-reverse" : "flex-row")}>
+                <Avatar className="h-7 w-7 shrink-0">
+                  <AvatarImage src={msg.profile?.avatar_url || undefined} />
+                  <AvatarFallback className="text-[10px]">
+                    {msg.profile?.name?.charAt(0)}
+                  </AvatarFallback>
+                </Avatar>
+                {renderBubble(msg)}
+              </div>
+            );
+          })
         )}
         <div ref={messagesEndRef} />
       </div>
