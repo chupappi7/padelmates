@@ -8,6 +8,7 @@ import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { ArrowLeft, Send, MessageCircle, MapPin, Calendar, CheckCircle2, Clock, AlertCircle, CreditCard, Copy, Check, ImagePlus } from "lucide-react";
 
+import { ChatImageMessage } from "@/components/chat/ChatImageMessage";
 import { toast } from "sonner";
 
 interface Profile {
@@ -678,6 +679,7 @@ export function CourtDMChat({
     const isMine = msg.sender_id === currentUserId;
     const isBankDetails = msg.message.startsWith("💳 Payment Details");
     const isImageMsg = msg.message.startsWith("📸 image:");
+    const isChatImage = msg.message.startsWith("[image]");
     const isPaymentSent = msg.message.toLowerCase().includes("payment sent") || msg.message.toLowerCase().includes("i've sent the payment");
     const isTakenMsg = msg.message.toLowerCase().includes("court has been taken") || msg.message.toLowerCase().includes("sorry, the court");
 
@@ -719,6 +721,19 @@ export function CourtDMChat({
           senderName={msg.profile?.name}
           createdAt={msg.created_at}
         />
+      );
+    }
+
+    if (isChatImage) {
+      const src = msg.message.replace("[image]", "");
+      return (
+        <div className={cn("max-w-[75%]", isMine && "text-right")}>
+          <p className="text-[11px] text-muted-foreground mb-0.5">
+            <span className="font-medium">{msg.profile?.name}</span>
+            <span className="ml-1.5">{format(new Date(msg.created_at), "HH:mm")}</span>
+          </p>
+          <ChatImageMessage src={src} />
+        </div>
       );
     }
 
