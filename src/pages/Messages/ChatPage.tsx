@@ -232,7 +232,7 @@ export default function ChatPage() {
           phrases.push({ label: "💳 Send Bank Details", action: handleSendBankDetails });
         }
         if (hasPaymentSent) {
-          phrases.push({ label: "✅ Payment received!", message: "Payment received! ✅ Booking confirmed. See you on the court! 🎾" });
+          phrases.push({ label: "✅ Payment received!", message: "Payment received! ✅ Booking confirmed. Enjoy the court! 🎾" });
         }
         if (lastIsOther && !hasBankDetails) {
           phrases.push({ label: "✅ Still available!", message: "Yes, it's still available! 🎾" });
