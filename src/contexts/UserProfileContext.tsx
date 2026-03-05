@@ -8,7 +8,6 @@ interface UserProfile {
   skill_level: number;
   pdr_rating: number | null;
   avatar_url: string | null;
-  tutorial_completed: boolean;
 }
 
 interface UserProfileContextType {
@@ -31,7 +30,6 @@ export function UserProfileProvider({ children }: { children: ReactNode }) {
       skill_level: 0,
       pdr_rating: null,
       avatar_url: googleAvatar,
-      tutorial_completed: false,
     } : null
   );
 
@@ -39,7 +37,7 @@ export function UserProfileProvider({ children }: { children: ReactNode }) {
     if (!user) { setProfile(null); return; }
     supabase
       .from("profiles")
-      .select("region, name, skill_level, pdr_rating, avatar_url, tutorial_completed")
+      .select("region, name, skill_level, pdr_rating, avatar_url")
       .eq("user_id", user.id)
       .single()
       .then(({ data }) => {
@@ -63,7 +61,6 @@ export function UserProfileProvider({ children }: { children: ReactNode }) {
         skill_level: 0,
         pdr_rating: null,
         avatar_url: googleAvatar,
-        tutorial_completed: false,
       });
     } else {
       setProfile(null);

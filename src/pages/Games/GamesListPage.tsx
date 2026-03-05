@@ -21,8 +21,6 @@ import { Calendar, Plus, Users, Gamepad2, Signal, Building2 } from "lucide-react
 import { HostTypeModal } from "@/components/games/HostTypeModal";
 import { useAuth } from "@/contexts/AuthContext";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { useUserProfileContext } from "@/contexts/UserProfileContext";
-import { TutorialOverlay } from "@/components/tutorial/TutorialOverlay";
 import { useUserLocation, calculateDistance } from "@/hooks/useUserLocation";
 import { isSameDay, format, isToday, isTomorrow, differenceInMinutes } from "date-fns";
 
@@ -71,15 +69,6 @@ export default function GamesListPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const isMobile = useIsMobile();
-  const { profile: userProfile, refreshProfile } = useUserProfileContext();
-  const [showTutorial, setShowTutorial] = useState(false);
-
-  useEffect(() => {
-    if (user && userProfile && userProfile.tutorial_completed === false && !loading && games.length > 0) {
-      const timer = setTimeout(() => setShowTutorial(true), 600);
-      return () => clearTimeout(timer);
-    }
-  }, [user, userProfile?.tutorial_completed, loading, games.length]);
   const { location: userLocation } = useUserLocation();
   const [showHostModal, setShowHostModal] = useState(false);
 
@@ -422,7 +411,7 @@ export default function GamesListPage() {
             ))}
           </div>
         ) : filteredGames.length > 0 ? (
-          <div className="space-y-3 sm:space-y-4" data-tutorial="matches-list">
+          <div className="space-y-3 sm:space-y-4">
             {(() => {
               let lastGroupKey = "";
               return filteredGames.map((game, index) => {
@@ -479,7 +468,6 @@ export default function GamesListPage() {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: Math.min(index * 0.02, 0.15) }}
-                    {...(index === 0 ? { "data-tutorial": "game-card" } : {})}
                   >
                     <GameCard
                       id={game.id}
@@ -539,9 +527,6 @@ export default function GamesListPage() {
         )}
       </div>
       <HostTypeModal open={showHostModal} onOpenChange={setShowHostModal} />
-      {showTutorial && (
-        <TutorialOverlay onComplete={() => { setShowTutorial(false); refreshProfile(); }} />
-      )}
     </div>
   );
 }

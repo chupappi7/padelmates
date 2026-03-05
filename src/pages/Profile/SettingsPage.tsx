@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { ArrowLeft, Bug, Send, GraduationCap } from "lucide-react";
+import { ArrowLeft, Bug, Send } from "lucide-react";
 import { ProfilePersonalDetails } from "@/components/profile/tabs/ProfilePersonalDetails";
 import { ProfilePaymentInfo } from "@/components/profile/tabs/ProfilePaymentInfo";
 import { Button } from "@/components/ui/button";
@@ -95,29 +95,6 @@ export default function SettingsPage() {
             bankQrUrl={profile.bank_qr_url}
             onSaved={fetchProfile}
           />
-
-          {/* Show Tutorial Again */}
-          <div className="bg-white rounded-2xl border border-[#E2E8F0] p-4">
-            <button
-              onClick={async () => {
-                await supabase
-                  .from("profiles")
-                  .update({ tutorial_completed: false } as any)
-                  .eq("user_id", user.id);
-                toast.success("Tutorial reset!");
-                navigate("/");
-              }}
-              className="flex items-center gap-3 w-full"
-            >
-              <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-                <GraduationCap className="w-4 h-4 text-primary" />
-              </div>
-              <div className="text-left">
-                <p className="font-bold text-sm text-[#0F172A]" style={{ fontFamily: SPACE }}>Show tutorial again</p>
-                <p className="text-xs text-[#64748B]">Replay the onboarding walkthrough</p>
-              </div>
-            </button>
-          </div>
 
           {/* Report Bug */}
           <div className="bg-white rounded-2xl border border-[#E2E8F0] p-4 space-y-3">

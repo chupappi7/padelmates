@@ -1139,7 +1139,6 @@ export type Database = {
           region: string | null
           sex: string | null
           skill_level: number
-          tutorial_completed: boolean
           updated_at: string
           user_id: string
         }
@@ -1169,7 +1168,6 @@ export type Database = {
           region?: string | null
           sex?: string | null
           skill_level?: number
-          tutorial_completed?: boolean
           updated_at?: string
           user_id: string
         }
@@ -1199,7 +1197,6 @@ export type Database = {
           region?: string | null
           sex?: string | null
           skill_level?: number
-          tutorial_completed?: boolean
           updated_at?: string
           user_id?: string
         }
