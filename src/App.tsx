@@ -5,6 +5,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { UserProfileProvider } from "@/contexts/UserProfileContext";
 import { BottomTabBar } from "@/components/layout/BottomTabBar";
 
 import { Loader2 } from "lucide-react";
@@ -45,44 +46,46 @@ const PageLoader = () => (
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <Suspense fallback={<PageLoader />}>
-            <Routes>
-              <Route path="/" element={<GamesListPage />} />
-              <Route path="/login" element={<LoginPage />} />
-              <Route path="/signup" element={<SignupPage />} />
-              <Route path="/onboarding" element={<OnboardingPage />} />
-              <Route path="/games" element={<GamesListPage />} />
-              <Route path="/games/create" element={<CreateGamePage />} />
-              <Route path="/games/:id" element={<GameDetailPage />} />
-              <Route path="/games/:id/edit" element={<EditGamePage />} />
-              <Route path="/clubs" element={<ClubsListPage />} />
-              <Route path="/clubs/create" element={<CreateClubPage />} />
-              <Route path="/clubs/:id" element={<ClubDetailPage />} />
-              <Route path="/my-matches" element={<MyMatchesPage />} />
-              <Route path="/friends" element={<FriendsPage />} />
-              <Route path="/notifications" element={<NotificationsPage />} />
-              <Route path="/messages" element={<InboxPage />} />
-              <Route path="/messages/game/:gameId" element={<GroupChatPage />} />
-              <Route path="/messages/:chatId" element={<ChatPage />} />
-              <Route path="/elo" element={<EloPage />} />
-              <Route path="/profile" element={<ProfilePage />} />
-              <Route path="/settings" element={<SettingsPage />} />
-              <Route path="/match-history" element={<MatchHistoryPage />} />
-              <Route path="/match-history/:userId" element={<MatchHistoryPage />} />
-              <Route path="/user/:userId" element={<UserProfilePage />} />
-              <Route path="/join/:gameId" element={<JoinPage />} />
-              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </Suspense>
-          
-          <BottomTabBar />
-        </BrowserRouter>
-      </TooltipProvider>
+      <UserProfileProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <Suspense fallback={<PageLoader />}>
+              <Routes>
+                <Route path="/" element={<GamesListPage />} />
+                <Route path="/login" element={<LoginPage />} />
+                <Route path="/signup" element={<SignupPage />} />
+                <Route path="/onboarding" element={<OnboardingPage />} />
+                <Route path="/games" element={<GamesListPage />} />
+                <Route path="/games/create" element={<CreateGamePage />} />
+                <Route path="/games/:id" element={<GameDetailPage />} />
+                <Route path="/games/:id/edit" element={<EditGamePage />} />
+                <Route path="/clubs" element={<ClubsListPage />} />
+                <Route path="/clubs/create" element={<CreateClubPage />} />
+                <Route path="/clubs/:id" element={<ClubDetailPage />} />
+                <Route path="/my-matches" element={<MyMatchesPage />} />
+                <Route path="/friends" element={<FriendsPage />} />
+                <Route path="/notifications" element={<NotificationsPage />} />
+                <Route path="/messages" element={<InboxPage />} />
+                <Route path="/messages/game/:gameId" element={<GroupChatPage />} />
+                <Route path="/messages/:chatId" element={<ChatPage />} />
+                <Route path="/elo" element={<EloPage />} />
+                <Route path="/profile" element={<ProfilePage />} />
+                <Route path="/settings" element={<SettingsPage />} />
+                <Route path="/match-history" element={<MatchHistoryPage />} />
+                <Route path="/match-history/:userId" element={<MatchHistoryPage />} />
+                <Route path="/user/:userId" element={<UserProfilePage />} />
+                <Route path="/join/:gameId" element={<JoinPage />} />
+                {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </Suspense>
+            
+            <BottomTabBar />
+          </BrowserRouter>
+        </TooltipProvider>
+      </UserProfileProvider>
     </AuthProvider>
   </QueryClientProvider>
 );
