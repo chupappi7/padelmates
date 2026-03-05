@@ -4,14 +4,14 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { ShieldCheck, Upload, ImageOff, ExternalLink, RefreshCw } from "lucide-react";
+import { ShieldCheck, Upload, ImageOff, ExternalLink, RefreshCw, Trash2 } from "lucide-react";
 
 interface BookingProofTabProps {
   gameId: string;
   bookingScreenshotUrl: string | null;
   isHost: boolean;
   userId: string | undefined;
-  onScreenshotUpdated: (newPath: string) => void;
+  onScreenshotUpdated: (newPath: string | null) => void;
 }
 
 export function BookingProofTab({
@@ -24,6 +24,7 @@ export function BookingProofTab({
   const [signedUrl, setSignedUrl] = useState<string | null>(null);
   const [loadingUrl, setLoadingUrl] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     if (bookingScreenshotUrl) {
@@ -83,6 +84,20 @@ export function BookingProofTab({
     onScreenshotUpdated(filePath);
     fetchSignedUrl(filePath);
     setUploading(false);
+  };
+
+  const handleDelete = async () => {
+    if (!bookingScreenshotUrl) return;
+    setDeleting(true);
+    await supabase.storage.from("booking-proofs").remove([bookingScreenshotUrl]);
+    await supabase
+      .from("games")
+      .update({ booking_screenshot_url: null } as any)
+      .eq("id", gameId);
+    setSignedUrl(null);
+    onScreenshotUpdated(null);
+    toast.success("Booking proof deleted");
+    setDeleting(false);
   };
 
   const hasProof = !!bookingScreenshotUrl;
@@ -158,9 +173,23 @@ export function BookingProofTab({
       {/* Host Upload / Replace Controls */}
       {isHost && (
         <div className="bg-card border border-border rounded-xl p-4 space-y-3">
-          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-            {hasProof ? "Replace Screenshot" : "Upload Proof"}
-          </p>
+          <div className="flex items-center justify-between">
+            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+              {hasProof ? "Replace Screenshot" : "Upload Proof"}
+            </p>
+            {hasProof && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 text-xs text-destructive hover:text-destructive hover:bg-destructive/10 gap-1"
+                onClick={handleDelete}
+                disabled={deleting}
+              >
+                <Trash2 className="w-3 h-3" />
+                {deleting ? "Deleting…" : "Delete"}
+              </Button>
+            )}
+          </div>
           <div className="border-2 border-dashed border-border rounded-xl p-4 text-center hover:border-primary/50 transition-colors">
             <Input
               type="file"
