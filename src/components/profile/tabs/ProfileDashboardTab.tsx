@@ -141,7 +141,7 @@ export function ProfileDashboardTab({ userId, profile, isSelf = true }: Props) {
     <div className="space-y-3">
       {/* PDR Card */}
       <button
-        onClick={() => navigate("/elo")}
+        onClick={() => navigate(isSelf ? "/elo" : `/user/${userId}`)}
         className="w-full bg-white shadow-sm border border-[#E2E8F0] rounded-2xl p-4 text-left transition-colors hover:bg-[#F8FAFC]"
       >
         <div className="flex items-center justify-between">
