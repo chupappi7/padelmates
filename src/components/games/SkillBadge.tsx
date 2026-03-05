@@ -4,6 +4,7 @@ interface SkillBadgeProps {
   level: number;
   size?: "sm" | "md" | "lg";
   className?: string;
+  labelOverride?: string;
 }
 
 export const SKILL_LEVELS: Record<number, { label: string; className: string }> = {
@@ -20,7 +21,7 @@ export const SKILL_LEVEL_OPTIONS = [
   { value: 1, label: "D" },
 ];
 
-export function SkillBadge({ level, size = "md", className }: SkillBadgeProps) {
+export function SkillBadge({ level, size = "md", className, labelOverride }: SkillBadgeProps) {
   const config = SKILL_LEVELS[level] ?? SKILL_LEVELS[2];
 
   const sizeClasses = {
@@ -29,16 +30,26 @@ export function SkillBadge({ level, size = "md", className }: SkillBadgeProps) {
     lg: "px-4 py-1.5 text-sm",
   };
 
+  // If labelOverride, pick color from first char
+  let badgeClass = config.className;
+  if (labelOverride) {
+    const first = labelOverride.charAt(0);
+    if (first === "A") badgeClass = "badge-skill-a";
+    else if (first === "B") badgeClass = "badge-skill-b";
+    else if (first === "C") badgeClass = "badge-skill-c";
+    else if (first === "D") badgeClass = "badge-skill-d";
+  }
+
   return (
     <span
       className={cn(
         "badge-skill font-semibold",
-        config.className,
+        badgeClass,
         sizeClasses[size],
         className
       )}
     >
-      {config.label}
+      {labelOverride || config.label}
     </span>
   );
 }
