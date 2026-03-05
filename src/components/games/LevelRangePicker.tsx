@@ -31,10 +31,22 @@ function mainOf(level: string): string {
   return level;
 }
 
+const MAIN_RANGES: Record<string, [string, string]> = {
+  "A-B": ["B2", "A"],
+  "B-C": ["C3", "B1"],
+  "C-D": ["D", "C1"],
+};
+
 function activeMains(min: string, max: string): Set<string> {
   const s = new Set<string>();
-  s.add(mainOf(max));
-  s.add(mainOf(min));
+  const hierarchy = ["A", "B1", "B2", "C1", "C2", "C3", "D"];
+  const si = hierarchy.indexOf(max);
+  const ei = hierarchy.indexOf(min);
+  if (si >= 0 && ei >= 0) {
+    for (let i = si; i <= ei; i++) {
+      s.add(mainOf(hierarchy[i]));
+    }
+  }
   return s;
 }
 
@@ -60,30 +72,67 @@ export function LevelRangePicker({ minLevel, maxLevel, onChange }: LevelRangePic
       setExpanded(null);
       return;
     }
-    const max = mainOf(currentMax);
-    if (max === "B") setExpanded("B");
-    else if (max === "C") setExpanded("C");
-    else setExpanded(null);
+    const mains = activeMains(currentMin, currentMax);
+    // Only expand sub-levels for single-main selections
+    if (mains.size === 1) {
+      if (mains.has("B")) setExpanded("B");
+      else if (mains.has("C")) setExpanded("C");
+      else setExpanded(null);
+    } else {
+      setExpanded(null);
+    }
   }, [currentMin, currentMax]);
 
   const handleMainTap = (main: string) => {
-    if (main === "A" || main === "D") {
-      setExpanded(null);
-      onChange(main, main);
-      return;
+    const mains = currentMin && currentMax ? activeMains(currentMin, currentMax) : new Set<string>();
+
+    // If already have one main selected and tapping adjacent → main-level range
+    if (mains.size === 1 && !mains.has(main)) {
+      const existing = [...mains][0];
+      const mainOrder = ["A", "B", "C", "D"];
+      const ei = mainOrder.indexOf(existing);
+      const mi = mainOrder.indexOf(main);
+      if (Math.abs(ei - mi) === 1) {
+        const key = ei < mi ? `${existing}-${main}` : `${main}-${existing}`;
+        const range = MAIN_RANGES[key];
+        if (range) {
+          setExpanded(null);
+          onChange(range[0], range[1]);
+          return;
+        }
+      }
     }
 
-    if (expanded === main) {
-      // Toggle off
+    // If tapping already-selected single main → deselect
+    if (mains.size === 1 && mains.has(main) && expanded === (main === "B" || main === "C" ? main : null)) {
       setExpanded(null);
       onChange("", "");
       return;
     }
 
-    // Expand and select full group
-    setExpanded(main as "B" | "C");
-    if (main === "B") onChange("B2", "B1"); // All B
-    if (main === "C") onChange("C3", "C1"); // All C
+    // If in a main-level range and tapping one of the two → keep the other
+    if (mains.size === 2 && mains.has(main)) {
+      const other = [...mains].find((m) => m !== main)!;
+      if (other === "A" || other === "D") {
+        setExpanded(null);
+        onChange(other, other);
+      } else {
+        setExpanded(other as "B" | "C");
+        if (other === "B") onChange("B2", "B1");
+        if (other === "C") onChange("C3", "C1");
+      }
+      return;
+    }
+
+    // Fresh selection or non-adjacent → select this main
+    if (main === "A" || main === "D") {
+      setExpanded(null);
+      onChange(main, main);
+    } else {
+      setExpanded(main as "B" | "C");
+      if (main === "B") onChange("B2", "B1");
+      if (main === "C") onChange("C3", "C1");
+    }
   };
 
   const handleOptionTap = (opt: Option) => {
