@@ -1,10 +1,6 @@
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
-import {
-  LEVEL_HIERARCHY,
-  formatLevelBadge,
-  type GameLevel,
-} from "@/lib/levelUtils";
+import { formatLevelBadge } from "@/lib/levelUtils";
 
 interface LevelRangePickerProps {
   minLevel: string | null;
@@ -14,28 +10,20 @@ interface LevelRangePickerProps {
 
 const MAINS = ["A", "B", "C", "D"] as const;
 
-// Sub-levels shown when a main is expanded, including adjacent boundary levels
-const EXPANDED_SUBS: Record<string, GameLevel[]> = {
-  B: ["A", "B1", "B2", "C1"],
-  C: ["B2", "C1", "C2", "C3", "D"],
-};
+type Option = { label: string; min: string; max: string };
 
-// Which indices in EXPANDED_SUBS are the "own" subs (not boundaries)
-const OWN_RANGE: Record<string, [number, number]> = {
-  B: [1, 2],   // B1=1, B2=2
-  C: [1, 3],   // C1=1, C2=2, C3=3
-};
+const B_OPTIONS: Option[] = [
+  { label: "B1", min: "B1", max: "B1" },
+  { label: "B2", min: "B2", max: "B2" },
+  { label: "B2 – C1", min: "C1", max: "B2" },
+];
 
-// Full range for main-level combos
-const MAIN_RANGES: Record<string, [GameLevel, GameLevel]> = {
-  A: ["A", "A"],
-  D: ["D", "D"],
-  B: ["B1", "B2"],
-  C: ["C1", "C3"],
-  "A-B": ["A", "B2"],
-  "B-C": ["B1", "C3"],
-  "C-D": ["C1", "D"],
-};
+const C_OPTIONS: Option[] = [
+  { label: "C1", min: "C1", max: "C1" },
+  { label: "C2", min: "C2", max: "C2" },
+  { label: "C3", min: "C3", max: "C3" },
+  { label: "C3 – D", min: "D", max: "C3" },
+];
 
 function mainOf(level: string): string {
   if (level.startsWith("B")) return "B";
@@ -43,201 +31,76 @@ function mainOf(level: string): string {
   return level;
 }
 
-function mainsAreAdjacent(a: string, b: string): boolean {
-  const ai = MAINS.indexOf(a as typeof MAINS[number]);
-  const bi = MAINS.indexOf(b as typeof MAINS[number]);
-  return ai >= 0 && bi >= 0 && Math.abs(ai - bi) === 1;
-}
-
-function rangeKey(a: string, b: string): string {
-  const ai = MAINS.indexOf(a as typeof MAINS[number]);
-  const bi = MAINS.indexOf(b as typeof MAINS[number]);
-  return ai < bi ? `${a}-${b}` : `${b}-${a}`;
+function activeMains(min: string, max: string): Set<string> {
+  const s = new Set<string>();
+  s.add(mainOf(max));
+  s.add(mainOf(min));
+  return s;
 }
 
 export function LevelRangePicker({ minLevel, maxLevel, onChange }: LevelRangePickerProps) {
-  const [selectedMain, setSelectedMain] = useState<string | null>(null);
-  const [secondMain, setSecondMain] = useState<string | null>(null);
-  const [subStart, setSubStart] = useState<number | null>(null);
-  const [subEnd, setSubEnd] = useState<number | null>(null);
+  const [expanded, setExpanded] = useState<"B" | "C" | null>(null);
 
-  // Sync from props
-  useEffect(() => {
-    if (!minLevel || !maxLevel) {
-      setSelectedMain(null);
-      setSecondMain(null);
-      setSubStart(null);
-      setSubEnd(null);
-      return;
-    }
+  // Determine which option is currently selected
+  const currentMin = minLevel || "";
+  const currentMax = maxLevel || "";
 
-    const maxMain = mainOf(maxLevel); // best
-    const minMain = mainOf(minLevel); // weakest
-
-    if (maxMain === minMain) {
-      setSelectedMain(maxMain);
-      setSecondMain(null);
-      const subs = EXPANDED_SUBS[maxMain];
-      if (subs) {
-        const si = subs.indexOf(maxLevel as GameLevel);
-        const ei = subs.indexOf(minLevel as GameLevel);
-        setSubStart(si >= 0 ? si : null);
-        setSubEnd(ei >= 0 ? ei : null);
-      } else {
-        setSubStart(null);
-        setSubEnd(null);
-      }
-    } else if (mainsAreAdjacent(maxMain, minMain)) {
-      // Check if it fits in one expanded group (cross-boundary like B2-C1)
-      for (const tryMain of [maxMain, minMain]) {
-        const subs = EXPANDED_SUBS[tryMain];
-        if (subs) {
-          const si = subs.indexOf(maxLevel as GameLevel);
-          const ei = subs.indexOf(minLevel as GameLevel);
-          if (si >= 0 && ei >= 0) {
-            setSelectedMain(tryMain);
-            setSecondMain(null);
-            setSubStart(si);
-            setSubEnd(ei);
-            return;
-          }
-        }
-      }
-      // Full main-level range
-      setSelectedMain(maxMain);
-      setSecondMain(minMain);
-      setSubStart(null);
-      setSubEnd(null);
-    } else {
-      setSelectedMain(maxMain);
-      setSecondMain(null);
-      setSubStart(null);
-      setSubEnd(null);
-    }
-  }, [minLevel, maxLevel]);
-
-  const autoSelectOwnSubs = (main: string) => {
-    const own = OWN_RANGE[main];
-    if (own) {
-      setSubStart(own[0]);
-      setSubEnd(own[1]);
-    } else {
-      setSubStart(null);
-      setSubEnd(null);
-    }
+  const isMainActive = (main: string) => {
+    if (!currentMin || !currentMax) return false;
+    const mains = activeMains(currentMin, currentMax);
+    return mains.has(main);
   };
 
+  const isOptionSelected = (opt: Option) =>
+    currentMin === opt.min && currentMax === opt.max;
+
+  // Sync expanded state from current selection
+  useEffect(() => {
+    if (!currentMin || !currentMax) {
+      setExpanded(null);
+      return;
+    }
+    const max = mainOf(currentMax);
+    if (max === "B") setExpanded("B");
+    else if (max === "C") setExpanded("C");
+    else setExpanded(null);
+  }, [currentMin, currentMax]);
+
   const handleMainTap = (main: string) => {
-    if (selectedMain === null) {
-      setSelectedMain(main);
-      setSecondMain(null);
-      const range = MAIN_RANGES[main];
-      if (range) onChange(range[1], range[0]);
-      autoSelectOwnSubs(main);
+    if (main === "A" || main === "D") {
+      setExpanded(null);
+      onChange(main, main);
       return;
     }
 
-    if (main === selectedMain && secondMain === null) {
-      setSelectedMain(null);
-      setSecondMain(null);
-      setSubStart(null);
-      setSubEnd(null);
+    if (expanded === main) {
+      // Toggle off
+      setExpanded(null);
       onChange("", "");
       return;
     }
 
-    if (main === secondMain) {
-      setSecondMain(null);
-      const range = MAIN_RANGES[selectedMain];
-      if (range) onChange(range[1], range[0]);
-      autoSelectOwnSubs(selectedMain);
-      return;
-    }
-
-    if (secondMain !== null && main === selectedMain) {
-      const newPrimary = secondMain;
-      setSelectedMain(newPrimary);
-      setSecondMain(null);
-      const range = MAIN_RANGES[newPrimary];
-      if (range) onChange(range[1], range[0]);
-      autoSelectOwnSubs(newPrimary);
-      return;
-    }
-
-    if (mainsAreAdjacent(selectedMain, main)) {
-      setSecondMain(main);
-      setSubStart(null);
-      setSubEnd(null);
-      const key = rangeKey(selectedMain, main);
-      const range = MAIN_RANGES[key];
-      if (range) onChange(range[1], range[0]);
-    } else {
-      setSelectedMain(main);
-      setSecondMain(null);
-      const range = MAIN_RANGES[main];
-      if (range) onChange(range[1], range[0]);
-      autoSelectOwnSubs(main);
-    }
+    // Expand and select full group
+    setExpanded(main as "B" | "C");
+    if (main === "B") onChange("B2", "B1"); // All B
+    if (main === "C") onChange("C3", "C1"); // All C
   };
 
-  const handleSubTap = (idx: number) => {
-    if (!selectedMain) return;
-    const subs = EXPANDED_SUBS[selectedMain];
-    if (!subs) return;
-
-    const hasFullRange = subStart !== null && subEnd !== null;
-
-    if (hasFullRange) {
-      const lo = Math.min(subStart!, subEnd!);
-      const hi = Math.max(subStart!, subEnd!);
-      if (idx >= lo && idx <= hi) {
-        // Tap inside range → reset to single anchor
-        setSubStart(idx);
-        setSubEnd(null);
-        onChange(subs[idx], subs[idx]);
-        return;
-      }
+  const handleOptionTap = (opt: Option) => {
+    if (isOptionSelected(opt)) {
+      // Deselect → back to full group
+      if (expanded === "B") onChange("B2", "B1");
+      else if (expanded === "C") onChange("C3", "C1");
+      return;
     }
-
-    if (subStart === null || subEnd !== null) {
-      // First tap
-      setSubStart(idx);
-      setSubEnd(null);
-      onChange(subs[idx], subs[idx]);
-    } else {
-      // Second tap → range
-      const lo = Math.min(subStart, idx);
-      const hi = Math.max(subStart, idx);
-      setSubStart(lo);
-      setSubEnd(hi);
-      onChange(subs[hi], subs[lo]);
-    }
+    onChange(opt.min, opt.max);
   };
 
-  const isMainHighlighted = (main: string) => main === selectedMain || main === secondMain;
+  const options = expanded === "B" ? B_OPTIONS : expanded === "C" ? C_OPTIONS : null;
 
-  const showSubs = selectedMain && !secondMain && EXPANDED_SUBS[selectedMain];
-  const subs = showSubs ? EXPANDED_SUBS[selectedMain!] : null;
-
-  const displayLabel = (() => {
-    if (!selectedMain) return null;
-    if (secondMain) {
-      const key = rangeKey(selectedMain, secondMain);
-      const range = MAIN_RANGES[key];
-      if (range) return formatLevelBadge(range[1], range[0]);
-    }
-    if (subs && subStart !== null) {
-      if (subEnd !== null) {
-        const lo = Math.min(subStart, subEnd);
-        const hi = Math.max(subStart, subEnd);
-        return formatLevelBadge(subs[hi], subs[lo]);
-      }
-      return subs[subStart];
-    }
-    const range = MAIN_RANGES[selectedMain];
-    if (range) return formatLevelBadge(range[1], range[0]);
-    return selectedMain;
-  })();
+  const displayLabel = currentMin && currentMax
+    ? formatLevelBadge(currentMin, currentMax)
+    : null;
 
   return (
     <div className="space-y-3">
@@ -250,7 +113,7 @@ export function LevelRangePicker({ minLevel, maxLevel, onChange }: LevelRangePic
             onClick={() => handleMainTap(main)}
             className={cn(
               "flex-1 h-11 rounded-xl border-2 text-sm font-bold transition-all",
-              isMainHighlighted(main)
+              isMainActive(main)
                 ? "border-primary bg-primary/10 text-foreground"
                 : "border-border text-muted-foreground hover:border-primary/40"
             )}
@@ -260,50 +123,24 @@ export function LevelRangePicker({ minLevel, maxLevel, onChange }: LevelRangePic
         ))}
       </div>
 
-      {/* Sub-level row with boundaries */}
-      {subs && (
-        <div className="flex items-center gap-1.5 pl-1">
-          <div className="flex gap-1.5 items-center">
-            {subs.map((sub, idx) => {
-              const lo = subStart !== null && subEnd !== null ? Math.min(subStart, subEnd) : (subStart ?? -1);
-              const hi = subStart !== null && subEnd !== null ? Math.max(subStart, subEnd) : (subStart ?? -1);
-              const hasRange = subStart !== null && subEnd !== null;
-              const isInRange = hasRange && idx >= lo && idx <= hi;
-              const isAnchor = subStart === idx && subEnd === null;
-
-              const own = OWN_RANGE[selectedMain!];
-              const isBoundary = own ? (idx < own[0] || idx > own[1]) : false;
-
-              // Show separator arrows
-              const showLeftArrow = own && idx === own[0] && own[0] > 0;
-              const showRightArrow = own && idx === own[1] + 1;
-
-              return (
-                <span key={sub} className="flex items-center gap-1.5">
-                  {showLeftArrow && (
-                    <span className="text-muted-foreground text-[10px] mx-0.5">←</span>
-                  )}
-                  {showRightArrow && (
-                    <span className="text-muted-foreground text-[10px] mx-0.5">→</span>
-                  )}
-                  <button
-                    type="button"
-                    onClick={() => handleSubTap(idx)}
-                    className={cn(
-                      "h-9 px-4 rounded-full text-xs font-semibold border-2 transition-all",
-                      isInRange || isAnchor
-                        ? "bg-primary text-primary-foreground border-primary"
-                        : isBoundary
-                          ? "bg-background text-muted-foreground border-dashed border-border hover:border-primary hover:text-foreground"
-                          : "bg-background text-muted-foreground border-border hover:border-primary hover:text-foreground"
-                    )}
-                  >
-                    {sub}
-                  </button>
-                </span>
-              );
-            })}
-          </div>
+      {/* Sub-options */}
+      {options && (
+        <div className="flex gap-1.5 pl-1 flex-wrap">
+          {options.map((opt) => (
+            <button
+              key={opt.label}
+              type="button"
+              onClick={() => handleOptionTap(opt)}
+              className={cn(
+                "h-9 px-4 rounded-full text-xs font-semibold border-2 transition-all",
+                isOptionSelected(opt)
+                  ? "bg-primary text-primary-foreground border-primary"
+                  : "bg-background text-muted-foreground border-border hover:border-primary hover:text-foreground"
+              )}
+            >
+              {opt.label}
+            </button>
+          ))}
         </div>
       )}
 
