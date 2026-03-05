@@ -14,18 +14,24 @@ interface LevelRangePickerProps {
 
 const MAINS = ["A", "B", "C", "D"] as const;
 
-// When a single main is selected, these are the sub-levels + adjacent boundary to show
+// Sub-levels shown when a main is expanded, including adjacent boundary levels
 const EXPANDED_SUBS: Record<string, GameLevel[]> = {
-  B: ["B1", "B2", "C1"],   // B subs + one step into C
-  C: ["C1", "C2", "C3", "D"], // C subs + one step into D
+  B: ["A", "B1", "B2", "C1"],
+  C: ["B2", "C1", "C2", "C3", "D"],
 };
 
-// Full range for main-level pairs
+// Which indices in EXPANDED_SUBS are the "own" subs (not boundaries)
+const OWN_RANGE: Record<string, [number, number]> = {
+  B: [1, 2],   // B1=1, B2=2
+  C: [1, 3],   // C1=1, C2=2, C3=3
+};
+
+// Full range for main-level combos
 const MAIN_RANGES: Record<string, [GameLevel, GameLevel]> = {
-  "A": ["A", "A"],
-  "D": ["D", "D"],
-  "B": ["B1", "B2"],
-  "C": ["C1", "C3"],
+  A: ["A", "A"],
+  D: ["D", "D"],
+  B: ["B1", "B2"],
+  C: ["C1", "C3"],
   "A-B": ["A", "B2"],
   "B-C": ["B1", "C3"],
   "C-D": ["C1", "D"],
@@ -38,22 +44,20 @@ function mainOf(level: string): string {
 }
 
 function mainsAreAdjacent(a: string, b: string): boolean {
-  const idx = MAINS.indexOf(a as any);
-  const idx2 = MAINS.indexOf(b as any);
-  return Math.abs(idx - idx2) === 1;
+  const ai = MAINS.indexOf(a as typeof MAINS[number]);
+  const bi = MAINS.indexOf(b as typeof MAINS[number]);
+  return ai >= 0 && bi >= 0 && Math.abs(ai - bi) === 1;
 }
 
 function rangeKey(a: string, b: string): string {
-  const ai = MAINS.indexOf(a as any);
-  const bi = MAINS.indexOf(b as any);
+  const ai = MAINS.indexOf(a as typeof MAINS[number]);
+  const bi = MAINS.indexOf(b as typeof MAINS[number]);
   return ai < bi ? `${a}-${b}` : `${b}-${a}`;
 }
 
 export function LevelRangePicker({ minLevel, maxLevel, onChange }: LevelRangePickerProps) {
-  // "mode" is either single-main (with optional sub-level drill) or main-range
   const [selectedMain, setSelectedMain] = useState<string | null>(null);
-  const [secondMain, setSecondMain] = useState<string | null>(null); // adjacent main for range
-  // Sub-level range (indices into EXPANDED_SUBS[selectedMain])
+  const [secondMain, setSecondMain] = useState<string | null>(null);
   const [subStart, setSubStart] = useState<number | null>(null);
   const [subEnd, setSubEnd] = useState<number | null>(null);
 
@@ -67,11 +71,10 @@ export function LevelRangePicker({ minLevel, maxLevel, onChange }: LevelRangePic
       return;
     }
 
-    const maxMain = mainOf(maxLevel);
-    const minMain = mainOf(minLevel);
+    const maxMain = mainOf(maxLevel); // best
+    const minMain = mainOf(minLevel); // weakest
 
     if (maxMain === minMain) {
-      // Single main group
       setSelectedMain(maxMain);
       setSecondMain(null);
       const subs = EXPANDED_SUBS[maxMain];
@@ -85,19 +88,19 @@ export function LevelRangePicker({ minLevel, maxLevel, onChange }: LevelRangePic
         setSubEnd(null);
       }
     } else if (mainsAreAdjacent(maxMain, minMain)) {
-      // Check if it's a fine sub-level cross (like B2-C1)
-      const primaryMain = maxMain;
-      const subs = EXPANDED_SUBS[primaryMain];
-      if (subs) {
-        const si = subs.indexOf(maxLevel as GameLevel);
-        const ei = subs.indexOf(minLevel as GameLevel);
-        if (si >= 0 && ei >= 0) {
-          // It's a sub-level cross-boundary range
-          setSelectedMain(primaryMain);
-          setSecondMain(null);
-          setSubStart(si);
-          setSubEnd(ei);
-          return;
+      // Check if it fits in one expanded group (cross-boundary like B2-C1)
+      for (const tryMain of [maxMain, minMain]) {
+        const subs = EXPANDED_SUBS[tryMain];
+        if (subs) {
+          const si = subs.indexOf(maxLevel as GameLevel);
+          const ei = subs.indexOf(minLevel as GameLevel);
+          if (si >= 0 && ei >= 0) {
+            setSelectedMain(tryMain);
+            setSecondMain(null);
+            setSubStart(si);
+            setSubEnd(ei);
+            return;
+          }
         }
       }
       // Full main-level range
@@ -113,28 +116,28 @@ export function LevelRangePicker({ minLevel, maxLevel, onChange }: LevelRangePic
     }
   }, [minLevel, maxLevel]);
 
+  const autoSelectOwnSubs = (main: string) => {
+    const own = OWN_RANGE[main];
+    if (own) {
+      setSubStart(own[0]);
+      setSubEnd(own[1]);
+    } else {
+      setSubStart(null);
+      setSubEnd(null);
+    }
+  };
+
   const handleMainTap = (main: string) => {
     if (selectedMain === null) {
-      // First selection
       setSelectedMain(main);
       setSecondMain(null);
       const range = MAIN_RANGES[main];
       if (range) onChange(range[1], range[0]);
-      // If B or C, auto-select all subs
-      const subs = EXPANDED_SUBS[main];
-      if (subs) {
-        const ownSubs = main === "B" ? 2 : 3; // exclude boundary
-        setSubStart(0);
-        setSubEnd(ownSubs - 1);
-      } else {
-        setSubStart(null);
-        setSubEnd(null);
-      }
+      autoSelectOwnSubs(main);
       return;
     }
 
     if (main === selectedMain && secondMain === null) {
-      // Deselect
       setSelectedMain(null);
       setSecondMain(null);
       setSubStart(null);
@@ -144,40 +147,24 @@ export function LevelRangePicker({ minLevel, maxLevel, onChange }: LevelRangePic
     }
 
     if (main === secondMain) {
-      // Deselect second → back to single
       setSecondMain(null);
       const range = MAIN_RANGES[selectedMain];
       if (range) onChange(range[1], range[0]);
-      const subs = EXPANDED_SUBS[selectedMain];
-      if (subs) {
-        const ownSubs = selectedMain === "B" ? 2 : 3;
-        setSubStart(0);
-        setSubEnd(ownSubs - 1);
-      }
+      autoSelectOwnSubs(selectedMain);
       return;
     }
 
     if (secondMain !== null && main === selectedMain) {
-      // Deselect first main, keep second as primary
       const newPrimary = secondMain;
       setSelectedMain(newPrimary);
       setSecondMain(null);
       const range = MAIN_RANGES[newPrimary];
       if (range) onChange(range[1], range[0]);
-      const subs = EXPANDED_SUBS[newPrimary];
-      if (subs) {
-        const ownSubs = newPrimary === "B" ? 2 : 3;
-        setSubStart(0);
-        setSubEnd(ownSubs - 1);
-      } else {
-        setSubStart(null);
-        setSubEnd(null);
-      }
+      autoSelectOwnSubs(newPrimary);
       return;
     }
 
     if (mainsAreAdjacent(selectedMain, main)) {
-      // Adjacent → main-level range
       setSecondMain(main);
       setSubStart(null);
       setSubEnd(null);
@@ -185,20 +172,11 @@ export function LevelRangePicker({ minLevel, maxLevel, onChange }: LevelRangePic
       const range = MAIN_RANGES[key];
       if (range) onChange(range[1], range[0]);
     } else {
-      // Non-adjacent → move
       setSelectedMain(main);
       setSecondMain(null);
       const range = MAIN_RANGES[main];
       if (range) onChange(range[1], range[0]);
-      const subs = EXPANDED_SUBS[main];
-      if (subs) {
-        const ownSubs = main === "B" ? 2 : 3;
-        setSubStart(0);
-        setSubEnd(ownSubs - 1);
-      } else {
-        setSubStart(null);
-        setSubEnd(null);
-      }
+      autoSelectOwnSubs(main);
     }
   };
 
@@ -207,11 +185,13 @@ export function LevelRangePicker({ minLevel, maxLevel, onChange }: LevelRangePic
     const subs = EXPANDED_SUBS[selectedMain];
     if (!subs) return;
 
-    // If tapping a filled pill → reset, anchor here
-    if (subStart !== null && subEnd !== null) {
-      const lo = Math.min(subStart, subEnd);
-      const hi = Math.max(subStart, subEnd);
+    const hasFullRange = subStart !== null && subEnd !== null;
+
+    if (hasFullRange) {
+      const lo = Math.min(subStart!, subEnd!);
+      const hi = Math.max(subStart!, subEnd!);
       if (idx >= lo && idx <= hi) {
+        // Tap inside range → reset to single anchor
         setSubStart(idx);
         setSubEnd(null);
         onChange(subs[idx], subs[idx]);
@@ -234,17 +214,11 @@ export function LevelRangePicker({ minLevel, maxLevel, onChange }: LevelRangePic
     }
   };
 
-  const isMainHighlighted = (main: string) => {
-    if (main === selectedMain) return true;
-    if (main === secondMain) return true;
-    return false;
-  };
+  const isMainHighlighted = (main: string) => main === selectedMain || main === secondMain;
 
-  // Show subs only when single main selected (no second main) and main has subs
   const showSubs = selectedMain && !secondMain && EXPANDED_SUBS[selectedMain];
   const subs = showSubs ? EXPANDED_SUBS[selectedMain!] : null;
 
-  // Compute display
   const displayLabel = (() => {
     if (!selectedMain) return null;
     if (secondMain) {
@@ -286,25 +260,31 @@ export function LevelRangePicker({ minLevel, maxLevel, onChange }: LevelRangePic
         ))}
       </div>
 
-      {/* Sub-level row */}
+      {/* Sub-level row with boundaries */}
       {subs && (
         <div className="flex items-center gap-1.5 pl-1">
-          <div className="flex gap-1.5">
+          <div className="flex gap-1.5 items-center">
             {subs.map((sub, idx) => {
               const lo = subStart !== null && subEnd !== null ? Math.min(subStart, subEnd) : (subStart ?? -1);
               const hi = subStart !== null && subEnd !== null ? Math.max(subStart, subEnd) : (subStart ?? -1);
               const hasRange = subStart !== null && subEnd !== null;
               const isInRange = hasRange && idx >= lo && idx <= hi;
               const isAnchor = subStart === idx && subEnd === null;
-              
-              // Visual separator between own subs and boundary
-              const ownCount = selectedMain === "B" ? 2 : 3;
-              const isBoundary = idx >= ownCount;
+
+              const own = OWN_RANGE[selectedMain!];
+              const isBoundary = own ? (idx < own[0] || idx > own[1]) : false;
+
+              // Show separator arrows
+              const showLeftArrow = own && idx === own[0] && own[0] > 0;
+              const showRightArrow = own && idx === own[1] + 1;
 
               return (
                 <span key={sub} className="flex items-center gap-1.5">
-                  {isBoundary && idx === ownCount && (
-                    <span className="text-muted-foreground text-xs mx-0.5">→</span>
+                  {showLeftArrow && (
+                    <span className="text-muted-foreground text-[10px] mx-0.5">←</span>
+                  )}
+                  {showRightArrow && (
+                    <span className="text-muted-foreground text-[10px] mx-0.5">→</span>
                   )}
                   <button
                     type="button"
