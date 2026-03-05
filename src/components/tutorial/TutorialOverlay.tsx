@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Badge } from "@/components/ui/badge";
+import { MapPin, Clock, Users, Signal, Share2, Star } from "lucide-react";
 
 interface TutorialStep {
   selector: string | null;
@@ -11,18 +12,21 @@ interface TutorialStep {
   isLarger?: boolean;
   isGreyed?: boolean;
   comingSoon?: boolean;
+  useMockCard?: boolean;
 }
 
 const STEPS: TutorialStep[] = [
   {
-    selector: '[data-tutorial="matches-list"]',
+    selector: '[data-tutorial="mock-card"]',
     title: "Find a match",
     description: "Browse open matches near you. Filter by level, format or club.",
+    useMockCard: true,
   },
   {
-    selector: '[data-tutorial="game-card"]',
+    selector: '[data-tutorial="mock-card"]',
     title: "See who is playing",
     description: "Tap any match to see details, the level, location and who has already joined.",
+    useMockCard: true,
   },
   {
     selector: '[data-tutorial="host-button"]',
@@ -56,30 +60,88 @@ interface Rect {
   height: number;
 }
 
+/* ── Mock example game card ── */
+function MockGameCard() {
+  return (
+    <div
+      data-tutorial="mock-card"
+      className="bg-card rounded-2xl border border-border shadow-sm p-4 w-[calc(100vw-48px)] max-w-[360px]"
+      style={{ pointerEvents: "none" }}
+    >
+      {/* Top row */}
+      <div className="flex items-start justify-between mb-3">
+        <div className="flex-1 min-w-0">
+          <p className="font-display font-bold text-sm text-foreground truncate">Sunday Padel Session</p>
+          <div className="flex items-center gap-1.5 mt-1">
+            <MapPin className="w-3 h-3 text-muted-foreground shrink-0" />
+            <span className="text-xs text-muted-foreground truncate">Padel Club Bangkok</span>
+          </div>
+        </div>
+        <div className="flex items-center gap-1 bg-primary/10 px-2 py-1 rounded-full shrink-0 ml-2">
+          <Signal className="w-3 h-3 text-primary" />
+          <span className="text-[10px] font-semibold text-primary">B</span>
+        </div>
+      </div>
+
+      {/* Info chips */}
+      <div className="flex items-center gap-2 flex-wrap mb-3">
+        <div className="flex items-center gap-1 bg-muted px-2 py-1 rounded-full">
+          <Clock className="w-3 h-3 text-muted-foreground" />
+          <span className="text-[10px] font-medium text-muted-foreground">Today 18:00</span>
+        </div>
+        <div className="flex items-center gap-1 bg-muted px-2 py-1 rounded-full">
+          <Users className="w-3 h-3 text-muted-foreground" />
+          <span className="text-[10px] font-medium text-muted-foreground">3 / 8</span>
+        </div>
+      </div>
+
+      {/* Host + avatars row */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center">
+            <span className="text-[10px] font-bold text-primary">A</span>
+          </div>
+          <span className="text-xs text-muted-foreground">Alex</span>
+        </div>
+        <div className="flex -space-x-1.5">
+          {["bg-secondary/30", "bg-accent/30", "bg-primary/30"].map((bg, i) => (
+            <div key={i} className={`w-5 h-5 rounded-full ${bg} border-2 border-card`} />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function TutorialOverlay({ onComplete }: { onComplete: () => void }) {
   const { user } = useAuth();
   const [step, setStep] = useState(0);
   const [targetRect, setTargetRect] = useState<Rect | null>(null);
   const observerRef = useRef<ResizeObserver | null>(null);
+  const mockRef = useRef<HTMLDivElement>(null);
 
   const current = STEPS[step];
+  const showMock = !!current.useMockCard;
 
   const measureTarget = useCallback(() => {
-    if (!current.selector) {
-      setTargetRect(null);
-      return;
-    }
-    const el = document.querySelector(current.selector);
-    if (el) {
-      const r = el.getBoundingClientRect();
-      setTargetRect({ top: r.top, left: r.left, width: r.width, height: r.height });
-    } else {
-      setTargetRect(null);
-    }
+    const sel = current.selector;
+    if (!sel) { setTargetRect(null); return; }
+
+    // Small delay for mock card to render
+    requestAnimationFrame(() => {
+      const el = document.querySelector(sel);
+      if (el) {
+        const r = el.getBoundingClientRect();
+        setTargetRect({ top: r.top, left: r.left, width: r.width, height: r.height });
+      } else {
+        setTargetRect(null);
+      }
+    });
   }, [current.selector]);
 
   useEffect(() => {
-    measureTarget();
+    // Delay measurement slightly so mock card is in DOM
+    const timer = setTimeout(measureTarget, 50);
     window.addEventListener("resize", measureTarget);
     window.addEventListener("scroll", measureTarget, true);
 
@@ -92,6 +154,7 @@ export function TutorialOverlay({ onComplete }: { onComplete: () => void }) {
     }
 
     return () => {
+      clearTimeout(timer);
       window.removeEventListener("resize", measureTarget);
       window.removeEventListener("scroll", measureTarget, true);
       observerRef.current?.disconnect();
@@ -114,13 +177,11 @@ export function TutorialOverlay({ onComplete }: { onComplete: () => void }) {
   };
 
   const PAD = 8;
-
   const hasTarget = !!targetRect;
-  const isCentered = !hasTarget;
+  const isCentered = !hasTarget && !showMock;
 
-  // Tooltip positioning
   const getTooltipStyle = (): React.CSSProperties => {
-    if (isCentered) {
+    if (isCentered || !targetRect) {
       return {
         position: "fixed",
         top: "50%",
@@ -128,11 +189,8 @@ export function TutorialOverlay({ onComplete }: { onComplete: () => void }) {
         transform: "translate(-50%, -50%)",
       };
     }
-    if (!targetRect) return {};
 
-    const below = targetRect.top + targetRect.height + PAD + 20;
-    const above = targetRect.top - PAD - 20;
-    const showBelow = below + 220 < window.innerHeight;
+    const showBelow = targetRect.top + targetRect.height + PAD + 240 < window.innerHeight;
 
     return {
       position: "fixed",
@@ -147,6 +205,21 @@ export function TutorialOverlay({ onComplete }: { onComplete: () => void }) {
     <div className="fixed inset-0 z-[9999]" style={{ pointerEvents: "auto" }}>
       {/* Backdrop */}
       <div className="fixed inset-0 bg-black/75 transition-opacity" />
+
+      {/* Mock card rendered on-screen for steps that need it */}
+      {showMock && (
+        <div
+          ref={mockRef}
+          className="fixed z-[10002] flex items-center justify-center"
+          style={{
+            top: "28%",
+            left: "50%",
+            transform: "translateX(-50%)",
+          }}
+        >
+          <MockGameCard />
+        </div>
+      )}
 
       {/* Highlight cutout */}
       <AnimatePresence mode="wait">
@@ -183,7 +256,7 @@ export function TutorialOverlay({ onComplete }: { onComplete: () => void }) {
           transition={{ duration: 0.25 }}
           style={{
             ...getTooltipStyle(),
-            zIndex: 10001,
+            zIndex: 10003,
           }}
           className={`bg-[#1A1F2E] border border-[#2A3040] rounded-2xl shadow-2xl ${current.isLarger ? "p-6 max-w-[340px]" : "p-5 max-w-[300px]"}`}
         >
