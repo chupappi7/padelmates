@@ -7,6 +7,7 @@ interface UserProfile {
   name: string;
   skill_level: number;
   pdr_rating: number | null;
+  avatar_url: string | null;
 }
 
 export function useUserProfile() {
@@ -17,7 +18,7 @@ export function useUserProfile() {
     if (!user) return;
     supabase
       .from("profiles")
-      .select("region, name, skill_level, pdr_rating")
+      .select("region, name, skill_level, pdr_rating, avatar_url")
       .eq("user_id", user.id)
       .single()
       .then(({ data }) => {
