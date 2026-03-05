@@ -76,6 +76,8 @@ interface Game {
   court_taken_by: string | null;
   booking_screenshot_url: string | null;
   slug?: string;
+  min_level?: string | null;
+  max_level?: string | null;
   club_id: string | null;
   profiles: { name: string; avatar_url: string | null; skill_level?: number } | null;
   club?: { name: string; logo_url: string | null } | null;
@@ -1424,6 +1426,8 @@ export default function GameDetailPage() {
         hostName={game?.profiles?.name || undefined}
         clubName={game?.club?.name || undefined}
         skillLevel={game?.skill_level}
+        minLevel={game?.min_level}
+        maxLevel={game?.max_level}
         pricePerPlayer={game?.price_per_player}
       />
     </div>

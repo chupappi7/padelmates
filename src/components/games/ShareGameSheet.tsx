@@ -3,7 +3,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { Link2, MessageCircle, Send, Search, Check } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
-import { getSkillLabel } from "@/components/games/SkillBadge";
+import { formatLevelBadge } from "@/lib/levelUtils";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useAuth } from "@/contexts/AuthContext";
 import { useFriends } from "@/hooks/useFriends";
@@ -26,6 +26,8 @@ interface ShareGameSheetProps {
   hostName?: string;
   clubName?: string;
   skillLevel?: number;
+  minLevel?: string | null;
+  maxLevel?: string | null;
   pricePerPlayer?: number;
 }
 
@@ -41,7 +43,7 @@ const formatLabel = (f: string) => {
 export function ShareGameSheet({
   open, onOpenChange, gameId,
   gameSlug, gameLocation, gameDateTime, endDateTime, gameFormat,
-  gameMaxPlayers, currentPlayersCount, hostName, clubName, skillLevel, pricePerPlayer,
+  gameMaxPlayers, currentPlayersCount, hostName, clubName, skillLevel, minLevel, maxLevel, pricePerPlayer,
 }: ShareGameSheetProps) {
   const isMobile = useIsMobile();
   const { user } = useAuth();
@@ -87,7 +89,8 @@ export function ShareGameSheet({
 
     if (gameFormat) lines.push(`🎯 ${formatLabel(gameFormat)}`);
 
-    if (skillLevel) lines.push(`🏅 Level ${getSkillLabel(skillLevel)}`);
+    const levelLabel = formatLevelBadge(minLevel, maxLevel, skillLevel);
+    if (levelLabel && levelLabel !== "?") lines.push(`🏅 Level ${levelLabel}`);
 
     if (pricePerPlayer && pricePerPlayer > 0) {
       lines.push(`💰 ${pricePerPlayer} Kč per player`);

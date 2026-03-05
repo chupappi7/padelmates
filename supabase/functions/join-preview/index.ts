@@ -1,5 +1,22 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
+const LEVEL_HIERARCHY = ["A", "B1", "B2", "C1", "C2", "C3", "D"];
+
+function formatLevelBadge(minLevel?: string | null, maxLevel?: string | null, skillLevel?: number): string {
+  if (!minLevel && !maxLevel) {
+    if (skillLevel != null) {
+      return ["D", "C", "B", "A"][skillLevel - 1] ?? `${skillLevel}`;
+    }
+    return "";
+  }
+  const min = minLevel || "D";
+  const max = maxLevel || "A";
+  if (min === max) return min;
+  if (max === "B1" && min === "B2") return "B";
+  if (max === "C1" && min === "C3") return "C";
+  return `${max} – ${min}`;
+}
+
 Deno.serve(async (req) => {
   const url = new URL(req.url)
   const gameId = url.searchParams.get('game_id')
@@ -16,7 +33,7 @@ Deno.serve(async (req) => {
 
   let query = supabase
     .from('games')
-    .select('id, title, location, date_time, max_players, host_id, format, slug')
+    .select('id, title, location, date_time, max_players, host_id, host_is_playing, format, slug, prefilled_players, min_level, max_level, skill_level')
 
   if (slug) {
     query = query.eq('slug', slug)
@@ -41,14 +58,22 @@ Deno.serve(async (req) => {
     .select('*', { count: 'exact', head: true })
     .eq('game_id', game.id)
 
-  const spotsLeft = game.max_players - (count || 0)
+  // Total = registered players + prefilled guests + host (if playing)
+  const prefilledCount = Array.isArray(game.prefilled_players) ? game.prefilled_players.length : 0;
+  const hostPlaying = game.host_is_playing ? 1 : 0;
+  const totalPlayers = (count || 0) + prefilledCount + hostPlaying;
+  const spotsLeft = Math.max(0, game.max_players - totalPlayers);
+
   const date = new Date(game.date_time).toLocaleDateString('en-GB', {
     weekday: 'short', day: 'numeric', month: 'short',
     hour: '2-digit', minute: '2-digit'
   })
 
+  const levelLabel = formatLevelBadge(game.min_level, game.max_level, game.skill_level);
+  const levelPart = levelLabel ? ` · 🏅 ${levelLabel}` : '';
+
   const title = `🎾 ${game.title}`
-  const description = `📍 ${game.location} · 🗓 ${date} · 👥 ${spotsLeft} spots left · Hosted by ${host?.name || 'Someone'}`
+  const description = `📍 ${game.location} · 🗓 ${date} · 👥 ${spotsLeft} spots left${levelPart} · Hosted by ${host?.name || 'Someone'}`
   const joinPath = game.slug || game.id
   const appUrl = `https://padelmates.app/join/${joinPath}`
   const image = `https://padelmates.app/og-image.png`
