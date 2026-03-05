@@ -199,6 +199,9 @@ export function useConversations() {
 
         const senderName = lastMsg?.sender_id === user.id ? "You" : profile?.name || "Unknown";
 
+        const rawUnread = (chatUnreadCounts as Record<string, number>)[chat.id] || 0;
+        const neverOpened = !getLastReadAt(chat.id);
+
         const convo: UnifiedConversation = {
           id: chat.id,
           type: isCourt ? "court" : "dm",
@@ -210,7 +213,7 @@ export function useConversations() {
           lastMessage: lastMsg?.message || "",
           lastMessageAt: lastMsg?.created_at || chat.created_at,
           lastMessageSenderName: lastMsg ? senderName : undefined,
-          unreadCount: (chatUnreadCounts as Record<string, number>)[chat.id] || 0,
+          unreadCount: neverOpened ? Math.max(rawUnread, 1) : rawUnread,
           chatId: chat.id,
           gameId: chat.listing_id || undefined,
           gameDateTime: game?.date_time,
@@ -315,6 +318,9 @@ export function useConversations() {
         const formatLabel = formatLabels[(game as any).format] || "Match";
         const dateStr = format(new Date(game.date_time), "EEE, MMM d · HH:mm");
 
+        const rawUnread = (gameUnreadCounts as Record<string, number>)[game.id] || 0;
+        const neverOpened = !getLastReadAt(convoId);
+
         const convo: UnifiedConversation = {
           id: convoId,
           type: "match",
@@ -323,9 +329,9 @@ export function useConversations() {
           gameLocation: game.location,
           avatarUrl: null,
           lastMessage: lastMsg?.message || "",
-          lastMessageAt: lastMsg?.created_at || "",
+          lastMessageAt: lastMsg?.created_at || game.date_time,
           lastMessageSenderName: senderName,
-          unreadCount: (gameUnreadCounts as Record<string, number>)[game.id] || 0,
+          unreadCount: neverOpened ? Math.max(rawUnread, 1) : rawUnread,
           gameId: game.id,
           gameDateTime: game.date_time,
           gameEndDateTime: game.end_date_time,
