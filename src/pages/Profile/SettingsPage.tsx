@@ -2,9 +2,13 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Bug, Send } from "lucide-react";
 import { ProfilePersonalDetails } from "@/components/profile/tabs/ProfilePersonalDetails";
 import { ProfilePaymentInfo } from "@/components/profile/tabs/ProfilePaymentInfo";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
+import { toast } from "sonner";
 
 const SPACE = "'Space Grotesk', system-ui, sans-serif";
 
@@ -23,6 +27,9 @@ export default function SettingsPage() {
   const navigate = useNavigate();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [bugSubject, setBugSubject] = useState("");
+  const [bugDescription, setBugDescription] = useState("");
+  const [sending, setSending] = useState(false);
 
   useEffect(() => {
     if (user) fetchProfile();
@@ -36,6 +43,23 @@ export default function SettingsPage() {
       .single();
     if (data) setProfile(data as Profile);
     setLoading(false);
+  };
+
+  const handleReportBug = () => {
+    if (!bugDescription.trim()) {
+      toast.error("Please describe the bug");
+      return;
+    }
+    setSending(true);
+    const subject = encodeURIComponent(bugSubject || "Bug Report");
+    const body = encodeURIComponent(
+      `${bugDescription}\n\n---\nReported by: ${user?.email ?? "Unknown"}\nUser ID: ${user?.id ?? "Unknown"}\nTimestamp: ${new Date().toISOString()}`
+    );
+    window.open(`mailto:thinht7110@gmail.com?subject=${subject}&body=${body}`, "_blank");
+    toast.success("Opening email client…");
+    setBugSubject("");
+    setBugDescription("");
+    setSending(false);
   };
 
   if (!user) { navigate("/login"); return null; }
@@ -71,6 +95,37 @@ export default function SettingsPage() {
             bankQrUrl={profile.bank_qr_url}
             onSaved={fetchProfile}
           />
+
+          {/* Report Bug */}
+          <div className="bg-white rounded-2xl border border-[#E2E8F0] p-4 space-y-3">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-full bg-destructive/10 flex items-center justify-center">
+                <Bug className="w-4 h-4 text-destructive" />
+              </div>
+              <h2 className="font-bold text-sm text-[#0F172A]" style={{ fontFamily: SPACE }}>Report a Bug</h2>
+            </div>
+            <Input
+              placeholder="Subject (optional)"
+              value={bugSubject}
+              onChange={(e) => setBugSubject(e.target.value)}
+              className="text-sm"
+            />
+            <Textarea
+              placeholder="Describe what went wrong…"
+              value={bugDescription}
+              onChange={(e) => setBugDescription(e.target.value)}
+              className="text-sm min-h-[100px]"
+            />
+            <Button
+              onClick={handleReportBug}
+              disabled={sending || !bugDescription.trim()}
+              className="w-full gap-2"
+              variant="destructive"
+            >
+              <Send className="w-4 h-4" />
+              Send Report
+            </Button>
+          </div>
         </div>
       )}
     </div>
