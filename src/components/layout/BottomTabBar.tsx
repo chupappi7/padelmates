@@ -40,6 +40,7 @@ export function BottomTabBar() {
               return (
                 <button
                   key={tab.path}
+                  data-tutorial="host-button"
                   onClick={() => setShowHostModal(true)}
                   className="flex flex-col items-center justify-center -mt-4"
                 >
