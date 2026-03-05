@@ -26,6 +26,11 @@ export function levelRank(level: string): number {
   return RANK[level] ?? Infinity;
 }
 
+/** Check if two levels are adjacent in the hierarchy (1 step apart). */
+export function areAdjacent(a: string, b: string): boolean {
+  return Math.abs(levelRank(a) - levelRank(b)) === 1;
+}
+
 /** Get the main level group for a sub-level */
 export function mainLevelOf(level: string): MainLevel {
   if (level.startsWith("B")) return "B";
