@@ -11,6 +11,15 @@ import { ArrowLeft, Send, MessageCircle, MapPin, Calendar, CheckCircle2, Clock, 
 import { ChatImageMessage } from "@/components/chat/ChatImageMessage";
 import { toast } from "sonner";
 
+function formatLastMessage(msg?: string): string {
+  if (!msg) return "";
+  if (msg.startsWith("[image]")) return "📷 Photo";
+  if (msg.startsWith("📸 image:")) return "📷 Photo";
+  if (msg.startsWith("[game:")) return "🎾 Shared a match";
+  if (msg.startsWith("💳 Payment Details")) return "💳 Bank details";
+  return msg;
+}
+
 interface Profile {
   name: string;
   avatar_url: string | null;
@@ -628,7 +637,7 @@ export function CourtDMChat({
                     <p className={cn(
                       "text-xs truncate",
                       hasUnread ? "text-foreground font-semibold" : "text-muted-foreground"
-                    )}>{u.lastMessage}</p>
+                    )}>{formatLastMessage(u.lastMessage)}</p>
                   ) : (
                     <p className="text-xs text-muted-foreground/60 italic">No message yet</p>
                   )}
