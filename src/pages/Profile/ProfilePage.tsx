@@ -58,7 +58,7 @@ export default function ProfilePage() {
       .from("profiles")
       .select("*")
       .eq("user_id", user?.id)
-      .single();
+      .maybeSingle();
     if (data) setProfile(data as unknown as Profile);
     setLoading(false);
   };
