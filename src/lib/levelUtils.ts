@@ -83,6 +83,11 @@ export function formatLevelBadge(minLevel?: string | null, maxLevel?: string | n
   const max = maxLevel || "A";
 
   if (min === max) return min;
+
+  // Collapse full sub-level ranges to main level: B1–B2 → "B", C1–C3 → "C"
+  if (max === "B1" && min === "B2") return "B";
+  if (max === "C1" && min === "C3") return "C";
+
   // Show highest first: "B1 – C2"
   return `${max} – ${min}`;
 }
