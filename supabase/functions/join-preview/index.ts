@@ -75,8 +75,9 @@ Deno.serve(async (req) => {
   const title = `🎾 ${game.title}`
   const description = `📍 ${game.location} · 🗓 ${date} · 👥 ${spotsLeft} spots left${levelPart} · Hosted by ${host?.name || 'Someone'}`
   const joinPath = game.slug || game.id
-  const appUrl = `https://padelmates.app/join/${joinPath}`
-  const image = `https://padelmates.app/og-image.png`
+  const siteUrl = Deno.env.get('SITE_URL') || 'https://padel-palooza-play.lovable.app'
+  const appUrl = `${siteUrl}/games/${game.id}`
+  const image = `${siteUrl}/og-image.png`
 
   const html = `<!DOCTYPE html>
 <html lang="en">
