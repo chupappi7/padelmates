@@ -164,6 +164,8 @@ export default function MyMatchesPage() {
                 dateTime={game.date_time}
                 endDateTime={game.end_date_time}
                 skillLevel={game.skill_level}
+                minLevel={(game as any).min_level}
+                maxLevel={(game as any).max_level}
                 format={game.format}
                 maxPlayers={game.max_players}
                 currentPlayers={(game.game_players?.length || 0) + (game.host_is_playing ? 1 : 0)}

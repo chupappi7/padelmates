@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Navbar } from "@/components/layout/Navbar";
 import { SkillBadge } from "@/components/games/SkillBadge";
+import { formatLevelBadge } from "@/lib/levelUtils";
 import { JoinRequestModal } from "@/components/games/JoinRequestModal";
 import { ParticipantsTab } from "@/components/games/ParticipantsTab";
 import { MatchesTab } from "@/components/games/MatchesTab";
@@ -658,9 +659,10 @@ export default function GameDetailPage() {
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-1.5">
                 <h1 className="font-display text-sm md:text-xl font-bold line-clamp-2 break-words">{game.title}</h1>
-                {!isCourtSharing && (
-                  <SkillBadge level={game.skill_level as number} size="sm" />
-                )}
+                {!isCourtSharing && (() => {
+                  const badgeLabel = formatLevelBadge((game as any).min_level, (game as any).max_level, game.skill_level as number);
+                  return <SkillBadge level={game.skill_level as number} size="sm" labelOverride={badgeLabel} />;
+                })()}
               </div>
               {isCourtSharing && (
                 <p className="text-[11px] text-muted-foreground mt-0.5">

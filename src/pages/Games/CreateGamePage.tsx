@@ -30,6 +30,7 @@ import { DurationChips } from "@/components/games/DurationChips";
 import { CourtPicker } from "@/components/games/CourtPicker";
 import { Switch } from "@/components/ui/switch";
 import type { HostType } from "@/components/games/HostTypeModal";
+import { LevelRangePicker } from "@/components/games/LevelRangePicker";
 
 const HOST_TYPE_CONFIG: Record<HostType, { title: string; subtitle: string; format: string; defaultMaxPlayers: number; defaultJoinMode: string; maxPlayerLimit?: number }> = {
   find_players: {
@@ -137,6 +138,8 @@ export default function CreateGamePage() {
   const [allowSubstitutions, setAllowSubstitutions] = useState(false);
   const [gameType, setGameType] = useState<"friendly" | "americano" | "other">("friendly");
   const [customGameType, setCustomGameType] = useState("");
+  const [minLevel, setMinLevel] = useState<string | null>(null);
+  const [maxLevel, setMaxLevel] = useState<string | null>(null);
 
   // Find Players: spotsNeeded is the primary control (how many more players do you need?)
   // Min court size is 4, so minimum spots = max(1, 4 - prefilled - (hostIsPlaying ? 1 : 0))
@@ -277,6 +280,8 @@ export default function CreateGamePage() {
       ...(isSellCourt && bookingScreenshotPath ? { booking_screenshot_url: bookingScreenshotPath } : {}),
       ...(hostType === "americano" ? { allow_substitutions: allowSubstitutions } : {}),
       ...(isHostingAsClub && selectedClub ? { club_id: selectedClub.id } : {}),
+      ...(minLevel ? { min_level: minLevel } : {}),
+      ...(maxLevel ? { max_level: maxLevel } : {}),
     } as any).select().single();
 
     if (error) {
@@ -939,23 +944,11 @@ export default function CreateGamePage() {
                         <Trophy className="w-4 h-4 md:w-5 md:h-5 text-primary" />
                         Skill Level
                       </h2>
-                      <div className="space-y-1.5">
-                        <Label htmlFor="skill" className="text-sm">Skill Level</Label>
-                        <Select
-                          value={String(formData.skillLevel)}
-                          onValueChange={(v) => handleChange("skillLevel", parseInt(v))}
-                        >
-                          <SelectTrigger className="h-11">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="4">A</SelectItem>
-                            <SelectItem value="3">B</SelectItem>
-                            <SelectItem value="2">C</SelectItem>
-                            <SelectItem value="1">D</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
+                      <LevelRangePicker
+                        minLevel={minLevel}
+                        maxLevel={maxLevel}
+                        onChange={(min, max) => { setMinLevel(min || null); setMaxLevel(max || null); }}
+                      />
                     </div>
 
                     {/* Card 4: How to Join */}
@@ -1346,23 +1339,11 @@ export default function CreateGamePage() {
                         Skill Level & Settings
                       </h2>
 
-                      <div className="space-y-1.5">
-                        <Label htmlFor="skill" className="text-sm">Skill Level</Label>
-                        <Select
-                          value={String(formData.skillLevel)}
-                          onValueChange={(v) => handleChange("skillLevel", parseInt(v))}
-                        >
-                          <SelectTrigger className="h-11">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="4">A</SelectItem>
-                            <SelectItem value="3">B</SelectItem>
-                            <SelectItem value="2">C</SelectItem>
-                            <SelectItem value="1">D</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
+                      <LevelRangePicker
+                        minLevel={minLevel}
+                        maxLevel={maxLevel}
+                        onChange={(min, max) => { setMinLevel(min || null); setMaxLevel(max || null); }}
+                      />
 
                       <div className="space-y-1.5">
                         <Label className="text-sm">Visibility</Label>

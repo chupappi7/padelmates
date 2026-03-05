@@ -689,7 +689,9 @@ export type Database = {
           id: string
           join_mode: string
           location: string
+          max_level: string | null
           max_players: number
+          min_level: string | null
           payment_deadline_hours: number | null
           payment_instructions: string | null
           payment_mode: string
@@ -719,7 +721,9 @@ export type Database = {
           id?: string
           join_mode?: string
           location: string
+          max_level?: string | null
           max_players?: number
+          min_level?: string | null
           payment_deadline_hours?: number | null
           payment_instructions?: string | null
           payment_mode?: string
@@ -749,7 +753,9 @@ export type Database = {
           id?: string
           join_mode?: string
           location?: string
+          max_level?: string | null
           max_players?: number
+          min_level?: string | null
           payment_deadline_hours?: number | null
           payment_instructions?: string | null
           payment_mode?: string

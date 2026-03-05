@@ -28,6 +28,7 @@ import { DurationChips, snapToDuration } from "@/components/games/DurationChips"
 import { CourtPicker } from "@/components/games/CourtPicker";
 import { Switch } from "@/components/ui/switch";
 import type { HostType } from "@/components/games/HostTypeModal";
+import { LevelRangePicker } from "@/components/games/LevelRangePicker";
 
 const HOST_TYPE_CONFIG: Record<HostType, { title: string; subtitle: string; format: string; defaultMaxPlayers: number; defaultJoinMode: string; maxPlayerLimit?: number }> = {
   find_players: {
@@ -126,6 +127,8 @@ export default function EditGamePage() {
   const [allowSubstitutions, setAllowSubstitutions] = useState(false);
   const [gameType, setGameType] = useState<"friendly" | "americano" | "other">("friendly");
   const [customGameType, setCustomGameType] = useState("");
+  const [minLevel, setMinLevel] = useState<string | null>(null);
+  const [maxLevel, setMaxLevel] = useState<string | null>(null);
 
   // Spots needed stepper (same logic as CreateGamePage)
   const minSpotsNeeded = (hIsPlaying: boolean, pCount: number) =>
@@ -259,6 +262,10 @@ export default function EditGamePage() {
     // Allow substitutions
     setAllowSubstitutions((data as any).allow_substitutions || false);
 
+    // Level range
+    if ((data as any).min_level) setMinLevel((data as any).min_level);
+    if ((data as any).max_level) setMaxLevel((data as any).max_level);
+
     // Booking screenshot
     if ((data as any).booking_screenshot_url) {
       setBookingScreenshotPath((data as any).booking_screenshot_url);
@@ -352,6 +359,8 @@ export default function EditGamePage() {
       ...(isSellCourt && bookingScreenshotPath ? { booking_screenshot_url: bookingScreenshotPath } : {}),
       ...(hostType === "americano" ? { allow_substitutions: allowSubstitutions } : {}),
       ...(isHostingAsClub && selectedClub ? { club_id: selectedClub.id } : {}),
+      min_level: minLevel || null,
+      max_level: maxLevel || null,
     } as any).eq("id", id);
 
     if (error) {
@@ -1009,23 +1018,11 @@ export default function EditGamePage() {
                         <Trophy className="w-4 h-4 md:w-5 md:h-5 text-primary" />
                         Skill Level
                       </h2>
-                      <div className="space-y-1.5">
-                        <Label htmlFor="skill" className="text-sm">Skill Level</Label>
-                        <Select
-                          value={String(formData.skillLevel)}
-                          onValueChange={(v) => handleChange("skillLevel", parseInt(v))}
-                        >
-                          <SelectTrigger className="h-11">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="4">A</SelectItem>
-                            <SelectItem value="3">B</SelectItem>
-                            <SelectItem value="2">C</SelectItem>
-                            <SelectItem value="1">D</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
+                      <LevelRangePicker
+                        minLevel={minLevel}
+                        maxLevel={maxLevel}
+                        onChange={(min, max) => { setMinLevel(min || null); setMaxLevel(max || null); }}
+                      />
                     </div>
 
                     {/* Card 4: How to Join */}
@@ -1411,23 +1408,11 @@ export default function EditGamePage() {
                         Skill Level & Settings
                       </h2>
 
-                      <div className="space-y-1.5">
-                        <Label htmlFor="skill" className="text-sm">Skill Level</Label>
-                        <Select
-                          value={String(formData.skillLevel)}
-                          onValueChange={(v) => handleChange("skillLevel", parseInt(v))}
-                        >
-                          <SelectTrigger className="h-11">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="4">A</SelectItem>
-                            <SelectItem value="3">B</SelectItem>
-                            <SelectItem value="2">C</SelectItem>
-                            <SelectItem value="1">D</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
+                      <LevelRangePicker
+                        minLevel={minLevel}
+                        maxLevel={maxLevel}
+                        onChange={(min, max) => { setMinLevel(min || null); setMaxLevel(max || null); }}
+                      />
 
                       <div className="space-y-1.5">
                         <Label className="text-sm">Visibility</Label>

@@ -3,6 +3,7 @@ import { MapPin, Clock, Users } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { differenceInHours, format } from "date-fns";
 import { motion } from "framer-motion";
+import { formatLevelBadge } from "@/lib/levelUtils";
 
 interface GameCardProps {
   id: string;
@@ -27,11 +28,21 @@ interface GameCardProps {
   userStatus?: "joined" | "hosting" | "requested" | "court_secured";
   courtTakenBy?: string | null;
   interestCount?: number;
+  minLevel?: string | null;
+  maxLevel?: string | null;
 }
 
 const getSkillColor = (level: number) => {
   const map: Record<number, string> = { 4: "badge-skill-a", 3: "badge-skill-b", 2: "badge-skill-c", 1: "badge-skill-d" };
   return map[level] ?? "badge-skill-c";
+};
+
+const getLevelBadgeColor = (label: string) => {
+  if (label.startsWith("A")) return "badge-skill-a";
+  if (label.startsWith("B")) return "badge-skill-b";
+  if (label.startsWith("C")) return "badge-skill-c";
+  if (label.startsWith("D")) return "badge-skill-d";
+  return "badge-skill-c";
 };
 
 const getUrgencyPill = () => "bg-primary/15 text-primary border-primary/25";
@@ -79,6 +90,8 @@ export function GameCard({
   userStatus,
   courtTakenBy,
   interestCount = 0,
+  minLevel,
+  maxLevel,
 }: GameCardProps) {
   const isCourtSharing = paymentMode === "court_sharing";
   const isCourtTaken = !!courtTakenBy;
@@ -144,11 +157,15 @@ export function GameCard({
                 </span>
               )}
             </div>
-            {!isCourtSharing && (
-              <span className={`badge-skill text-sm sm:text-base px-2.5 sm:px-3 py-1 font-black shrink-0 ${getSkillColor(skillLevel)}`}>
-                {["D","C","B","A"][skillLevel - 1] ?? skillLevel}
-              </span>
-            )}
+            {!isCourtSharing && (() => {
+              const badgeLabel = formatLevelBadge(minLevel, maxLevel, skillLevel);
+              const badgeColor = getLevelBadgeColor(badgeLabel);
+              return (
+                <span className={`badge-skill text-sm sm:text-base px-2.5 sm:px-3 py-1 font-black shrink-0 ${badgeColor}`}>
+                  {badgeLabel}
+                </span>
+              );
+            })()}
           </div>
 
           {/* Row 2: Location + distance */}
