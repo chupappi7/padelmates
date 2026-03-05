@@ -103,7 +103,7 @@ export function Navbar() {
                     )}
                   </Button>
                 </NotificationPanel>
-                <Button variant="ghost" className="relative h-9 w-9 rounded-full p-0" onClick={() => navigate("/profile")}>
+                <Button variant="ghost" className="relative h-9 w-9 rounded-full p-0 hover:bg-primary/10" onClick={() => navigate("/profile")}>
                   <Avatar className="h-9 w-9">
                     <AvatarImage src={avatarUrl} alt="Profile" />
                     <AvatarFallback className="bg-primary/10 text-primary font-semibold text-sm">
