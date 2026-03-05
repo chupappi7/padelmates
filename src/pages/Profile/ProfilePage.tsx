@@ -112,16 +112,13 @@ export default function ProfilePage() {
       {/* Header — tightened */}
       <div className="bg-gradient-to-b from-teal-50 to-white px-4 pt-3 pb-1">
         <div className="flex items-center justify-between">
-          <div className="w-9" />
+          <button onClick={() => navigate("/settings")} className="w-9 h-9 rounded-full bg-[#F1F5F9] flex items-center justify-center">
+            <Settings className="w-4 h-4 text-[#64748B]" />
+          </button>
           <h1 className="text-[#0F172A] font-bold text-lg" style={{ fontFamily: SPACE }}>Profile</h1>
-          <div className="flex items-center gap-1.5">
-            <button onClick={() => navigate("/settings")} className="w-9 h-9 rounded-full bg-[#F1F5F9] flex items-center justify-center">
-              <Settings className="w-4 h-4 text-[#64748B]" />
-            </button>
-            <button onClick={async () => { await signOut(); navigate("/login"); }} className="w-9 h-9 rounded-full bg-red-50 flex items-center justify-center">
-              <LogOut className="w-4 h-4 text-red-500" />
-            </button>
-          </div>
+          <button onClick={async () => { await signOut(); navigate("/login"); }} className="w-9 h-9 rounded-full bg-red-50 flex items-center justify-center">
+            <LogOut className="w-4 h-4 text-red-500" />
+          </button>
         </div>
 
         {/* Avatar + Name — tighter spacing */}
