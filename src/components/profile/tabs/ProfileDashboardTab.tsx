@@ -64,7 +64,7 @@ export function ProfileDashboardTab({ userId, profile, isSelf = true }: Props) {
     const { count: joined } = await supabase.from("game_players").select("id", { count: "exact", head: true }).eq("user_id", userId);
     setJoinedCount(joined ?? 0);
 
-    const { data: profileData } = await supabase.from("profiles").select("created_at").eq("user_id", userId).single();
+    const { data: profileData } = await supabase.from("profiles").select("created_at").eq("user_id", userId).maybeSingle();
     if (profileData) {
       setMemberSince(new Date(profileData.created_at).toLocaleDateString("en", { month: "short", year: "numeric" }));
     }
