@@ -3,7 +3,6 @@ import { cn } from "@/lib/utils";
 import {
   LEVEL_HIERARCHY,
   formatLevelBadge,
-  levelRank,
   type GameLevel,
 } from "@/lib/levelUtils";
 
@@ -13,10 +12,23 @@ interface LevelRangePickerProps {
   onChange: (minLevel: string, maxLevel: string) => void;
 }
 
-const MAIN_GROUPS = ["A", "B", "C", "D"] as const;
-const SUB_LEVELS: Record<string, GameLevel[]> = {
-  B: ["B1", "B2"],
-  C: ["C1", "C2", "C3"],
+const MAINS = ["A", "B", "C", "D"] as const;
+
+// When a single main is selected, these are the sub-levels + adjacent boundary to show
+const EXPANDED_SUBS: Record<string, GameLevel[]> = {
+  B: ["B1", "B2", "C1"],   // B subs + one step into C
+  C: ["C1", "C2", "C3", "D"], // C subs + one step into D
+};
+
+// Full range for main-level pairs
+const MAIN_RANGES: Record<string, [GameLevel, GameLevel]> = {
+  "A": ["A", "A"],
+  "D": ["D", "D"],
+  "B": ["B1", "B2"],
+  "C": ["C1", "C3"],
+  "A-B": ["A", "B2"],
+  "B-C": ["B1", "C3"],
+  "C-D": ["C1", "D"],
 };
 
 function mainOf(level: string): string {
@@ -25,157 +37,246 @@ function mainOf(level: string): string {
   return level;
 }
 
+function mainsAreAdjacent(a: string, b: string): boolean {
+  const idx = MAINS.indexOf(a as any);
+  const idx2 = MAINS.indexOf(b as any);
+  return Math.abs(idx - idx2) === 1;
+}
+
+function rangeKey(a: string, b: string): string {
+  const ai = MAINS.indexOf(a as any);
+  const bi = MAINS.indexOf(b as any);
+  return ai < bi ? `${a}-${b}` : `${b}-${a}`;
+}
+
 export function LevelRangePicker({ minLevel, maxLevel, onChange }: LevelRangePickerProps) {
-  const [expandedMains, setExpandedMains] = useState<Set<string>>(new Set());
-  // Range expressed as indices into LEVEL_HIERARCHY
-  const [rangeStart, setRangeStart] = useState<number | null>(null);
-  const [rangeEnd, setRangeEnd] = useState<number | null>(null);
+  // "mode" is either single-main (with optional sub-level drill) or main-range
+  const [selectedMain, setSelectedMain] = useState<string | null>(null);
+  const [secondMain, setSecondMain] = useState<string | null>(null); // adjacent main for range
+  // Sub-level range (indices into EXPANDED_SUBS[selectedMain])
+  const [subStart, setSubStart] = useState<number | null>(null);
+  const [subEnd, setSubEnd] = useState<number | null>(null);
 
   // Sync from props
   useEffect(() => {
     if (!minLevel || !maxLevel) {
-      setExpandedMains(new Set());
-      setRangeStart(null);
-      setRangeEnd(null);
-      return;
-    }
-    const si = LEVEL_HIERARCHY.indexOf(maxLevel as GameLevel); // best = lowest index
-    const ei = LEVEL_HIERARCHY.indexOf(minLevel as GameLevel); // weakest = highest index
-    if (si < 0 || ei < 0) return;
-
-    setRangeStart(si);
-    setRangeEnd(ei);
-
-    // Expand relevant mains
-    const mains = new Set<string>();
-    for (let i = si; i <= ei; i++) {
-      const m = mainOf(LEVEL_HIERARCHY[i]);
-      if (m === "B" || m === "C") mains.add(m);
-    }
-    setExpandedMains(mains);
-  }, [minLevel, maxLevel]);
-
-  const lo = rangeStart !== null && rangeEnd !== null ? Math.min(rangeStart, rangeEnd) : (rangeStart ?? -1);
-  const hi = rangeStart !== null && rangeEnd !== null ? Math.max(rangeStart, rangeEnd) : (rangeStart ?? -1);
-  const hasRange = rangeStart !== null && rangeEnd !== null;
-
-  const emit = (s: number, e: number) => {
-    const loI = Math.min(s, e);
-    const hiI = Math.max(s, e);
-    onChange(LEVEL_HIERARCHY[hiI], LEVEL_HIERARCHY[loI]);
-  };
-
-  // Build the visible sub-level row: only for expanded B/C, in hierarchy order
-  const visibleSubs: GameLevel[] = [];
-  LEVEL_HIERARCHY.forEach((l) => {
-    const m = mainOf(l);
-    if ((m === "B" || m === "C") && expandedMains.has(m)) {
-      visibleSubs.push(l);
-    }
-  });
-
-  const handleMainTap = (main: string) => {
-    if (main === "A" || main === "D") {
-      const idx = LEVEL_HIERARCHY.indexOf(main as GameLevel);
-      setExpandedMains(new Set());
-      setRangeStart(idx);
-      setRangeEnd(idx);
-      emit(idx, idx);
+      setSelectedMain(null);
+      setSecondMain(null);
+      setSubStart(null);
+      setSubEnd(null);
       return;
     }
 
-    // B or C toggle
-    const next = new Set(expandedMains);
-    if (next.has(main)) {
-      next.delete(main);
-      // If deselecting and current range is within this group, clear
-      if (rangeStart !== null) {
-        const subs = SUB_LEVELS[main];
-        const subIndices = subs.map((s) => LEVEL_HIERARCHY.indexOf(s));
-        const allInGroup = lo >= subIndices[0] && hi <= subIndices[subIndices.length - 1];
-        if (allInGroup) {
-          setRangeStart(null);
-          setRangeEnd(null);
-          onChange("", "");
+    const maxMain = mainOf(maxLevel);
+    const minMain = mainOf(minLevel);
+
+    if (maxMain === minMain) {
+      // Single main group
+      setSelectedMain(maxMain);
+      setSecondMain(null);
+      const subs = EXPANDED_SUBS[maxMain];
+      if (subs) {
+        const si = subs.indexOf(maxLevel as GameLevel);
+        const ei = subs.indexOf(minLevel as GameLevel);
+        setSubStart(si >= 0 ? si : null);
+        setSubEnd(ei >= 0 ? ei : null);
+      } else {
+        setSubStart(null);
+        setSubEnd(null);
+      }
+    } else if (mainsAreAdjacent(maxMain, minMain)) {
+      // Check if it's a fine sub-level cross (like B2-C1)
+      const primaryMain = maxMain;
+      const subs = EXPANDED_SUBS[primaryMain];
+      if (subs) {
+        const si = subs.indexOf(maxLevel as GameLevel);
+        const ei = subs.indexOf(minLevel as GameLevel);
+        if (si >= 0 && ei >= 0) {
+          // It's a sub-level cross-boundary range
+          setSelectedMain(primaryMain);
+          setSecondMain(null);
+          setSubStart(si);
+          setSubEnd(ei);
+          return;
         }
       }
+      // Full main-level range
+      setSelectedMain(maxMain);
+      setSecondMain(minMain);
+      setSubStart(null);
+      setSubEnd(null);
     } else {
-      next.add(main);
-      // Auto-select all subs of this group
-      const subs = SUB_LEVELS[main];
-      const first = LEVEL_HIERARCHY.indexOf(subs[0]);
-      const last = LEVEL_HIERARCHY.indexOf(subs[subs.length - 1]);
-
-      if (rangeStart === null || rangeEnd === null) {
-        // No prior selection → select all of this group
-        setRangeStart(first);
-        setRangeEnd(last);
-        emit(first, last);
-      } else {
-        // Extend range to include this group
-        const newLo = Math.min(lo, first);
-        const newHi = Math.max(hi, last);
-        setRangeStart(newLo);
-        setRangeEnd(newHi);
-        emit(newLo, newHi);
-      }
+      setSelectedMain(maxMain);
+      setSecondMain(null);
+      setSubStart(null);
+      setSubEnd(null);
     }
-    setExpandedMains(next);
-  };
+  }, [minLevel, maxLevel]);
 
-  const handleSubTap = (level: GameLevel) => {
-    const idx = LEVEL_HIERARCHY.indexOf(level);
-
-    // Tapping a filled pill → reset, start fresh
-    if (hasRange && idx >= lo && idx <= hi) {
-      setRangeStart(idx);
-      setRangeEnd(null);
-      // Emit single immediately
-      emit(idx, idx);
+  const handleMainTap = (main: string) => {
+    if (selectedMain === null) {
+      // First selection
+      setSelectedMain(main);
+      setSecondMain(null);
+      const range = MAIN_RANGES[main];
+      if (range) onChange(range[1], range[0]);
+      // If B or C, auto-select all subs
+      const subs = EXPANDED_SUBS[main];
+      if (subs) {
+        const ownSubs = main === "B" ? 2 : 3; // exclude boundary
+        setSubStart(0);
+        setSubEnd(ownSubs - 1);
+      } else {
+        setSubStart(null);
+        setSubEnd(null);
+      }
       return;
     }
 
-    if (rangeStart === null || rangeEnd !== null) {
-      // First tap (or restart)
-      setRangeStart(idx);
-      setRangeEnd(null);
-      emit(idx, idx);
+    if (main === selectedMain && secondMain === null) {
+      // Deselect
+      setSelectedMain(null);
+      setSecondMain(null);
+      setSubStart(null);
+      setSubEnd(null);
+      onChange("", "");
+      return;
+    }
+
+    if (main === secondMain) {
+      // Deselect second → back to single
+      setSecondMain(null);
+      const range = MAIN_RANGES[selectedMain];
+      if (range) onChange(range[1], range[0]);
+      const subs = EXPANDED_SUBS[selectedMain];
+      if (subs) {
+        const ownSubs = selectedMain === "B" ? 2 : 3;
+        setSubStart(0);
+        setSubEnd(ownSubs - 1);
+      }
+      return;
+    }
+
+    if (secondMain !== null && main === selectedMain) {
+      // Deselect first main, keep second as primary
+      const newPrimary = secondMain;
+      setSelectedMain(newPrimary);
+      setSecondMain(null);
+      const range = MAIN_RANGES[newPrimary];
+      if (range) onChange(range[1], range[0]);
+      const subs = EXPANDED_SUBS[newPrimary];
+      if (subs) {
+        const ownSubs = newPrimary === "B" ? 2 : 3;
+        setSubStart(0);
+        setSubEnd(ownSubs - 1);
+      } else {
+        setSubStart(null);
+        setSubEnd(null);
+      }
+      return;
+    }
+
+    if (mainsAreAdjacent(selectedMain, main)) {
+      // Adjacent → main-level range
+      setSecondMain(main);
+      setSubStart(null);
+      setSubEnd(null);
+      const key = rangeKey(selectedMain, main);
+      const range = MAIN_RANGES[key];
+      if (range) onChange(range[1], range[0]);
     } else {
-      // Second tap → set range
-      setRangeEnd(idx);
-      emit(rangeStart, idx);
+      // Non-adjacent → move
+      setSelectedMain(main);
+      setSecondMain(null);
+      const range = MAIN_RANGES[main];
+      if (range) onChange(range[1], range[0]);
+      const subs = EXPANDED_SUBS[main];
+      if (subs) {
+        const ownSubs = main === "B" ? 2 : 3;
+        setSubStart(0);
+        setSubEnd(ownSubs - 1);
+      } else {
+        setSubStart(null);
+        setSubEnd(null);
+      }
     }
   };
 
-  const isMainActive = (main: string) => {
-    if (!hasRange) return false;
-    if (main === "A") return lo <= 0 && hi >= 0;
-    if (main === "D") return lo <= 6 && hi >= 6;
-    const subs = SUB_LEVELS[main];
-    if (!subs) return false;
-    const first = LEVEL_HIERARCHY.indexOf(subs[0]);
-    const last = LEVEL_HIERARCHY.indexOf(subs[subs.length - 1]);
-    // At least one sub in range
-    return hi >= first && lo <= last;
+  const handleSubTap = (idx: number) => {
+    if (!selectedMain) return;
+    const subs = EXPANDED_SUBS[selectedMain];
+    if (!subs) return;
+
+    // If tapping a filled pill → reset, anchor here
+    if (subStart !== null && subEnd !== null) {
+      const lo = Math.min(subStart, subEnd);
+      const hi = Math.max(subStart, subEnd);
+      if (idx >= lo && idx <= hi) {
+        setSubStart(idx);
+        setSubEnd(null);
+        onChange(subs[idx], subs[idx]);
+        return;
+      }
+    }
+
+    if (subStart === null || subEnd !== null) {
+      // First tap
+      setSubStart(idx);
+      setSubEnd(null);
+      onChange(subs[idx], subs[idx]);
+    } else {
+      // Second tap → range
+      const lo = Math.min(subStart, idx);
+      const hi = Math.max(subStart, idx);
+      setSubStart(lo);
+      setSubEnd(hi);
+      onChange(subs[hi], subs[lo]);
+    }
   };
 
+  const isMainHighlighted = (main: string) => {
+    if (main === selectedMain) return true;
+    if (main === secondMain) return true;
+    return false;
+  };
+
+  // Show subs only when single main selected (no second main) and main has subs
+  const showSubs = selectedMain && !secondMain && EXPANDED_SUBS[selectedMain];
+  const subs = showSubs ? EXPANDED_SUBS[selectedMain!] : null;
+
+  // Compute display
   const displayLabel = (() => {
-    if (!hasRange) return null;
-    return formatLevelBadge(LEVEL_HIERARCHY[hi], LEVEL_HIERARCHY[lo]);
+    if (!selectedMain) return null;
+    if (secondMain) {
+      const key = rangeKey(selectedMain, secondMain);
+      const range = MAIN_RANGES[key];
+      if (range) return formatLevelBadge(range[1], range[0]);
+    }
+    if (subs && subStart !== null) {
+      if (subEnd !== null) {
+        const lo = Math.min(subStart, subEnd);
+        const hi = Math.max(subStart, subEnd);
+        return formatLevelBadge(subs[hi], subs[lo]);
+      }
+      return subs[subStart];
+    }
+    const range = MAIN_RANGES[selectedMain];
+    if (range) return formatLevelBadge(range[1], range[0]);
+    return selectedMain;
   })();
 
   return (
     <div className="space-y-3">
       {/* Main level pills */}
       <div className="flex gap-2">
-        {MAIN_GROUPS.map((main) => (
+        {MAINS.map((main) => (
           <button
             key={main}
             type="button"
             onClick={() => handleMainTap(main)}
             className={cn(
               "flex-1 h-11 rounded-xl border-2 text-sm font-bold transition-all",
-              isMainActive(main) || expandedMains.has(main)
+              isMainHighlighted(main)
                 ? "border-primary bg-primary/10 text-foreground"
                 : "border-border text-muted-foreground hover:border-primary/40"
             )}
@@ -185,39 +286,44 @@ export function LevelRangePicker({ minLevel, maxLevel, onChange }: LevelRangePic
         ))}
       </div>
 
-      {/* Sub-level row for expanded groups */}
-      {visibleSubs.length > 0 && (
-        <div className="flex items-center gap-1.5 pl-1 flex-wrap">
-          {(["B", "C"] as const).map((main) => {
-            if (!expandedMains.has(main)) return null;
-            const subs = SUB_LEVELS[main];
-            return (
-              <div key={main} className="flex items-center gap-1.5 mr-2">
-                <span className="text-xs text-muted-foreground font-medium w-5 shrink-0">{main}:</span>
-                {subs.map((sub) => {
-                  const idx = LEVEL_HIERARCHY.indexOf(sub);
-                  const isInRange = hasRange && idx >= lo && idx <= hi;
-                  const isAnchor = rangeStart === idx && rangeEnd === null;
+      {/* Sub-level row */}
+      {subs && (
+        <div className="flex items-center gap-1.5 pl-1">
+          <div className="flex gap-1.5">
+            {subs.map((sub, idx) => {
+              const lo = subStart !== null && subEnd !== null ? Math.min(subStart, subEnd) : (subStart ?? -1);
+              const hi = subStart !== null && subEnd !== null ? Math.max(subStart, subEnd) : (subStart ?? -1);
+              const hasRange = subStart !== null && subEnd !== null;
+              const isInRange = hasRange && idx >= lo && idx <= hi;
+              const isAnchor = subStart === idx && subEnd === null;
+              
+              // Visual separator between own subs and boundary
+              const ownCount = selectedMain === "B" ? 2 : 3;
+              const isBoundary = idx >= ownCount;
 
-                  return (
-                    <button
-                      key={sub}
-                      type="button"
-                      onClick={() => handleSubTap(sub)}
-                      className={cn(
-                        "h-9 px-4 rounded-full text-xs font-semibold border-2 transition-all",
-                        isInRange || isAnchor
-                          ? "bg-primary text-primary-foreground border-primary"
+              return (
+                <span key={sub} className="flex items-center gap-1.5">
+                  {isBoundary && idx === ownCount && (
+                    <span className="text-muted-foreground text-xs mx-0.5">→</span>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => handleSubTap(idx)}
+                    className={cn(
+                      "h-9 px-4 rounded-full text-xs font-semibold border-2 transition-all",
+                      isInRange || isAnchor
+                        ? "bg-primary text-primary-foreground border-primary"
+                        : isBoundary
+                          ? "bg-background text-muted-foreground border-dashed border-border hover:border-primary hover:text-foreground"
                           : "bg-background text-muted-foreground border-border hover:border-primary hover:text-foreground"
-                      )}
-                    >
-                      {sub}
-                    </button>
-                  );
-                })}
-              </div>
-            );
-          })}
+                    )}
+                  >
+                    {sub}
+                  </button>
+                </span>
+              );
+            })}
+          </div>
         </div>
       )}
 
