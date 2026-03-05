@@ -93,6 +93,14 @@ export default function CreateGamePage() {
   const [userClubs, setUserClubs] = useState<UserClub[]>([]);
   const [hostingAs, setHostingAs] = useState<"personal" | string>("personal"); // "personal" or club id
 
+  // For sell_court, navigate immediately after creation (no invite sheet)
+  useEffect(() => {
+    if (createdGameId && hostType === "sell_court") {
+      navigate(`/games/${createdGameId}`);
+      setCreatedGameId(null);
+    }
+  }, [createdGameId, hostType, navigate]);
+
   useEffect(() => {
     if (!user) return;
     supabase
@@ -1463,7 +1471,7 @@ export default function CreateGamePage() {
           </form>
         </motion.div>
       </div>
-      {createdGameId && (
+      {createdGameId && hostType !== "sell_court" && (
         <InviteFriendsSheet
           open={!!createdGameId}
           onOpenChange={(val) => { if (!val) { navigate(`/games/${createdGameId}`); setCreatedGameId(null); } }}
