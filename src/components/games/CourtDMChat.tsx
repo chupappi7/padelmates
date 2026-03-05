@@ -736,7 +736,7 @@ export function CourtDMChat({
     if (isChatImage) {
       const src = msg.message.replace("[image]", "");
       return (
-        <div className={cn("max-w-[75%]", isMine && "text-right")}>
+        <div className="max-w-[75%]">
           <p className="text-[11px] text-muted-foreground mb-0.5">
             <span className="font-medium">{msg.profile?.name}</span>
             <span className="ml-1.5">{format(new Date(msg.created_at), "HH:mm")}</span>
@@ -748,7 +748,7 @@ export function CourtDMChat({
 
     if (isPaymentSent) {
       return (
-        <div className={cn("max-w-[75%]", isMine && "text-right")}>
+        <div className="max-w-[75%]">
           <p className="text-[11px] text-muted-foreground mb-0.5">
             <span className="font-medium">{msg.profile?.name}</span>
             <span className="ml-1.5">{format(new Date(msg.created_at), "HH:mm")}</span>
@@ -763,7 +763,7 @@ export function CourtDMChat({
 
     if (isTakenMsg) {
       return (
-        <div className={cn("max-w-[75%]", isMine && "text-right")}>
+        <div className="max-w-[75%]">
           <p className="text-[11px] text-muted-foreground mb-0.5">
             <span className="font-medium">{msg.profile?.name}</span>
             <span className="ml-1.5">{format(new Date(msg.created_at), "HH:mm")}</span>
@@ -776,7 +776,7 @@ export function CourtDMChat({
     }
 
     return (
-      <div className={cn("max-w-[75%]", isMine && "text-right")}>
+        <div className="max-w-[75%]">
         <p className="text-[11px] text-muted-foreground mb-0.5">
           <span className="font-medium">{msg.profile?.name}</span>
           <span className="ml-1.5">{format(new Date(msg.created_at), "HH:mm")}</span>
@@ -868,7 +868,7 @@ export function CourtDMChat({
           </div>
         ) : (
           messages.map((msg) => (
-            <div key={msg.id} className={cn("flex gap-2.5", msg.sender_id === currentUserId && "flex-row-reverse")}>
+            <div key={msg.id} className="flex gap-2.5">
               <Avatar className="h-7 w-7 shrink-0">
                 <AvatarImage src={msg.profile?.avatar_url || undefined} />
                 <AvatarFallback className="text-[10px]">
