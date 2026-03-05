@@ -40,6 +40,7 @@ interface InterestedUser {
   lastMessageAt?: string;
   chat_id?: string;
   hasMessaged?: boolean;
+  unreadCount?: number;
 }
 
 interface CourtDMChatProps {
@@ -215,6 +216,7 @@ export function CourtDMChat({
       let lastMessage: string | undefined;
       let lastMessageAt: string | undefined;
       let hasMessaged = false;
+      let unreadCount = 0;
 
       if (chatId) {
         const { data: msgs } = await supabase
@@ -228,6 +230,34 @@ export function CourtDMChat({
           lastMessageAt = msgs[0].created_at;
           hasMessaged = true;
         }
+
+        // Count unread messages (from the other user, not host)
+        const { count } = await supabase
+          .from("chat_messages")
+          .select("id", { count: "exact", head: true })
+          .eq("chat_id", chatId)
+          .neq("sender_id", currentUserId);
+        // Simple heuristic: all messages from other user are "unread" if no read tracking per-thread
+        // We use conversation_preferences last_read_at if available
+        const { data: prefData } = await supabase
+          .from("conversation_preferences")
+          .select("last_read_at")
+          .eq("user_id", currentUserId)
+          .eq("conversation_id", chatId)
+          .maybeSingle();
+        
+        if (prefData?.last_read_at) {
+          const { count: unread } = await supabase
+            .from("chat_messages")
+            .select("id", { count: "exact", head: true })
+            .eq("chat_id", chatId)
+            .neq("sender_id", currentUserId)
+            .gt("created_at", prefData.last_read_at);
+          unreadCount = unread || 0;
+        } else {
+          // No read marker = all messages from others are unread
+          unreadCount = count || 0;
+        }
       }
 
       users.push({
@@ -240,6 +270,7 @@ export function CourtDMChat({
         lastMessageAt,
         chat_id: chatId,
         hasMessaged,
+        unreadCount,
       });
     }
 
@@ -268,7 +299,9 @@ export function CourtDMChat({
       .or(`and(user_1_id.eq.${currentUserId},user_2_id.eq.${otherUserId}),and(user_1_id.eq.${otherUserId},user_2_id.eq.${currentUserId})`)
       .maybeSingle();
 
+    let chatId: string | null = null;
     if (existing) {
+      chatId = existing.id;
       setActiveChatId(existing.id);
     } else {
       const user1 = currentUserId < otherUserId ? currentUserId : otherUserId;
@@ -278,7 +311,28 @@ export function CourtDMChat({
         .insert({ listing_id: gameId, user_1_id: user1, user_2_id: user2 })
         .select("id")
         .single();
-      if (created) setActiveChatId(created.id);
+      if (created) {
+        chatId = created.id;
+        setActiveChatId(created.id);
+      }
+    }
+
+    // Mark as read
+    if (chatId) {
+      const now = new Date().toISOString();
+      const { data: existingPref } = await supabase
+        .from("conversation_preferences")
+        .select("id")
+        .eq("user_id", currentUserId)
+        .eq("conversation_id", chatId)
+        .maybeSingle();
+      if (existingPref) {
+        await supabase.from("conversation_preferences").update({ last_read_at: now }).eq("id", existingPref.id);
+      } else {
+        await supabase.from("conversation_preferences").insert({ user_id: currentUserId, conversation_id: chatId, last_read_at: now });
+      }
+      // Clear unread count locally
+      setInterestedUsers(prev => prev.map(u => u.user_id === otherUserId ? { ...u, unreadCount: 0 } : u));
     }
   };
 
@@ -540,11 +594,16 @@ export function CourtDMChat({
           </div>
         ) : (
           <div className="divide-y divide-border overflow-y-auto flex-1">
-            {interestedUsers.map((u) => (
+            {interestedUsers.map((u) => {
+              const hasUnread = (u.unreadCount || 0) > 0;
+              return (
               <button
                 key={u.user_id}
                 onClick={() => openConversation(u.user_id)}
-                className="w-full flex items-center gap-3 p-4 hover:bg-muted/40 transition-colors text-left"
+                className={cn(
+                  "w-full flex items-center gap-3 p-4 hover:bg-muted/40 transition-colors text-left",
+                  hasUnread && "bg-muted/30"
+                )}
               >
                 <Avatar className="h-10 w-10 shrink-0">
                   <AvatarImage src={u.avatar_url || undefined} />
@@ -554,7 +613,10 @@ export function CourtDMChat({
                 </Avatar>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-1.5 mb-0.5">
-                    <p className="text-sm font-semibold truncate">{u.name}</p>
+                    <p className={cn(
+                      "text-sm truncate",
+                      hasUnread ? "font-bold" : "font-semibold"
+                    )}>{u.name}</p>
                     {u.interest_status === "confirmed" && (
                       <Badge className="text-[9px] h-4 px-1.5 bg-success/10 text-success border-success/20 border shrink-0">
                         Confirmed
@@ -562,18 +624,29 @@ export function CourtDMChat({
                     )}
                   </div>
                   {u.hasMessaged ? (
-                    <p className="text-xs text-muted-foreground truncate">{u.lastMessage}</p>
+                    <p className={cn(
+                      "text-xs truncate",
+                      hasUnread ? "text-foreground font-semibold" : "text-muted-foreground"
+                    )}>{u.lastMessage}</p>
                   ) : (
                     <p className="text-xs text-muted-foreground/60 italic">No message yet</p>
                   )}
                 </div>
                 <div className="flex flex-col items-end gap-1 shrink-0">
                   {u.lastMessageAt && (
-                    <span className="text-[10px] text-muted-foreground">
+                    <span className={cn(
+                      "text-[10px]",
+                      hasUnread ? "text-primary font-semibold" : "text-muted-foreground"
+                    )}>
                       {format(new Date(u.lastMessageAt), "HH:mm")}
                     </span>
                   )}
-                  {u.hasMessaged && u.interest_status !== "confirmed" && !isCourtTaken && (
+                  {hasUnread && (
+                    <span className="min-w-[18px] h-[18px] rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold flex items-center justify-center px-1">
+                      {u.unreadCount! > 9 ? "9+" : u.unreadCount}
+                    </span>
+                  )}
+                  {!hasUnread && u.hasMessaged && u.interest_status !== "confirmed" && !isCourtTaken && (
                     <button
                       onClick={(e) => { e.stopPropagation(); onConfirmBooking?.(u.interest_id, u.user_id); }}
                       className="text-[10px] font-semibold text-primary hover:text-primary/80 transition-colors"
@@ -583,7 +656,8 @@ export function CourtDMChat({
                   )}
                 </div>
               </button>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
