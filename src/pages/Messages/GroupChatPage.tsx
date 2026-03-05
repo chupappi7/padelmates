@@ -247,7 +247,7 @@ export default function GroupChatPage() {
                                   </div>
                                 )}
                                 {isMine && <div className="flex-1" />}
-                                <div className={cn("max-w-[75%]")}>
+                    <div className={cn("max-w-[75%]")}>
                                   {isFirstInSeries && (
                                     <p className={cn(
                                       "text-[10px] mb-0.5 font-medium",
@@ -256,22 +256,31 @@ export default function GroupChatPage() {
                                       {isMine ? "You" : msg.profiles?.name}
                                     </p>
                                   )}
-                      <div
-                        className={cn(
-                          "px-3.5 py-2 text-sm",
-                          isMine
-                            ? "bg-primary text-primary-foreground rounded-2xl rounded-br-md"
-                            : "bg-muted rounded-2xl rounded-bl-md"
-                        )}
-                      >
-                        <ChatMessageContent message={msg.message} isMine={isMine} />
-                        <p className={cn(
-                          "text-[10px] mt-0.5 text-right",
-                          isMine ? "text-primary-foreground/60" : "text-muted-foreground"
-                        )}>
-                          {formatMessageTime(msg.created_at)}
-                        </p>
-                      </div>
+                      {msg.message.startsWith("[image]") || /^\[game:[\w-]+\]$/.test(msg.message) ? (
+                        <div>
+                          <ChatMessageContent message={msg.message} isMine={isMine} />
+                          <p className="text-[10px] mt-0.5 text-right text-muted-foreground">
+                            {formatMessageTime(msg.created_at)}
+                          </p>
+                        </div>
+                      ) : (
+                        <div
+                          className={cn(
+                            "px-3.5 py-2 text-sm",
+                            isMine
+                              ? "bg-primary text-primary-foreground rounded-2xl rounded-br-md"
+                              : "bg-muted rounded-2xl rounded-bl-md"
+                          )}
+                        >
+                          <ChatMessageContent message={msg.message} isMine={isMine} />
+                          <p className={cn(
+                            "text-[10px] mt-0.5 text-right",
+                            isMine ? "text-primary-foreground/60" : "text-muted-foreground"
+                          )}>
+                            {formatMessageTime(msg.created_at)}
+                          </p>
+                        </div>
+                      )}
                     </div>
                                 {isMine && (
                                   <div className="w-7 shrink-0 self-end">
