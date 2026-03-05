@@ -104,7 +104,7 @@ export function GameCard({
   const urgencyPill = getUrgencyPill();
   const roleAccent = getRoleAccent(userStatus);
   const showPrice = pricePerPlayer > 0 && (priceMode !== "free" || isCourtSharing);
-  const showJoinButton = !user && !isCourtSharing && spotsLeft > 0;
+  const showJoinButton = false; // Join CTA moved to game detail page
 
   const spotsColor = spotsLeft <= 0
     ? "bg-destructive/15 text-destructive border-destructive/20"
