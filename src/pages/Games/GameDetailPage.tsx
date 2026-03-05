@@ -1309,6 +1309,20 @@ export default function GameDetailPage() {
         </div>
       )}
 
+      {/* Unauthenticated Join CTA - mobile */}
+      {!user && !isCourtSharing && spotsLeft > 0 && activeTab !== "chat" && (
+        <div className="fixed left-0 right-0 px-4 pb-2 pt-2 bg-background/95 backdrop-blur-md md:hidden z-50" style={{ bottom: "calc(4.5rem + env(safe-area-inset-bottom))" }}>
+          <Button
+            variant="default"
+            size="lg"
+            className="w-full h-11 text-sm font-semibold"
+            onClick={() => navigate("/login")}
+          >
+            Sign in to Join
+          </Button>
+        </div>
+      )}
+
       {/* Desktop Join Button - not for court sharing */}
       {user && !isHost && !isCourtSharing && !isPlayer && !myRequest && spotsLeft > 0 && activeTab !== "chat" && (
         <div className="hidden md:block fixed bottom-8 right-8">
@@ -1324,6 +1338,20 @@ export default function GameDetailPage() {
               : game?.payment_mode === "spot_selling"
                 ? "Take This Spot"
                 : isOpenJoin ? "Join Now" : "Request to Join"}
+          </Button>
+        </div>
+      )}
+
+      {/* Unauthenticated Join CTA - desktop */}
+      {!user && !isCourtSharing && spotsLeft > 0 && activeTab !== "chat" && (
+        <div className="hidden md:block fixed bottom-8 right-8">
+          <Button
+            variant="default"
+            size="default"
+            className="shadow-xl"
+            onClick={() => navigate("/login")}
+          >
+            Sign in to Join
           </Button>
         </div>
       )}
