@@ -4,6 +4,14 @@ import { Input } from "@/components/ui/input";
 import { Send, ImagePlus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
+
+export interface QuickPhrase {
+  label: string;
+  message?: string;
+  action?: () => void;
+  variant?: "default" | "destructive";
+}
 
 interface ChatInputWithUploadProps {
   value: string;
@@ -13,6 +21,8 @@ interface ChatInputWithUploadProps {
   disabled?: boolean;
   placeholder?: string;
   userId?: string;
+  quickPhrases?: QuickPhrase[];
+  onQuickPhrase?: (message: string) => void;
 }
 
 export function ChatInputWithUpload({
@@ -23,6 +33,8 @@ export function ChatInputWithUpload({
   disabled,
   placeholder = "Message...",
   userId,
+  quickPhrases = [],
+  onQuickPhrase,
 }: ChatInputWithUploadProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -59,45 +71,74 @@ export function ChatInputWithUpload({
     if (fileRef.current) fileRef.current.value = "";
   };
 
+  const handleChipClick = (phrase: QuickPhrase) => {
+    if (phrase.action) {
+      phrase.action();
+    } else if (phrase.message && onQuickPhrase) {
+      onQuickPhrase(phrase.message);
+    }
+  };
+
   return (
-    <form
-      onSubmit={(e) => {
-        e.preventDefault();
-        onSend();
-      }}
-      className="flex items-center gap-2"
-    >
-      <input
-        ref={fileRef}
-        type="file"
-        accept="image/*"
-        className="hidden"
-        onChange={handleFileChange}
-      />
-      <button
-        type="button"
-        onClick={() => fileRef.current?.click()}
-        disabled={uploading}
-        className="h-11 w-11 rounded-full bg-muted/50 flex items-center justify-center shrink-0 hover:bg-muted transition-colors disabled:opacity-50"
+    <div className="space-y-2">
+      {quickPhrases.length > 0 && (
+        <div className="flex gap-1.5 overflow-x-auto pb-0.5 no-scrollbar">
+          {quickPhrases.map((phrase) => (
+            <button
+              key={phrase.label}
+              onClick={() => handleChipClick(phrase)}
+              disabled={disabled}
+              className={cn(
+                "shrink-0 px-2.5 py-1 rounded-full border text-[11px] font-medium transition-colors disabled:opacity-50",
+                phrase.variant === "destructive"
+                  ? "border-destructive/40 bg-destructive/5 text-destructive hover:bg-destructive/10"
+                  : "border-primary/30 bg-primary/5 text-primary hover:bg-primary/10"
+              )}
+            >
+              {phrase.label}
+            </button>
+          ))}
+        </div>
+      )}
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          onSend();
+        }}
+        className="flex items-center gap-2"
       >
-        <ImagePlus className="w-5 h-5 text-muted-foreground" />
-      </button>
-      <Input
-        ref={inputRef}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder={uploading ? "Uploading..." : placeholder}
-        className="flex-1 rounded-full bg-muted/50 border-0 focus-visible:ring-1 h-11 text-base"
-        disabled={uploading}
-      />
-      <Button
-        type="submit"
-        size="icon"
-        className="h-11 w-11 rounded-full shrink-0"
-        disabled={!value.trim() || disabled || uploading}
-      >
-        <Send className="w-4 h-4" />
-      </Button>
-    </form>
+        <input
+          ref={fileRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={handleFileChange}
+        />
+        <button
+          type="button"
+          onClick={() => fileRef.current?.click()}
+          disabled={uploading}
+          className="h-11 w-11 rounded-full bg-muted/50 flex items-center justify-center shrink-0 hover:bg-muted transition-colors disabled:opacity-50"
+        >
+          <ImagePlus className="w-5 h-5 text-muted-foreground" />
+        </button>
+        <Input
+          ref={inputRef}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={uploading ? "Uploading..." : placeholder}
+          className="flex-1 rounded-full bg-muted/50 border-0 focus-visible:ring-1 h-11 text-base"
+          disabled={uploading}
+        />
+        <Button
+          type="submit"
+          size="icon"
+          className="h-11 w-11 rounded-full shrink-0"
+          disabled={!value.trim() || disabled || uploading}
+        >
+          <Send className="w-4 h-4" />
+        </Button>
+      </form>
+    </div>
   );
 }

@@ -10,7 +10,7 @@ import { ArrowLeft, MapPin, Calendar, MoreVertical, Copy, Trash2, BellOff, Ban }
 import { Navbar } from "@/components/layout/Navbar";
 import { cn } from "@/lib/utils";
 import { format, isToday, isYesterday } from "date-fns";
-import { ChatInputWithUpload } from "@/components/chat/ChatInputWithUpload";
+import { ChatInputWithUpload, QuickPhrase } from "@/components/chat/ChatInputWithUpload";
 import { ChatMessageContent } from "@/components/chat/ChatMessageContent";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger } from "@/components/ui/context-menu";
@@ -29,6 +29,7 @@ interface CourtContext {
   court_number: string | null;
   date_time: string;
   gameId: string;
+  hostId: string;
 }
 
 export default function ChatPage() {
@@ -93,7 +94,7 @@ export default function ChatPage() {
       if (chat.listing_id) {
         const { data: game } = await supabase
           .from("games")
-          .select("id, title, location, court_number, date_time")
+          .select("id, title, location, court_number, date_time, host_id")
           .eq("id", chat.listing_id)
           .single();
 
@@ -104,6 +105,7 @@ export default function ChatPage() {
             court_number: game.court_number,
             date_time: game.date_time,
             gameId: game.id,
+            hostId: game.host_id,
           });
         }
       }
@@ -165,6 +167,115 @@ export default function ChatPage() {
 
     setSending(false);
     inputRef.current?.focus();
+  };
+
+  const sendQuickMessage = async (msg: string) => {
+    if (!user || !chatId || sending) return;
+    setSending(true);
+    await supabase.from("chat_messages").insert({
+      chat_id: chatId,
+      sender_id: user.id,
+      message: msg,
+    });
+    setSending(false);
+  };
+
+  const handleSendBankDetails = async () => {
+    if (!user || !chatId) return;
+    setSending(true);
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("bank_details, bank_qr_url")
+      .eq("user_id", user.id)
+      .single();
+
+    if (!profile?.bank_details && !profile?.bank_qr_url) {
+      toast.error("Add your bank details in Profile → Settings → Payment Info first");
+      setSending(false);
+      return;
+    }
+
+    if (profile.bank_details) {
+      await supabase.from("chat_messages").insert({
+        chat_id: chatId,
+        sender_id: user.id,
+        message: `💳 Payment Details:\n${profile.bank_details}`,
+      });
+    }
+    if (profile.bank_qr_url) {
+      await supabase.from("chat_messages").insert({
+        chat_id: chatId,
+        sender_id: user.id,
+        message: `[image]${profile.bank_qr_url}`,
+      });
+    }
+    toast.success("Bank details sent!");
+    setSending(false);
+  };
+
+  // ── QUICK PHRASES ────────────────────────────────────────────────────────
+  const getQuickPhrases = (): QuickPhrase[] => {
+    const isHost = courtContext && user ? courtContext.hostId === user.id : false;
+    const lastMsg = messages[messages.length - 1];
+    const lastIsOther = lastMsg && lastMsg.sender_id !== user?.id;
+
+    // Court sale context
+    if (courtContext) {
+      const hasBankDetails = messages.some((m) => m.message.startsWith("💳 Payment Details:"));
+      const hasPaymentSent = messages.some((m) =>
+        m.message.toLowerCase().includes("payment sent") || m.message.includes("I've sent the payment")
+      );
+
+      if (isHost) {
+        const phrases: QuickPhrase[] = [];
+        if (!hasBankDetails) {
+          phrases.push({ label: "💳 Send Bank Details", action: handleSendBankDetails });
+        }
+        if (hasPaymentSent) {
+          phrases.push({ label: "✅ Payment received!", message: "Payment received! ✅ Booking confirmed. See you on the court! 🎾" });
+        }
+        if (lastIsOther && !hasBankDetails) {
+          phrases.push({ label: "✅ Still available!", message: "Yes, it's still available! 🎾" });
+          phrases.push({ label: "❌ Sorry, taken", message: "Sorry, the court has been taken 😔", variant: "destructive" });
+        }
+        return phrases;
+      } else {
+        // Buyer
+        const phrases: QuickPhrase[] = [];
+        if (hasBankDetails && !hasPaymentSent) {
+          phrases.push({ label: "✅ Payment sent!", message: "I've sent the payment! ✅ Please check and confirm." });
+          phrases.push({ label: "📸 I'll send a screenshot", message: "I'll send a screenshot of my transfer as proof." });
+        }
+        if (!hasBankDetails && lastIsOther) {
+          phrases.push({ label: "💳 Send me payment details", message: "Sounds good! Please send me the payment details." });
+          phrases.push({ label: "🎾 I'll take it!", message: "Great, I'll take it! How do I pay?" });
+        }
+        if (messages.length === 0) {
+          phrases.push({ label: "🎾 Still available?", message: "Hi! Is this court still available?" });
+          phrases.push({ label: "💰 What's the price?", message: "Hi! What's the price per person?" });
+        }
+        return phrases;
+      }
+    }
+
+    // Regular DM - general phrases
+    if (messages.length === 0) {
+      return [
+        { label: "👋 Hey!", message: "Hey! 👋" },
+        { label: "🎾 Want to play?", message: "Hey! Want to play sometime? 🎾" },
+      ];
+    }
+
+    if (lastIsOther) {
+      return [
+        { label: "👍 Sounds good!", message: "Sounds good! 👍" },
+        { label: "🏃 On my way!", message: "On my way! 🏃" },
+        { label: "⏰ Running late", message: "I'm running a bit late, sorry! ⏰" },
+        { label: "👋 See you there!", message: "See you there! 👋" },
+      ];
+    }
+
+    return [];
   };
 
   const handleMuteChat = async () => {
@@ -452,6 +563,8 @@ export default function ChatPage() {
           }}
           disabled={sending}
           userId={user?.id}
+          quickPhrases={getQuickPhrases()}
+          onQuickPhrase={sendQuickMessage}
         />
       </div>
     </div>

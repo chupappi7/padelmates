@@ -9,7 +9,7 @@ import { ArrowLeft, MapPin, Calendar } from "lucide-react";
 import { Navbar } from "@/components/layout/Navbar";
 import { cn } from "@/lib/utils";
 import { format, isToday, isYesterday } from "date-fns";
-import { ChatInputWithUpload } from "@/components/chat/ChatInputWithUpload";
+import { ChatInputWithUpload, QuickPhrase } from "@/components/chat/ChatInputWithUpload";
 import { ChatMessageContent } from "@/components/chat/ChatMessageContent";
 
 interface GameMessage {
@@ -146,6 +146,50 @@ export default function GroupChatPage() {
 
     setSending(false);
     inputRef.current?.focus();
+  };
+
+  const sendQuickMessage = async (msg: string) => {
+    if (!user || !gameId || sending) return;
+    setSending(true);
+    await supabase.from("game_messages").insert({
+      game_id: gameId,
+      user_id: user.id,
+      message: msg,
+    });
+    setSending(false);
+  };
+
+  const isHost = user?.id === gameInfo?.host_id;
+
+  const getQuickPhrases = (): QuickPhrase[] => {
+    const lastMsg = messages[messages.length - 1];
+    const lastIsOther = lastMsg && lastMsg.user_id !== user?.id;
+
+    if (messages.length === 0) {
+      return isHost
+        ? [
+            { label: "👋 Welcome everyone!", message: "Welcome everyone! Looking forward to playing together 🎾" },
+            { label: "📍 Here's how to get there", message: "Here's how to get to the venue:" },
+          ]
+        : [
+            { label: "👋 Hey everyone!", message: "Hey everyone! 👋 Excited to play!" },
+            { label: "🎾 See you there!", message: "See you all there! 🎾" },
+          ];
+    }
+
+    if (lastIsOther) {
+      const phrases: QuickPhrase[] = [
+        { label: "👍 Sounds good!", message: "Sounds good! 👍" },
+        { label: "🏃 On my way!", message: "On my way! 🏃" },
+        { label: "⏰ Running late", message: "I'm running a bit late, sorry! ⏰" },
+      ];
+      if (isHost) {
+        phrases.push({ label: "ℹ️ Check the details tab", message: "Check the Details tab for all the info! ℹ️" });
+      }
+      return phrases;
+    }
+
+    return [];
   };
 
   const formatMessageTime = (dateStr: string) => format(new Date(dateStr), "HH:mm");
@@ -322,6 +366,8 @@ export default function GroupChatPage() {
           }}
           disabled={sending}
           userId={user?.id}
+          quickPhrases={getQuickPhrases()}
+          onQuickPhrase={sendQuickMessage}
         />
       </div>
     </div>
