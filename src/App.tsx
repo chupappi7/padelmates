@@ -6,7 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { BottomTabBar } from "@/components/layout/BottomTabBar";
-import { RegionPrompt } from "@/components/RegionPrompt";
+
 import { Loader2 } from "lucide-react";
 
 // Lazy-loaded pages
@@ -77,7 +77,7 @@ const App = () => (
               <Route path="*" element={<NotFound />} />
             </Routes>
           </Suspense>
-          <RegionPrompt />
+          
           <BottomTabBar />
         </BrowserRouter>
       </TooltipProvider>
