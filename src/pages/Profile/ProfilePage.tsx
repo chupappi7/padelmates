@@ -5,6 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { LogOut, Camera, Settings } from "lucide-react";
+import { Navbar } from "@/components/layout/Navbar";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { SkillBadge } from "@/components/games/SkillBadge";
@@ -109,6 +110,7 @@ export default function ProfilePage() {
 
   return (
     <div className="min-h-screen bg-[#F5F5F5] pb-32 md:pb-8 lg:max-w-4xl lg:mx-auto">
+      <div className="hidden md:block"><Navbar /></div>
       {/* Header — tightened */}
       <div className="bg-gradient-to-b from-teal-50 to-white px-4 pt-3 pb-1">
         <div className="flex items-center justify-between">
