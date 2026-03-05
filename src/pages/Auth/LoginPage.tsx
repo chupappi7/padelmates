@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { lovable } from "@/integrations/lovable/index";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { Eye, EyeOff } from "lucide-react";
