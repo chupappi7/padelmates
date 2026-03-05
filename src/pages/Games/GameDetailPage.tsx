@@ -1160,22 +1160,31 @@ export default function GameDetailPage() {
                                       {isMine ? "You" : msg.profiles?.name}
                                     </p>
                                   )}
-                                  <div
-                                    className={cn(
-                                      "px-3.5 py-2 text-sm",
-                                      isMine
-                                        ? "bg-primary text-primary-foreground rounded-2xl rounded-br-md"
-                                        : "bg-muted rounded-2xl rounded-bl-md"
-                                    )}
-                                  >
-                                    <ChatMessageContent message={msg.message} isMine={msg.user_id === user?.id} />
-                                    <p className={cn(
-                                      "text-[10px] mt-0.5 text-right",
-                                      isMine ? "text-primary-foreground/60" : "text-muted-foreground"
-                                    )}>
-                                      {format(new Date(msg.created_at), "HH:mm")}
-                                    </p>
-                                  </div>
+                                  {msg.message.startsWith("[image]") || /^\[game:[\w-]+\]$/.test(msg.message) ? (
+                                    <div>
+                                      <ChatMessageContent message={msg.message} isMine={msg.user_id === user?.id} />
+                                      <p className="text-[10px] mt-0.5 text-right text-muted-foreground">
+                                        {format(new Date(msg.created_at), "HH:mm")}
+                                      </p>
+                                    </div>
+                                  ) : (
+                                    <div
+                                      className={cn(
+                                        "px-3.5 py-2 text-sm",
+                                        isMine
+                                          ? "bg-primary text-primary-foreground rounded-2xl rounded-br-md"
+                                          : "bg-muted rounded-2xl rounded-bl-md"
+                                      )}
+                                    >
+                                      <ChatMessageContent message={msg.message} isMine={msg.user_id === user?.id} />
+                                      <p className={cn(
+                                        "text-[10px] mt-0.5 text-right",
+                                        isMine ? "text-primary-foreground/60" : "text-muted-foreground"
+                                      )}>
+                                        {format(new Date(msg.created_at), "HH:mm")}
+                                      </p>
+                                    </div>
+                                  )}
                                 </div>
                               </div>
                             );

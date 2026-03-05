@@ -336,6 +336,8 @@ export default function ChatPage() {
                   i === group.messages.length - 1 ||
                   group.messages[i + 1]?.sender_id !== msg.sender_id;
                 const isGameCard = /^\[game:[\w-]+\]$/.test(msg.message);
+                const isImage = msg.message.startsWith("[image]");
+                const isSpecial = isGameCard || isImage;
 
                 return (
                   <div key={msg.id}>
@@ -367,7 +369,7 @@ export default function ChatPage() {
                         if (open && navigator.vibrate) navigator.vibrate(30);
                       }}>
                         <ContextMenuTrigger asChild>
-                          {isGameCard ? (
+                          {isSpecial ? (
                             <div className="max-w-[75%] select-none">
                               <ChatMessageContent message={msg.message} isMine={isMine} />
                               <p className={cn(
