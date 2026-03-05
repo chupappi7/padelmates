@@ -12,6 +12,7 @@ import { Loader2 } from "lucide-react";
 // Lazy-loaded pages
 const LoginPage = lazy(() => import("./pages/Auth/LoginPage"));
 const SignupPage = lazy(() => import("./pages/Auth/SignupPage"));
+const OnboardingPage = lazy(() => import("./pages/Auth/OnboardingPage"));
 const GamesListPage = lazy(() => import("./pages/Games/GamesListPage"));
 const CreateGamePage = lazy(() => import("./pages/Games/CreateGamePage"));
 const GameDetailPage = lazy(() => import("./pages/Games/GameDetailPage"));
@@ -53,6 +54,7 @@ const App = () => (
               <Route path="/" element={<GamesListPage />} />
               <Route path="/login" element={<LoginPage />} />
               <Route path="/signup" element={<SignupPage />} />
+              <Route path="/onboarding" element={<OnboardingPage />} />
               <Route path="/games" element={<GamesListPage />} />
               <Route path="/games/create" element={<CreateGamePage />} />
               <Route path="/games/:id" element={<GameDetailPage />} />

@@ -129,7 +129,7 @@ export default function LoginPage() {
         <button
           type="button"
           disabled={googleLoading}
-          onClick={async () => {
+         onClick={async () => {
             setGoogleLoading(true);
             const { error } = await lovable.auth.signInWithOAuth("google", {
               redirect_uri: window.location.origin,
@@ -138,6 +138,7 @@ export default function LoginPage() {
               toast.error(error.message);
               setGoogleLoading(false);
             }
+            // After OAuth redirect completes, onAuthStateChange in AuthContext handles navigation
           }}
           className="w-full h-[52px] rounded-xl bg-white border border-[#E2E8F0] text-[#334155] font-semibold text-base flex items-center justify-center gap-3 hover:bg-[#F8FAFC] transition-colors disabled:opacity-50"
         >
