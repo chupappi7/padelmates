@@ -37,6 +37,7 @@ export function Navbar() {
   };
 
   const desktopNavLinks = [
+    { href: "/", label: "Home", icon: Home, exact: true },
     { href: "/games", label: "Matches", icon: Search },
     { href: "/clubs", label: "Clubs", icon: Building2 },
     { href: "/my-matches", label: "My Matches", icon: CalendarCheck },
@@ -66,8 +67,8 @@ export function Navbar() {
           {/* Desktop Navigation — mirrors mobile bottom tab bar */}
           <div className="hidden md:flex items-center gap-1">
             {user && desktopNavLinks.map((link) => {
-              const isActive = link.href === "/"
-                ? location.pathname === "/"
+              const isActive = link.exact
+                ? location.pathname === link.href
                 : location.pathname.startsWith(link.href);
               return (
                 <Link
