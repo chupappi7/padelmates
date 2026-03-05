@@ -70,7 +70,7 @@ export default function EloPage() {
       <Navbar />
 
       {/* Coming Soon overlay */}
-      <div className="absolute inset-0 z-50 flex items-center justify-center pointer-events-none" style={{ top: '56px' }}>
+      <div className="fixed inset-0 z-[60] flex items-center justify-center pointer-events-none" style={{ top: 0 }}>
         <div className="absolute inset-0 backdrop-blur-[1.5px] bg-background/50" />
         <div className="relative bg-card border border-border rounded-2xl px-8 py-6 shadow-lg text-center pointer-events-auto">
           <h2 className="text-2xl font-bold font-display text-foreground mb-1">Coming Soon</h2>
