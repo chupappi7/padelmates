@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
-import { InviteFriendsSheet } from "@/components/games/InviteFriendsSheet";
+import { ShareTemplateSheet } from "@/components/games/ShareTemplateSheet";
+import { useUserProfile } from "@/hooks/useUserProfile";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -77,6 +78,7 @@ export default function CreateGamePage() {
   const config = HOST_TYPE_CONFIG[hostType] || HOST_TYPE_CONFIG.find_players;
 
   const { user } = useAuth();
+  const profile = useUserProfile();
   const [loading, setLoading] = useState(false);
   const [createdGameId, setCreatedGameId] = useState<string | null>(null);
   const [bookingScreenshotPath, setBookingScreenshotPath] = useState<string | null>(null);
@@ -1452,13 +1454,39 @@ export default function CreateGamePage() {
           </form>
         </motion.div>
       </div>
-      {createdGameId && hostType !== "sell_court" && (
-        <InviteFriendsSheet
-          open={!!createdGameId}
-          onOpenChange={(val) => { if (!val) { navigate(`/games/${createdGameId}`); setCreatedGameId(null); } }}
-          gameId={createdGameId}
-          onDone={() => { navigate(`/games/${createdGameId}`); setCreatedGameId(null); }}
-        />
+      {createdGameId && hostType !== "sell_court" && (() => {
+        const [hours, minutes] = selectedTime.split(":").map(Number);
+        const dt = new Date(selectedDate!);
+        dt.setHours(hours, minutes, 0, 0);
+        const endDt = new Date(dt.getTime() + duration * 60 * 1000);
+        const pm = hostType === "sell_spots" ? "spot_selling" : "pay_to_join";
+        const priceVal = formData.totalPrice && Number(formData.totalPrice) > 0
+          ? (hostType === "americano")
+            ? Number(formData.totalPrice)
+            : formData.priceMode === "split_evenly"
+              ? Math.ceil(Number(formData.totalPrice) / derivedMaxPlayers)
+              : Number(formData.totalPrice)
+          : 0;
+        return (
+          <ShareTemplateSheet
+            open={!!createdGameId}
+            onOpenChange={(val) => { if (!val) { navigate(`/games/${createdGameId}`); setCreatedGameId(null); } }}
+            gameId={createdGameId}
+            location={formData.location}
+            dateTime={dt.toISOString()}
+            endDateTime={endDt.toISOString()}
+            gameFormat={formData.format}
+            maxPlayers={derivedMaxPlayers}
+            hostName={profile?.name || ""}
+            skillLevel={formData.skillLevel}
+            minLevel={minLevel}
+            maxLevel={maxLevel}
+            pricePerPlayer={priceVal}
+            paymentMode={pm}
+            onDone={() => { navigate(`/games/${createdGameId}`); setCreatedGameId(null); }}
+          />
+        );
+      })(
       )}
     </div>
   );
