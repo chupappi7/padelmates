@@ -116,7 +116,12 @@ export function ShareTemplateSheet({
 
   const handleCopy = () => {
     navigator.clipboard.writeText(message);
-    toast.success("Copied to clipboard!");
+    toast.success("Message copied!");
+  };
+
+  const handleCopyLink = () => {
+    navigator.clipboard.writeText(shareUrl);
+    toast.success("Link copied!");
   };
 
   const handleWhatsApp = () => {
@@ -144,21 +149,25 @@ export function ShareTemplateSheet({
         </div>
 
         <div className="px-5 pb-3 pt-2 border-t border-border/50 space-y-2">
-          <div className={`flex gap-2 ${isMobile ? "" : ""}`}>
-            <Button onClick={handleCopy} variant="outline" className={`h-11 ${isMobile ? "flex-1" : "w-full"}`}>
+          <div className={`flex gap-2`}>
+            <Button onClick={handleCopyLink} variant="outline" className={`h-11 ${isMobile ? "flex-1" : "w-full"}`}>
               <Copy className="w-4 h-4 mr-2" />
               Copy Link
             </Button>
-            {isMobile && (
-              <Button
-                onClick={handleWhatsApp}
-                className="flex-1 h-11 bg-[#25D366] hover:bg-[#20bd5a] text-white"
-              >
-                <MessageCircle className="w-4 h-4 mr-2" />
-                WhatsApp
-              </Button>
-            )}
+            <Button onClick={handleCopy} variant="outline" className={`h-11 ${isMobile ? "flex-1" : "w-full"}`}>
+              <Copy className="w-4 h-4 mr-2" />
+              Copy Text
+            </Button>
           </div>
+          {isMobile && (
+            <Button
+              onClick={handleWhatsApp}
+              className="w-full h-11 bg-[#25D366] hover:bg-[#20bd5a] text-white"
+            >
+              <MessageCircle className="w-4 h-4 mr-2" />
+              WhatsApp
+            </Button>
+          )}
           <Button variant="ghost" className="w-full" onClick={onDone}>
             Skip
           </Button>
