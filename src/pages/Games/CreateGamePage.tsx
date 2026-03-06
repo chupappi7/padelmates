@@ -96,13 +96,6 @@ export default function CreateGamePage() {
   const [userClubs, setUserClubs] = useState<UserClub[]>([]);
   const [hostingAs, setHostingAs] = useState<"personal" | string>("personal"); // "personal" or club id
 
-  // For sell_court, navigate immediately after creation (no invite sheet)
-  useEffect(() => {
-    if (createdGameId && hostType === "sell_court") {
-      navigate(`/games/${createdGameId}`);
-      setCreatedGameId(null);
-    }
-  }, [createdGameId, hostType, navigate]);
 
   useEffect(() => {
     if (!user) return;
@@ -1454,12 +1447,12 @@ export default function CreateGamePage() {
           </form>
         </motion.div>
       </div>
-      {createdGameId && hostType !== "sell_court" && (() => {
+      {createdGameId && (() => {
         const [hours, minutes] = selectedTime.split(":").map(Number);
         const dt = new Date(selectedDate!);
         dt.setHours(hours, minutes, 0, 0);
         const endDt = new Date(dt.getTime() + duration * 60 * 1000);
-        const pm = hostType === "sell_spots" ? "spot_selling" : "pay_to_join";
+        const pm = hostType === "sell_court" ? "court_sharing" : hostType === "sell_spots" ? "spot_selling" : "pay_to_join";
         const priceVal = formData.totalPrice && Number(formData.totalPrice) > 0
           ? (hostType === "americano")
             ? Number(formData.totalPrice)
