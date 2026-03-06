@@ -49,8 +49,30 @@ export function useNotifications() {
       });
     });
 
-    results.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-    setNotifications(results);
+    // Filter out notifications linking to deleted games
+    const gameLinks = results
+      .filter((n) => n.link?.startsWith("/games/"))
+      .map((n) => n.link!.replace("/games/", "").split("/")[0]);
+
+    const uniqueGameIds = [...new Set(gameLinks)].filter(Boolean);
+
+    let validGameIds = new Set<string>();
+    if (uniqueGameIds.length > 0) {
+      const { data: existingGames } = await supabase
+        .from("games")
+        .select("id")
+        .in("id", uniqueGameIds);
+      validGameIds = new Set((existingGames || []).map((g: any) => g.id));
+    }
+
+    const filtered = results.filter((n) => {
+      if (!n.link?.startsWith("/games/")) return true;
+      const gameId = n.link.replace("/games/", "").split("/")[0];
+      return validGameIds.has(gameId);
+    });
+
+    filtered.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+    setNotifications(filtered);
     setLoading(false);
   };
 
