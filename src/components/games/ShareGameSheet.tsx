@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { Link2, MessageCircle, Send, Search, Check } from "lucide-react";
+import { Link2, MessageCircle, Send, Search, Check, Copy } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { formatLevelBadge } from "@/lib/levelUtils";
@@ -129,10 +129,16 @@ export function ShareGameSheet({
     return lines.join("\n");
   };
 
-  const handleCopyLink = () => {
-    navigator.clipboard.writeText(buildMessage());
+  const message = buildMessage();
+
+  const handleCopyText = () => {
+    navigator.clipboard.writeText(message);
+    toast.success("Message copied!");
+  };
+
+  const handleCopyLinkOnly = () => {
+    navigator.clipboard.writeText(shareUrl);
     toast.success("Link copied!");
-    onOpenChange(false);
   };
 
   const handleWhatsApp = () => {
@@ -197,7 +203,7 @@ export function ShareGameSheet({
 
   return (
     <Sheet open={open} onOpenChange={handleClose}>
-      <SheetContent side="bottom" className="rounded-t-2xl max-h-[70vh] flex flex-col p-0">
+      <SheetContent side="bottom" className="rounded-t-2xl max-h-[80vh] flex flex-col p-0">
         <div className="px-5 pt-5 pb-3 border-b border-border/50">
           <SheetHeader>
             <SheetTitle className="text-left text-base">
@@ -207,49 +213,70 @@ export function ShareGameSheet({
         </div>
 
         {!showFriends ? (
-          <div className="px-5 py-4 space-y-1">
-            <button
-              onClick={handleCopyLink}
-              className="w-full flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-accent/50 transition-colors"
-            >
-              <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                <Link2 className="w-4 h-4 text-primary" />
+          <div className="flex-1 overflow-y-auto">
+            <div className="px-5 py-4">
+              <div className="bg-muted rounded-xl p-4 whitespace-pre-wrap text-sm font-mono leading-relaxed text-foreground/90">
+                {message}
               </div>
-              <div className="text-left">
-                <p className="text-sm font-medium">Copy invite link</p>
-                <p className="text-xs text-muted-foreground">Copy full invite to clipboard</p>
-              </div>
-            </button>
+            </div>
 
-            {user && (
+            <div className="px-5 pb-2 space-y-1">
               <button
-                onClick={() => setShowFriends(true)}
+                onClick={handleCopyLinkOnly}
                 className="w-full flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-accent/50 transition-colors"
               >
                 <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                  <Send className="w-4 h-4 text-primary" />
+                  <Link2 className="w-4 h-4 text-primary" />
                 </div>
                 <div className="text-left">
-                  <p className="text-sm font-medium">Send to friends</p>
-                  <p className="text-xs text-muted-foreground">Share via in-app message</p>
+                  <p className="text-sm font-medium">Copy link</p>
+                  <p className="text-xs text-muted-foreground">Copy invite URL only</p>
                 </div>
               </button>
-            )}
 
-            {isMobile && (
               <button
-                onClick={handleWhatsApp}
+                onClick={handleCopyText}
                 className="w-full flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-accent/50 transition-colors"
               >
-                <div className="w-9 h-9 rounded-full bg-[#25D366]/10 flex items-center justify-center shrink-0">
-                  <MessageCircle className="w-4 h-4 text-[#25D366]" />
+                <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                  <Copy className="w-4 h-4 text-primary" />
                 </div>
                 <div className="text-left">
-                  <p className="text-sm font-medium">Share to WhatsApp</p>
-                  <p className="text-xs text-muted-foreground">Send match invite via WhatsApp</p>
+                  <p className="text-sm font-medium">Copy full text</p>
+                  <p className="text-xs text-muted-foreground">Copy entire invite message</p>
                 </div>
               </button>
-            )}
+
+              {user && (
+                <button
+                  onClick={() => setShowFriends(true)}
+                  className="w-full flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-accent/50 transition-colors"
+                >
+                  <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                    <Send className="w-4 h-4 text-primary" />
+                  </div>
+                  <div className="text-left">
+                    <p className="text-sm font-medium">Send to friends</p>
+                    <p className="text-xs text-muted-foreground">Share via in-app message</p>
+                  </div>
+                </button>
+              )}
+
+              {isMobile && (
+                <button
+                  onClick={handleWhatsApp}
+                  className="w-full flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-accent/50 transition-colors"
+                >
+                  <div className="w-9 h-9 rounded-full bg-[#25D366]/10 flex items-center justify-center shrink-0">
+                    <MessageCircle className="w-4 h-4 text-[#25D366]" />
+                  </div>
+                  <div className="text-left">
+                    <p className="text-sm font-medium">Share to WhatsApp</p>
+                    <p className="text-xs text-muted-foreground">Send match invite via WhatsApp</p>
+                  </div>
+                </button>
+              )}
+            </div>
           </div>
         ) : (
           <div className="flex-1 overflow-y-auto px-5 py-4 space-y-3">
