@@ -1,0 +1,23 @@
+{
+  "name": "wingman-worker",
+  "main": "src/index.js",
+  "workers_dev": true,
+  "compatibility_date": "2026-10-01",
+  "compatibility_flags": ["nodejs_compat"],
+
+  // Run near Anthropic rather than near the caller. From Vietnam a Worker can
+  // land in Hong Kong, where Anthropic refuses requests (seen on Konvo).
+  "placement": { "mode": "smart" },
+
+  // Top-level "ratelimits", not unsafe.bindings: the unsafe form deploys but
+  // does nothing at runtime (also learned on Konvo).
+  "ratelimits": [
+    {
+      "name": "RATE_LIMIT",
+      "namespace_id": "1002",
+      "simple": { "limit": 20, "period": 60 }
+    }
+  ],
+
+  "observability": { "enabled": true }
+}
