@@ -14,7 +14,7 @@ jobs:
       run:
         working-directory: wingman
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Install XcodeGen
         run: brew install xcodegen
       - name: Generate project

@@ -3,6 +3,8 @@ import UIKit
 
 /// Talks to the Cloudflare worker in Backend/, which holds the Claude key.
 enum APIClient {
+    private struct ErrorBody: Decodable { let error: String }
+
     struct APIError: LocalizedError {
         let message: String
         var errorDescription: String? { message }
@@ -69,7 +71,6 @@ enum APIClient {
         let (data, response) = try await URLSession.shared.data(for: request)
         let status = (response as? HTTPURLResponse)?.statusCode ?? 0
         guard (200..<300).contains(status) else {
-            struct ErrorBody: Decodable { let error: String }
             let message = (try? JSONDecoder().decode(ErrorBody.self, from: data))?.error
             throw APIError(message: message ?? "Request failed (\(status))")
         }
